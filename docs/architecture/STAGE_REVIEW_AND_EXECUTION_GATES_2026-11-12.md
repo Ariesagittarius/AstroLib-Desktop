@@ -960,6 +960,7 @@ acceptance_commands:
 | G4 | — | — | — | — | — | NOT STARTED | — |
 | G5 | — | — | — | — | — | NOT STARTED | — |
 | G0 | `b5d781b8` | Owner 决策 + ADR 核对（无代码变更） | 0 | 选定模式 A（零内置书 Shell + GitHub Releases 13 本 .abp/catalog + 本地导入）；模式 B `NOT ACTIVE`；预算 `win-unpacked <= 600 MB` / `app.asar <= 200 MB` | `docs/architecture/ADR-DISTRIBUTION-2026-11-12.md` | PASS | 待审计 |
+| G1 | `d9fc23c3` | `npm run check:all` + `npm run build` + `build-electron.mjs` + `electron-builder --dir --win` + asar/launch smoke | 0 | `win-unpacked=490.83 MB` (`<=600`), `app.asar=51.38 MB` (`<=200`), `app.asar.unpacked=83.06 MB`, entries=1,986, 禁止路径 0 违例, `AstroLib.exe` 启动 `/desktop/` 与 `/data/exercises/community_ai_solutions.json` 均 200, 61/348 tests pass | `artifacts/audit/g1-evidence.json` | PASS | 待审计 |
 
 ---
 
