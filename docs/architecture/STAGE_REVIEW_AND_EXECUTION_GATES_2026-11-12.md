@@ -1086,3 +1086,11 @@ REFACTOR BASELINE — NOT RELEASE CANDIDATE
 **复核方式**：只读代码 + 实际构建/测试/打包 + 产物解析  
 **源码修改**：无（本文件为新增审计文档）  
 **下一次更新条件**：任一 Gate 完成、或被审计发现新 P0/P1 事实
+
+---
+
+## 11. 第二轮独立复核结论（2026-11-12）
+
+本轮独立复核已拆分为独立文档：[P0_CLOSURE_AUDIT_ROUND2_2026-11-12.md](./P0_CLOSURE_AUDIT_ROUND2_2026-11-12.md)。
+
+**结论：P0 NOT CLOSED。** 完整证据、Gate 处置与关闭顺序见该文档。

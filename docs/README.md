@@ -34,12 +34,13 @@
 ## 2. 核心架构与专项技术交接
 
 > [!NOTE]
-> 下表中的早期专项交接文档（如 `src/content/docs/collections/`、`public/abp-packs/` 相关描述）保留作为**历史归档参考，不再作为当前桌面端（`electron/main`）的执行指令**；当前权威架构与门禁基线请以 `ADR-DISTRIBUTION-2026-11-12.md` 与 `STAGE_REVIEW_AND_EXECUTION_GATES_2026-11-12.md` 为准。
+> 下表中的早期专项交接文档（如 `src/content/docs/collections/`、`public/abp-packs/` 相关描述）保留作为**历史归档参考，不再作为当前桌面端（`electron/main`）的执行指令**；当前权威架构与门禁基线请以 `ADR-DISTRIBUTION-2026-11-12.md`、`STAGE_REVIEW_AND_EXECUTION_GATES_2026-11-12.md` 与 `P0_CLOSURE_AUDIT_ROUND2_2026-11-12.md` 为准。
 
 | 文档名称 | 核心主题与说明 | 关联代码模块 |
 | :--- | :--- | :--- |
 | [ADR-DISTRIBUTION-2026-11-12.md](./architecture/ADR-DISTRIBUTION-2026-11-12.md) | **桌面端书籍内容发行契约决策（Gate G0，2026-11-12）**：正式拍板采用**模式 A（零内置书 Shell + GitHub Releases 同步发布 `.abp` 与 `catalog.json` + 本地导入兜底）**，明确模式 B 为 `NOT ACTIVE`，固化 13 本首发书单、体积预算（`win-unpacked ≤ 600 MB` / `app.asar ≤ 200 MB`）与 `electron-release.yml` 目标产物清单。 | `package.json`<br>`.github/workflows/electron-release.yml`<br>`electron/services/` |
 | [STAGE_REVIEW_AND_EXECUTION_GATES_2026-11-12.md](./architecture/STAGE_REVIEW_AND_EXECUTION_GATES_2026-11-12.md) | **阶段报告复核与下一阶段执行/审计门禁（2026-11-12）**：逐项核对执行 Agent 阶段报告；确认桌面包体、ABP exercises、发行契约、干净 clone、SSOT、测试空跑、PWA/文档/工具链等未完成项；给出 G0–G5 边界、验收命令、证据要求与执行日志模板。 | `package.json`<br>`electron/`<br>`scripts/pack-book-abp.mjs`<br>`src/config/collections.config.ts` |
+| [P0_CLOSURE_AUDIT_ROUND2_2026-11-12.md](./architecture/P0_CLOSURE_AUDIT_ROUND2_2026-11-12.md) | **第二轮 P0 关闭独立审计（2026-11-12）**：对 HEAD `8c6508f9` 做 `git archive` 干净归档复核；确认 `check:types` 因缺少 `.astro/` 生成类型失败、`npm test` 因 `backup/`/现场打包/Electron 下载/模型缓存失败；判定 G3 发行仓坐标与手动 tag 未闭合、NSIS/portable 未生成；结论 `P0 NOT CLOSED`，附最小关闭顺序与重审证据要求。 | `package.json`<br>`.github/workflows/`<br>`tests/acceptance/`<br>`src/config/release.config.ts`<br>`scripts/release-desktop.mjs` |
 | [PROJECT_ARCHITECTURE_AUDIT_2026-11-12.md](./architecture/PROJECT_ARCHITECTURE_AUDIT_2026-11-12.md) | **当前架构全面审计与破坏性重构建议（2026-11-12）**：双轨运行态、内容 SSOT 四分五裂、Web 阅读路由缺失、ABP slug 95.5% 不一致、书库五套实现、五套内容转换器、构建链空转、发布包依赖未跟踪产物；附逐文件冗余总账、目标架构、分阶段迁移路线与验收指标。 | `src/config/`<br>`src/pages/`<br>`src/services/content-provider/`<br>`electron/`<br>`scripts/` |
 | [Electron多Fragment研读架构与Win11任意分屏系统交接文档.md](./Electron多Fragment研读架构与Win11任意分屏系统交接文档.md) | **桌面端多 Fragment SPA 架构与 Win11 任意分屏**：统一研读实体模型（教材与文献同级第一公民）、三段式 Fragment 调度器、Lottie 动效大厅、Google Play 规范研读书库与自动解析摄取管线、底部可折叠 Chrome 标签栏、Windows 11 风格 1px 细线 0 边距分屏网格、拖拽分屏交互与防重复 iframe 性能优化。 | `src/pages/desktop.astro`<br>`src/components/desktop/`<br>`src/styles/desktop/`<br>`src/types/library-entity.ts`<br>`electron/services/library-manager.ts` |
 | [Electron桌面端与ABP离线分发系统交接文档.md](./Electron桌面端与ABP离线分发系统交接文档.md) | **Electron 桌面端与 ABP 离线分发**：零硬编码图书解耦架构、ABP Schema 1.0.0 规范、Universal Reader 动态页面合成引擎（多书导航树、M3 模块折叠大纲、KaTeX/GFM 预渲染、折叠解题与数字资源）、防闪烁设置持久化同步、无边框三键避让与免安装便携版打包。 | `electron/`<br>`src/services/content-provider/`<br>`scripts/pack-book-abp.mjs`<br>`public/abp-packs/` |
