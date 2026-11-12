@@ -1,5 +1,5 @@
 /**
- * src/pages/workspace/ingest-controller.ts
+ * src/features/doc-ingestion/ingest-controller.ts
  * ============================================================================
  * AstroLib 学术文献研读工作台核心控制器 (Material 3 + Chrome 官方交互架构)
  * 严格对齐主页面品牌，统一归档设置，消除 AI SaaS 粗制滥造，支持 LaTeX 字体与行距微调

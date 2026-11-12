@@ -6,7 +6,7 @@ describe('Academic Algorithm Block & Typography Invariant Contract', () => {
   const rootDir = process.cwd();
   const componentPath = path.join(rootDir, 'src/components/Algorithm.astro');
   const customCssPath = path.join(rootDir, 'src/styles/custom.css');
-  const algosDir = path.join(rootDir, 'src/content/docs/collections/cs/algorithms');
+  const algosDir = path.join(rootDir, 'content-sources/collections/cs/algorithms');
 
   it('Algorithm.astro 组件必须物理存在并符合学术 LaTeX ruled 规范', () => {
     expect(fs.existsSync(componentPath)).toBe(true);
@@ -36,7 +36,7 @@ describe('Academic Algorithm Block & Typography Invariant Contract', () => {
   });
 
   it('cs/algorithms 目录下所有算法必须全部收敛至 <Algorithm> 组件，零残留 <div class="mineru-algorithm">', () => {
-    if (!fs.existsSync(algosDir)) return;
+    expect(fs.existsSync(algosDir), `缺失真实源码目录: ${algosDir}`).toBe(true);
     const files = fs.readdirSync(algosDir).filter((f) => f.endsWith('.mdx'));
     expect(files.length).toBeGreaterThan(0);
 
@@ -47,7 +47,7 @@ describe('Academic Algorithm Block & Typography Invariant Contract', () => {
   });
 
   it('01.3_primality-testing.mdx (Figure 1.7) 必须正确采用 <Algorithm> 并保留前缀标题', () => {
-    if (!fs.existsSync(algosDir)) return;
+    expect(fs.existsSync(algosDir), `缺失真实源码目录: ${algosDir}`).toBe(true);
     const content = fs.readFileSync(path.join(algosDir, '01.3_primality-testing.mdx'), 'utf-8');
     expect(content).toContain('<Algorithm title="Figure 1.7 An algorithm for testing primality.">');
     expect(content).toContain('function primality');
@@ -55,7 +55,7 @@ describe('Academic Algorithm Block & Typography Invariant Contract', () => {
   });
 
   it('06.6_shortest-paths.mdx (Floyd-Warshall 与 TSP) 必须正确采用 <Algorithm> 并具备正确的伪代码层级缩进', () => {
-    if (!fs.existsSync(algosDir)) return;
+    expect(fs.existsSync(algosDir), `缺失真实源码目录: ${algosDir}`).toBe(true);
     const content = fs.readFileSync(path.join(algosDir, '06.6_shortest-paths.mdx'), 'utf-8');
 
     // Floyd-Warshall 算法块

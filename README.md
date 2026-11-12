@@ -105,27 +105,33 @@ npm run dev
 > npx astro dev stop          # 安全退出
 > ```
 
-### 3. 生产构建与本地预览
+### 3. 生产构建与桌面打包（模式 A：零内置书 Shell）
 
 ```bash
-# 全量构建（包含习题数据预编译、检索索引构建与静态站点生成）
+# 1. 构建桌面端应用壳体静态资源（产物输出至 dist/，不含内置书籍）
 npm run build
 
-# 预览生产构建产物
-npm run preview
+# 2. 编译支持书单的习题切片（输出至 artifacts/exercises/）
+npm run build:exercises
+
+# 3. 打包全量 13 本官方教材为自包含 ABP 包（输出至 artifacts/abp-packs/）
+npm run pack:books
+
+# 4. 打包 Windows 桌面端免安装目录（输出至 release/win-unpacked/）
+npm run electron:pack
 ```
 
 ### 4. 辅助工具与导出命令
 
 ```bash
-# 一键生成全书离线 EPUB3 电子书
+# 一键生成全书离线 EPUB3 电子书（输出至 artifacts/epub/）
 npm run epub
 
 # 检查全站公式的 KaTeX 规范性
 npm run check:katex
 
 # 快速验证指定书籍目录下的 MDX 语法
-node scripts/scan-mdx.mjs src/content/docs/collections/math/math_analysis
+node scripts/scan-mdx.mjs content-sources/collections/math/math_analysis
 ```
 
 ---
@@ -150,25 +156,26 @@ AstroLib 作为纯静态架构（SSG），**日常浏览、学习与生产打包
 .
 ├── astro.config.mjs               # Astro / Starlight 主配置与插件挂载
 ├── AGENTS.md                      # 工程规范与学术 Commit 约束说明
-├── docs/                          # 核心架构设计与详细交接文档全集
-├── scripts/                       # 构建管线、题库编译与校验脚本
-│   ├── build-exercise-data.mjs    # 题库公式预编译与瘦身脚本
-│   ├── build-ai-index.mjs         # 离线检索索引构建脚本
+├── content-sources/collections/   # 数字化教材 MDX 章节唯一源码目录（4 合集 / 13 本书）
+├── artifacts/                     # 编译产物目录（abp-packs / exercises / 索引，不入库）
+├── electron/                      # Electron 主进程、Preload、本地服务与 reader-shell 合成器
+├── docs/                          # 核心架构设计与阶段复核/门禁文档
+├── scripts/                       # 构建管线、ABP 编译、题库编译与校验脚本
+│   ├── build-exercise-data.mjs    # 题库公式预编译与瘦身脚本（-> artifacts/exercises/）
+│   ├── pack-book-abp.mjs          # 官方 ABP 1.0.0 内容包编译器（-> artifacts/abp-packs/）
 │   ├── generate-epub.mjs          # EPUB3 自动化打包流水线
 │   └── lib/math_archive/          # 真题题库解析与清洗算法库
 ├── src/
 │   ├── config/
-│   │   ├── collections.config.mjs # 中央书库配置（全站书籍元数据与模块映射单源）
-│   │   └── features.config.mjs    # 全站功能注册表（构建装配与零打包开销控制）
-│   ├── content/docs/
-│   │   ├── dev/                   # 内置开发者手册与设计指南
-│   │   └── collections/           # 数字化教材 MDX 章节存储目录
-│   ├── components/                # 语义卡片、答题组件与 Starlight 覆盖层
+│   │   ├── collections.config.ts  # 中央书库配置（sourceCollections 为 13 本教材 SSOT）
+│   │   ├── features.config.ts     # 全站功能注册表（构建装配与开关控制）
+│   │   └── release.config.ts      # 桌面端 GitHub Releases 资产坐标配置
+│   ├── content/docs/dev/          # 内置开发者手册与设计指南
+│   ├── components/                # 语义卡片、M3 组件、桌面 Fragment 与覆盖层
 │   │   └── exercises/             # 习题系统交互核心与 LaTeX 导出前端
-│   ├── utils/
-│   │   └── latex/                 # LaTeX 学术练习册生成引擎
-│   └── data/exercises/            # 2900+ 题标准化真题与章节倒排索引
-└── public/                        # 静态资源、自托管字体切片与构建缓存
+│   ├── publishing/                # Headless LaTeX / Typst / EPUB 编译引擎
+│   └── data/exercises/            # 标准化真题与教材课后习题源数据
+└── public/                        # 静态图标、封面与 Lottie 等纯浏览器静态资产
 ```
 
 ---

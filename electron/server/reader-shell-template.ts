@@ -1,5 +1,5 @@
 /**
- * src/services/content-provider/reader-shell-template.ts
+ * electron/server/reader-shell-template.ts
  * ============================================================================
  * Universal Reader Shell 页面合成引擎 (Universal Reader HTML Synthesizer)
  * ============================================================================

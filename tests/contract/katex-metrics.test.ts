@@ -5,8 +5,8 @@ import { walkFiles } from '../helpers/fs-helpers.ts';
 
 describe('KaTeX Character Metrics Pitfalls Contract', () => {
   it('MDX 正文中的公式不应包含引发 KaTeX metrics 警告的裸 Unicode 罗马数字与 circled tag', () => {
-    const docsDir = path.resolve('src/content/docs/collections/math/engineering_analysis');
-    if (!fs.existsSync(docsDir)) return;
+    const docsDir = path.resolve('content-sources/collections/math/engineering_analysis');
+    expect(fs.existsSync(docsDir), `缺失真实源码目录: ${docsDir}`).toBe(true);
 
     const mdxFiles = walkFiles(docsDir, (f) => f.endsWith('.mdx'));
     const romanInMathRegex = /\$[^$\n]*[ⅠⅡⅢⅣⅤⅥⅦⅧⅨⅩⅪⅫⅰⅱⅲⅳⅴⅵⅶⅷⅸⅹ][^$\n]*\$/g;

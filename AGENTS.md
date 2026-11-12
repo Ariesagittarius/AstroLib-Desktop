@@ -207,10 +207,10 @@ When designing or refining UI layouts, flows, and interactive components, agents
   ```bash
   node scripts/pack-book-abp.mjs --all
   ```
-  产物自动生成至 `public/abp-packs/` 与 `dist/abp-packs/`。严禁修改或破坏 `src/types/content-package.ts` 中的主清单与章节有效负载核心契约。
+  产物自动生成至 `artifacts/abp-packs/`（含 `.abp` 单文件包、展开目录与 `catalog.json`），严禁将生成物放回 `public/` 或提交入库。严禁修改或破坏 `src/types/content-package.ts` 中的主清单与章节有效负载核心契约。
 
 ### 8.2 Universal Reader Shell Synthesis Invariant (Master Shell 页面合成铁律)
-- **无损合成原则**：桌面端章节阅读基于 `dist/reader-shell/index.html`（预编译 Starlight Master Shell），在 `src/services/content-provider/reader-shell-template.ts` 中动态装配 HTML。
+- **无损合成原则**：桌面端章节阅读基于 `dist/reader-shell/index.html`（预编译 Starlight Master Shell），在 `electron/server/reader-shell-template.ts` 中动态装配 HTML。
 - **严禁 UI 降级**：
   1. **左侧导航**：必须渲染支持全学科合集（`cs`, `math`, `science`, `telecom`）、全书目展开/折叠、章节精确高亮的树状目录，与 Web 版体验保持绝对一致；
   2. **右侧大纲**：必须调用 `buildStructuredTocHtml()` 深度提取 `h2/h3` 标题与 `.toc-chunk` 学术卡片，带上模块 Chip（`[引]`, `[习]`, `[定]`, `[理]`, `[例]`）与 M3 折叠按钮（`.toc-collapse-btn`）；

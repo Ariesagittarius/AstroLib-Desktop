@@ -42,6 +42,24 @@ function bumpVersion(current, type) {
   return type.replace(/^v/, ''); // 自定义指定版本号
 }
 
+function resolveTargetRemotes(remotes, explicitRemote) {
+  if (explicitRemote) {
+    if (!remotes.includes(explicitRemote)) {
+      throw new Error(`指定的发布远程仓库 '${explicitRemote}' 不存在（当前 remotes: ${remotes.join(', ') || '无'}）`);
+    }
+    return [explicitRemote];
+  }
+  const targets = [];
+  if (remotes.includes('private')) targets.push('private');
+  if (remotes.includes('origin')) targets.push('origin');
+  if (targets.length === 0) {
+    throw new Error(
+      `未检测到可用的桌面发布远程仓库（期望 private 或 origin，当前 remotes: ${remotes.join(', ') || '无'}）。请配置 remote 或传入 --remote=<name>。`
+    );
+  }
+  return targets;
+}
+
 async function main() {
   console.log(`
 ===================================================================
@@ -49,9 +67,18 @@ async function main() {
 ===================================================================
 `);
 
+  const cliArgs = process.argv.slice(2);
+  const dryRun = cliArgs.includes('--dry-run');
+  const remoteArg = cliArgs.find((a) => a.startsWith('--remote='))?.slice('--remote='.length);
+  const bumpArg = cliArgs.find((a) => !a.startsWith('--')) || 'patch';
+
+  // 0. 预检远程仓库配置
+  const remotes = runGit('remote').split(/\r?\n/).filter(Boolean);
+  const targetRemotes = resolveTargetRemotes(remotes, remoteArg);
+
   // 1. 检查工作区状态
   const status = runGit('status --porcelain');
-  if (status.length > 0) {
+  if (!dryRun && status.length > 0) {
     console.error('❌ 检测到工作区存在未提交的更改，请先使用 npm run push 完成提交后再发布！');
     process.exit(1);
   }
@@ -62,11 +89,15 @@ async function main() {
   const currentVer = pkg.version || '0.0.1';
 
   // 3. 解析目标版本号
-  const arg = process.argv[2] || 'patch';
-  const newVer = bumpVersion(currentVer, arg);
+  const newVer = bumpVersion(currentVer, bumpArg);
   const tag = `v${newVer}`;
 
-  console.log(`📦 当前版本: v${currentVer} -> 目标发布版本: ${tag}`);
+  console.log(`📦 当前版本: v${currentVer} -> 目标发布版本: ${tag} | 目标 remotes: ${targetRemotes.join(', ')}`);
+
+  if (dryRun) {
+    console.log(`🔎 [Dry Run] 预检通过（未修改 package.json、未打 Tag、未执行 git push）`);
+    return;
+  }
 
   // 4. 更新 package.json
   pkg.version = newVer;
@@ -81,20 +112,9 @@ async function main() {
 
   // 6. 推送至远程仓库
   console.log('🚀 正在推送提交与 Tag 到远程仓库...');
-  const remotes = runGit('remote').split(/\r?\n/).filter(Boolean);
-
-  if (remotes.includes('private')) {
-    try {
-      execSync(`git push private HEAD && git push private ${tag}`, { cwd: ROOT, stdio: 'inherit' });
-      console.log('✅ 已推送到 private 仓库');
-    } catch {
-      console.warn('⚠️ 推送到 private 失败，继续推送 origin');
-    }
-  }
-
-  if (remotes.includes('origin')) {
-    execSync(`git push origin HEAD && git push origin ${tag}`, { cwd: ROOT, stdio: 'inherit' });
-    console.log('✅ 已推送到 origin 仓库');
+  for (const r of targetRemotes) {
+    execSync(`git push ${r} HEAD && git push ${r} ${tag}`, { cwd: ROOT, stdio: 'inherit' });
+    console.log(`✅ 已推送到 ${r} 仓库`);
   }
 
   console.log(`

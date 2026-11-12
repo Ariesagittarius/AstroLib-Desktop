@@ -33,6 +33,9 @@
 
 ## 2. 核心架构与专项技术交接
 
+> [!NOTE]
+> 下表中的早期专项交接文档（如 `src/content/docs/collections/`、`public/abp-packs/` 相关描述）保留作为**历史归档参考，不再作为当前桌面端（`electron/main`）的执行指令**；当前权威架构与门禁基线请以 `ADR-DISTRIBUTION-2026-11-12.md` 与 `STAGE_REVIEW_AND_EXECUTION_GATES_2026-11-12.md` 为准。
+
 | 文档名称 | 核心主题与说明 | 关联代码模块 |
 | :--- | :--- | :--- |
 | [ADR-DISTRIBUTION-2026-11-12.md](./architecture/ADR-DISTRIBUTION-2026-11-12.md) | **桌面端书籍内容发行契约决策（Gate G0，2026-11-12）**：正式拍板采用**模式 A（零内置书 Shell + GitHub Releases 同步发布 `.abp` 与 `catalog.json` + 本地导入兜底）**，明确模式 B 为 `NOT ACTIVE`，固化 13 本首发书单、体积预算（`win-unpacked ≤ 600 MB` / `app.asar ≤ 200 MB`）与 `electron-release.yml` 目标产物清单。 | `package.json`<br>`.github/workflows/electron-release.yml`<br>`electron/services/` |

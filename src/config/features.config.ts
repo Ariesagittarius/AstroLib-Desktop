@@ -378,8 +378,8 @@ const featureDefs: Record<string, FeatureManifest<any>> = {
     id: 'seo',
     cat: 'extra',
     label: 'SEO 与搜索引擎优化',
-    desc: '自动化 Canonical、Sitemap、智能标题与摘要合成、Schema.org 结构化数据及 Bing IndexNow 支持',
-    enabled: true,
+    desc: 'Web 站专用：自动化 Canonical、Sitemap、结构化数据及 IndexNow（桌面仓默认关闭，归属 AstroLib-Web）',
+    enabled: false,
     devOnly: false,
     ui: false,
     config: {
@@ -388,7 +388,7 @@ const featureDefs: Record<string, FeatureManifest<any>> = {
       defaultDescription: 'AstroLib 是面向高校师生与自学者的大学理工科教材与学术数字化阅读系统，提供高清数学排版、推导过程、离线 EPUB 与课后真题练习。',
       googleSiteVerification: (typeof process !== 'undefined' && process.env?.GOOGLE_SITE_VERIFICATION) || '',
       bingSiteVerification: (typeof process !== 'undefined' && process.env?.BING_SITE_VERIFICATION) || '',
-      indexNowKey: (typeof process !== 'undefined' && process.env?.INDEXNOW_KEY) || 'f774bb6a2e78400d9863cad353421e5c',
+      indexNowKey: (typeof process !== 'undefined' && process.env?.INDEXNOW_KEY) || '',
     },
   }),
 
@@ -396,10 +396,10 @@ const featureDefs: Record<string, FeatureManifest<any>> = {
     id: 'pwa',
     cat: 'extra',
     label: '独立应用与离线 (PWA)',
-    desc: '支持在电脑与手机上安装为专用独立窗口应用，并提供离线阅读缓存',
-    enabled: true,
+    desc: 'Web 站专用：Service Worker 与离线缓存包（桌面仓默认关闭，归属 AstroLib-Web）',
+    enabled: false,
     devOnly: false,
-    ui: true,
+    ui: false,
     config: {
       releaseBaseUrl: 'https://github.com/Ariesagittarius/AstroLib/releases/latest/download',
       packFileName: 'astrolib-offline-pack.json',

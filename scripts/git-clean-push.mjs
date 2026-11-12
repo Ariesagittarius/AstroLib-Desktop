@@ -42,7 +42,7 @@ function parseArgs() {
     mode: 'clean', // 'clean', 'private', 'all'
     dryRun: false,
     force: false,
-    remote: 'origin',
+    remote: '',
     privateRemote: 'private',
     branch: '',
     help: false,
@@ -140,10 +140,12 @@ async function pushPrivate(options, repoInfo) {
 async function pushClean(options, repoInfo) {
   console.log('\n🧹 [2/2] 正在准备推送【公共无注释版】...');
   const targetBranch = options.branch || repoInfo.branch;
-  const remote = options.remote;
+  const remote = options.remote || (repoInfo.remotes.includes('origin') ? 'origin' : (repoInfo.remotes.includes('web-upstream') ? 'web-upstream' : ''));
 
-  if (!repoInfo.remotes.includes(remote)) {
-    throw new Error(`未找到指定的公共远程仓库: '${remote}'`);
+  if (!remote || !repoInfo.remotes.includes(remote)) {
+    throw new Error(
+      `未找到可用的公共远程仓库 '${options.remote || 'origin/web-upstream'}'（当前 remotes: ${repoInfo.remotes.join(', ') || '无'}）。请使用 --remote <name> 显式指定。`
+    );
   }
 
   // 临时沙箱目录
