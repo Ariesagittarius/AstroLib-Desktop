@@ -959,6 +959,7 @@ acceptance_commands:
 | G3 | — | — | — | — | — | NOT STARTED | — |
 | G4 | — | — | — | — | — | NOT STARTED | — |
 | G5 | — | — | — | — | — | NOT STARTED | — |
+| G0 | `b5d781b8` | Owner 决策 + ADR 核对（无代码变更） | 0 | 选定模式 A（零内置书 Shell + GitHub Releases 13 本 .abp/catalog + 本地导入）；模式 B `NOT ACTIVE`；预算 `win-unpacked <= 600 MB` / `app.asar <= 200 MB` | `docs/architecture/ADR-DISTRIBUTION-2026-11-12.md` | PASS | 待审计 |
 
 ---
 
