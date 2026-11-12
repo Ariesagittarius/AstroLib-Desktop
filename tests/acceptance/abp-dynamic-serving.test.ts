@@ -1,8 +1,11 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import path from 'node:path';
 import fs from 'node:fs';
+import zlib from 'node:zlib';
 import { StaticHandler } from '../../electron/server/static-handler.ts';
 import { resolveAbpArtifactsDir, resolveBookSourceDir } from '../../src/core/catalog/content-paths.ts';
+import { SUPPORTED_EXERCISE_BOOKS } from '../../scripts/build-exercise-data.mjs';
+import { getCatalogBooks } from '../../src/config/collections.config.ts';
 
 describe('ABP Dynamic Content Serving Acceptance Test', () => {
   const ROOT = path.resolve(__dirname, '../..');
@@ -156,6 +159,91 @@ describe('ABP Dynamic Content Serving Acceptance Test', () => {
       fs.rmSync(testUserAbpDir, { recursive: true, force: true });
     } finally {
       await localServer.stop();
+    }
+  });
+
+  it('真实 ABP 题库链路：支持书单 bundle.exercises 非空、落盘且 StaticHandler 返回 HTTP 200', async () => {
+    const supportedSlugs = SUPPORTED_EXERCISE_BOOKS.map((b) => b.slug);
+    expect(supportedSlugs).toEqual([
+      'engineering_analysis',
+      'linear_algebra_geometry',
+      'digital_circuit',
+      'electronic_circuits',
+    ]);
+
+    const eaAbpFile = path.join(artifactsAbpDir, 'math-engineering_analysis.abp');
+    if (!fs.existsSync(eaAbpFile)) {
+      const { execFileSync } = await import('node:child_process');
+      execFileSync(process.execPath, [path.join(ROOT, 'scripts', 'build-exercise-data.mjs')], { cwd: ROOT });
+      const { packBook } = await import('../../scripts/pack-book-abp.mjs');
+      await packBook({
+        bookDir: resolveBookSourceDir('math', 'engineering_analysis', ROOT),
+        outDir: artifactsAbpDir,
+        withVectors: false,
+        includeAuxiliary: true,
+      });
+    }
+
+    // 1. 解析真实 .abp 包，确认 bundle.exercises 非空
+    const bundle = JSON.parse(zlib.gunzipSync(fs.readFileSync(eaAbpFile)).toString('utf8'));
+    expect(bundle.exercises).toBeTruthy();
+    expect(typeof bundle.exercises['ch1.json']).toBe('string');
+    expect(typeof bundle.exercises['papers.json']).toBe('string');
+
+    // 2. DesktopBookManager 解包安装后，exercises/ 必须真实落盘
+    const exUserDir = path.join(ROOT, 'tests', 'fixtures', 'runtime-abp-exercises');
+    fs.rmSync(exUserDir, { recursive: true, force: true });
+    try {
+      const { DesktopBookManager } = await import('../../electron/services/book-manager.ts');
+      const manager = new DesktopBookManager(exUserDir);
+      await manager.installBookFromAbp(fs.readFileSync(eaAbpFile));
+
+      const installedExDir = path.join(exUserDir, 'math-engineering_analysis', 'exercises');
+      expect(fs.existsSync(path.join(installedExDir, 'ch1.json'))).toBe(true);
+      expect(fs.existsSync(path.join(installedExDir, 'papers.json'))).toBe(true);
+      expect(fs.existsSync(path.join(installedExDir, 'meta.json'))).toBe(true);
+
+      // 3. StaticHandler 请求 /data/exercises/<book>/<file>.json 返回 200（仅依赖 userAbpDir，不回退 projectRoot）
+      const exHandler = new StaticHandler(distDir, exUserDir);
+      for (const reqUrl of [
+        '/data/exercises/engineering_analysis/ch1.json',
+        '/data/exercises/engineering_analysis/papers.json',
+      ]) {
+        let statusCode = 0;
+        let outBuf: Buffer | null = null;
+        const handled = await exHandler.handle(
+          { method: 'GET', url: reqUrl, headers: {} } as any,
+          {
+            writeHead: (code: number) => { statusCode = code; },
+            end: (chunk?: any) => { if (chunk) outBuf = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk); },
+          } as any
+        );
+        expect(handled).toBe(true);
+        expect(statusCode).toBe(200);
+        const parsed = JSON.parse(outBuf!.toString('utf8'));
+        expect(parsed.total).toBeGreaterThan(0);
+      }
+    } finally {
+      fs.rmSync(exUserDir, { recursive: true, force: true });
+    }
+
+    // 4. 若全量 13 本 .abp 已编译，核对支持书单与 unsupported 书单完全一致
+    const allCatalogBooks = getCatalogBooks();
+    const allAbpExist = allCatalogBooks.every((b) =>
+      fs.existsSync(path.join(artifactsAbpDir, `${b.collectionSlug}-${b.slug}.abp`))
+    );
+    if (allAbpExist) {
+      const supportedSet = new Set(supportedSlugs);
+      for (const b of allCatalogBooks) {
+        const p = path.join(artifactsAbpDir, `${b.collectionSlug}-${b.slug}.abp`);
+        const bdl = JSON.parse(zlib.gunzipSync(fs.readFileSync(p)).toString('utf8'));
+        if (supportedSet.has(b.slug)) {
+          expect(bdl.exercises, `${b.collectionSlug}-${b.slug} 应包含非空 exercises`).toBeTruthy();
+          expect(Object.keys(bdl.exercises).length).toBeGreaterThan(0);
+        } else {
+          expect(bdl.exercises ?? null, `${b.collectionSlug}-${b.slug} 为 unsupported 书目，exercises 应为 null`).toBeNull();
+        }
+      }
     }
   });
 });

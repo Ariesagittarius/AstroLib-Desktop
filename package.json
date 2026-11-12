@@ -11,7 +11,7 @@
     "pack:book": "node scripts/pack-book-abp.mjs",
     "pack:books": "node scripts/pack-book-abp.mjs --all",
     "build:exercises": "node scripts/build-exercise-data.mjs",
-    "build:all": "npm run build && node scripts/pack-book-abp.mjs --all",
+    "build:all": "npm run build:exercises && npm run build && node scripts/pack-book-abp.mjs --all",
     "preview": "astro preview",
     "epub": "node scripts/generate-epub.mjs",
     "electron:build:scripts": "node scripts/build-electron.mjs",

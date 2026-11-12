@@ -34,6 +34,9 @@ import { buildGlobalBlockIndex } from '../src/core/indexing/cross-ref-indexer.mj
 import { scanBookModules } from '../src/features/module-inspector/core/scanner.mjs';
 import { chunkMdx } from '../src/ai/chunker.mjs';
 import { serializeEmbeddingsBinary } from '../src/features/search-rec/services/storage.ts';
+import { SUPPORTED_EXERCISE_BOOKS } from './build-exercise-data.mjs';
+
+const SUPPORTED_EXERCISE_SLUGS = new Set(SUPPORTED_EXERCISE_BOOKS.map((b) => b.slug));
 
 // 嵌入模型 Pipeline 单例缓存 (避免重复加载)
 let embeddingPipelineInstance = null;
@@ -764,12 +767,15 @@ export async function packBook({
       console.warn(`   ⚠️ 模块巡检生成跳过: ${e.message}`);
     }
 
-    // 若存在对应书目的编译题库切片，一并编入 .abp
-    const exCandidates = [
-      path.join(ROOT, 'artifacts', 'exercises', manifest.slug),
-      path.join(ROOT, 'public', 'data', 'exercises', manifest.slug),
-    ];
-    const exSrcDir = exCandidates.find((d) => fs.existsSync(d));
+    // 若存在对应书目的编译题库切片，一并编入 .abp（唯一权威来源：artifacts/exercises/<slug>）
+    const primaryExDir = path.join(ROOT, 'artifacts', 'exercises', manifest.slug);
+    const legacyExDir = path.join(ROOT, 'public', 'data', 'exercises', manifest.slug);
+    let exSrcDir = fs.existsSync(primaryExDir) ? primaryExDir : null;
+    if (!exSrcDir && fs.existsSync(legacyExDir)) {
+      console.warn(`   ⚠️ [DEPRECATED] 正在回退读取旧路径 ${path.relative(ROOT, legacyExDir)}，请改用 npm run build:exercises 生成 artifacts/exercises/`);
+      exSrcDir = legacyExDir;
+    }
+
     if (exSrcDir) {
       const exMap = {};
       const collectEx = (dir) => {
@@ -789,7 +795,13 @@ export async function packBook({
       collectEx(exSrcDir);
       if (Object.keys(exMap).length > 0) {
         exercisesBundle = exMap;
+      } else if (SUPPORTED_EXERCISE_SLUGS.has(manifest.slug)) {
+        throw new Error(`支持题库的书籍 ${manifest.id} 在 ${exSrcDir} 下未找到任何 .json 题库切片`);
       }
+    } else if (SUPPORTED_EXERCISE_SLUGS.has(manifest.slug)) {
+      throw new Error(`支持题库的书籍 ${manifest.id} 缺少已编译题库目录: ${primaryExDir}，请先执行 npm run build:exercises`);
+    } else {
+      console.log(`   ℹ️ 题库状态 [unsupported]: ${manifest.id} 在 src/data/exercises/ 中无结构化题库，保持 exercises=null`);
     }
   }
 
