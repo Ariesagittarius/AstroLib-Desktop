@@ -35,6 +35,7 @@
 
 | 文档名称 | 核心主题与说明 | 关联代码模块 |
 | :--- | :--- | :--- |
+| [STAGE_REVIEW_AND_EXECUTION_GATES_2026-11-12.md](./architecture/STAGE_REVIEW_AND_EXECUTION_GATES_2026-11-12.md) | **阶段报告复核与下一阶段执行/审计门禁（2026-11-12）**：逐项核对执行 Agent 阶段报告；确认桌面包体、ABP exercises、发行契约、干净 clone、SSOT、测试空跑、PWA/文档/工具链等未完成项；给出 G0–G5 边界、验收命令、证据要求与执行日志模板。 | `package.json`<br>`electron/`<br>`scripts/pack-book-abp.mjs`<br>`src/config/collections.config.ts` |
 | [PROJECT_ARCHITECTURE_AUDIT_2026-11-12.md](./architecture/PROJECT_ARCHITECTURE_AUDIT_2026-11-12.md) | **当前架构全面审计与破坏性重构建议（2026-11-12）**：双轨运行态、内容 SSOT 四分五裂、Web 阅读路由缺失、ABP slug 95.5% 不一致、书库五套实现、五套内容转换器、构建链空转、发布包依赖未跟踪产物；附逐文件冗余总账、目标架构、分阶段迁移路线与验收指标。 | `src/config/`<br>`src/pages/`<br>`src/services/content-provider/`<br>`electron/`<br>`scripts/` |
 | [Electron多Fragment研读架构与Win11任意分屏系统交接文档.md](./Electron多Fragment研读架构与Win11任意分屏系统交接文档.md) | **桌面端多 Fragment SPA 架构与 Win11 任意分屏**：统一研读实体模型（教材与文献同级第一公民）、三段式 Fragment 调度器、Lottie 动效大厅、Google Play 规范研读书库与自动解析摄取管线、底部可折叠 Chrome 标签栏、Windows 11 风格 1px 细线 0 边距分屏网格、拖拽分屏交互与防重复 iframe 性能优化。 | `src/pages/desktop.astro`<br>`src/components/desktop/`<br>`src/styles/desktop/`<br>`src/types/library-entity.ts`<br>`electron/services/library-manager.ts` |
 | [Electron桌面端与ABP离线分发系统交接文档.md](./Electron桌面端与ABP离线分发系统交接文档.md) | **Electron 桌面端与 ABP 离线分发**：零硬编码图书解耦架构、ABP Schema 1.0.0 规范、Universal Reader 动态页面合成引擎（多书导航树、M3 模块折叠大纲、KaTeX/GFM 预渲染、折叠解题与数字资源）、防闪烁设置持久化同步、无边框三键避让与免安装便携版打包。 | `electron/`<br>`src/services/content-provider/`<br>`scripts/pack-book-abp.mjs`<br>`public/abp-packs/` |
