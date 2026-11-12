@@ -85,6 +85,8 @@ export interface AstroLibDesktopBridge {
   selectPythonPath?: () => Promise<string | null>;
   setCustomPythonPath?: (customPath: string) => Promise<SystemDiagnostics>;
   installBookFromAbp?: (abpData: ArrayBuffer | Uint8Array) => Promise<any>;
+  fetchOfficialCatalog?: (customUrl?: string) => Promise<any>;
+  installOfficialBook?: (entry: any) => Promise<any>;
   getInstalledBooks?: () => Promise<any[]>;
   getBookManifest?: (colSlug: string, bookSlug: string) => Promise<any | null>;
   getChapterPayload?: (colSlug: string, bookSlug: string, chapterSlug: string) => Promise<any | null>;

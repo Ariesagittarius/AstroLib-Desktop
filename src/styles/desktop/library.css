@@ -618,3 +618,120 @@ md-filter-chip.lib-filter-chip {
   border-radius: 50%;
   animation: banner-spin 0.8s linear infinite;
 }
+
+.library-empty-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: center;
+  margin-top: 0.5rem;
+}
+
+.official-catalog-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: var(--layer-modal, 600);
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.official-catalog-surface {
+  width: min(760px, 96vw);
+  max-height: 82vh;
+  background: var(--md-sys-color-surface, #ffffff);
+  color: var(--md-sys-color-on-surface, #1f1f1f);
+  border: 1px solid var(--md-sys-color-outline-variant, #dfe4e0);
+  border-radius: 16px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.official-catalog-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 18px 22px;
+  border-bottom: 1px solid var(--md-sys-color-outline-variant, #dfe4e0);
+}
+
+.official-catalog-header h2 {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.official-catalog-sub {
+  margin: 0.25rem 0 0;
+  font-size: 0.76rem;
+  color: var(--md-sys-color-outline, #5f6368);
+  word-break: break-all;
+}
+
+.official-catalog-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.official-catalog-body {
+  padding: 16px 22px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.official-catalog-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.official-catalog-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 12px 14px;
+  border: 1px solid var(--md-sys-color-outline-variant, #dfe4e0);
+  border-radius: 10px;
+}
+
+.official-catalog-info {
+  min-width: 0;
+  flex: 1;
+}
+
+.official-catalog-name {
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.official-catalog-meta {
+  font-size: 0.76rem;
+  color: var(--md-sys-color-outline, #5f6368);
+  margin-top: 0.2rem;
+}
+
+.official-catalog-error {
+  padding: 1.5rem;
+  border: 1px solid var(--md-sys-color-outline-variant, #dfe4e0);
+  border-radius: 10px;
+  text-align: center;
+}
+
+.official-error-title {
+  margin: 0 0 0.5rem;
+  font-weight: 600;
+}
+
+.official-error-detail {
+  margin: 0 0 1rem;
+  font-size: 0.8rem;
+  color: var(--md-sys-color-error, #b3261e);
+  word-break: break-word;
+}

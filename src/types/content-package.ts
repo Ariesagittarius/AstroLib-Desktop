@@ -163,6 +163,8 @@ export interface CatalogBookEntry {
 export interface LibraryCatalog {
   schemaVersion: typeof ABP_SCHEMA_VERSION;
   catalogName: string;
+  releaseRepo?: string;
+  releaseTag?: string;
   sourceUrl?: string;
   generatedAt: string;
   books: CatalogBookEntry[];

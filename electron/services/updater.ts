@@ -7,9 +7,10 @@
 
 import https from 'node:https';
 import type { AppUpdateInfo } from '../types.ts';
+import { normalizeReleaseRepo } from '../../src/config/release.config.ts';
 
 export class AppUpdater {
-  private static readonly GITHUB_REPO = 'Ariesagittarius/AstroLib';
+  private static readonly GITHUB_REPO = normalizeReleaseRepo();
 
   /**
    * 检查 GitHub Releases 是否有新版本

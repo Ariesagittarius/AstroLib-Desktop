@@ -104,6 +104,12 @@ import '../../styles/desktop/library.css';
           <span>MinerU 凭证</span>
         </button>
 
+        <!-- 官方书库通道 (Mode A: GitHub Releases 在线获取 .abp) -->
+        <button type="button" class="library-token-btn" id="btn-official-catalog" title="从官方 Release 获取教材 .abp">
+          <M3Icon name="cloud_download" size={16} />
+          <span>官方书库</span>
+        </button>
+
         <!-- 上传文件按钮 (接受 .abp 或 .pdf) -->
         <button type="button" class="library-upload-btn" id="btn-library-upload">
           <M3Icon name="upload" size={19} />
@@ -157,6 +163,28 @@ import '../../styles/desktop/library.css';
       </div>
     </div>
   </main>
+
+  <!-- 官方 Release 书库获取覆盖层 (Mode A) -->
+  <div class="official-catalog-backdrop" id="official-catalog-modal" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="official-catalog-title">
+    <div class="official-catalog-surface">
+      <header class="official-catalog-header">
+        <div>
+          <h2 id="official-catalog-title">官方教材发行目录</h2>
+          <p class="official-catalog-sub" id="official-catalog-source">GitHub Releases · 模式 A 零内置壳按需安装</p>
+        </div>
+        <div class="official-catalog-header-actions">
+          <md-outlined-button id="btn-official-refresh">刷新目录</md-outlined-button>
+          <md-text-button id="btn-official-close">关闭</md-text-button>
+        </div>
+      </header>
+      <div class="official-catalog-body" id="official-catalog-body">
+        <div class="library-loading-placeholder">
+          <div class="lib-spinner"></div>
+          <p>正在连接官方发行清单...</p>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- 客户端书库控制器 -->
@@ -243,9 +271,21 @@ import '../../styles/desktop/library.css';
         this.render();
       });
 
-      // 6. 上传触发
+      // 6. 上传触发与官方书库触发
       document.getElementById('btn-library-upload')?.addEventListener('click', () => {
         this.fileInput?.click();
+      });
+      document.getElementById('btn-official-catalog')?.addEventListener('click', () => {
+        this.openOfficialCatalog();
+      });
+      document.getElementById('btn-official-close')?.addEventListener('click', () => {
+        this.closeOfficialCatalog();
+      });
+      document.getElementById('btn-official-refresh')?.addEventListener('click', () => {
+        this.loadOfficialCatalog();
+      });
+      document.getElementById('official-catalog-modal')?.addEventListener('click', (e) => {
+        if (e.target === e.currentTarget) this.closeOfficialCatalog();
       });
       this.fileInput?.addEventListener('change', (e: any) => {
         const file = e.target.files?.[0];
@@ -565,13 +605,28 @@ import '../../styles/desktop/library.css';
       });
 
       if (filtered.length === 0) {
+        const isFirstLaunch = this.entities.length === 0;
         this.gridEl.innerHTML = `
           <div class="library-empty">
             <span class="material-symbols-outlined" style="font-size: 48px; color: var(--md-sys-color-outline);">auto_stories</span>
-            <p>暂无符合条件的研读资源</p>
-            <span class="empty-sub">点击右上角“+ 上传文件”导入 .abp 教材包或 .pdf 学术文献</span>
+            <p>${isFirstLaunch ? '书库尚未安装教材' : '暂无符合条件的研读资源'}</p>
+            <span class="empty-sub">${
+              isFirstLaunch
+                ? '当前为精简安装壳，请从官方 Release 拉取教材包或导入本地 .abp / .pdf 文件'
+                : '尝试切换筛选条件，或导入新的 .abp 教材包与 .pdf 学术文献'
+            }</span>
+            <div class="library-empty-actions">
+              <md-filled-button id="btn-empty-official-catalog">获取官方教材 (.abp)</md-filled-button>
+              <md-outlined-button id="btn-empty-upload">导入本地 .abp / .pdf</md-outlined-button>
+            </div>
           </div>
         `;
+        document.getElementById('btn-empty-official-catalog')?.addEventListener('click', () => {
+          this.openOfficialCatalog();
+        });
+        document.getElementById('btn-empty-upload')?.addEventListener('click', () => {
+          this.fileInput?.click();
+        });
         return;
       }
 
@@ -622,6 +677,151 @@ import '../../styles/desktop/library.css';
 
         this.gridEl!.appendChild(card);
       });
+    }
+
+    private openOfficialCatalog() {
+      const modal = document.getElementById('official-catalog-modal');
+      if (modal) {
+        modal.style.display = 'flex';
+        this.loadOfficialCatalog();
+      }
+    }
+
+    private closeOfficialCatalog() {
+      const modal = document.getElementById('official-catalog-modal');
+      if (modal) modal.style.display = 'none';
+    }
+
+    private async loadOfficialCatalog() {
+      const bodyEl = document.getElementById('official-catalog-body');
+      const sourceEl = document.getElementById('official-catalog-source');
+      if (!bodyEl) return;
+
+      bodyEl.innerHTML = `
+        <div class="library-loading-placeholder">
+          <div class="lib-spinner"></div>
+          <p>正在拉取官方发行目录...</p>
+        </div>
+      `;
+
+      try {
+        const bridge = (window as any).astrolib;
+        let catalog: any;
+        let installedBooks: any[] = [];
+
+        if (bridge && typeof bridge.fetchOfficialCatalog === 'function') {
+          [catalog, installedBooks] = await Promise.all([
+            bridge.fetchOfficialCatalog(),
+            typeof bridge.getInstalledBooks === 'function' ? bridge.getInstalledBooks() : Promise.resolve([]),
+          ]);
+        } else {
+          const res = await fetch('/abp-packs/catalog.json');
+          if (!res.ok) throw new Error(`HTTP ${res.status} (${res.url})`);
+          catalog = await res.json();
+        }
+
+        if (sourceEl && catalog?.sourceUrl) {
+          sourceEl.textContent = `源清单: ${catalog.sourceUrl}${catalog.releaseTag ? ` (${catalog.releaseTag})` : ''}`;
+        }
+
+        const installedMap = new Map<string, any>();
+        for (const b of installedBooks) {
+          if (b?.manifest?.id) installedMap.set(b.manifest.id, b.manifest);
+        }
+
+        const books = Array.isArray(catalog?.books) ? catalog.books : [];
+        if (books.length === 0) {
+          bodyEl.innerHTML = `<div class="official-catalog-error">官方目录为空，请稍后重试或使用本地 .abp 导入。</div>`;
+          return;
+        }
+
+        const list = document.createElement('div');
+        list.className = 'official-catalog-list';
+
+        for (const entry of books) {
+          const installed = installedMap.get(entry.id);
+          const hasUpdate = Boolean(installed && entry.contentHash && installed.contentHash !== entry.contentHash);
+          const sizeMb = entry.sizeBytes ? `${(entry.sizeBytes / 1048576).toFixed(2)} MB` : '未知大小';
+
+          const row = document.createElement('div');
+          row.className = 'official-catalog-row';
+
+          const info = document.createElement('div');
+          info.className = 'official-catalog-info';
+          info.innerHTML = `
+            <div class="official-catalog-name"></div>
+            <div class="official-catalog-meta"></div>
+          `;
+          info.querySelector('.official-catalog-name')!.textContent = entry.title || entry.id;
+          info.querySelector('.official-catalog-meta')!.textContent =
+            `${entry.author || 'AstroLib'} · ${entry.totalChapters || 0} 章 · ${sizeMb}`;
+
+          const actionWrap = document.createElement('div');
+          actionWrap.className = 'official-catalog-action';
+
+          const btn: any = document.createElement(installed && !hasUpdate ? 'md-outlined-button' : 'md-filled-button');
+          if (installed && !hasUpdate) {
+            btn.textContent = '已安装';
+            btn.disabled = true;
+          } else {
+            btn.textContent = hasUpdate ? '更新' : '下载安装';
+            btn.addEventListener('click', async () => {
+              btn.disabled = true;
+              btn.textContent = '安装中...';
+              this.showBanner(`正在从官方 Release 下载并校验《${entry.title}》...`);
+              try {
+                if (bridge && typeof bridge.installOfficialBook === 'function') {
+                  await bridge.installOfficialBook(entry);
+                } else {
+                  const packUrl = entry.remotePackUrl || `/abp-packs/${entry.packFileName}`;
+                  const packRes = await fetch(packUrl);
+                  if (!packRes.ok) throw new Error(`HTTP ${packRes.status} (${packUrl})`);
+                  const buf = await packRes.arrayBuffer();
+                  const upRes = await fetch('/api/library/upload-abp', { method: 'POST', body: buf });
+                  const upData = await upRes.json();
+                  if (!upData.success) throw new Error(upData.error || '安装失败');
+                }
+                btn.textContent = '已安装';
+                this.showBanner(`《${entry.title}》安装并校验完成！`, 3500);
+                await this.fetchData();
+              } catch (err: any) {
+                btn.disabled = false;
+                btn.textContent = hasUpdate ? '重试更新' : '重试安装';
+                this.showBanner(`安装《${entry.title}》失败: ${err?.message || err}`, 8000, true);
+              }
+            });
+          }
+
+          actionWrap.appendChild(btn);
+          row.appendChild(info);
+          row.appendChild(actionWrap);
+          list.appendChild(row);
+        }
+
+        bodyEl.innerHTML = '';
+        bodyEl.appendChild(list);
+      } catch (err: any) {
+        bodyEl.innerHTML = '';
+        const errBox = document.createElement('div');
+        errBox.className = 'official-catalog-error';
+        errBox.innerHTML = `
+          <p class="official-error-title">无法获取官方发行目录</p>
+          <p class="official-error-detail"></p>
+          <div class="library-empty-actions">
+            <md-filled-button id="btn-catalog-err-upload">导入本地 .abp 文件</md-filled-button>
+            <md-outlined-button id="btn-catalog-err-retry">重试连接</md-outlined-button>
+          </div>
+        `;
+        errBox.querySelector('.official-error-detail')!.textContent = String(err?.message || err);
+        bodyEl.appendChild(errBox);
+        document.getElementById('btn-catalog-err-upload')?.addEventListener('click', () => {
+          this.closeOfficialCatalog();
+          this.fileInput?.click();
+        });
+        document.getElementById('btn-catalog-err-retry')?.addEventListener('click', () => {
+          this.loadOfficialCatalog();
+        });
+      }
     }
   }
 

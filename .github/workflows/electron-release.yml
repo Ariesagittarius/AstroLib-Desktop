@@ -48,15 +48,21 @@ jobs:
       - name: Compile Electron Main Process & Preload Scripts
         run: node scripts/build-electron.mjs
 
+      - name: Build Supported Exercise Artifacts (artifacts/exercises/)
+        run: npm run build:exercises
+
+      - name: Compile Official ABP Packages (artifacts/abp-packs/)
+        run: node scripts/pack-book-abp.mjs --all --no-vectors --release-repo="${{ github.repository }}" --release-tag="${{ github.ref_name || inputs.tag }}"
+
       - name: Execute Automated Test Suites (Unit, Contract, Acceptance)
         run: npm test
 
-      - name: Package Windows Installers with electron-builder
+      - name: Package Windows Installers with electron-builder (Mode A Shell Only)
         run: npx electron-builder --win
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Create GitHub Release and Upload Artifacts
+      - name: Create GitHub Release and Upload Shell + ABP Assets
         uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
         with:
@@ -69,5 +75,7 @@ jobs:
             release/*.zip
             release/*.blockmap
             release/latest.yml
+            artifacts/abp-packs/catalog.json
+            artifacts/abp-packs/*.abp
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

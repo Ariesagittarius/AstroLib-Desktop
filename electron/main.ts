@@ -16,6 +16,7 @@ import { AppUpdater } from './services/updater.ts';
 import { DesktopBookManager } from './services/book-manager.ts';
 import { DesktopLibraryManager } from './services/library-manager.ts';
 import { SettingsManager } from './services/settings-manager.ts';
+import { fetchOfficialCatalog, installOfficialBook } from './services/remote-catalog-service.ts';
 import { QwenHighlightService } from '../src/services/info-highlight/qwen-highlight-service.ts';
 
 // 规范应用名称并彻底移除默认菜单栏
@@ -239,6 +240,15 @@ function setupIpcHandlers() {
   ipcMain.handle('astrolib:install-book-from-abp', async (_event, abpData: Uint8Array | Buffer | ArrayBuffer) => {
     if (!bookManager) throw new Error('桌面图书服务未初始化');
     return bookManager.installBookFromAbp(abpData);
+  });
+
+  ipcMain.handle('astrolib:fetch-official-catalog', async (_event, customUrl?: string) => {
+    return fetchOfficialCatalog(customUrl);
+  });
+
+  ipcMain.handle('astrolib:install-official-book', async (_event, entry: any) => {
+    if (!bookManager) throw new Error('桌面图书服务未初始化');
+    return installOfficialBook(entry, bookManager);
   });
 
   ipcMain.handle('astrolib:get-installed-books', async () => {

@@ -35,6 +35,12 @@ import { scanBookModules } from '../src/features/module-inspector/core/scanner.m
 import { chunkMdx } from '../src/ai/chunker.mjs';
 import { serializeEmbeddingsBinary } from '../src/features/search-rec/services/storage.ts';
 import { SUPPORTED_EXERCISE_BOOKS } from './build-exercise-data.mjs';
+import {
+  DEFAULT_DESKTOP_RELEASE_REPO,
+  buildReleaseCatalogUrl,
+  buildReleasePackUrl,
+  normalizeReleaseRepo,
+} from '../src/config/release.config.ts';
 
 const SUPPORTED_EXERCISE_SLUGS = new Set(SUPPORTED_EXERCISE_BOOKS.map((b) => b.slug));
 
@@ -455,6 +461,8 @@ export async function packBook({
   withVectors = true,
   vectorFormat = 'int8',
   includeAuxiliary = true,
+  releaseRepo = DEFAULT_DESKTOP_RELEASE_REPO,
+  releaseTag = process.env.ASTROLIB_RELEASE_TAG || '',
 }) {
   if (!fs.existsSync(bookDir)) {
     throw new Error(`目标书籍目录不存在: ${bookDir}`);
@@ -831,7 +839,10 @@ export async function packBook({
   console.log(`   - 单文件包: ${abpPath} (${abpSizeMb} MB)`);
 
   // 6. 增量更新/重新生成 outDir/catalog.json 与权威投影 content-sources/catalog.json
-  updateCatalogJson(outDir, manifest, `${manifest.colSlug}-${manifest.slug}.abp`, abpBuffer.length);
+  updateCatalogJson(outDir, manifest, `${manifest.colSlug}-${manifest.slug}.abp`, abpBuffer.length, {
+    releaseRepo,
+    releaseTag,
+  });
 
   return {
     manifest,
@@ -844,11 +855,16 @@ export async function packBook({
 /**
  * 原子更新或创建书库总清单 catalog.json
  */
-export function updateCatalogJson(outDir, manifest, packFileName, sizeBytes) {
+export function updateCatalogJson(outDir, manifest, packFileName, sizeBytes, releaseOpts = {}) {
   const catalogPath = path.join(outDir, 'catalog.json');
+  const releaseRepo = normalizeReleaseRepo(releaseOpts.releaseRepo || DEFAULT_DESKTOP_RELEASE_REPO);
+  const releaseTag = String(releaseOpts.releaseTag || '').trim() || undefined;
   let catalog = {
     schemaVersion: ABP_SCHEMA_VERSION,
     catalogName: 'AstroLib Book Catalog',
+    releaseRepo,
+    ...(releaseTag ? { releaseTag } : {}),
+    sourceUrl: buildReleaseCatalogUrl(releaseRepo, releaseTag),
     generatedBy: 'scripts/pack-book-abp.mjs',
     generatedAt: new Date().toISOString(),
     books: [],
@@ -877,6 +893,7 @@ export function updateCatalogJson(outDir, manifest, packFileName, sizeBytes) {
     totalChapters: manifest.totalChapters,
     sizeBytes: sizeBytes,
     packFileName: packFileName,
+    remotePackUrl: buildReleasePackUrl(packFileName, releaseRepo, releaseTag),
     contentHash: manifest.contentHash,
     updatedAt: manifest.updatedAt,
   };
@@ -887,6 +904,14 @@ export function updateCatalogJson(outDir, manifest, packFileName, sizeBytes) {
     catalog.books.push(entry);
   }
 
+  catalog.schemaVersion = ABP_SCHEMA_VERSION;
+  catalog.releaseRepo = releaseRepo;
+  if (releaseTag) {
+    catalog.releaseTag = releaseTag;
+  } else {
+    delete catalog.releaseTag;
+  }
+  catalog.sourceUrl = buildReleaseCatalogUrl(releaseRepo, releaseTag);
   catalog.generatedBy = 'scripts/pack-book-abp.mjs';
   catalog.generatedAt = new Date().toISOString();
   const payload = JSON.stringify(catalog, null, 2);
@@ -899,6 +924,10 @@ export function updateCatalogJson(outDir, manifest, packFileName, sizeBytes) {
 if (process.argv[1] && process.argv[1].endsWith('pack-book-abp.mjs')) {
   const args = process.argv.slice(2);
   const outArg = args.find((a) => a.startsWith('--out='))?.slice('--out='.length);
+  const releaseRepoArg = args.find((a) => a.startsWith('--release-repo='))?.slice('--release-repo='.length);
+  const releaseTagArg = args.find((a) => a.startsWith('--release-tag='))?.slice('--release-tag='.length);
+  const releaseRepo = normalizeReleaseRepo(releaseRepoArg || DEFAULT_DESKTOP_RELEASE_REPO);
+  const releaseTag = (releaseTagArg || process.env.ASTROLIB_RELEASE_TAG || '').trim();
   const outDir = outArg ? path.resolve(ROOT, outArg) : resolveAbpArtifactsDir(ROOT);
   fs.mkdirSync(outDir, { recursive: true });
 
@@ -930,7 +959,15 @@ if (process.argv[1] && process.argv[1].endsWith('pack-book-abp.mjs')) {
 
       for (const b of allBooks) {
         console.log(`⏳ 正在打包: ${b.title}...`);
-        await packBook({ bookDir: b.bookDir, outDir, withVectors, vectorFormat, includeAuxiliary });
+        await packBook({
+          bookDir: b.bookDir,
+          outDir,
+          withVectors,
+          vectorFormat,
+          includeAuxiliary,
+          releaseRepo,
+          releaseTag,
+        });
       }
 
       // 同步权威投影 content-sources/catalog.json
@@ -951,6 +988,8 @@ if (process.argv[1] && process.argv[1].endsWith('pack-book-abp.mjs')) {
         withVectors,
         vectorFormat,
         includeAuxiliary,
+        releaseRepo,
+        releaseTag,
       });
     }
   }

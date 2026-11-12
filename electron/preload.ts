@@ -90,6 +90,14 @@ const bridge: AstroLibDesktopBridge = {
     return ipcRenderer.invoke('astrolib:install-book-from-abp', uint8);
   },
 
+  async fetchOfficialCatalog(customUrl?: string): Promise<any> {
+    return ipcRenderer.invoke('astrolib:fetch-official-catalog', customUrl);
+  },
+
+  async installOfficialBook(entry: any): Promise<any> {
+    return ipcRenderer.invoke('astrolib:install-official-book', entry);
+  },
+
   async getInstalledBooks(): Promise<any[]> {
     return ipcRenderer.invoke('astrolib:get-installed-books');
   },
