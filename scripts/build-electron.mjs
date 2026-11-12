@@ -35,7 +35,6 @@ async function build() {
       'electron',
       '@huggingface/transformers',
       'onnxruntime-node',
-      '@myriaddreamin/typst-ts-node-compiler',
       'sharp',
     ],
   });

@@ -7,7 +7,7 @@
   "scripts": {
     "dev": "astro dev",
     "start": "astro dev",
-    "build": "node --max-old-space-size=4096 node_modules/astro/bin/astro.mjs build",
+    "build": "node --max-old-space-size=4096 node_modules/astro/bin/astro.mjs build && node -e \"const fs=require('fs');fs.mkdirSync('dist/data/exercises',{recursive:true});fs.copyFileSync('src/data/exercises/community_ai_solutions.json','dist/data/exercises/community_ai_solutions.json');\"",
     "pack:book": "node scripts/pack-book-abp.mjs",
     "pack:books": "node scripts/pack-book-abp.mjs --all",
     "build:exercises": "node scripts/build-exercise-data.mjs",
@@ -39,34 +39,34 @@
     "astro": "astro"
   },
   "dependencies": {
+    "@huggingface/transformers": "^4.3.2"
+  },
+  "devDependencies": {
     "@alerix/m3-loading-indicator": "^1.0.5",
+    "@astrojs/check": "^0.9.10",
     "@astrojs/markdown-remark": "^7.2.1",
     "@astrojs/starlight": "^0.41.3",
     "@fontsource-variable/noto-sans-sc": "^5.3.0",
     "@fontsource-variable/noto-serif-sc": "^5.3.0",
     "@fontsource-variable/outfit": "^5.3.0",
     "@fontsource-variable/plus-jakarta-sans": "^5.3.0",
-    "@huggingface/transformers": "^4.3.2",
     "@m3e/web": "^2.12.0",
     "@material/material-color-utilities": "^0.3.0",
     "@material/web": "^2.5.0",
     "@myriaddreamin/typst-ts-node-compiler": "^0.7.0",
     "astro": "^7.0.2",
+    "electron": "^45.2.2",
+    "electron-builder": "^26.18.0",
     "jsqr": "^1.4.0",
+    "lorem-ipsum": "^3.0.0",
     "lottie-web": "^5.13.0",
     "mermaid": "^11.17.2",
     "onnxruntime-node": "^1.31.1",
+    "pagefind": "^1.5.2",
     "qrcode": "^1.5.4",
     "rehype-katex": "^7.0.1",
     "remark-math": "^6.0.0",
-    "sharp": "^0.34.5"
-  },
-  "devDependencies": {
-    "@astrojs/check": "^0.9.10",
-    "electron": "^45.2.2",
-    "electron-builder": "^26.18.0",
-    "lorem-ipsum": "^3.0.0",
-    "pagefind": "^1.5.2",
+    "sharp": "^0.34.5",
     "typescript": "^5.7.3",
     "vitest": "^5.0.1"
   },
@@ -81,7 +81,8 @@
     "asarUnpack": [
       "dist-electron/qwen-highlight-runner.py",
       "public/favicon.png",
-      "**/*.node"
+      "**/*.node",
+      "**/*.dll"
     ],
     "directories": {
       "output": "release"
@@ -92,10 +93,25 @@
       "!dist/abp-packs/*.abp",
       "!dist/abp-packs/*/**",
       "dist-electron/**/*",
+      "!dist-electron/**/*.map",
       "!content-sources/**",
+      "!public/abp-packs/**",
       "public/favicon.png",
-      "public/data/exercises/community_ai_solutions.json",
-      "package.json"
+      "package.json",
+      "!**/.cache/**",
+      "!**/*.tmp*",
+      "!**/test/**",
+      "!**/tests/**",
+      "!**/docs/**",
+      "!**/examples/**",
+      "!**/*.map",
+      "!**/*.md",
+      "!node_modules/onnxruntime-web/**",
+      "!node_modules/**/onnxruntime-node/bin/**/darwin/**",
+      "!node_modules/**/onnxruntime-node/bin/**/linux/**",
+      "!node_modules/**/onnxruntime-node/bin/**/win32/arm64/**",
+      "!node_modules/@huggingface/transformers/src/**",
+      "!node_modules/@huggingface/transformers/types/**"
     ],
     "win": {
       "target": [

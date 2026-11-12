@@ -361,15 +361,21 @@ function setupIpcHandlers() {
 // 2. 应用程序准备就绪
 app.whenReady().then(async () => {
   const userAbpDir = path.join(app.getPath('userData'), 'abp-packs');
-  if (app.isPackaged && !process.env.ASTROLIB_INGEST_DIR) {
-    process.env.ASTROLIB_INGEST_DIR = path.join(app.getPath('userData'), 'ingest-tasks');
+  const customModelsDir = path.join(app.getPath('userData'), 'models');
+  if (app.isPackaged) {
+    process.env.ASTROLIB_MODELS_DIR = customModelsDir;
+    if (!process.env.HF_HOME) {
+      process.env.HF_HOME = customModelsDir;
+    }
+    if (!process.env.ASTROLIB_INGEST_DIR) {
+      process.env.ASTROLIB_INGEST_DIR = path.join(app.getPath('userData'), 'ingest-tasks');
+    }
   }
   bookManager = new DesktopBookManager(userAbpDir);
   libraryManager = new DesktopLibraryManager(bookManager, projectRoot);
 
   setupIpcHandlers();
 
-  const customModelsDir = path.join(app.getPath('userData'), 'models');
   modelManager = new ModelManager(projectRoot, customModelsDir);
 
   // 监听并广播模型下载进度给主窗口（设置覆盖层宿于主窗口内）

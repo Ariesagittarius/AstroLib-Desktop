@@ -79,7 +79,10 @@ export class BilingualOnnxEngine {
         const nodeImport = new Function('m', 'return import(m)');
         transformersMod = await nodeImport('@huggingface/transformers');
       }
-      const { pipeline } = transformersMod;
+      const { pipeline, env } = transformersMod;
+      if (process.env.ASTROLIB_MODELS_DIR && env) {
+        env.cacheDir = process.env.ASTROLIB_MODELS_DIR;
+      }
 
       // 使用高效且内存稳定的 CPU / AVX2 引擎（INT8 q8 模型在 CPU 原生量化执行速度最优，且彻底免疫 Direct3D 12 缓冲区溢出与 TDR 崩溃）
       const loadWithTimeout = async () => {

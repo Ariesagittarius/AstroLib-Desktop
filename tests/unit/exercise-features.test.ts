@@ -11,7 +11,7 @@ import {
 
 describe('Exercise Features and Fallbacks', () => {
   const root = path.resolve('.');
-  const publicCommunityFile = path.join(root, 'public', 'data', 'exercises', 'community_ai_solutions.json');
+  const sourceCommunityFile = path.join(root, 'src', 'data', 'exercises', 'community_ai_solutions.json');
   let store: Map<string, string>;
 
   beforeEach(() => {
@@ -28,9 +28,9 @@ describe('Exercise Features and Fallbacks', () => {
     delete (globalThis as any).localStorage;
   });
 
-  it('验证 public/data/exercises/community_ai_solutions.json 存在且结构合法', () => {
-    expect(fs.existsSync(publicCommunityFile)).toBe(true);
-    const raw = fs.readFileSync(publicCommunityFile, 'utf8');
+  it('验证 src/data/exercises/community_ai_solutions.json 存在且结构合法', () => {
+    expect(fs.existsSync(sourceCommunityFile)).toBe(true);
+    const raw = fs.readFileSync(sourceCommunityFile, 'utf8');
     const data = JSON.parse(raw);
     expect(data).toBeDefined();
     expect(Array.isArray(data)).toBe(true);
