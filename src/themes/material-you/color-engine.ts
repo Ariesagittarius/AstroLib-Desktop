@@ -165,26 +165,32 @@ function generateSchemeCss(seedHex: string): string {
 
   return `
 /* --- Material You Dynamic Color Scheme (Seed: ${seedHex}) --- */
+:root,
 html[data-site-theme='material-you'],
-html[data-site-theme='material-you'][data-theme='light'] {
-  --md-sys-color-primary: ${lightPrimary};
-  --md-sys-color-on-primary: ${lightOnPrimary};
-  --md-sys-color-primary-container: ${lightPrimaryContainer};
-  --md-sys-color-on-primary-container: ${lightOnPrimaryContainer};
+html[data-site-theme='material-you'][data-theme='light'],
+html.desktop-app-html,
+html.desktop-app-html[data-theme='light'] {
+  color-scheme: light;
+  --md-sys-color-primary: ${lightPrimary} !important;
+  --md-sys-color-on-primary: ${lightOnPrimary} !important;
+  --md-sys-color-primary-container: ${lightPrimaryContainer} !important;
+  --md-sys-color-on-primary-container: ${lightOnPrimaryContainer} !important;
 
-  --md-sys-color-secondary: ${lightSecondary};
-  --md-sys-color-on-secondary: ${lightOnSecondary};
-  --md-sys-color-secondary-container: ${lightSecondaryContainer};
-  --md-sys-color-on-secondary-container: ${lightOnSecondaryContainer};
+  --md-sys-color-secondary: ${lightSecondary} !important;
+  --md-sys-color-on-secondary: ${lightOnSecondary} !important;
+  --md-sys-color-secondary-container: ${lightSecondaryContainer} !important;
+  --md-sys-color-on-secondary-container: ${lightOnSecondaryContainer} !important;
 
-  --md-sys-color-tertiary: ${lightTertiary};
-  --md-sys-color-on-tertiary: ${lightOnTertiary};
-  --md-sys-color-tertiary-container: ${lightTertiaryContainer};
-  --md-sys-color-on-tertiary-container: ${lightOnTertiaryContainer};
+  --md-sys-color-tertiary: ${lightTertiary} !important;
+  --md-sys-color-on-tertiary: ${lightOnTertiary} !important;
+  --md-sys-color-tertiary-container: ${lightTertiaryContainer} !important;
+  --md-sys-color-on-tertiary-container: ${lightOnTertiaryContainer} !important;
 
   /* 严格保持顶栏、正文与背景为纯净白底，杜绝色调污染 */
   --md-sys-color-background: #ffffff;
+  --md-sys-color-on-background: #1f1f1f;
   --md-sys-color-surface: #ffffff;
+  --md-sys-color-on-surface: #1f1f1f;
   --md-sys-color-surface-dim: #f8f9fa;
   --md-sys-color-surface-bright: #ffffff;
   --md-sys-color-surface-container-lowest: #ffffff;
@@ -193,53 +199,80 @@ html[data-site-theme='material-you'][data-theme='light'] {
   --md-sys-color-surface-container-high: #e8eaed;
   --md-sys-color-surface-container-highest: #dadce0;
 
-  --md-sys-color-surface-variant: ${lightSurfaceVariant};
-  --md-sys-color-on-surface-variant: ${lightOnSurfaceVariant};
-  --md-sys-color-outline: ${lightOutline};
-  --md-sys-color-outline-variant: ${lightOutlineVariant};
+  --md-sys-color-surface-variant: ${lightSurfaceVariant} !important;
+  --md-sys-color-on-surface-variant: ${lightOnSurfaceVariant} !important;
+  --md-sys-color-outline: ${lightOutline} !important;
+  --md-sys-color-outline-variant: ${lightOutlineVariant} !important;
 
   /* AstroLib / Starlight Semantic Bridge (Pure White Light Background) */
   --sl-color-bg: #ffffff;
   --sl-color-bg-nav: #ffffff;
   --sl-color-bg-sidebar: #ffffff;
-  --sl-color-accent: ${lightPrimary};
-  --sl-color-accent-low: ${lightPrimaryContainer};
-  --sl-color-text-accent: ${lightPrimary};
-  --sl-color-text-invert: ${lightOnPrimary};
+  --sl-color-white: #1f1f1f;
+  --sl-color-gray-1: #1f1f1f;
+  --sl-color-gray-2: ${lightOnSurfaceVariant};
+  --sl-color-gray-3: ${lightOutline};
+  --sl-color-gray-4: ${lightOutlineVariant};
+  --sl-color-gray-5: #e8eaed;
+  --sl-color-gray-6: #f8f9fa;
+  --sl-color-accent: ${lightPrimary} !important;
+  --sl-color-accent-low: ${lightPrimaryContainer} !important;
+  --sl-color-text-accent: ${lightPrimary} !important;
+  --sl-color-text-invert: ${lightOnPrimary} !important;
 }
 
-html[data-site-theme='material-you'][data-theme='dark'] {
-  --md-sys-color-primary: ${darkPrimary};
-  --md-sys-color-on-primary: ${darkOnPrimary};
-  --md-sys-color-primary-container: ${darkPrimaryContainer};
-  --md-sys-color-on-primary-container: ${darkOnPrimaryContainer};
+:root[data-theme='dark'],
+html[data-site-theme='material-you'][data-theme='dark'],
+html.desktop-app-html[data-theme='dark'] {
+  color-scheme: dark;
+  --md-sys-color-primary: ${darkPrimary} !important;
+  --md-sys-color-on-primary: ${darkOnPrimary} !important;
+  --md-sys-color-primary-container: ${darkPrimaryContainer} !important;
+  --md-sys-color-on-primary-container: ${darkOnPrimaryContainer} !important;
 
-  --md-sys-color-secondary: ${darkSecondary};
-  --md-sys-color-on-secondary: ${darkOnSecondary};
-  --md-sys-color-secondary-container: ${darkSecondaryContainer};
-  --md-sys-color-on-secondary-container: ${darkOnSecondaryContainer};
+  --md-sys-color-secondary: ${darkSecondary} !important;
+  --md-sys-color-on-secondary: ${darkOnSecondary} !important;
+  --md-sys-color-secondary-container: ${darkSecondaryContainer} !important;
+  --md-sys-color-on-secondary-container: ${darkOnSecondaryContainer} !important;
 
-  --md-sys-color-tertiary: ${darkTertiary};
-  --md-sys-color-on-tertiary: ${darkOnTertiary};
-  --md-sys-color-tertiary-container: ${darkTertiaryContainer};
-  --md-sys-color-on-tertiary-container: ${darkOnTertiaryContainer};
+  --md-sys-color-tertiary: ${darkTertiary} !important;
+  --md-sys-color-on-tertiary: ${darkOnTertiary} !important;
+  --md-sys-color-tertiary-container: ${darkTertiaryContainer} !important;
+  --md-sys-color-on-tertiary-container: ${darkOnTertiaryContainer} !important;
 
-  --md-sys-color-surface: ${darkSurface};
+  /* 黑色系沉浸暗夜表面阶梯（与桌面原生 titleBarOverlay #131316 保持像素级一致） */
+  --md-sys-color-background: #111213;
+  --md-sys-color-on-background: #e3e3e3;
+  --md-sys-color-surface: #131316;
   --md-sys-color-on-surface: ${darkOnSurface};
-  --md-sys-color-surface-variant: ${darkSurfaceVariant};
-  --md-sys-color-on-surface-variant: ${darkOnSurfaceVariant};
+  --md-sys-color-surface-dim: #0f1011;
+  --md-sys-color-surface-bright: #373739;
+  --md-sys-color-surface-container-lowest: #0b0c0d;
+  --md-sys-color-surface-container-low: #18191a;
+  --md-sys-color-surface-container: #1e1f20;
+  --md-sys-color-surface-container-high: #28292a;
+  --md-sys-color-surface-container-highest: #333537;
 
-  --md-sys-color-outline: ${darkOutline};
-  --md-sys-color-outline-variant: ${darkOutlineVariant};
+  --md-sys-color-surface-variant: ${darkSurfaceVariant} !important;
+  --md-sys-color-on-surface-variant: ${darkOnSurfaceVariant} !important;
+  --md-sys-color-outline: ${darkOutline} !important;
+  --md-sys-color-outline-variant: ${darkOutlineVariant} !important;
 
   /* AstroLib / Starlight Semantic Bridge (Dark Mode) */
   --sl-color-bg: #111213;
   --sl-color-bg-sidebar: #1e1f20;
   --sl-color-bg-nav: #18191a;
-  --sl-color-accent: ${darkPrimary};
-  --sl-color-accent-low: ${darkPrimaryContainer};
-  --sl-color-text-accent: ${darkPrimary};
-  --sl-color-text-invert: ${darkOnPrimary};
+  --sl-color-white: ${darkOnSurface};
+  --sl-color-gray-1: ${darkOnSurface};
+  --sl-color-gray-2: ${darkOnSurfaceVariant};
+  --sl-color-gray-3: ${darkOutline};
+  --sl-color-gray-4: ${darkOutlineVariant};
+  --sl-color-gray-5: #28292a;
+  --sl-color-gray-6: #18191a;
+  --sl-color-accent: ${darkPrimary} !important;
+  --sl-color-accent-low: ${darkPrimaryContainer} !important;
+  --sl-color-text-accent: ${darkPrimary} !important;
+  --sl-color-text-invert: ${darkOnPrimary} !important;
 }
   `.trim();
 }
@@ -294,9 +327,14 @@ export function applyThemeColor(colorIdOrHex?: string): void {
     styleEl.id = styleId;
     styleEl.textContent = schemeCss;
     document.head.appendChild(styleEl);
-  } else if (styleEl.textContent !== schemeCss) {
-    // 仅当样式内容真正发生变化时才更新 textContent，避免无效的 DOM 突变与全局样式重排
-    styleEl.textContent = schemeCss;
+  } else {
+    if (styleEl.textContent !== schemeCss) {
+      styleEl.textContent = schemeCss;
+    }
+    // 关键机制：确保 styleEl 始终位于 head 最后一个子节点，防止被其它静态 link CSS 覆盖
+    if (document.head.lastElementChild !== styleEl) {
+      document.head.appendChild(styleEl);
+    }
   }
 
   if (document.documentElement.dataset.m3ThemeColor !== currentPref) {
@@ -308,6 +346,21 @@ export function applyThemeColor(colorIdOrHex?: string): void {
       detail: { color: currentPref, seedHex },
     })
   );
+
+  // 跨窗口与多 iframe 双向实时同步 (保证外层 Shell 与内部 Reader 保持 100% 相同主题色)
+  try {
+    if (typeof window !== 'undefined') {
+      if (window.parent && window.parent !== window) {
+        window.parent.postMessage({ type: 'M3_THEME_COLOR_CHANGED', color: currentPref, schemeCss }, '*');
+      }
+      const iframes = document.querySelectorAll('iframe');
+      iframes.forEach((ifr) => {
+        try {
+          ifr.contentWindow?.postMessage({ type: 'M3_THEME_COLOR_CHANGED', color: currentPref, schemeCss }, '*');
+        } catch (e) {}
+      });
+    }
+  } catch (e) {}
 }
 
 /**
@@ -322,6 +375,15 @@ export function initColorEngine(): void {
   if (document.documentElement.dataset.siteTheme === 'material-you') {
     applyThemeColor();
   }
+
+  // 监听跨 iframe / 主窗口主题色同步消息
+  window.addEventListener('message', (event) => {
+    if (event.data && event.data.type === 'M3_THEME_COLOR_CHANGED' && event.data.color) {
+      if (document.documentElement.dataset.m3ThemeColor !== event.data.color) {
+        applyThemeColor(event.data.color);
+      }
+    }
+  });
 
   // 监听站点主题切换
   window.addEventListener('site-theme-change', (e: Event) => {

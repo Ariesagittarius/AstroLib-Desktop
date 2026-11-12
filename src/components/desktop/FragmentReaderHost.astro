@@ -1,0 +1,512 @@
+---
+/**
+ * src/components/desktop/FragmentReaderHost.astro
+ * ============================================================================
+ * Fragment 3: Chrome 风格底部标签栏与 Windows 11 任意分屏研读中心
+ * ============================================================================
+ * 规范：
+ * 1. 视窗优先：所有非内容信息彻底剔除，0 边距、0 阴影、1px 细分割线；
+ * 2. 标签栏置底且支持折叠：最大化垂直研读可视面积；
+ * 3. 杜绝重复 iframe 性能浪费：单书分屏时辅屏呈现「选择对照研读内容」插槽；
+ * 4. Win11 风格拖拽分屏：支持将标签页拖入指定窗格独立呈现；
+ * 5. 全局 CSS 解耦：样式由 src/styles/desktop/reader-host.css 统一托管。
+ * ============================================================================
+ */
+
+import M3Icon from '../m3/M3Icon.astro';
+import '../../styles/desktop/reader-host.css';
+---
+
+<div class="fragment-reader-container" id="fragment-reader">
+  <!-- 核心视窗容器舞台 (纯净占据上方全部空间) -->
+  <main class="reader-viewport-stage" id="reader-viewport-stage">
+    <!-- 空状态展台 -->
+    <div class="reader-empty-stage" id="reader-empty-stage">
+      <span class="material-symbols-outlined empty-icon">menu_book</span>
+      <h3 class="empty-title">暂无已打开的研读视窗</h3>
+      <p class="empty-desc">请从左侧「研读书库」中点击教材或文献，即可以标签页形式在此打开。</p>
+      <p class="empty-sub">支持教材与文献多维对照研读，支持 Windows 11 灵活分屏与标签拖拽。</p>
+      <button type="button" class="empty-jump-btn" id="btn-jump-to-library">
+        <M3Icon name="auto_stories" size={18} />
+        <span>进入研读书库</span>
+      </button>
+    </div>
+
+    <!-- 动态分屏网格容器 (零边距、零冗余阴影、极细 1px 分割线) -->
+    <div class="reader-split-grid mode-1x1" id="reader-split-grid" style="display: none;">
+      <!-- Pane 0 (主视窗) -->
+      <div class="split-pane-box" id="pane-0" data-pane-index="0">
+        <div class="pane-iframe-wrap" id="pane-wrap-0"></div>
+      </div>
+
+      <!-- Pane 1 (辅视窗 1 / 右屏或下屏) -->
+      <div class="split-pane-box" id="pane-1" data-pane-index="1" style="display: none;">
+        <div class="pane-iframe-wrap" id="pane-wrap-1"></div>
+      </div>
+
+      <!-- Pane 2 (辅视窗 2 / 象限 3) -->
+      <div class="split-pane-box" id="pane-2" data-pane-index="2" style="display: none;">
+        <div class="pane-iframe-wrap" id="pane-wrap-2"></div>
+      </div>
+
+      <!-- Pane 3 (辅视窗 3 / 象限 4) -->
+      <div class="split-pane-box" id="pane-3" data-pane-index="3" style="display: none;">
+        <div class="pane-iframe-wrap" id="pane-wrap-3"></div>
+      </div>
+    </div>
+  </main>
+
+  <!-- 页面底部 Chrome 风格标签页栏 (Bottom Dock) & 折叠机制 -->
+  <footer class="reader-bottom-dock" id="reader-bottom-dock">
+    <!-- 折叠把手 (折叠时悬浮于底部中央) -->
+    <button type="button" class="dock-expand-handle" id="dock-expand-handle" title="展开标签栏与分屏控制器">
+      <span class="material-symbols-outlined" style="font-size: 16px;">expand_less</span>
+      <span>标签页与分屏</span>
+    </button>
+
+    <div class="bottom-dock-content">
+      <!-- 标签页横向滑动区 -->
+      <div class="chrome-tabs-scroll" id="chrome-tabs-scroll">
+        <div class="chrome-tabs-track" id="chrome-tabs-track"></div>
+        <button type="button" class="chrome-new-tab-btn" id="btn-reader-new-tab" title="打开研读书库选择新文献/教材">
+          <M3Icon name="add" size={16} />
+        </button>
+      </div>
+
+      <!-- 右侧动作区：分屏模式控制器与折叠按钮 -->
+      <div class="reader-split-controls">
+        <div class="split-mode-group" role="group" aria-label="分屏模式">
+          <button type="button" class="split-btn active" data-split="1x1" id="split-btn-1x1" title="单屏沉浸阅读 (1x1)">
+            <M3Icon name="crop_portrait" size={16} />
+          </button>
+          <button type="button" class="split-btn" data-split="1x2" id="split-btn-1x2" title="左右双屏对照 (1x2)">
+            <M3Icon name="splitscreen" size={16} style="transform: rotate(90deg);" />
+          </button>
+          <button type="button" class="split-btn" data-split="2x1" id="split-btn-2x1" title="上下双屏对照 (2x1)">
+            <M3Icon name="splitscreen" size={16} />
+          </button>
+          <button type="button" class="split-btn" data-split="2x2" id="split-btn-2x2" title="四象限分屏矩阵 (2x2)">
+            <M3Icon name="grid_view" size={16} />
+          </button>
+        </div>
+
+        <button type="button" class="dock-collapse-btn" id="btn-dock-collapse" title="折叠底部标签栏以最大化阅读高度">
+          <M3Icon name="keyboard_arrow_down" size={18} />
+        </button>
+      </div>
+    </div>
+  </footer>
+</div>
+
+<!-- 客户端标签页与 Win11 任意分屏控制器 -->
+<script>
+  import type { TabItem, UnifiedReadingEntity, SplitLayoutMode } from '../../types/library-entity';
+
+  class ReaderChromeHostController {
+    private tabs: TabItem[] = [];
+    private activeTabId: string | null = null;
+    private splitMode: SplitLayoutMode = 'single';
+    private paneTabBindings: (string | null)[] = [null, null, null, null];
+    private pendingSlotTarget: number | null = null;
+
+    private trackEl: HTMLElement | null = null;
+    private emptyEl: HTMLElement | null = null;
+    private splitGridEl: HTMLElement | null = null;
+    private bottomDockEl: HTMLElement | null = null;
+    private tabCountBadge: HTMLElement | null = null;
+
+    constructor() {
+      this.trackEl = document.getElementById('chrome-tabs-track');
+      this.emptyEl = document.getElementById('reader-empty-stage');
+      this.splitGridEl = document.getElementById('reader-split-grid');
+      this.bottomDockEl = document.getElementById('reader-bottom-dock');
+      this.tabCountBadge = document.getElementById('rail-reader-tab-count');
+
+      this.initEvents();
+      this.initDragAndDrop();
+    }
+
+    private initEvents() {
+      // 1. 监听全局“打开研读实体”事件 (从 Fragment 2 触发)
+      window.addEventListener('astrolib:open-reading-entity', ((e: CustomEvent<UnifiedReadingEntity>) => {
+        const entity = e.detail;
+        if (!entity) return;
+        this.openEntityInTab(entity);
+      }) as EventListener);
+
+      // 2. 新建标签页按钮 -> 切换回书库挑选
+      document.getElementById('btn-reader-new-tab')?.addEventListener('click', () => {
+        window.dispatchEvent(new CustomEvent('astrolib:switch-fragment', { detail: 'library' }));
+      });
+      document.getElementById('btn-jump-to-library')?.addEventListener('click', () => {
+        window.dispatchEvent(new CustomEvent('astrolib:switch-fragment', { detail: 'library' }));
+      });
+
+      // 3. 分屏模式按钮切换
+      const splitBtns = document.querySelectorAll('.split-btn[data-split]');
+      splitBtns.forEach((btn) => {
+        btn.addEventListener('click', () => {
+          splitBtns.forEach((b) => b.classList.remove('active'));
+          btn.classList.add('active');
+          const mode = btn.getAttribute('data-split') || '1x1';
+          this.setSplitMode(mode as any);
+        });
+      });
+
+      // 4. 底部栏折叠与展开
+      document.getElementById('btn-dock-collapse')?.addEventListener('click', () => {
+        this.bottomDockEl?.classList.add('is-collapsed');
+      });
+
+      document.getElementById('dock-expand-handle')?.addEventListener('click', () => {
+        this.bottomDockEl?.classList.remove('is-collapsed');
+      });
+    }
+
+    /**
+     * Win11 风格拖拽标签页到分屏窗格
+     */
+    private initDragAndDrop() {
+      for (let i = 0; i < 4; i++) {
+        const paneBox = document.getElementById(`pane-${i}`);
+        if (!paneBox) continue;
+
+        paneBox.addEventListener('dragover', (e) => {
+          e.preventDefault();
+          paneBox.classList.add('pane-drag-over');
+        });
+
+        paneBox.addEventListener('dragleave', () => {
+          paneBox.classList.remove('pane-drag-over');
+        });
+
+        paneBox.addEventListener('drop', (e) => {
+          e.preventDefault();
+          paneBox.classList.remove('pane-drag-over');
+          const tabId = e.dataTransfer?.getData('text/plain');
+          if (tabId && this.tabs.some((t) => t.id === tabId)) {
+            this.paneTabBindings[i] = tabId;
+            this.renderPanes();
+            this.renderTabs();
+          }
+        });
+      }
+    }
+
+    public openEntityInTab(entity: UnifiedReadingEntity) {
+      // 检查是否已有对应实体的 Tab，若有直接聚焦激活
+      const existing = this.tabs.find((t) => t.entityId === entity.id);
+      if (existing) {
+        if (this.pendingSlotTarget !== null && this.pendingSlotTarget < this.getMaxPanes()) {
+          this.paneTabBindings[this.pendingSlotTarget] = existing.id;
+          this.pendingSlotTarget = null;
+        }
+        this.activateTab(existing.id);
+        window.dispatchEvent(new CustomEvent('astrolib:switch-fragment', { detail: 'reader' }));
+        return;
+      }
+
+      // 计算视窗 URL
+      let targetUrl = '';
+      if (entity.kind === 'book') {
+        const meta = entity.metadata;
+        targetUrl = `/collections/${meta.colSlug || 'math'}/${meta.bookSlug || 'book'}/${meta.entryPoint || 'chapter-01'}/`;
+      } else if (entity.kind === 'paper') {
+        targetUrl = `/workspace/ingest/?taskId=${encodeURIComponent(entity.metadata?.taskId || '')}`;
+      }
+
+      const newTab: TabItem = {
+        id: `tab-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+        entityId: entity.id,
+        kind: entity.kind,
+        title: entity.title,
+        url: targetUrl,
+        active: true,
+        lastVisited: Date.now(),
+      };
+
+      this.tabs.push(newTab);
+
+      // 若指定了目标空插槽，则定向绑定到该窗格
+      if (this.pendingSlotTarget !== null && this.pendingSlotTarget < this.getMaxPanes()) {
+        this.paneTabBindings[this.pendingSlotTarget] = newTab.id;
+        this.pendingSlotTarget = null;
+      }
+
+      this.activateTab(newTab.id);
+
+      // 切换视图到 Fragment 3
+      window.dispatchEvent(new CustomEvent('astrolib:switch-fragment', { detail: 'reader' }));
+    }
+
+    private getMaxPanes(): number {
+      if (this.splitMode === 'single') return 1;
+      if (this.splitMode === 'grid-2x2') return 4;
+      return 2;
+    }
+
+    private activateTab(tabId: string) {
+      this.activeTabId = tabId;
+      this.tabs.forEach((t) => (t.active = t.id === tabId));
+
+      // 若处于单屏模式，主窗格绑定此激活 Tab
+      if (this.splitMode === 'single') {
+        this.paneTabBindings[0] = tabId;
+      }
+
+      this.updateBadge();
+      this.renderTabs();
+      this.renderPanes();
+    }
+
+    private closeTab(tabId: string) {
+      const idx = this.tabs.findIndex((t) => t.id === tabId);
+      if (idx === -1) return;
+
+      this.tabs.splice(idx, 1);
+
+      // 解除分屏窗格绑定
+      for (let i = 0; i < 4; i++) {
+        if (this.paneTabBindings[i] === tabId) {
+          this.paneTabBindings[i] = null;
+        }
+      }
+
+      // 若关闭的是当前活动标签，激活前一个或后一个
+      if (this.activeTabId === tabId) {
+        if (this.tabs.length > 0) {
+          const nextIdx = Math.max(0, idx - 1);
+          this.activateTab(this.tabs[nextIdx].id);
+        } else {
+          this.activeTabId = null;
+          this.renderTabs();
+          this.renderPanes();
+        }
+      } else {
+        this.renderTabs();
+        this.renderPanes();
+      }
+
+      this.updateBadge();
+    }
+
+    private setSplitMode(mode: '1x1' | '1x2' | '2x1' | '2x2') {
+      if (mode === '1x1') {
+        this.splitMode = 'single';
+        this.paneTabBindings[0] = this.activeTabId;
+      } else if (mode === '1x2') {
+        this.splitMode = 'split-vertical';
+        this.autoAssignPanes(2);
+      } else if (mode === '2x1') {
+        this.splitMode = 'split-horizontal';
+        this.autoAssignPanes(2);
+      } else if (mode === '2x2') {
+        this.splitMode = 'grid-2x2';
+        this.autoAssignPanes(4);
+      }
+
+      this.renderPanes();
+    }
+
+    /**
+     * 智能分屏分配：严禁把同一本书重复打开多份！
+     * 若没有多余的已打开标签页，辅助窗格置空以提示用户挑选，杜绝性能浪费。
+     */
+    private autoAssignPanes(neededCount: number) {
+      this.paneTabBindings[0] = this.activeTabId;
+
+      // 提取未绑定的独立标签页
+      const assigned = new Set<string>();
+      if (this.activeTabId) assigned.add(this.activeTabId);
+
+      for (let i = 1; i < neededCount; i++) {
+        const curr = this.paneTabBindings[i];
+        if (curr && this.tabs.some((t) => t.id === curr) && !assigned.has(curr)) {
+          assigned.add(curr);
+        } else {
+          // 寻找尚未分配的标签
+          const available = this.tabs.find((t) => !assigned.has(t.id));
+          if (available) {
+            this.paneTabBindings[i] = available.id;
+            assigned.add(available.id);
+          } else {
+            // 无多余标签页，置空显示「添加对照」插槽，严禁重复绑定 activeTabId
+            this.paneTabBindings[i] = null;
+          }
+        }
+      }
+    }
+
+    private updateBadge() {
+      if (this.tabCountBadge) {
+        const count = this.tabs.length;
+        if (count > 0) {
+          this.tabCountBadge.textContent = String(count);
+          this.tabCountBadge.style.display = 'flex';
+        } else {
+          this.tabCountBadge.style.display = 'none';
+        }
+      }
+    }
+
+    private renderTabs() {
+      if (!this.trackEl) return;
+      this.trackEl.innerHTML = '';
+
+      this.tabs.forEach((tab) => {
+        const tabEl = document.createElement('div');
+        tabEl.className = `chrome-tab ${tab.active ? 'active' : ''}`;
+        tabEl.setAttribute('data-tab-id', tab.id);
+        tabEl.setAttribute('draggable', 'true');
+
+        const isPaper = tab.kind === 'paper';
+        const iconName = isPaper ? 'description' : 'menu_book';
+
+        tabEl.innerHTML = `
+          <span class="material-symbols-outlined tab-icon">${iconName}</span>
+          <span class="tab-title" title="${tab.title}">${tab.title}</span>
+          <button type="button" class="tab-close-btn" title="关闭标签页">
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        `;
+
+        // 标签拖拽事件 (支持 Win11 风格拖入分屏)
+        tabEl.addEventListener('dragstart', (e) => {
+          e.dataTransfer?.setData('text/plain', tab.id);
+        });
+
+        // 标签切换
+        tabEl.addEventListener('click', (e) => {
+          if ((e.target as HTMLElement).closest('.tab-close-btn')) return;
+          this.activateTab(tab.id);
+        });
+
+        // 标签关闭
+        tabEl.querySelector('.tab-close-btn')?.addEventListener('click', (e) => {
+          e.stopPropagation();
+          this.closeTab(tab.id);
+        });
+
+        this.trackEl!.appendChild(tabEl);
+      });
+    }
+
+    private renderPanes() {
+      if (this.tabs.length === 0) {
+        if (this.emptyEl) this.emptyEl.style.display = 'flex';
+        if (this.splitGridEl) this.splitGridEl.style.display = 'none';
+        return;
+      }
+
+      if (this.emptyEl) this.emptyEl.style.display = 'none';
+      if (this.splitGridEl) this.splitGridEl.style.display = 'grid';
+
+      // 调整 Grid 布局模式类名
+      const grid = this.splitGridEl!;
+      grid.className = 'reader-split-grid';
+      if (this.splitMode === 'single') {
+        grid.classList.add('mode-1x1');
+      } else if (this.splitMode === 'split-vertical') {
+        grid.classList.add('mode-1x2');
+      } else if (this.splitMode === 'split-horizontal') {
+        grid.classList.add('mode-2x1');
+      } else if (this.splitMode === 'grid-2x2') {
+        grid.classList.add('mode-2x2');
+      }
+
+      // 控制 4 个窗格的可见性与内容绑定
+      const maxPanes = this.getMaxPanes();
+
+      for (let i = 0; i < 4; i++) {
+        const paneBox = document.getElementById(`pane-${i}`);
+        const paneWrap = document.getElementById(`pane-wrap-${i}`);
+        if (!paneBox || !paneWrap) continue;
+
+        if (i < maxPanes) {
+          paneBox.style.display = 'flex';
+
+          const boundTabId = this.paneTabBindings[i];
+          const targetTab = this.tabs.find((t) => t.id === boundTabId);
+
+          if (targetTab) {
+            // 已绑定有效 Tab
+            const currentIframe = paneWrap.querySelector('iframe');
+            const targetSrc = targetTab.url;
+            if (!currentIframe || currentIframe.getAttribute('data-tab-id') !== targetTab.id) {
+              paneWrap.innerHTML = `
+                <iframe
+                  src="${targetSrc}"
+                  class="pane-reader-iframe"
+                  data-tab-id="${targetTab.id}"
+                  allow="fullscreen"
+                  title="${targetTab.title}"
+                ></iframe>
+              `;
+
+              // 保证新载入的阅读器视窗与外层框架主题色及亮暗模式 100% 绝对一致
+              const newIfr = paneWrap.querySelector('iframe');
+              newIfr?.addEventListener('load', () => {
+                try {
+                  const m3Color = localStorage.getItem('starlight-m3-theme-color');
+                  const cachedCss = localStorage.getItem('astrolib_m3_cached_css');
+                  const theme = localStorage.getItem('starlight-theme') || 'auto';
+                  const resolvedTheme = document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light';
+                  const font = localStorage.getItem('starlight-font');
+                  const fontSize = localStorage.getItem('astrolib_font_size');
+                  const punctStyle = localStorage.getItem('astrolib_punct_style');
+                  const indent =
+                    localStorage.getItem('astrolib_typography_indent') ??
+                    localStorage.getItem('starlight-paragraph-indent');
+                  const liteMode = localStorage.getItem('astrolib_lite_mode');
+                  const features = localStorage.getItem('starlight-features');
+                  newIfr.contentWindow?.postMessage(
+                    {
+                      type: 'M3_THEME_COLOR_CHANGED',
+                      color: m3Color,
+                      schemeCss: cachedCss,
+                      css: cachedCss,
+                      theme,
+                      resolvedTheme,
+                      font,
+                      fontSize,
+                      punctStyle,
+                      indent,
+                      liteMode,
+                      features,
+                    },
+                    '*'
+                  );
+                } catch (e) {}
+              });
+            }
+          } else {
+            // 空插槽：展示优雅的对照引导，点击跳转书库挑选
+            paneWrap.innerHTML = `
+              <div class="pane-empty-slot">
+                <button type="button" class="empty-slot-btn" data-slot-index="${i}">
+                  <span class="material-symbols-outlined" style="font-size: 18px;">add</span>
+                  <span>选择对照研读内容 (文献/教材)</span>
+                </button>
+              </div>
+            `;
+
+            paneWrap.querySelector('.empty-slot-btn')?.addEventListener('click', () => {
+              this.pendingSlotTarget = i;
+              window.dispatchEvent(new CustomEvent('astrolib:switch-fragment', { detail: 'library' }));
+            });
+          }
+        } else {
+          paneBox.style.display = 'none';
+          paneWrap.innerHTML = '';
+        }
+      }
+    }
+  }
+
+  // 初始化研读视窗控制器
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => new ReaderChromeHostController());
+  } else {
+    new ReaderChromeHostController();
+  }
+</script>

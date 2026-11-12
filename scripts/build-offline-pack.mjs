@@ -38,7 +38,14 @@ async function main() {
   console.log('  📦 AstroLib 离线数据包打包器 (Gzip Compressed & Per-Book Packs)');
   console.log('===================================================================\n');
 
-  if (!fs.existsSync(DIST_COLLECTIONS)) {
+  if (collections.length === 0) {
+    console.log('ℹ️ 当前合集配置为空 (Zero-Built-in Books)，跳过静态 HTML 离线包提取。');
+    if (fs.existsSync(DIST_COLLECTIONS)) {
+      try {
+        fs.rmSync(DIST_COLLECTIONS, { recursive: true, force: true });
+      } catch {}
+    }
+  } else if (!fs.existsSync(DIST_COLLECTIONS)) {
     console.error('❌ 未找到 dist/collections 构建产物，请先运行 npm run build！');
     process.exit(1);
   }

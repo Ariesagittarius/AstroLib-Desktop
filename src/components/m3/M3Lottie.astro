@@ -1,0 +1,157 @@
+---
+/**
+ * src/components/m3/M3Lottie.astro
+ * ============================================================================
+ * Material 3 声明式 Lottie 矢量动画播放组件
+ * ============================================================================
+ * 规范：
+ * 1. 遵循 M3 视觉体系与组件化设计，支持直接作为 UI 资源节点插入任意容器；
+ * 2. 默认使用 SVG 矢量渲染器，保证高分辨率与缩放无损；
+ * 3. 封装 Web Component <m3-lottie>，支持生命周期自管理与性能友好的可视区域懒播放。
+ * ============================================================================
+ */
+
+interface Props {
+  src: string;
+  id?: string;
+  class?: string;
+  loop?: boolean;
+  autoplay?: boolean;
+  speed?: number;
+  renderer?: 'svg' | 'canvas';
+  fit?: 'contain' | 'cover';
+  width?: string;
+  height?: string;
+  ariaLabel?: string;
+}
+
+const {
+  src,
+  id,
+  class: className = '',
+  loop = true,
+  autoplay = true,
+  speed = 1.0,
+  renderer = 'svg',
+  fit = 'contain',
+  width = '100%',
+  height = '100%',
+  ariaLabel = '矢量动画',
+} = Astro.props;
+---
+
+<m3-lottie
+  id={id}
+  class:list={['m3-lottie-container', className]}
+  data-src={src}
+  data-loop={String(loop)}
+  data-autoplay={String(autoplay)}
+  data-speed={String(speed)}
+  data-renderer={renderer}
+  data-fit={fit}
+  style={`width: ${width}; height: ${height};`}
+  role="img"
+  aria-label={ariaLabel}
+>
+  <div class="m3-lottie-target"></div>
+</m3-lottie>
+
+<script>
+  import lottie from 'lottie-web';
+
+  class M3LottieElement extends HTMLElement {
+    private anim: any = null;
+    private observer: IntersectionObserver | null = null;
+
+    connectedCallback() {
+      const target = this.querySelector('.m3-lottie-target') as HTMLElement;
+      if (!target) return;
+
+      const src = this.getAttribute('data-src') || '';
+      const loop = this.getAttribute('data-loop') !== 'false';
+      const autoplay = this.getAttribute('data-autoplay') !== 'false';
+      const speed = parseFloat(this.getAttribute('data-speed') || '1.0');
+      const renderer = (this.getAttribute('data-renderer') || 'svg') as 'svg' | 'canvas';
+
+      if (!src) return;
+
+      try {
+        this.anim = lottie.loadAnimation({
+          container: target,
+          renderer: renderer,
+          loop: loop,
+          autoplay: autoplay,
+          path: src,
+        });
+
+        if (speed !== 1.0) {
+          this.anim.setSpeed(speed);
+        }
+
+        // 性能优化：当容器离开视口时自动暂停动画，重新进入视口时恢复
+        if (autoplay && 'IntersectionObserver' in window) {
+          this.observer = new IntersectionObserver((entries) => {
+            for (const entry of entries) {
+              if (this.anim) {
+                if (entry.isIntersecting) {
+                  this.anim.play();
+                } else {
+                  this.anim.pause();
+                }
+              }
+            }
+          }, { threshold: 0.1 });
+          this.observer.observe(this);
+        }
+
+        // 挂载实例至 DOM 对象上供外部 JS 操纵
+        (this as any).anim = this.anim;
+        (this as any).play = () => this.anim?.play();
+        (this as any).pause = () => this.anim?.pause();
+        (this as any).stop = () => this.anim?.stop();
+        (this as any).setSpeed = (s: number) => this.anim?.setSpeed(s);
+      } catch (err) {
+        console.error('[M3Lottie] 加载失败:', err);
+      }
+    }
+
+    disconnectedCallback() {
+      if (this.observer) {
+        this.observer.disconnect();
+        this.observer = null;
+      }
+      if (this.anim) {
+        this.anim.destroy();
+        this.anim = null;
+      }
+    }
+  }
+
+  if (!customElements.get('m3-lottie')) {
+    customElements.define('m3-lottie', M3LottieElement);
+  }
+</script>
+
+<style>
+  .m3-lottie-container {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .m3-lottie-target {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .m3-lottie-target svg {
+    width: 100% !important;
+    height: 100% !important;
+    transform: translate3d(0, 0, 0);
+  }
+</style>

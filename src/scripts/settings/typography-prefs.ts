@@ -20,6 +20,9 @@ export function loadParagraphIndent(): boolean {
     if (typeof localStorage !== 'undefined') {
       const val = localStorage.getItem(TYPOGRAPHY_INDENT_KEY);
       if (val === 'false') return false;
+      if (val === 'true') return true;
+      const legacyVal = localStorage.getItem('starlight-paragraph-indent');
+      if (legacyVal === 'false') return false;
     }
     return true;
   } catch {
@@ -31,6 +34,7 @@ export function saveParagraphIndent(enabled: boolean): void {
   try {
     if (typeof localStorage !== 'undefined') {
       localStorage.setItem(TYPOGRAPHY_INDENT_KEY, String(enabled));
+      localStorage.setItem('starlight-paragraph-indent', String(enabled));
     }
   } catch {}
   applyParagraphIndent(enabled);
@@ -191,9 +195,11 @@ export function syncAllFontSizeSliders(val: number = loadFontSize()): void {
 export function syncAllPunctChips(targetStyle: PunctStyle = loadPunctStyle()): void {
   if (typeof document === 'undefined') return;
   document.querySelectorAll<any>('.ft-panel .ft-punct-chip, starlight-feature-toggles .ft-punct-chip').forEach((chip) => {
-    const val = chip.getAttribute('data-punct');
+    const val = chip.getAttribute('data-punct-val') || chip.getAttribute('data-punct');
     const isSelected = val === targetStyle;
     chip.classList.toggle('is-selected', isSelected);
+    chip.classList.toggle('active', isSelected);
+    chip.toggleAttribute('selected', isSelected);
     if ('selected' in chip) {
       chip.selected = isSelected;
     }
@@ -204,10 +210,15 @@ export function syncAllPunctChips(targetStyle: PunctStyle = loadPunctStyle()): v
 export function syncAllFontButtons(targetPref: FontPref = loadFontPref()): void {
   if (typeof document === 'undefined') return;
   document.querySelectorAll<any>('.ft-panel .ft-font-btn, starlight-feature-toggles .ft-font-btn, .ft-panel .ft-font-chip, starlight-feature-toggles .ft-font-chip').forEach((el) => {
-    const latinVal = el.getAttribute('data-font-latin');
-    const cjkVal = el.getAttribute('data-font-cjk');
+    const setting = el.getAttribute('data-font-setting');
+    const fontVal = el.getAttribute('data-font-val');
+    const latinVal = el.getAttribute('data-font-latin') || (setting === 'latin' ? fontVal : null);
+    const cjkVal = el.getAttribute('data-font-cjk') || (setting === 'cjk' ? fontVal : null);
+    if (!latinVal && !cjkVal) return;
     const isSelected = (latinVal && latinVal === targetPref.latin) || (cjkVal && cjkVal === targetPref.cjk);
     el.classList.toggle('is-selected', !!isSelected);
+    el.classList.toggle('active', !!isSelected);
+    el.toggleAttribute('selected', !!isSelected);
     if ('selected' in el) {
       el.selected = !!isSelected;
     }

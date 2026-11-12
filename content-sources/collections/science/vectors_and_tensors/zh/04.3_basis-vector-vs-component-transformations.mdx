@@ -1,0 +1,44 @@
+---
+title: '4.3 分量变换与基矢量变换'
+---
+
+import Guide from '@/components/Guide.astro';
+import Knowledge from '@/components/Knowledge.astro';
+import Example from '@/components/Example.astro';
+import Analysis from '@/components/Analysis.astro';
+import Solution from '@/components/Solution.astro';
+import Variant from '@/components/Variant.astro';
+import Note from '@/components/Note.astro';
+import Block from '@/components/Block.astro';
+import Method from '@/components/Method.astro';
+import Exercise from '@/components/Exercise.astro';
+
+## 4.3 分量变换与基矢量变换
+
+因为式（4.14）与式（4.19）中都有变换矩阵，我们自然想要知道这两种矩阵是否具有某种联系．比较式（4.7）（坐标轴转过角 $\theta$ 引起的分量变化）与式（4.15）（基矢量转过角 $\theta$ 得到的新基矢量）中的变换矩阵就可以找到线索．从这两个方程中提取出变换矩阵：
+
+式（4.7）中的变换矩阵：
+
+$$
+\left( \begin{array}{c c} \cos (\theta) & \sin (\theta) \\ - \sin (\theta) & \cos (\theta) \end{array} \right),
+$$
+
+为求坐标系转过角 $\theta$ 后，同一个矢量在新坐标系下分量的变换矩阵式（4.15）中的变换矩阵：
+
+$$
+\left( \begin{array}{c c} \cos (\theta) & - \sin (\theta) \\ \sin (\theta) & \cos (\theta) \end{array} \right),
+$$
+
+为求原基矢量转过角 $\theta$ 后，新的基矢量在原坐标系下表达式的变换矩阵将两个矩阵相乘，有：
+
+$$
+\left( \begin{array}{c c} \cos (\theta) & \sin (\theta) \\ - \sin (\theta) & \cos (\theta) \end{array} \right) \left( \begin{array}{c c} \cos (\theta) & - \sin (\theta) \\ \sin (\theta) & \cos (\theta) \end{array} \right) = \left( \begin{array}{c c} 1 & 0 \\ 0 & 1 \end{array} \right).
+$$
+
+可以看出，在这种情况下，两种变换矩阵关系的本质就是分量变换矩阵是基矢量变换矩阵的逆矩阵（因为矩阵乘以它的逆矩阵就是单位矩阵）。同样的情况下，变换矩阵的转置矩阵等于其逆矩阵，所以该变换矩阵是"正交的"（从一个笛卡儿坐标系变换为另一个笛卡儿坐标系）。
+
+基于基矢量变换矩阵与矢量分量变换矩阵之间互逆的关系，可以说矢量分量变换与基矢量变换的方式是相反或者"相对"的（前提是知道，"分量变换"是求同一个矢量在新坐标系下的分量，"基矢量变换"是指将基矢量旋转到不同坐标轴的方向）.
+
+笛卡儿坐标轴的旋转只是多种变换形式中的一种。一般来说，只要一组基矢量变换为另一组基矢量，就必须要考虑到新的基矢量对坐标系中矢量分量的影响. 原基矢量到新基矢量的变换矩阵与矢量分量变换矩阵之间的关系取决于矢量用哪种分量表示.
+
+给定的矢量可以用多种类型分量来表示，比如矢量在各个坐标轴并不相互垂直的坐标系下的分量表示。下一节就来讨论这种"非正交"坐标系。

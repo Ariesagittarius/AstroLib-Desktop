@@ -1,0 +1,59 @@
+---
+/**
+ * src/components/m3/M3Chip.astro
+ * ============================================================================
+ * Official Material Design 3 Chip (@material/web)
+ * ============================================================================
+ */
+import M3Icon from './M3Icon.astro';
+
+interface Props {
+  label: string;
+  type?: 'filter' | 'assist' | 'input';
+  selected?: boolean;
+  disabled?: boolean;
+  elevated?: boolean;
+  icon?: string;
+  value?: string;
+  class?: string;
+  id?: string;
+}
+
+const {
+  label,
+  type = 'filter',
+  selected = false,
+  disabled = false,
+  elevated = false,
+  icon,
+  value,
+  class: className = '',
+  id,
+} = Astro.props;
+
+const Tag = type === 'assist' ? 'md-assist-chip' : 'md-filter-chip';
+---
+
+<Tag
+  class:list={['m3-declarative-chip', className]}
+  id={id}
+  label={label}
+  selected={type === 'filter' && selected ? true : undefined}
+  disabled={disabled ? true : undefined}
+  elevated={elevated ? true : undefined}
+  data-value={value}
+>
+  {icon && <M3Icon name={icon} slot="icon" size={18} />}
+  <slot />
+</Tag>
+
+<script>
+  import '@material/web/chips/filter-chip.js';
+  import '@material/web/chips/assist-chip.js';
+</script>
+
+<style>
+  .m3-declarative-chip {
+    font-family: var(--md-sys-typescale-label-large-font, 'Google Sans', system-ui, sans-serif);
+  }
+</style>

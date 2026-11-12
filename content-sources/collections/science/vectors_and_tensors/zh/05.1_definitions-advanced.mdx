@@ -1,0 +1,54 @@
+---
+title: '5.1 定义（高级）'
+---
+
+import Guide from '@/components/Guide.astro';
+import Knowledge from '@/components/Knowledge.astro';
+import Example from '@/components/Example.astro';
+import Analysis from '@/components/Analysis.astro';
+import Solution from '@/components/Solution.astro';
+import Variant from '@/components/Variant.astro';
+import Note from '@/components/Note.astro';
+import Block from '@/components/Block.astro';
+import Method from '@/components/Method.astro';
+import Exercise from '@/components/Exercise.astro';
+
+## 5.1 定义（高级）
+
+第1章中标量、矢量和张量的概念是由其所包含的方向的个数定义的：标量为零、矢量为一、张量大于一。既然现在我们已了解分量、基矢量及它们在不同坐标系之间的变换性质，就应该从更深的层次去理解标量、矢量和张量。很明显：
+
+标量是一个没有方向的单一数值，表示一个不随坐标变化而变化的量.
+
+因此对于标量，不管是用一个坐标系中的 $\phi$ （结合与该坐标系相关的单位）表示还是用另外一个坐标系中的 $\phi'$ （也有它自己的单位）表示，它们所表示的数量是相同的。因此1英寸和2.54厘米表示相同的长度。
+
+矢量是由三个（三维空间中）称为矢量分量的数组成的数组，矢量分量结合方向指标（基矢量）共同形成一个不随坐标系变化而变化的量.
+
+因此，矢量 $\vec{A}$ 不管用逆变分量 $A^{i}$ 表示还是用协变分量 $A_{i}$ 表示都代表同一个实体：
+
+$$
+\vec {A} = A ^ {i} \vec {e} _ {i} = A _ {i} \vec {e} ^ {i},
+$$
+
+其中， $\vec{e}_{i}$ 表示协变基矢量， $\vec{e}^{i}$ 表示逆变基矢量.
+
+在坐标系变换中，矢量在原坐标系（不带撇坐标系）中的逆变分量 $A^{j}$ 和新坐标系（带撇坐标系）中的逆变分量 $A^{\prime i}$ 之间的变换为
+
+$$
+A ^ {\prime i} = \frac {\partial x ^ {i ^ {\prime}}}{\partial x ^ {j}} A ^ {j},
+$$
+
+其中， $\frac{\partial x^{i'}}{\partial x^{j}}$ 表示沿原坐标轴方向的基矢量在新坐标系中的分量.
+
+同样，矢量在原坐标系（不带撇坐标系）中的协变分量 $A_{j}$ 和新坐标系（带撇坐标系）中协变分量 $A_{i}^{\prime}$ 之间的变换为
+
+$$
+A _ {i} ^ {\prime} = \frac {\partial x ^ {j}}{\partial x ^ {i ^ {\prime}}} A _ {j}.
+$$
+
+其中， $\frac{\partial x^{j}}{\partial x^{i}}$ 表示与原坐标轴方向垂直的对偶基矢量在新坐标系中的分量.
+
+n 阶张量是由 $3^{n}$ 个（三维空间中）称为张量分量的数组成的数组，张量分量结合多个方向指标（基矢量）共同形成一个不随坐标系变化而变化的量.
+
+由定义可知，在三维空间中一个2阶张量有 $3<sup>2</sup> = 9$ 个分量，而且0阶张量是标量，矢量是1阶张量.
+
+张量没有标准的表示方法：可以用双顶箭头表示（如 $\vec{T}$ ），也可以用波浪线或者上、下双箭头表示（如 $\widetilde{T}, \stackrel{\leftrightarrow}{T}$ 或 $T \leftrightarrow$ ）。许多人不使用箭头或波浪线表示张量，而是简单地使用角标来表示张量的逆变阶和协变阶（如 $T^{ij}$ 或 $T_b^a$ ）。

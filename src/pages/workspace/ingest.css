@@ -1,0 +1,2032 @@
+/**
+ * src/pages/workspace/ingest.css
+ * ============================================================================
+ * AstroLib 文献研读工作台 Material 3 (MD3) + Chrome 官方规范样式表
+ * 严格对齐 AstroLib 主页面设计语言，消除 AI SaaS 味道，坚守学术极简哲学
+ * ============================================================================
+ */
+
+/* 引入 TeX 学术出版经典字体 (Latin Modern / TeX Gyre Termes / Linux Libertine / CMU Serif) */
+@import url('https://fonts.cdnfonts.com/css/latin-modern-roman');
+@import url('https://fonts.cdnfonts.com/css/tex-gyre-termes');
+@import url('https://fonts.cdnfonts.com/css/linux-libertine');
+@import url('https://fonts.cdnfonts.com/css/cmu-serif');
+
+/* 引入 Google Material Symbols 官方图标库 */
+@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200');
+
+/* Google Material Symbols 官方标准样式 */
+.material-symbols-outlined {
+  font-family: 'Material Symbols Outlined';
+  font-weight: 300;
+  font-style: normal;
+  font-size: 20px;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  -webkit-font-feature-settings: 'liga';
+  -webkit-font-smoothing: antialiased;
+  user-select: none;
+}
+
+:root {
+  --ingest-sidebar-width: 256px;
+  --ingest-topbar-height: 56px;
+
+  /* TeX 与学术出版字体栈 */
+  --font-tex-latin-modern: 'Latin Modern Roman', 'KaTeX_Main', 'CMU Serif', 'Computer Modern', Georgia, serif;
+  --font-tex-termes: 'TeX Gyre Termes', 'Nimbus Roman', 'Times New Roman', Times, serif;
+  --font-tex-libertine: 'Linux Libertine', 'Libertinus Serif', Georgia, serif;
+  --font-tex-noto-serif: 'Noto Serif SC Variable', 'Noto Serif SC', 'Source Han Serif SC', 'Songti SC', serif;
+  --font-tex-sans: 'Plus Jakarta Sans Variable', 'Noto Sans SC Variable', system-ui, sans-serif;
+
+  /* 默认正文学术排版字体（默认采用 LaTeX 经典 Latin Modern） */
+  --ingest-reading-font: var(--font-tex-latin-modern);
+  --ingest-reading-size: 1.02rem;
+  --ingest-line-height: 1.82;
+
+  /* 标题学术排版字体预设 (支持现代黑体、跟随正文及各大经典学术衬线) */
+  --font-heading-default: var(--md-font-google-sans, 'Plus Jakarta Sans Variable', 'Noto Sans SC Variable', system-ui, sans-serif);
+  --font-heading-latin-modern: var(--font-tex-latin-modern);
+  --font-heading-termes: var(--font-tex-termes);
+  --font-heading-libertine: var(--font-tex-libertine);
+  --font-heading-noto-serif: var(--font-tex-noto-serif);
+
+  /* 默认标题排版字体与可变字重体系 (拒绝死重，采用 560..620 柔韧中粗字重) */
+  --ingest-heading-font: var(--font-heading-default);
+  --ingest-heading-weight-h1: 620;
+  --ingest-heading-weight-h2: 580;
+  --ingest-heading-weight-h3: 560;
+  --ingest-heading-variation-h1: 'wght' 620;
+  --ingest-heading-variation-h2: 'wght' 580;
+  --ingest-heading-variation-h3: 'wght' 560;
+  --ingest-heading-letter-spacing-h1: -0.015em;
+  --ingest-heading-letter-spacing-h2: -0.01em;
+  --ingest-heading-letter-spacing-h3: -0.005em;
+
+  /* Material You 核心语义色 (MD3 Tokens 桥接至全站统一 M3 系统变量) */
+  --md3-primary: var(--md-sys-color-primary, #0b57d0);
+  --md3-primary-hover: color-mix(in srgb, var(--md-sys-color-primary, #0b57d0) 88%, #000000);
+  --md3-on-primary: var(--md-sys-color-on-primary, #ffffff);
+  --md3-primary-container: var(--md-sys-color-primary-container, #d3e3fd);
+  --md3-on-primary-container: var(--md-sys-color-on-primary-container, #041e49);
+  --md3-secondary-container: var(--md-sys-color-secondary-container, #e8f0fe);
+  --md3-on-secondary-container: var(--md-sys-color-on-secondary-container, #174ea6);
+  --md3-surface: var(--md-sys-color-surface, #ffffff);
+  --md3-surface-dim: var(--md-sys-color-surface-dim, #f8f9fa);
+  --md3-surface-container-lowest: var(--md-sys-color-surface-container-lowest, #ffffff);
+  --md3-surface-container-low: var(--md-sys-color-surface-container-low, #f1f3f4);
+  --md3-surface-container: var(--md-sys-color-surface-container, #e9ebee);
+  --md3-surface-container-high: var(--md-sys-color-surface-container-high, #e1e3e6);
+  --md3-surface-container-highest: var(--md-sys-color-surface-container-highest, #d9dcde);
+  --md3-on-surface: var(--md-sys-color-on-surface, #1f1f1f);
+  --md3-on-surface-variant: var(--md-sys-color-on-surface-variant, #444746);
+  --md3-outline: var(--md-sys-color-outline, #72777d);
+  --md3-outline-variant: var(--md-sys-color-outline-variant, #e0e3e7);
+
+  /* 结构化选框颜色：全面跟随 M3 动态主题色 */
+  --ingest-bbox-border: var(--md-sys-color-primary, #0b57d0);
+  --ingest-bbox-bg: color-mix(in srgb, var(--md-sys-color-primary, #0b57d0) 5%, transparent);
+  --ingest-bbox-active-bg: color-mix(in srgb, var(--md-sys-color-primary, #0b57d0) 16%, transparent);
+}
+
+[data-theme='dark'] {
+  --md3-primary: var(--md-sys-color-primary, #a8c7fa);
+  --md3-primary-hover: color-mix(in srgb, var(--md-sys-color-primary, #a8c7fa) 88%, #ffffff);
+  --md3-on-primary: var(--md-sys-color-on-primary, #041e49);
+  --md3-primary-container: var(--md-sys-color-primary-container, #0842a0);
+  --md3-on-primary-container: var(--md-sys-color-on-primary-container, #d3e3fd);
+  --md3-secondary-container: var(--md-sys-color-secondary-container, #004a77);
+  --md3-on-secondary-container: var(--md-sys-color-on-secondary-container, #c2e7ff);
+  --md3-surface: var(--md-sys-color-surface, #1e1f20);
+  --md3-surface-dim: var(--md-sys-color-surface-dim, #131314);
+  --md3-surface-container-lowest: var(--md-sys-color-surface-container-lowest, #0e0e0f);
+  --md3-surface-container-low: var(--md-sys-color-surface-container-low, #1a1c1e);
+  --md3-surface-container: var(--md-sys-color-surface-container, #222426);
+  --md3-surface-container-high: var(--md-sys-color-surface-container-high, #2b2e30);
+  --md3-surface-container-highest: var(--md-sys-color-surface-container-highest, #333537);
+  --md3-on-surface: var(--md-sys-color-on-surface, #e3e3e3);
+  --md3-on-surface-variant: var(--md-sys-color-on-surface-variant, #c4c7c5);
+  --md3-outline: var(--md-sys-color-outline, #8e918f);
+  --md3-outline-variant: var(--md-sys-color-outline-variant, #3c4043);
+
+  --ingest-bbox-border: var(--md-sys-color-primary, #a8c7fa);
+  --ingest-bbox-bg: color-mix(in srgb, var(--md-sys-color-primary, #a8c7fa) 8%, transparent);
+  --ingest-bbox-active-bg: color-mix(in srgb, var(--md-sys-color-primary, #a8c7fa) 22%, transparent);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body.ingest-app-body {
+  margin: 0;
+  padding: 0;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+  font-family: var(--md-font-google-sans, 'Google Sans', 'Google Sans Text', 'Noto Sans SC', system-ui, sans-serif);
+  background-color: var(--md3-surface);
+  color: var(--md3-on-surface);
+  display: flex;
+  flex-direction: row;
+}
+
+/* ============================================================================
+   1. M3 Navigation Drawer 规范侧边栏 (完全对齐主页面图 2)
+   ============================================================================ */
+.ingest-sidebar {
+  width: var(--ingest-sidebar-width);
+  height: 100vh;
+  background-color: var(--md3-surface-dim);
+  border-right: 1px solid var(--md3-outline-variant);
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  user-select: none;
+  transition: width 0.2s cubic-bezier(0.2, 0, 0, 1), transform 0.2s ease;
+  z-index: var(--layer-sticky);
+}
+
+.ingest-sidebar.collapsed {
+  width: 0;
+  transform: translateX(-100%);
+  overflow: hidden;
+  border-right: none;
+}
+
+/* 侧栏顶部品牌区 (复刻主页面品牌风格：Logo + AstroLib 标识，弱化 MinerU) */
+.sidebar-brand-header {
+  height: var(--ingest-topbar-height);
+  padding: 0 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--md3-outline-variant);
+}
+
+.sidebar-logo {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--md3-on-surface);
+  text-decoration: none;
+  letter-spacing: -0.015em;
+}
+
+.sidebar-logo-img {
+  width: 28px;
+  height: 22px;
+  object-fit: contain;
+  display: block;
+}
+
+.sidebar-brand-badge {
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--md3-on-surface-variant);
+  background-color: var(--md3-surface-container-low);
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-left: 0.25rem;
+  border: 1px solid var(--md3-outline-variant);
+}
+
+.sidebar-collapse-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  color: var(--md3-on-surface-variant);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.15s ease;
+}
+.sidebar-collapse-btn:hover {
+  background-color: var(--md3-surface-container);
+  color: var(--md3-on-surface);
+}
+
+/* 上传操作：M3 Extended FAB 规范 */
+.sidebar-action-area {
+  padding: 1rem 0.85rem 0.65rem 0.85rem;
+}
+
+.sidebar-new-parse-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  padding: 0.75rem 1rem;
+  background-color: var(--md3-primary-container);
+  color: var(--md3-on-primary-container);
+  border: none;
+  border-radius: 16px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  transition: all 0.15s ease;
+}
+.sidebar-new-parse-btn:hover {
+  background-color: color-mix(in srgb, var(--md3-primary-container) 92%, var(--md3-on-primary-container));
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.12);
+  transform: translateY(-1px);
+}
+
+.sidebar-section-title {
+  padding: 0.75rem 1.15rem 0.35rem 1.15rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--md3-outline);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* 文献任务列表：采用主站图 2 的 .gdocs-tab-pill 风格，去除刺眼红贴片与彩点 */
+.sidebar-task-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0.35rem 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.task-item {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.55rem 0.85rem;
+  border-radius: 20px; /* M3 Navigation Drawer Item Pill Radius */
+  cursor: pointer;
+  text-decoration: none;
+  color: var(--md3-on-surface);
+  transition: background-color 0.12s ease, color 0.12s ease;
+  position: relative;
+}
+.task-item:hover {
+  background-color: var(--md3-surface-container);
+}
+.task-item.active {
+  background-color: var(--md3-secondary-container) !important;
+  color: var(--md3-on-secondary-container) !important;
+  font-weight: 600;
+}
+
+.task-item-icon {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  color: var(--md3-on-surface-variant);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.task-item.active .task-item-icon {
+  color: var(--md3-on-secondary-container);
+}
+
+.task-item-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.task-item-name {
+  font-size: 0.82rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
+}
+
+.task-item-meta {
+  font-size: 0.72rem;
+  color: var(--md3-outline);
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 1px;
+}
+.task-item.active .task-item-meta {
+  color: var(--md3-on-secondary-container);
+  opacity: 0.85;
+}
+
+.sidebar-footer {
+  padding: 0.65rem 0.85rem;
+  border-top: 1px solid var(--md3-outline-variant);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.sidebar-footer-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.78rem;
+  color: var(--md3-on-surface-variant);
+  text-decoration: none;
+  padding: 0.35rem 0.65rem;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+.sidebar-footer-btn:hover {
+  background-color: var(--md3-surface-container);
+  color: var(--md3-on-surface);
+}
+
+/* ============================================================================
+   2. 主工作区与 M3 Top App Bar (极简收敛，杜绝 AI SaaS 按钮群)
+   ============================================================================ */
+.ingest-workspace-root {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  min-width: 0;
+  overflow: hidden;
+  background-color: var(--md3-surface);
+}
+
+/* 顶栏：56px，极简、通透、呼吸感 */
+.ingest-topbar {
+  height: var(--ingest-topbar-height);
+  padding: 0 1.25rem;
+  border-bottom: 1px solid var(--md3-outline-variant);
+  background-color: var(--md3-surface);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-shrink: 0;
+  z-index: var(--layer-sticky);
+}
+
+.topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+/* 官方 M3 Toolbar 标准 40px 圆形动作按钮 (对齐 Chrome 与 Material 3 Top App Bar) */
+.m3-icon-btn,
+.sidebar-toggle-trigger {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  color: var(--md3-on-surface-variant);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  transition: all 0.15s cubic-bezier(0.2, 0, 0, 1);
+  position: relative;
+  user-select: none;
+  flex-shrink: 0;
+  appearance: none;
+  outline: none;
+}
+
+.m3-icon-btn:hover,
+.sidebar-toggle-trigger:hover {
+  background-color: var(--md3-surface-container-high);
+  color: var(--md3-on-surface);
+}
+
+.m3-icon-btn:active,
+.sidebar-toggle-trigger:active {
+  background-color: var(--md3-surface-container-highest);
+  transform: scale(0.94);
+}
+
+.m3-icon-btn:disabled,
+.sidebar-toggle-trigger:disabled {
+  opacity: 0.38;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.m3-icon-btn svg,
+.sidebar-toggle-trigger svg {
+  width: 20px;
+  height: 20px;
+  stroke-width: 1.8;
+  stroke: currentColor;
+  fill: none;
+}
+
+.doc-name-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.92rem;
+  font-weight: 600;
+  min-width: 0;
+}
+
+.doc-name-text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 280px;
+}
+
+/* 顶栏中间：只保留纯净的 M3 视图分段控制器 (Segmented Buttons) */
+.topbar-center {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.m3-segmented-group {
+  display: inline-flex;
+  align-items: center;
+  background-color: var(--md3-surface-container-low);
+  border-radius: 9999px;
+  padding: 3px;
+  border: 1px solid var(--md3-outline-variant);
+}
+
+.m3-segment-btn {
+  border: none;
+  background: transparent;
+  color: var(--md3-on-surface-variant);
+  padding: 0.32rem 0.85rem;
+  border-radius: 9999px;
+  font-size: 0.78rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+.m3-segment-btn:hover {
+  color: var(--md3-on-surface);
+}
+.m3-segment-btn.active {
+  background-color: var(--md3-surface);
+  color: var(--md3-primary);
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+[data-theme='dark'] .m3-segment-btn.active {
+  background-color: var(--md3-surface-container-high);
+}
+
+/* 顶栏右侧：统一采用单个 Icon + Tooltip 规范，极简得体 */
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+/* M3 Tonal 按钮 */
+.m3-btn-tonal {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  padding: 0.45rem 1.05rem;
+  border-radius: 9999px;
+  border: none;
+  background-color: var(--md3-secondary-container);
+  color: var(--md3-on-secondary-container);
+  font-size: 0.82rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+  appearance: none;
+  outline: none;
+}
+.m3-btn-tonal:hover {
+  background-color: var(--md3-primary-container);
+  color: var(--md3-primary);
+}
+
+/* M3 Outlined 按钮 */
+.m3-btn-outlined {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  padding: 0.42rem 1.05rem;
+  border-radius: 9999px;
+  border: 1px solid var(--md3-outline-variant);
+  background-color: transparent;
+  color: var(--md3-on-surface);
+  font-size: 0.82rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+  appearance: none;
+  outline: none;
+}
+.m3-btn-outlined:hover {
+  background-color: var(--md3-surface-container-low);
+  border-color: var(--md3-outline);
+}
+
+.m3-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.42rem 1.15rem;
+  border-radius: 9999px;
+  background-color: var(--md3-primary);
+  color: var(--md3-on-primary);
+  border: none;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  transition: all 0.15s ease;
+  appearance: none;
+  outline: none;
+}
+.m3-btn-primary:hover:not(:disabled) {
+  background-color: var(--md3-primary-hover);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.16);
+}
+.m3-btn-primary:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.m3-icon-action-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  color: var(--md3-on-surface-variant);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.12s ease;
+}
+.m3-icon-action-btn:hover {
+  background-color: var(--md3-surface-container);
+  color: var(--md3-on-surface);
+}
+
+/* 顶部微光进度条 */
+.m3-progress-line {
+  height: 2.5px;
+  width: 100%;
+  background-color: transparent;
+  position: relative;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.m3-progress-fill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 0%;
+  background-color: var(--md3-primary);
+  transition: width 0.25s ease;
+}
+
+/* ============================================================================
+   3. 双栏工作区 (Workspace Grid - 防水平溢出与穿透)
+   ============================================================================ */
+.workspace-grid {
+  flex: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  min-height: 0;
+  min-width: 0;
+  width: 100%;
+  overflow: hidden;
+}
+
+/* 左栏：PDF 视窗 */
+.pane-pdf {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+  background-color: var(--md3-surface-dim);
+  border-right: 1px solid var(--md3-outline-variant);
+}
+
+.pdf-toolbar {
+  height: 44px;
+  padding: 0 1rem;
+  border-bottom: 1px solid var(--md3-outline-variant);
+  background-color: var(--md3-surface);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+  user-select: none;
+}
+
+.pdf-toolbar-title {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--md3-outline);
+}
+
+.pdf-page-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  background-color: var(--md3-surface-container-low);
+  border-radius: 9999px;
+  padding: 2px 8px;
+  border: 1px solid var(--md3-outline-variant);
+}
+
+.pdf-page-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 4px;
+  color: var(--md3-on-surface);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.pdf-page-btn:hover:not(:disabled) {
+  background-color: var(--md3-surface-container);
+}
+.pdf-page-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.pdf-page-current-input {
+  width: 32px;
+  text-align: center;
+  font-size: 0.8rem;
+  font-weight: 600;
+  border: none;
+  background: transparent;
+  color: inherit;
+  outline: none;
+  padding: 0;
+}
+
+.pdf-page-total-text {
+  font-size: 0.78rem;
+  color: var(--md3-outline);
+}
+
+.pdf-zoom-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.pdf-zoom-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 4px;
+  font-size: 0.76rem;
+  color: var(--md3-outline);
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+.pdf-zoom-btn:hover {
+  background-color: var(--md3-surface-container);
+  color: var(--md3-on-surface);
+}
+
+.pdf-canvas-scroll-area {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: auto;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+/* 核心！单页 PDF 矢量容器与百分比选框叠加层 */
+.pdf-page-container {
+  position: relative !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+  background-color: #ffffff;
+  border-radius: 3px;
+  overflow: visible;
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+
+@keyframes pdfPageFadeIn {
+  0% {
+    opacity: 0.35;
+    filter: blur(1.5px);
+  }
+  100% {
+    opacity: 1;
+    filter: blur(0);
+  }
+}
+
+.pdf-page-container.fade-transition {
+  animation: pdfPageFadeIn 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: opacity, filter;
+}
+
+.pdf-page-canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.pdf-overlay-layer {
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* 结构化选框 (Bounding Box - 对齐 MinerU 原版) */
+.bbox-highlight {
+  position: absolute !important;
+  border: 1.5px solid var(--ingest-bbox-border) !important;
+  background-color: var(--ingest-bbox-bg) !important;
+  border-radius: 2px !important;
+  cursor: pointer;
+  pointer-events: auto !important;
+  box-sizing: border-box !important;
+  transition: border-color 0.12s ease, background-color 0.12s ease, box-shadow 0.12s ease;
+  z-index: 3;
+}
+.bbox-highlight:hover,
+.bbox-highlight.hover-bbox {
+  border-width: 2px !important;
+  background-color: var(--ingest-bbox-active-bg) !important;
+  z-index: 8 !important;
+}
+.bbox-highlight.active {
+  border: 2px solid var(--md3-primary) !important;
+  background-color: var(--ingest-bbox-active-bg) !important;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--md3-primary) 30%, transparent) !important;
+  z-index: 9 !important;
+}
+
+.bbox-tag {
+  position: absolute;
+  top: -1px;
+  left: -1px;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 1px 4px;
+  border-radius: 2px 0 2px 0;
+  background-color: var(--md3-primary);
+  color: var(--md3-on-primary);
+  pointer-events: none;
+  line-height: 1.2;
+  opacity: 0;
+  transition: opacity 0.12s ease;
+}
+.bbox-highlight:hover .bbox-tag,
+.bbox-highlight.hover-bbox .bbox-tag,
+.bbox-highlight.active .bbox-tag {
+  opacity: 1;
+}
+
+/* 浮动微型操作栏 (Mini Floating Toolbar) */
+.bbox-floating-toolbar {
+  position: absolute;
+  bottom: -34px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding: 3px 6px;
+  background-color: #ffffff;
+  border: 1px solid var(--md3-outline-variant);
+  border-radius: 9999px;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.18);
+  z-index: var(--layer-floating);
+  pointer-events: auto;
+  animation: fadeInPop 0.15s ease-out;
+}
+[data-theme='dark'] .bbox-floating-toolbar {
+  background-color: #2b2e30;
+  border-color: #444746;
+}
+
+@keyframes fadeInPop {
+  from { opacity: 0; transform: translate(-50%, -4px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}
+
+.floating-tool-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 2px 6px;
+  border: none;
+  background: transparent;
+  color: var(--md3-on-surface-variant);
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background-color 0.1s ease;
+}
+.floating-tool-btn:hover {
+  background-color: var(--md3-surface-container);
+  color: var(--md3-primary);
+}
+
+.floating-type-badge {
+  font-size: 10px;
+  font-weight: 700;
+  color: #ffffff;
+  background-color: var(--md3-primary);
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+
+/* ============================================================================
+   4. 右栏：学术结构化阅读视窗 (The Content is the Interface)
+   ============================================================================ */
+.pane-markdown {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+  background-color: var(--md3-surface);
+}
+
+.content-toolbar {
+  height: 44px;
+  padding: 0 1.25rem;
+  border-bottom: 1px solid var(--md3-outline-variant);
+  background-color: var(--md3-surface);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+  user-select: none;
+}
+
+.content-tab-group {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.content-tab-btn {
+  border: none;
+  background: transparent;
+  color: var(--md3-outline);
+  padding: 0.35rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+.content-tab-btn:hover {
+  color: var(--md3-on-surface);
+  background-color: var(--md3-surface-container);
+}
+.content-tab-btn.active {
+  color: var(--md3-primary);
+  font-weight: 600;
+  background-color: var(--md3-primary-container);
+}
+
+.content-stats-text {
+  font-size: 0.75rem;
+  color: var(--md3-outline);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* 动态字体与字阶覆盖 (支持用户切换 LaTeX 经典 / 顶刊 Times / Libertine / 思源宋体 / 屏幕黑体) */
+[data-reading-font='latin-modern'] .content-scroll-area,
+[data-reading-font='latin-modern'] .structured-blocks-container,
+[data-reading-font='latin-modern'] .continuous-reading-flow {
+  font-family: var(--font-tex-latin-modern) !important;
+}
+[data-reading-font='termes'] .content-scroll-area,
+[data-reading-font='termes'] .structured-blocks-container,
+[data-reading-font='termes'] .continuous-reading-flow {
+  font-family: var(--font-tex-termes) !important;
+}
+[data-reading-font='libertine'] .content-scroll-area,
+[data-reading-font='libertine'] .structured-blocks-container,
+[data-reading-font='libertine'] .continuous-reading-flow {
+  font-family: var(--font-tex-libertine) !important;
+}
+[data-reading-font='noto-serif'] .content-scroll-area,
+[data-reading-font='noto-serif'] .structured-blocks-container,
+[data-reading-font='noto-serif'] .continuous-reading-flow {
+  font-family: var(--font-tex-noto-serif) !important;
+}
+[data-reading-font='sans'] .content-scroll-area,
+[data-reading-font='sans'] .structured-blocks-container,
+[data-reading-font='sans'] .continuous-reading-flow {
+  font-family: var(--font-tex-sans) !important;
+}
+
+[data-reading-size='compact'] {
+  --ingest-reading-size: 0.92rem;
+}
+[data-reading-size='standard'] {
+  --ingest-reading-size: 1.02rem;
+}
+[data-reading-size='spacious'] {
+  --ingest-reading-size: 1.14rem;
+}
+
+/* 动态行距覆盖 (支持用户切换 紧凑 / 标准 / 宽松) */
+[data-reading-lh='compact'] {
+  --ingest-line-height: 1.48;
+}
+[data-reading-lh='standard'] {
+  --ingest-line-height: 1.72;
+}
+[data-reading-lh='spacious'] {
+  --ingest-line-height: 2.0;
+}
+
+/* 动态标题字体覆盖 (支持现代学术黑体、跟随正文及四大经典学术衬线，可变字重微调杜绝死重) */
+[data-heading-font='default'] {
+  --ingest-heading-font: var(--font-heading-default);
+  --ingest-heading-weight-h1: 620;
+  --ingest-heading-weight-h2: 580;
+  --ingest-heading-weight-h3: 560;
+  --ingest-heading-variation-h1: 'wght' 620;
+  --ingest-heading-variation-h2: 'wght' 580;
+  --ingest-heading-variation-h3: 'wght' 560;
+  --ingest-heading-letter-spacing-h1: -0.015em;
+  --ingest-heading-letter-spacing-h2: -0.01em;
+  --ingest-heading-letter-spacing-h3: -0.005em;
+}
+
+[data-heading-font='inherit'] {
+  --ingest-heading-font: inherit;
+  --ingest-heading-weight-h1: 600;
+  --ingest-heading-weight-h2: 580;
+  --ingest-heading-weight-h3: 560;
+  --ingest-heading-variation-h1: 'wght' 600;
+  --ingest-heading-variation-h2: 'wght' 580;
+  --ingest-heading-variation-h3: 'wght' 560;
+  --ingest-heading-letter-spacing-h1: -0.01em;
+  --ingest-heading-letter-spacing-h2: -0.005em;
+  --ingest-heading-letter-spacing-h3: 0;
+}
+
+[data-heading-font='latin-modern'] {
+  --ingest-heading-font: var(--font-tex-latin-modern);
+  --ingest-heading-weight-h1: 600;
+  --ingest-heading-weight-h2: 600;
+  --ingest-heading-weight-h3: 600;
+  --ingest-heading-variation-h1: normal;
+  --ingest-heading-variation-h2: normal;
+  --ingest-heading-variation-h3: normal;
+  --ingest-heading-letter-spacing-h1: 0.005em;
+  --ingest-heading-letter-spacing-h2: 0.002em;
+  --ingest-heading-letter-spacing-h3: 0;
+}
+
+[data-heading-font='termes'] {
+  --ingest-heading-font: var(--font-tex-termes);
+  --ingest-heading-weight-h1: 600;
+  --ingest-heading-weight-h2: 600;
+  --ingest-heading-weight-h3: 600;
+  --ingest-heading-variation-h1: normal;
+  --ingest-heading-variation-h2: normal;
+  --ingest-heading-variation-h3: normal;
+  --ingest-heading-letter-spacing-h1: -0.01em;
+  --ingest-heading-letter-spacing-h2: -0.005em;
+  --ingest-heading-letter-spacing-h3: 0;
+}
+
+[data-heading-font='libertine'] {
+  --ingest-heading-font: var(--font-tex-libertine);
+  --ingest-heading-weight-h1: 600;
+  --ingest-heading-weight-h2: 600;
+  --ingest-heading-weight-h3: 600;
+  --ingest-heading-variation-h1: normal;
+  --ingest-heading-variation-h2: normal;
+  --ingest-heading-variation-h3: normal;
+  --ingest-heading-letter-spacing-h1: 0;
+  --ingest-heading-letter-spacing-h2: 0;
+  --ingest-heading-letter-spacing-h3: 0;
+}
+
+[data-heading-font='noto-serif'] {
+  --ingest-heading-font: var(--font-tex-noto-serif);
+  --ingest-heading-weight-h1: 600;
+  --ingest-heading-weight-h2: 580;
+  --ingest-heading-weight-h3: 550;
+  --ingest-heading-variation-h1: 'wght' 600;
+  --ingest-heading-variation-h2: 'wght' 580;
+  --ingest-heading-variation-h3: 'wght' 550;
+  --ingest-heading-letter-spacing-h1: -0.005em;
+  --ingest-heading-letter-spacing-h2: 0;
+  --ingest-heading-letter-spacing-h3: 0;
+}
+
+.content-scroll-area {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1.75rem 3rem;
+  font-family: var(--ingest-reading-font);
+  font-size: var(--ingest-reading-size);
+  line-height: var(--ingest-line-height);
+  color: var(--academic-color-ink, #111111);
+  text-rendering: optimizeLegibility;
+  font-feature-settings: "chws" 1;
+}
+
+/* 结构化块条目：纯净学术呈现，悬停右上角轻微小药丸 */
+.structured-blocks-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.structured-block-item {
+  position: relative;
+  padding: 0.55rem 0.85rem;
+  border-left: 3px solid transparent;
+  border-radius: 6px;
+  background-color: transparent;
+  transition: all 0.15s ease;
+  cursor: pointer;
+}
+.structured-block-item:hover,
+.structured-block-item.hover-block {
+  background-color: color-mix(in srgb, var(--md3-primary) 4%, transparent);
+  border-left-color: color-mix(in srgb, var(--md3-primary) 40%, transparent);
+}
+.structured-block-item.active-block {
+  background-color: color-mix(in srgb, var(--md3-primary) 10%, transparent) !important;
+  border-left-color: var(--md3-primary) !important;
+}
+[data-theme='dark'] .structured-block-item.active-block {
+  background-color: color-mix(in srgb, var(--md3-primary) 14%, transparent) !important;
+  border-left-color: var(--md3-primary) !important;
+}
+
+/* 悬停微型动作组 */
+.block-hover-actions {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity 0.12s ease;
+  z-index: 5;
+}
+.structured-block-item:hover .block-hover-actions {
+  opacity: 1;
+}
+
+.block-hover-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 7px;
+  border-radius: 9999px;
+  border: 1px solid var(--md3-outline-variant);
+  background-color: var(--md3-surface);
+  color: var(--md3-on-surface-variant);
+  font-size: 0.72rem;
+  font-family: var(--md-font-google-sans, 'Noto Sans SC', system-ui, sans-serif);
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  transition: all 0.12s ease;
+}
+.block-hover-btn:hover {
+  background-color: var(--md3-primary-container);
+  color: var(--md3-primary);
+  border-color: var(--md3-primary);
+}
+
+.block-item-translation {
+  margin-top: 0.65rem;
+  padding: 0.65rem 0.95rem;
+  background-color: var(--md3-surface-container-low);
+  border-left: 2.5px solid var(--md3-primary);
+  border-radius: 0 6px 6px 0;
+  font-size: 0.98rem;
+  line-height: 1.8;
+  text-align: justify;
+}
+
+.translation-loading {
+  font-size: 0.82rem;
+  color: var(--md3-outline);
+  font-style: italic;
+}
+
+/* JSON 视图 */
+.pane-json-container {
+  font-family: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+  font-size: 0.82rem;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-all;
+  background-color: var(--md3-surface-dim);
+  padding: 1rem;
+  border-radius: 8px;
+  border: 1px solid var(--md3-outline-variant);
+  color: var(--md3-on-surface);
+  overflow-x: auto;
+}
+
+/* 学术 AST 标题排版样式 (可变字重微调系统，告别死重，支持学术衬线与现代黑体自由切换) */
+.doc-heading {
+  font-family: var(--ingest-heading-font) !important;
+  color: var(--academic-color-heading, var(--md3-on-surface));
+  font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+}
+
+.doc-heading-1 {
+  font-family: var(--ingest-heading-font) !important;
+  font-size: 1.6rem;
+  font-weight: var(--ingest-heading-weight-h1);
+  font-variation-settings: var(--ingest-heading-variation-h1);
+  letter-spacing: var(--ingest-heading-letter-spacing-h1);
+  line-height: 1.32;
+  margin: 1.25rem 0 0.85rem 0;
+  color: var(--academic-color-heading, var(--md3-on-surface));
+}
+
+.doc-heading-2 {
+  font-family: var(--ingest-heading-font) !important;
+  font-size: 1.3rem;
+  font-weight: var(--ingest-heading-weight-h2);
+  font-variation-settings: var(--ingest-heading-variation-h2);
+  letter-spacing: var(--ingest-heading-letter-spacing-h2);
+  line-height: 1.36;
+  margin: 1.15rem 0 0.65rem 0;
+  color: var(--academic-color-heading, var(--md3-on-surface));
+}
+
+.doc-heading-3 {
+  font-family: var(--ingest-heading-font) !important;
+  font-size: 1.12rem;
+  font-weight: var(--ingest-heading-weight-h3);
+  font-variation-settings: var(--ingest-heading-variation-h3);
+  letter-spacing: var(--ingest-heading-letter-spacing-h3);
+  line-height: 1.4;
+  margin: 0.95rem 0 0.5rem 0;
+  color: var(--academic-color-heading, var(--md3-on-surface));
+}
+.doc-paragraph {
+  margin: 0.35rem 0;
+  font-size: var(--ingest-reading-size, 1.02rem);
+  line-height: var(--ingest-line-height, 1.72);
+  text-align: justify;
+}
+.doc-equation-display {
+  margin: 0.9rem 0;
+  padding: 0.4rem 0;
+  text-align: center;
+  overflow-x: auto;
+}
+.doc-figure {
+  margin: 1.25rem auto;
+  text-align: center;
+}
+.doc-figure img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 4px;
+}
+.doc-figcaption {
+  font-size: 0.82rem;
+  color: var(--md3-outline);
+  margin-top: 0.45rem;
+}
+.doc-table-wrapper {
+  margin: 1rem 0;
+  overflow-x: auto;
+}
+.doc-table-wrapper table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.doc-table-wrapper th, .doc-table-wrapper td {
+  border: 1px solid var(--md3-outline-variant);
+  padding: 0.45rem 0.75rem;
+}
+
+/* ============================================================================
+   5. M3 设置对话框 (Unified Settings Dialog - 归档全部出格散落设置项)
+   ============================================================================ */
+.m3-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: var(--layer-dialog);
+}
+
+.m3-modal-card {
+  width: 92%;
+  max-width: 480px;
+  background-color: var(--md3-surface);
+  border-radius: 24px;
+  padding: 1.75rem;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18);
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  max-height: 88vh;
+  overflow-y: auto;
+}
+
+.m3-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.m3-modal-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.m3-settings-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.m3-settings-label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--md3-on-surface);
+}
+
+.m3-settings-desc {
+  font-size: 0.75rem;
+  color: var(--md3-outline);
+  margin: 0;
+}
+
+.m3-radio-tile-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.m3-radio-tile {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.65rem 0.85rem;
+  border-radius: 12px;
+  border: 1px solid var(--md3-outline-variant);
+  background-color: var(--md3-surface);
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+.m3-radio-tile:hover {
+  background-color: var(--md3-surface-container-low);
+}
+.m3-radio-tile.selected {
+  border-color: var(--md3-primary);
+  background-color: var(--md3-secondary-container);
+}
+
+.m3-radio-tile-title {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--md3-on-surface);
+}
+.m3-radio-tile-desc {
+  font-size: 0.72rem;
+  color: var(--md3-outline);
+}
+
+.m3-input-field {
+  width: 100%;
+  padding: 0.6rem 0.85rem;
+  border-radius: 8px;
+  border: 1px solid var(--md3-outline-variant);
+  background-color: var(--md3-surface);
+  color: inherit;
+  font-size: 0.85rem;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+.m3-input-field:focus {
+  border-color: var(--md3-primary);
+}
+
+/* Material 3 官方紧凑型 Outlined 下拉菜单 (彻底消除原生丑陋黑框与生硬直角) */
+.m3-select-compact {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  display: inline-flex;
+  align-items: center;
+  padding: 0.38rem 2.2rem 0.38rem 0.95rem;
+  border-radius: 9999px;
+  border: 1px solid var(--md3-outline-variant);
+  background-color: var(--md3-surface);
+  color: var(--md3-on-surface);
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 500;
+  cursor: pointer;
+  outline: none;
+  transition: all 0.15s cubic-bezier(0.2, 0, 0, 1);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='%2372777d'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.65rem center;
+  background-size: 16px 16px;
+  user-select: none;
+}
+.m3-select-compact:hover {
+  background-color: var(--md3-surface-container-low);
+  border-color: var(--md3-outline);
+}
+.m3-select-compact:focus {
+  border-color: var(--md3-primary);
+  box-shadow: 0 0 0 2px var(--md3-primary-container);
+}
+
+.m3-select-field {
+  width: 100%;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  padding: 0.62rem 2.2rem 0.62rem 0.85rem;
+  border-radius: 8px;
+  border: 1px solid var(--md3-outline-variant);
+  background-color: var(--md3-surface);
+  color: inherit;
+  font-size: 0.85rem;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='%2372777d'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 18px 18px;
+}
+.m3-select-field:hover {
+  border-color: var(--md3-outline);
+}
+.m3-select-field:focus {
+  border-color: var(--md3-primary);
+  box-shadow: 0 0 0 2px var(--md3-primary-container);
+}
+
+/* 学术排版与字体选项组件 */
+.m3-chip-selector {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.m3-chip-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.4rem 0.85rem;
+  border-radius: 9999px;
+  border: 1px solid var(--md3-outline-variant);
+  background-color: var(--md3-surface);
+  color: var(--md3-on-surface-variant);
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+.m3-chip-item:hover {
+  background-color: var(--md3-surface-container-low);
+  color: var(--md3-on-surface);
+}
+.m3-chip-item.active {
+  border-color: var(--md3-primary);
+  background-color: var(--md3-secondary-container);
+  color: var(--md3-on-secondary-container);
+  font-weight: 600;
+}
+
+.font-preview-sample {
+  font-size: 0.8rem;
+  color: var(--md3-outline);
+  padding: 0.5rem 0.75rem;
+  background-color: var(--md3-surface-dim);
+  border-radius: 8px;
+  border: 1px dashed var(--md3-outline-variant);
+}
+
+.m3-dialog-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.65rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--md3-outline-variant);
+}
+
+/* ==========================================================================
+ * 学术文献结构化元素强化：物理分页标尺、本页学术脚注与页外元注徽标
+ * ========================================================================== */
+
+/* 1. 物理分页标尺 (Page Divider) */
+.structured-block-item.type-page_divider {
+  padding: 0;
+  margin: 1.25rem 0 0.75rem;
+  background: transparent !important;
+  border-left: none !important;
+  cursor: default;
+}
+
+.doc-page-divider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  width: 100%;
+  user-select: none;
+  transition: opacity 0.2s ease;
+}
+
+body.hide-page-dividers .structured-block-item.type-page_divider {
+  display: none;
+}
+
+.doc-page-divider-line {
+  flex: 1;
+  height: 1px;
+  border-top: 1px dashed var(--md3-outline-variant, rgba(0, 0, 0, 0.15));
+}
+
+[data-theme='dark'] .doc-page-divider-line {
+  border-top-color: rgba(255, 255, 255, 0.15);
+}
+
+.doc-page-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.6rem;
+  height: 1.35rem;
+  padding: 0 0.45rem;
+  border-radius: 9999px;
+  font-size: 0.72rem;
+  font-weight: 500;
+  font-family: var(--font-tex-sans, system-ui, sans-serif);
+  color: var(--md3-on-surface-variant, #666);
+  background-color: var(--md3-surface, #fff);
+  border: 1px solid var(--md3-outline-variant, rgba(0, 0, 0, 0.12));
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+[data-theme='dark'] .doc-page-number {
+  background-color: var(--md3-surface, #1e1e1e);
+  color: #aaa;
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.doc-page-number:hover {
+  background-color: var(--md3-surface-container, color-mix(in srgb, var(--md3-primary) 8%, transparent));
+  color: var(--md3-primary);
+  border-color: var(--md3-primary);
+  transform: scale(1.06);
+}
+
+/* 2. 正文角标 (Footnote References) */
+.doc-footnote-ref {
+  display: inline-block;
+  font-size: 0.75em;
+  line-height: 1;
+  vertical-align: super;
+  font-weight: 600;
+  color: var(--md3-primary);
+  cursor: pointer;
+  padding: 0 2px;
+  margin: 0 1px;
+  border-radius: 3px;
+  text-decoration: none;
+  transition: all 0.15s ease;
+}
+
+.doc-footnote-ref:hover {
+  background-color: color-mix(in srgb, var(--md3-primary) 12%, transparent);
+  text-decoration: underline;
+}
+
+/* 3. 页底学术级独立附注区 (Page Footnotes Zone) */
+.structured-block-item.type-footnote {
+  padding: 0.45rem 0.85rem;
+  margin-top: 0.25rem;
+  border-left: 3px solid transparent;
+  background-color: rgba(0, 0, 0, 0.015);
+  border-radius: 6px;
+}
+
+[data-theme='dark'] .structured-block-item.type-footnote {
+  background-color: rgba(255, 255, 255, 0.02);
+}
+
+.doc-footnote-page-rule {
+  width: 25%;
+  height: 1px;
+  background-color: var(--md3-outline-variant, rgba(0, 0, 0, 0.18));
+  margin: 1.25rem 0 0.5rem 0.85rem;
+}
+
+[data-theme='dark'] .doc-footnote-page-rule {
+  background-color: rgba(255, 255, 255, 0.18);
+}
+
+.doc-page-footnote {
+  display: flex;
+  align-items: baseline;
+  gap: 0.45rem;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: var(--md3-on-surface-variant, #555);
+}
+
+[data-theme='dark'] .doc-page-footnote {
+  color: #bbb;
+}
+
+.doc-page-footnote .fn-marker {
+  font-weight: 700;
+  color: var(--md3-primary, #2563eb);
+  font-size: 0.78rem;
+  user-select: none;
+}
+
+.doc-page-footnote .fn-body {
+  flex: 1;
+}
+
+.doc-page-footnote .fn-back-link {
+  font-size: 0.85rem;
+  color: var(--md3-primary);
+  text-decoration: none;
+  padding: 0 4px;
+  border-radius: 4px;
+  opacity: 0.7;
+  transition: opacity 0.15s ease, background 0.15s ease;
+  cursor: pointer;
+}
+
+.doc-page-footnote .fn-back-link:hover {
+  opacity: 1;
+  background-color: color-mix(in srgb, var(--md3-primary) 12%, transparent);
+}
+
+/* 4. 沉浸式悬停微注浮窗 (Footnote Popover) */
+.doc-footnote-popover {
+  position: fixed;
+  max-width: 340px;
+  min-width: 200px;
+  padding: 0.6rem 0.85rem;
+  border-radius: 8px;
+  font-size: 0.78rem;
+  line-height: 1.5;
+  background-color: var(--md3-surface-container-high, #fff);
+  color: var(--md3-on-surface, #1f1f1f);
+  border: 1px solid var(--md3-outline-variant, #e0e0e0);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  z-index: var(--layer-popover);
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+[data-theme='dark'] .doc-footnote-popover {
+  background-color: #2b2b2b;
+  color: #e3e3e3;
+  border-color: #444;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+}
+
+.doc-footnote-popover.active {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+/* 5. 页外折叠元注徽标 (Page Meta Badge) */
+.structured-block-item.type-page_meta {
+  padding: 0 0.85rem;
+  margin: 0.25rem 0 0.5rem;
+  background: transparent !important;
+  border-left: none !important;
+  cursor: default;
+}
+
+body.hide-page-meta .structured-block-item.type-page_meta {
+  display: none;
+}
+
+.doc-page-meta-badge {
+  display: inline-block;
+  user-select: none;
+}
+
+.doc-page-meta-details {
+  position: relative;
+  display: inline-block;
+}
+
+.doc-page-meta-summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  font-size: 0.72rem;
+  color: var(--md3-on-surface-variant, #777);
+  background-color: var(--md3-surface-container, rgba(0, 0, 0, 0.04));
+  border: 1px solid var(--md3-outline-variant, rgba(0, 0, 0, 0.08));
+  cursor: pointer;
+  transition: all 0.15s ease;
+  list-style: none;
+}
+
+.doc-page-meta-summary::-webkit-details-marker {
+  display: none;
+}
+
+.doc-page-meta-summary:hover {
+  background-color: var(--md3-surface-container-high, rgba(0, 0, 0, 0.08));
+  color: var(--md3-on-surface);
+}
+
+.doc-page-meta-label {
+  max-width: 260px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.doc-page-meta-popover {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  min-width: 240px;
+  max-width: 380px;
+  padding: 0.55rem 0.75rem;
+  border-radius: 8px;
+  background-color: var(--md3-surface-container-high, #fff);
+  border: 1px solid var(--md3-outline-variant, #ddd);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1);
+  z-index: var(--layer-popover);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+[data-theme='dark'] .doc-page-meta-popover {
+  background-color: #2b2b2b;
+  border-color: #444;
+}
+
+.doc-meta-row {
+  display: flex;
+  gap: 6px;
+  font-size: 0.72rem;
+  line-height: 1.4;
+}
+
+.doc-meta-row .meta-k {
+  font-weight: 600;
+  color: var(--md3-primary);
+  flex-shrink: 0;
+}
+
+.doc-meta-row .meta-v {
+  color: var(--md3-on-surface-variant, #666);
+  word-break: break-all;
+}
+
+/* 6. 双向锚点平滑过渡与高亮闪烁 (Target Flash) */
+@keyframes targetGlow {
+  0% {
+    background-color: color-mix(in srgb, var(--md3-primary) 28%, transparent);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+.target-flash {
+  animation: targetGlow 1.8s ease-out forwards;
+}
+
+/* ============================================================================
+ * 7. M3 单词即点即译浮动卡片 (M3 Word Definition Popover & Mobile Sheet)
+ * ============================================================================ */
+.m3-word-popover {
+  position: fixed;
+  min-width: 240px;
+  max-width: 330px;
+  padding: 0.75rem 0.95rem;
+  border-radius: 14px;
+  background-color: var(--md3-surface-container-high, #ffffff);
+  color: var(--md3-on-surface, #1f1f1f);
+  border: 1px solid var(--md3-outline-variant, #e0e0e0);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.05);
+  z-index: var(--layer-popover, 500);
+  pointer-events: auto;
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity 0.16s ease, transform 0.16s ease;
+  user-select: text;
+}
+
+[data-theme='dark'] .m3-word-popover {
+  background-color: #2b2b2b;
+  color: #e3e3e3;
+  border-color: #444444;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
+}
+
+.m3-word-popover.active {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.m3-word-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--md3-outline-variant, rgba(0, 0, 0, 0.06));
+}
+
+.m3-word-header-left {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.m3-word-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--md3-primary, #005ac1);
+  letter-spacing: -0.01em;
+}
+
+.m3-word-phonetic {
+  font-family: var(--font-tex-latin-modern), 'Computer Modern', serif;
+  font-size: 0.82rem;
+  color: var(--md3-on-surface-variant, #666666);
+}
+
+.m3-word-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.m3-word-audio-btn,
+.m3-word-close-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  color: var(--md3-on-surface-variant, #555555);
+  cursor: pointer;
+  transition: all 0.14s ease;
+}
+
+.m3-word-audio-btn:hover,
+.m3-word-close-btn:hover {
+  background-color: var(--md3-surface-container-highest, rgba(0, 0, 0, 0.08));
+  color: var(--md3-primary, #005ac1);
+}
+
+.m3-word-meanings {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 6px 0;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.m3-word-meaning-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  font-size: 0.82rem;
+  line-height: 1.48;
+}
+
+.m3-pos-chip {
+  font-size: 0.7rem;
+  font-weight: 700;
+  font-style: italic;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background-color: var(--md3-primary-container);
+  color: var(--md3-on-primary-container);
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+[data-theme='dark'] .m3-pos-chip {
+  background-color: var(--md3-primary-container);
+  color: var(--md3-on-primary-container);
+}
+
+.m3-word-defs {
+  color: var(--md3-on-surface, #222222);
+  word-break: break-word;
+}
+
+.m3-word-example {
+  font-size: 0.75rem;
+  font-style: italic;
+  color: var(--md3-outline, #737373);
+  margin-top: 2px;
+}
+
+.m3-word-ai-section {
+  margin-top: 8px;
+  padding-top: 6px;
+  border-top: 1px dashed var(--md3-outline-variant, #e5e5e5);
+}
+
+.m3-ai-context-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 9px;
+  border-radius: 9999px;
+  font-size: 0.74rem;
+  font-weight: 500;
+  background-color: var(--md3-surface-container, rgba(0, 0, 0, 0.04));
+  color: var(--md3-primary, #005ac1);
+  border: 1px solid var(--md3-outline-variant, rgba(0, 0, 0, 0.1));
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.m3-ai-context-btn:hover {
+  background-color: var(--md3-surface-container-high, rgba(0, 0, 0, 0.08));
+}
+
+.m3-ai-context-btn:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.m3-ai-context-box {
+  margin-top: 6px;
+  padding: 6px 9px;
+  border-radius: 6px;
+  background-color: var(--md3-surface-container-lowest, rgba(0, 0, 0, 0.02));
+  border-left: 2.5px solid var(--md3-primary, #005ac1);
+  font-size: 0.79rem;
+  line-height: 1.48;
+  color: var(--md3-on-surface, #333333);
+}
+
+.m3-ai-context-box p {
+  margin: 3px 0;
+}
+
+.m3-ai-context-box p:first-child {
+  margin-top: 0;
+}
+
+.m3-ai-context-box p:last-child {
+  margin-bottom: 0;
+}
+
+[data-theme='dark'] .m3-ai-context-box {
+  background-color: #222222;
+  color: #dddddd;
+}
+
+/* 移动端 (< 50rem) 转换为 M3 Bottom Sheet */
+@media (max-width: 50rem) {
+  .m3-word-popover.mobile-sheet {
+    top: auto !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100vw !important;
+    max-width: 100vw !important;
+    border-radius: 16px 16px 0 0 !important;
+    max-height: 60vh !important;
+    overflow-y: auto !important;
+    transform: translateY(100%);
+    box-shadow: 0 -6px 28px rgba(0, 0, 0, 0.2);
+  }
+
+  .m3-word-popover.mobile-sheet.active {
+    transform: translateY(0);
+  }
+}
+
+/* 单词取词悬停提示 */
+.click-to-define-ready .structured-block-item.type-text .block-item-body,
+.click-to-define-ready .structured-block-item.type-title .block-item-body {
+  cursor: default;
+}
+
+/* 优雅 M3 错误提示横幅 (Banner) */
+.ingest-error-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 18px;
+  background-color: var(--md-sys-color-error-container, #f9dedc);
+  color: var(--md-sys-color-on-error-container, #410e0b);
+  border-bottom: 1px solid var(--md-sys-color-error, #ba1a1a);
+  font-size: 0.84rem;
+  font-weight: 500;
+  z-index: var(--layer-sticky, 100);
+  animation: slideDownFade 0.2s ease-out;
+}
+
+@keyframes slideDownFade {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.ingest-error-content {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+

@@ -1,0 +1,50 @@
+---
+/**
+ * src/components/m3/M3Switch.astro
+ * ============================================================================
+ * Official Material Design 3 Switch (@material/web)
+ * ============================================================================
+ */
+interface Props {
+  id?: string;
+  name?: string;
+  value?: string;
+  selected?: boolean;
+  disabled?: boolean;
+  icons?: boolean;
+  class?: string;
+  ariaLabel?: string;
+}
+
+const {
+  id,
+  name,
+  value,
+  selected = false,
+  disabled = false,
+  icons = true,
+  class: className = '',
+  ariaLabel,
+} = Astro.props;
+---
+
+<md-switch
+  class:list={['m3-declarative-switch', className]}
+  id={id}
+  name={name}
+  value={value}
+  selected={selected ? true : undefined}
+  disabled={disabled ? true : undefined}
+  icons={icons ? true : undefined}
+  aria-label={ariaLabel}
+></md-switch>
+
+<script>
+  import '@material/web/switch/switch.js';
+</script>
+
+<style>
+  .m3-declarative-switch {
+    vertical-align: middle;
+  }
+</style>

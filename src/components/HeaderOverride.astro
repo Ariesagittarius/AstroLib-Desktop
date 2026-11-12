@@ -1,11 +1,7 @@
 ---
 import config from 'virtual:starlight/user-config';
 
-import LanguageSelect from 'virtual:starlight/components/LanguageSelect';
 import Search from 'virtual:starlight/components/Search';
-import SocialIcons from 'virtual:starlight/components/SocialIcons';
-import ThemeSelect from 'virtual:starlight/components/ThemeSelect';
-import HeaderToolsMenu from './HeaderToolsMenu.astro';
 
 /**
  * Render the `Search` component if Pagefind is enabled or default search is overridden.
@@ -14,13 +10,70 @@ const shouldRenderSearch =
 	config.pagefind || config.components.Search !== '@astrojs/starlight/components/Search.astro';
 ---
 
-<div class="vp-header-inner">
-	<!-- Brand & Existing Logo Icon -->
-	<div class="vp-brand-wrapper">
+<script is:inline>
+	(function () {
+		try {
+			var themeKey = 'starlight-site-theme';
+			var theme = localStorage.getItem(themeKey);
+			if (!theme || theme === 'vitepress' || theme === 'starlight') {
+				theme = 'material-you';
+			}
+			document.documentElement.dataset.siteTheme = theme;
+
+			var colorThemeKey = 'starlight-theme';
+			var colorTheme = localStorage.getItem(colorThemeKey);
+			var resolvedColorTheme =
+				colorTheme === 'dark' || colorTheme === 'light'
+					? colorTheme
+					: window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+						? 'dark'
+						: 'light';
+			document.documentElement.dataset.theme = resolvedColorTheme;
+			document.documentElement.style.colorScheme = resolvedColorTheme;
+
+			var fontKey = 'starlight-font';
+			var rawFont = localStorage.getItem(fontKey);
+			if (rawFont) {
+				var parsed = JSON.parse(rawFont);
+				if (parsed && typeof parsed === 'object') {
+					if (parsed.latin) document.documentElement.dataset.fontLatin = parsed.latin;
+					if (parsed.cjk) document.documentElement.dataset.fontCjk = parsed.cjk;
+				}
+			}
+			var indentVal = localStorage.getItem('astrolib_typography_indent');
+			if (indentVal === null) indentVal = localStorage.getItem('starlight-paragraph-indent');
+			document.documentElement.dataset.paragraphIndent = indentVal === 'false' ? 'false' : 'true';
+
+			var fsVal = parseInt(localStorage.getItem('astrolib_font_size') || '', 10);
+			if (!isNaN(fsVal) && fsVal >= 14 && fsVal <= 22) {
+				document.documentElement.style.setProperty('--academic-font-size-body', parseFloat((fsVal * 0.75).toFixed(2)) + 'pt');
+			}
+
+			if (localStorage.getItem('astrolib_lite_mode') === 'true') {
+				document.documentElement.classList.add('astrolib-lite-mode');
+			}
+			var colorKey = 'starlight-m3-theme-color';
+			var m3Color = localStorage.getItem(colorKey);
+			if (m3Color) document.documentElement.dataset.m3ThemeColor = m3Color;
+
+			var cachedCss = localStorage.getItem('astrolib_m3_cached_css');
+			if (cachedCss && theme === 'material-you') {
+				var styleEl = document.getElementById('m3-dynamic-color-theme') || document.createElement('style');
+				styleEl.id = 'm3-dynamic-color-theme';
+				styleEl.textContent = cachedCss;
+				if (!styleEl.parentNode) document.head.appendChild(styleEl);
+			}
+		} catch (e) {}
+	})();
+</script>
+
+<div class="m3-header-inner vp-header-inner">
+	<!-- Left: Directory Toggle Button (Clean Reader Window - No redundant Brand/Logo) -->
+	<div class="m3-brand-wrapper vp-brand-wrapper">
 		<!-- 左侧栏收放切换按钮 (全视口统一：桌面折叠/移动端抽屉) -->
 		<button
 			type="button"
-			class="vp-sidebar-toggle-btn"
+			class="m3-icon-btn m3-sidebar-toggle-btn vp-sidebar-toggle-btn"
 			id="vp-sidebar-toggle-btn"
 			aria-label="收放全书章节目录"
 			title="收放全书章节目录 (Ctrl+B)"
@@ -37,26 +90,19 @@ const shouldRenderSearch =
 				<line x1="6" y1="6" x2="18" y2="18" />
 			</svg>
 		</button>
-
-		<a href="/" class="vp-brand-link" aria-label="AstroLib 首页">
-			<div class="vp-logo-wrap" aria-hidden="true">
-				<img src="/astrolib-logo.webp" class="vp-logo-img" alt="AstroLib 徽标" width="31" height="24" />
-			</div>
-			<span class="vp-site-name">AstroLib</span>
-		</a>
 	</div>
 
 	<!-- Search Trigger (Google Drive Centered Pill Style) -->
-	<div class="vp-search-wrapper print:hidden">
+	<div class="m3-search-wrapper vp-search-wrapper print:hidden">
 		{shouldRenderSearch && <Search />}
 	</div>
 
-	<!-- Right Control Group (Google Drive 40px Circular Icon Group) -->
-	<div class="print:hidden vp-right-group right-group">
+	<!-- Right Control Group: Reading Utilities Only (TOC, Bilingual, Lens) -->
+	<div class="print:hidden m3-right-group vp-right-group right-group">
 		<!-- 0. 右侧栏 / 本章大纲收放按钮 (全视口统一：桌面折叠/移动端大纲) -->
 		<button
 			type="button"
-			class="vp-right-sidebar-toggle-btn"
+			class="m3-icon-btn m3-right-sidebar-toggle-btn vp-right-sidebar-toggle-btn"
 			id="vp-right-sidebar-toggle-btn"
 			aria-label="收放本节大纲与侧载栏"
 			title="收放本节大纲 (Alt+T)"
@@ -73,7 +119,7 @@ const shouldRenderSearch =
 		<!-- 翻译与双语助读专属入口 (Alt+Y) -->
 		<button
 			type="button"
-			class="vp-translate-btn"
+			class="m3-icon-btn m3-translate-btn vp-translate-btn"
 			id="vp-translate-btn"
 			data-translation-trigger
 			aria-label="双语助读与学术翻译 (Alt+Y)"
@@ -83,37 +129,18 @@ const shouldRenderSearch =
 			<md-icon class="header-mdicon vp-translate-icon" aria-hidden="true">translate</md-icon>
 		</button>
 
-		<!-- 空白文档与学术工作台专属入口 (Alt+B) -->
-		<a
-			href="/blank/"
-			target="_blank"
-			rel="noopener noreferrer"
-			class="vp-blank-doc-btn"
-			id="vp-blank-doc-btn"
-			data-blank-doc-trigger
-			aria-label="打开空白文档与学术工作台 (Alt+B)"
-			title="打开空白文档与学术工作台 (Alt+B)"
-			data-tooltip="空白文档 (Alt+B)"
+		<!-- 关注点透镜与信息高亮入口 (Alt+I) -->
+		<button
+			type="button"
+			class="m3-icon-btn m3-focus-btn vp-focus-btn"
+			id="vp-focus-btn"
+			data-focus-trigger
+			aria-label="关注点透镜与信息高亮 (Alt+I)"
+			title="关注点透镜与信息高亮 (Alt+I)"
+			data-tooltip="关注点透镜 (Alt+I)"
 		>
-			<md-icon class="header-mdicon vp-blank-doc-icon" aria-hidden="true">edit_document</md-icon>
-		</a>
-
-		<!-- 1. 书籍与学习工具聚合菜单 -->
-		<HeaderToolsMenu />
-
-		<!-- 2. 日夜主题与全站设置 -->
-		<div class="vp-header-theme-group">
-			<ThemeSelect />
-		</div>
-
-		<!-- 3. GitHub 仓库入口 -->
-		<div class="vp-social-group sl-hidden sm:sl-flex">
-			<SocialIcons />
-		</div>
-
-		<div class="sl-hidden md:sl-block">
-			<LanguageSelect />
-		</div>
+			<md-icon class="header-mdicon vp-focus-icon" aria-hidden="true">center_focus_strong</md-icon>
+		</button>
 	</div>
 </div>
 
@@ -136,6 +163,7 @@ const shouldRenderSearch =
 	.vp-sidebar-toggle-btn,
 	.vp-right-sidebar-toggle-btn,
 	.vp-translate-btn,
+	.vp-focus-btn,
 	.vp-blank-doc-btn {
 		display: inline-flex;
 		align-items: center;
@@ -155,7 +183,9 @@ const shouldRenderSearch =
 	}
 
 	.vp-translate-icon,
-	.vp-blank-doc-icon {
+	.vp-focus-icon,
+	.vp-blank-doc-icon,
+	.vp-hub-icon {
 		font-size: 1.25rem !important;
 		width: 1.25rem;
 		height: 1.25rem;
@@ -168,6 +198,7 @@ const shouldRenderSearch =
 	:global([data-theme='dark']) .vp-sidebar-toggle-btn,
 	:global([data-theme='dark']) .vp-right-sidebar-toggle-btn,
 	:global([data-theme='dark']) .vp-translate-btn,
+	:global([data-theme='dark']) .vp-focus-btn,
 	:global([data-theme='dark']) .vp-blank-doc-btn {
 		color: var(--sl-color-gray-2, #e2e8f0);
 	}
@@ -175,6 +206,7 @@ const shouldRenderSearch =
 	.vp-sidebar-toggle-btn:hover,
 	.vp-right-sidebar-toggle-btn:hover,
 	.vp-translate-btn:hover,
+	.vp-focus-btn:hover,
 	.vp-blank-doc-btn:hover {
 		background-color: var(--sl-color-gray-6, rgba(125, 125, 125, 0.1));
 		color: var(--sl-color-text-accent);
@@ -366,8 +398,8 @@ const shouldRenderSearch =
 		display: flex;
 		align-items: center;
 		justify-content: flex-start;
-		max-width: 42rem;
-		margin-inline: 1rem;
+		max-width: 32rem;
+		margin-inline: 0.5rem;
 		min-width: 0;
 	}
 
@@ -405,6 +437,117 @@ const shouldRenderSearch =
 <script>
 	import { sidebarLayoutController } from './sidebar/sidebar-layout-controller';
 	import { sideloadManager } from './sideload/sideload-manager';
+	import { initColorEngine, applyThemeColor } from '../themes/material-you/color-engine';
+	import { features } from '../config/features.config.mjs';
+	import { initHeadlessReaderSettings } from '../scripts/feature-toggles';
+	import { applyFontPref } from '../scripts/font-presets';
+	import { applyParagraphIndent, applyPunctStyle, applyFontSize } from '../scripts/settings/typography-prefs';
+	import { applyLiteMode } from '../scripts/settings/performance-prefs';
+
+	const RUNTIME_IDS = new Set([
+		'theme',
+		'fonts',
+		'crossRef',
+		'formulaActions',
+		'prewarm',
+		'relationGraph',
+		'mermaid',
+		'epub',
+		'aiAsk',
+		'editor',
+		'inspector',
+		'pwa',
+	]);
+
+	const readerMeta = Object.entries(features).map(([id, f]: [string, any]) => ({
+		id,
+		label: f.label,
+		build: Boolean(f.enabled),
+		runtime: RUNTIME_IDS.has(id),
+		devOnly: Boolean(f.devOnly),
+	}));
+
+	initHeadlessReaderSettings(readerMeta);
+
+	if (typeof window !== 'undefined' && !(window as any).__readerColorSyncBound) {
+		(window as any).__readerColorSyncBound = true;
+		initColorEngine();
+
+		window.addEventListener('storage', (e) => {
+			if (e.key === 'starlight-m3-theme-color') {
+				applyThemeColor(e.newValue || undefined);
+			} else if (e.key === 'astrolib_m3_cached_css' && e.newValue) {
+				let styleEl = document.getElementById('m3-dynamic-color-theme') as HTMLStyleElement | null;
+				if (!styleEl) {
+					styleEl = document.createElement('style');
+					styleEl.id = 'm3-dynamic-color-theme';
+					document.head.appendChild(styleEl);
+				}
+				styleEl.textContent = e.newValue;
+			} else if (e.key === 'starlight-theme') {
+				const themeVal = e.newValue;
+				const effective =
+					themeVal === 'dark' || themeVal === 'light'
+						? themeVal
+						: window.matchMedia('(prefers-color-scheme: dark)').matches
+							? 'dark'
+							: 'light';
+				document.documentElement.dataset.theme = effective;
+				document.documentElement.style.colorScheme = effective;
+			}
+		});
+
+		window.addEventListener('message', (e) => {
+			if (e.data && e.data.type === 'M3_THEME_COLOR_CHANGED') {
+				if (e.data.theme || e.data.resolvedTheme) {
+					const effective =
+						e.data.resolvedTheme === 'dark' || e.data.resolvedTheme === 'light'
+							? e.data.resolvedTheme
+							: e.data.theme === 'dark' || e.data.theme === 'light'
+								? e.data.theme
+								: window.matchMedia('(prefers-color-scheme: dark)').matches
+									? 'dark'
+									: 'light';
+					document.documentElement.dataset.theme = effective;
+					document.documentElement.style.colorScheme = effective;
+				}
+				if (e.data.font) {
+					try {
+						const parsed = typeof e.data.font === 'string' ? JSON.parse(e.data.font) : e.data.font;
+						applyFontPref(parsed);
+					} catch {}
+				}
+				if (e.data.fontSize !== undefined && e.data.fontSize !== null) {
+					const parsedSize = parseInt(String(e.data.fontSize), 10);
+					if (!isNaN(parsedSize)) applyFontSize(parsedSize);
+				}
+				if (e.data.punctStyle === 'dot' || e.data.punctStyle === 'circle') {
+					applyPunctStyle(e.data.punctStyle);
+				}
+				if (e.data.indent !== undefined && e.data.indent !== null) {
+					applyParagraphIndent(String(e.data.indent) !== 'false');
+				}
+				if (e.data.liteMode !== undefined && e.data.liteMode !== null) {
+					applyLiteMode(String(e.data.liteMode) === 'true');
+				}
+				if (e.data.features !== undefined) {
+					initHeadlessReaderSettings(readerMeta);
+				}
+				const cssContent = e.data.schemeCss || e.data.css;
+				if (cssContent) {
+					let styleEl = document.getElementById('m3-dynamic-color-theme') as HTMLStyleElement | null;
+					if (!styleEl) {
+						styleEl = document.createElement('style');
+						styleEl.id = 'm3-dynamic-color-theme';
+					}
+					styleEl.textContent = cssContent;
+					document.head.appendChild(styleEl);
+				} else if (e.data.color) {
+					applyThemeColor(e.data.color);
+				}
+			}
+		});
+	}
 
 	function setupHeaderSidebars() {
 		sidebarLayoutController.init();
@@ -508,6 +651,35 @@ const shouldRenderSearch =
 					sessionStorage.setItem('astrolib_blank_import_snippet', selection);
 				}
 				sessionStorage.setItem('astrolib_blank_return_url', window.location.href);
+			}
+		});
+	}
+
+	// 全局监听 Alt+I 开启/切换关注点透镜
+	if (typeof window !== 'undefined' && !(window as any).__focusShortcutBound) {
+		(window as any).__focusShortcutBound = true;
+		window.addEventListener('keydown', (e: KeyboardEvent) => {
+			const target = e.target as HTMLElement | null;
+			if (target && (
+				target.tagName === 'INPUT' ||
+				target.tagName === 'TEXTAREA' ||
+				target.tagName === 'MD-OUTLINED-TEXT-FIELD' ||
+				target.isContentEditable
+			)) {
+				return;
+			}
+			if (e.altKey && e.key.toLowerCase() === 'i' && !e.ctrlKey && !e.metaKey) {
+				e.preventDefault();
+				sideloadManager.toggle('focus');
+			}
+		});
+
+		// 全局点击代理：确保点击顶栏或任何部位的透镜按钮能无缝唤起关注点透镜
+		document.addEventListener('click', (e) => {
+			const target = (e.target as HTMLElement | null)?.closest('[data-focus-trigger]');
+			if (target) {
+				e.preventDefault();
+				sideloadManager.toggle('focus');
 			}
 		});
 	}

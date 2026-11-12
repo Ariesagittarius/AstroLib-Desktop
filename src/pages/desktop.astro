@@ -1,0 +1,612 @@
+---
+/**
+ * src/pages/desktop.astro
+ * ============================================================================
+ * AstroLib 桌面端专属 SPA 框架工作台 (Desktop Main Shell & Multi-Fragment Host)
+ * ============================================================================
+ * 规范：
+ * 1. 严格践行“外层框架 + Android Fragment 范式”，左侧为 M3 主导航轨；
+ * 2. 窗口主体挂载 3 大核心 Fragment：
+ *    - Fragment 1: Agent 纵览大厅 (全幅 Lottie 矢量动画实验展台)
+ *    - Fragment 2: 学术研读书库 (Google Play 图书级书架 / 书籍与文献一等公民)
+ *    - Fragment 3: 研读视窗中心 (Chrome 风格多标签栏 + Windows 11 灵活分屏)
+ * 3. 极速常驻状态，Fragment 切换零页面重刷、零白屏抖动，全面保持阅读会话与滚动位置。
+ * ============================================================================
+ */
+
+import '@fontsource-variable/noto-sans-sc/index.css';
+import '@fontsource-variable/noto-serif-sc/index.css';
+import '@fontsource-variable/plus-jakarta-sans/index.css';
+import '../styles/tokens/layers.css';
+import '../themes/material-you/tokens.css';
+import '../themes/material-you/theme.css';
+import '../styles/fonts.css';
+
+import NavigationRail from '../components/desktop/NavigationRail.astro';
+import FragmentOverview from '../components/desktop/FragmentOverview.astro';
+import FragmentLibrary from '../components/desktop/FragmentLibrary.astro';
+import FragmentReaderHost from '../components/desktop/FragmentReaderHost.astro';
+import SettingsHubContent from '../components/desktop/SettingsHubContent.astro';
+
+const pageTitle = 'AstroLib - 理工科学术教辅系统';
+---
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-site-theme="material-you" class="desktop-app-html">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{pageTitle}</title>
+    <link rel="icon" href="/favicon.png" />
+
+    <!-- Google 官方字体与 Material Symbols Outlined 图标库 -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;600;700&family=Google+Sans+Text:wght@400;500;600&family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap" />
+
+    <!-- 性能与一致性保障：首屏秒级预注 M3 动态色彩与深浅模式，杜绝闪烁并与研读视窗绝对同步 -->
+    <script is:inline>
+      (function () {
+        try {
+          var themeKey = 'starlight-theme';
+          var currentTheme = localStorage.getItem(themeKey);
+          if (!currentTheme || currentTheme === 'auto') {
+            currentTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+          }
+          document.documentElement.dataset.theme = currentTheme;
+          document.documentElement.style.colorScheme = currentTheme;
+          document.documentElement.dataset.siteTheme = 'material-you';
+
+          var colorKey = 'starlight-m3-theme-color';
+          var m3Color = localStorage.getItem(colorKey);
+          if (m3Color) document.documentElement.dataset.m3ThemeColor = m3Color;
+
+          var cachedCss = localStorage.getItem('astrolib_m3_cached_css');
+          if (cachedCss) {
+            var styleEl = document.createElement('style');
+            styleEl.id = 'm3-dynamic-color-theme';
+            styleEl.textContent = cachedCss;
+            document.head.appendChild(styleEl);
+
+            // 确保样式表在 DOM 解析完毕后仍然处于 head 末尾以压制静态 link 样式
+            document.addEventListener('DOMContentLoaded', function () {
+              if (styleEl && document.head.lastElementChild !== styleEl) {
+                document.head.appendChild(styleEl);
+              }
+            });
+          }
+        } catch (e) {}
+      })();
+    </script>
+  </head>
+  <body class="desktop-app-body">
+    <!-- 桌面端标题栏安全区 (避让 Windows 11 原生右上角三键与可拖拽区域) -->
+    <div class="desktop-titlebar-drag-region" id="desktop-titlebar">
+      <div class="titlebar-left">
+        <span class="titlebar-product-title">AstroLib</span>
+      </div>
+    </div>
+
+    <!-- 外层主框架容器 -->
+    <div class="desktop-shell-root">
+      <!-- 1. 最左侧 M3 导航轨 (Navigation Rail) -->
+      <NavigationRail />
+
+      <!-- 2. 主 Fragment 挂载舞台 (Fragment Stage) -->
+      <main class="desktop-fragment-stage" id="desktop-fragment-stage">
+        <!-- Fragment 1: Agent 纵览 (默认隐藏，点击导航轨第 1 项激活) -->
+        <section class="fragment-view" id="view-fragment-overview" style="display: none;">
+          <FragmentOverview />
+        </section>
+
+        <!-- Fragment 2: 学术研读书库 (默认首屏激活) -->
+        <section class="fragment-view active" id="view-fragment-library">
+          <FragmentLibrary />
+        </section>
+
+        <!-- Fragment 3: 多篇研读中心 (默认隐藏，点击书籍或导航轨第 3 项激活) -->
+        <section class="fragment-view" id="view-fragment-reader" style="display: none;">
+          <FragmentReaderHost />
+        </section>
+      </main>
+    </div>
+
+    <!-- 窗口内覆盖层设置中心 (模仿 Antigravity / M3 Modal Sheet 交互) -->
+    <div
+      class="hub-overlay-backdrop"
+      id="desktop-hub-overlay"
+      aria-hidden="true"
+      role="dialog"
+      aria-modal="true"
+      aria-label="设置与控制中心"
+    >
+      <div class="hub-modal-shell" id="desktop-hub-modal-shell">
+        <SettingsHubContent isOverlay={true} />
+      </div>
+    </div>
+
+    <!-- 客户端 Fragment 调度状态机与 Material You 动态主题同步 -->
+    <script>
+      import '@material/web/chips/chip-set.js';
+      import '@material/web/chips/filter-chip.js';
+      import { initColorEngine, applyThemeColor } from '../themes/material-you/color-engine';
+      import { applyThemeMode, saveThemeMode, syncAllThemeModes } from '../scripts/settings/theme-prefs';
+
+      class DesktopFragmentRouter {
+        private activeFragmentId: string = 'library';
+        private hubOverlay: HTMLElement | null = document.getElementById('desktop-hub-overlay');
+        private isHubOpen: boolean = false;
+
+        constructor() {
+          this.initThemeSync();
+          this.initRailClicks();
+          this.initHubOverlay();
+          this.initGlobalEvents();
+        }
+
+        private syncNativeTitleBar() {
+          const resolved = document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light';
+          const bridge = (window as any).astrolib;
+          if (bridge && typeof bridge.setThemeMode === 'function') {
+            bridge.setThemeMode(resolved);
+          }
+          const themeBtn = document.getElementById('rail-btn-theme');
+          if (themeBtn) {
+            themeBtn.setAttribute('aria-pressed', String(resolved === 'dark'));
+            themeBtn.setAttribute('title', resolved === 'dark' ? '当前深色模式（点击切换浅色）' : '当前浅色模式（点击切换深色）');
+          }
+        }
+
+        private broadcastThemeToPanes() {
+          let m3Color: string | null = null;
+          let cachedCss: string | null = null;
+          let theme: string = 'auto';
+          let font: string | null = null;
+          let fontSize: string | null = null;
+          let punctStyle: string | null = null;
+          let indent: string | null = null;
+          let liteMode: string | null = null;
+          let features: string | null = null;
+          let transProvider: string | null = null;
+
+          try {
+            m3Color = localStorage.getItem('starlight-m3-theme-color');
+            cachedCss = localStorage.getItem('astrolib_m3_cached_css');
+            theme = localStorage.getItem('starlight-theme') || 'auto';
+            font = localStorage.getItem('starlight-font');
+            fontSize = localStorage.getItem('astrolib_font_size');
+            punctStyle = localStorage.getItem('astrolib_punct_style');
+            indent = localStorage.getItem('astrolib_typography_indent') ?? localStorage.getItem('starlight-paragraph-indent');
+            liteMode = localStorage.getItem('astrolib_lite_mode');
+            features = localStorage.getItem('starlight-features');
+            transProvider = localStorage.getItem('astrolib_trans_provider');
+          } catch {}
+
+          const resolvedTheme = document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light';
+
+          document.querySelectorAll<HTMLIFrameElement>('.pane-reader-iframe').forEach((ifr) => {
+            try {
+              ifr.contentWindow?.postMessage(
+                {
+                  type: 'M3_THEME_COLOR_CHANGED',
+                  color: m3Color,
+                  schemeCss: cachedCss,
+                  css: cachedCss,
+                  theme,
+                  resolvedTheme,
+                  font,
+                  fontSize,
+                  punctStyle,
+                  indent,
+                  liteMode,
+                  features,
+                  transProvider,
+                },
+                '*'
+              );
+            } catch {}
+          });
+        }
+
+        private applyCachedDynamicStyle(cssText: string | null) {
+          if (!cssText) return;
+          let styleEl = document.getElementById('m3-dynamic-color-theme') as HTMLStyleElement | null;
+          if (!styleEl) {
+            styleEl = document.createElement('style');
+            styleEl.id = 'm3-dynamic-color-theme';
+          }
+          styleEl.textContent = cssText;
+          document.head.appendChild(styleEl);
+        }
+
+        private initThemeSync() {
+          // 初始化 Material You 动态颜色引擎，并与 Windows 原生标题栏同步首屏状态
+          initColorEngine();
+          applyThemeColor();
+          this.syncNativeTitleBar();
+
+          // 同窗口 SettingsHubContent 状态变更事件实时同步至主壳层及所有阅读/解析子视窗
+          window.addEventListener('starlight-theme-change', () => {
+            applyThemeColor();
+            this.syncNativeTitleBar();
+            this.broadcastThemeToPanes();
+          });
+
+          window.addEventListener('m3-theme-color-change', () => {
+            this.broadcastThemeToPanes();
+          });
+
+          window.addEventListener('astrolib:font-change', () => {
+            this.broadcastThemeToPanes();
+          });
+
+          window.addEventListener('dsh:feature-change', () => {
+            this.broadcastThemeToPanes();
+          });
+
+          window.addEventListener('astrolib:lite-mode-change', () => {
+            this.broadcastThemeToPanes();
+          });
+
+          window.addEventListener('astrolib:settings-changed', () => {
+            this.broadcastThemeToPanes();
+          });
+
+          // 监听系统深浅模式变化（当偏好设置为跟随系统 auto 时）
+          try {
+            window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (mq) => {
+              const saved = localStorage.getItem('starlight-theme');
+              if (!saved || saved === 'auto') {
+                const resolved = mq.matches ? 'dark' : 'light';
+                document.documentElement.dataset.theme = resolved;
+                document.documentElement.style.colorScheme = resolved;
+                applyThemeColor();
+                syncAllThemeModes();
+                this.syncNativeTitleBar();
+                this.broadcastThemeToPanes();
+              }
+            });
+          } catch {}
+
+          // 监听来自独立 /hub/ 页面或跨窗口的存储变更，实时双向同步
+          window.addEventListener('storage', (e) => {
+            if (e.key === 'starlight-m3-theme-color') {
+              applyThemeColor(e.newValue || undefined);
+              this.broadcastThemeToPanes();
+            } else if (e.key === 'astrolib_m3_cached_css' && e.newValue) {
+              this.applyCachedDynamicStyle(e.newValue);
+              this.broadcastThemeToPanes();
+            } else if (e.key === 'starlight-theme') {
+              const themeVal = e.newValue;
+              const effective =
+                themeVal === 'dark' || themeVal === 'light'
+                  ? themeVal
+                  : window.matchMedia('(prefers-color-scheme: dark)').matches
+                    ? 'dark'
+                    : 'light';
+              document.documentElement.dataset.theme = effective;
+              document.documentElement.style.colorScheme = effective;
+              applyThemeColor();
+              syncAllThemeModes();
+              this.syncNativeTitleBar();
+              this.broadcastThemeToPanes();
+            } else if (
+              e.key === 'starlight-font' ||
+              e.key === 'starlight-paragraph-indent' ||
+              e.key === 'astrolib_typography_indent' ||
+              e.key === 'astrolib_font_size' ||
+              e.key === 'astrolib_punct_style' ||
+              e.key === 'astrolib_lite_mode' ||
+              e.key === 'starlight-features' ||
+              e.key === 'astrolib_trans_provider'
+            ) {
+              this.broadcastThemeToPanes();
+            }
+          });
+
+          // 监听子 iframe 的 postMessage 通知（如设置同步请求或主题色回传）
+          window.addEventListener('message', (e) => {
+            if (e.data && e.data.type === 'M3_THEME_COLOR_CHANGED' && e.data.color) {
+              applyThemeColor(e.data.color);
+              this.broadcastThemeToPanes();
+            } else if (e.data && e.data.type === 'ASTROLIB_OPEN_SETTINGS_HUB') {
+              this.openSettingsHub(e.data.panel, e.data.section);
+            }
+          });
+        }
+
+        public openSettingsHub(panel?: string, section?: string) {
+          if (!this.hubOverlay) return;
+          this.isHubOpen = true;
+          this.hubOverlay.classList.add('is-open');
+          this.hubOverlay.setAttribute('aria-hidden', 'false');
+          document.getElementById('rail-btn-settings')?.classList.add('active');
+          if (panel || section) {
+            window.dispatchEvent(new CustomEvent('astrolib:hub-select-panel', { detail: { panel, section } }));
+          }
+        }
+
+        public closeSettingsHub() {
+          if (!this.hubOverlay || !this.isHubOpen) return;
+          this.isHubOpen = false;
+          this.hubOverlay.classList.remove('is-open');
+          this.hubOverlay.setAttribute('aria-hidden', 'true');
+          document.getElementById('rail-btn-settings')?.classList.remove('active');
+        }
+
+        private initHubOverlay() {
+          document.getElementById('hub-overlay-close-btn')?.addEventListener('click', () => {
+            this.closeSettingsHub();
+          });
+
+          this.hubOverlay?.addEventListener('click', (e) => {
+            if (e.target === this.hubOverlay) {
+              this.closeSettingsHub();
+            }
+          });
+
+          window.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && this.isHubOpen) {
+              e.preventDefault();
+              this.closeSettingsHub();
+            } else if ((e.ctrlKey || e.metaKey) && e.key === ',') {
+              e.preventDefault();
+              if (this.isHubOpen) {
+                this.closeSettingsHub();
+              } else {
+                this.openSettingsHub();
+              }
+            }
+          });
+
+          const bridge = (window as any).astrolib;
+          if (bridge && typeof bridge.onOpenHubOverlay === 'function') {
+            bridge.onOpenHubOverlay(() => {
+              this.openSettingsHub();
+            });
+          }
+        }
+
+        private initRailClicks() {
+          const railItems = document.querySelectorAll('.rail-nav-item[data-fragment]');
+          railItems.forEach((item) => {
+            item.addEventListener('click', () => {
+              this.closeSettingsHub();
+              const targetFragment = item.getAttribute('data-fragment');
+              if (targetFragment) {
+                this.switchFragment(targetFragment);
+              }
+            });
+          });
+
+          // 全局亮暗切换（同步更新主外壳、Material You 动态色板、Native 标题栏三键、Hub 及所有子视窗）
+          document.getElementById('rail-btn-theme')?.addEventListener('click', () => {
+            const current = document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light';
+            const next = current === 'dark' ? 'light' : 'dark';
+            saveThemeMode(next);
+            applyThemeMode(next);
+            applyThemeColor();
+            syncAllThemeModes();
+            this.syncNativeTitleBar();
+            this.broadcastThemeToPanes();
+          });
+
+          // 全局设置与控制中心入口（改为窗口内覆盖层模态窗）
+          document.getElementById('rail-btn-settings')?.addEventListener('click', () => {
+            if (this.isHubOpen) {
+              this.closeSettingsHub();
+            } else {
+              this.openSettingsHub();
+            }
+          });
+        }
+
+        private initGlobalEvents() {
+          // 监听全局切屏指令
+          window.addEventListener('astrolib:switch-fragment', ((e: CustomEvent<string>) => {
+            const fragmentId = e.detail;
+            if (fragmentId) {
+              this.switchFragment(fragmentId);
+            }
+          }) as EventListener);
+
+          // 监听窗口内打开/关闭设置覆盖层事件
+          window.addEventListener('astrolib:open-settings-hub', ((e: CustomEvent<{ panel?: string; section?: string }>) => {
+            this.openSettingsHub(e.detail?.panel, e.detail?.section);
+          }) as EventListener);
+
+          window.addEventListener('astrolib:close-settings-hub', () => {
+            this.closeSettingsHub();
+          });
+        }
+
+        public switchFragment(fragmentId: string) {
+          if (this.activeFragmentId === fragmentId) return;
+          this.activeFragmentId = fragmentId;
+
+          // 1. 同步导航轨状态
+          document.querySelectorAll('.rail-nav-item[data-fragment]').forEach((item) => {
+            const f = item.getAttribute('data-fragment');
+            if (f === fragmentId) {
+              item.classList.add('active');
+            } else {
+              item.classList.remove('active');
+            }
+          });
+
+          // 2. 调度 Fragment 视图显隐 (保留内存状态与滚动)
+          const fragments: Record<string, string> = {
+            overview: 'view-fragment-overview',
+            library: 'view-fragment-library',
+            reader: 'view-fragment-reader',
+          };
+
+          for (const [key, elementId] of Object.entries(fragments)) {
+            const el = document.getElementById(elementId);
+            if (el) {
+              if (key === fragmentId) {
+                el.style.display = 'flex';
+                el.classList.add('active');
+              } else {
+                el.style.display = 'none';
+                el.classList.remove('active');
+              }
+            }
+          }
+        }
+      }
+
+      // 初始化色彩引擎与桌面端路由器
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => {
+          initColorEngine();
+          applyThemeColor();
+          new DesktopFragmentRouter();
+        });
+      } else {
+        initColorEngine();
+        applyThemeColor();
+        new DesktopFragmentRouter();
+      }
+    </script>
+  </body>
+</html>
+
+<style>
+  :root {
+    --desktop-titlebar-height: 38px;
+  }
+
+  html.desktop-app-html, body.desktop-app-body {
+    margin: 0;
+    padding: 0;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    background-color: var(--md-sys-color-surface, #ffffff);
+    color: var(--md-sys-color-on-surface, #1d1b20);
+    font-family: var(--font-ui, 'Google Sans', 'Google Sans Text', 'Noto Sans SC Variable', 'Source Han Sans SC', 'Noto Sans SC', '思源黑体', sans-serif);
+  }
+
+  body.desktop-app-body {
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* 顶栏原生拖拽条 (Window Drag Area - 避让右上角固定 140px 系统三键；严格无杂底，仅留浅色分割线) */
+  .desktop-titlebar-drag-region {
+    height: var(--desktop-titlebar-height);
+    background-color: var(--md-sys-color-surface, #ffffff);
+    border-bottom: 1px solid var(--md-sys-color-outline-variant, #dfe4e0);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 1rem;
+    padding-right: 140px; /* 严格遵循 AGENTS.md 8.3 窗口三键避让安全间距铁律 */
+    -webkit-app-region: drag;
+    user-select: none;
+    flex-shrink: 0;
+    z-index: var(--layer-sticky);
+  }
+
+  .titlebar-left {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+
+  .titlebar-product-title {
+    font-family: var(--font-ui, 'Google Sans', 'Google Sans Text', 'Noto Sans SC Variable', 'Source Han Sans SC', 'Noto Sans SC', '思源黑体', sans-serif);
+    font-size: 0.85rem;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    color: var(--md-sys-color-on-surface, #202124);
+  }
+
+  /* 外层主框架网格 */
+  .desktop-shell-root {
+    flex: 1;
+    display: flex;
+    overflow: hidden;
+    position: relative;
+    height: calc(100vh - var(--desktop-titlebar-height));
+  }
+
+  /* 主舞台 */
+  .desktop-fragment-stage {
+    flex: 1;
+    height: 100%;
+    position: relative;
+    overflow: hidden;
+    background-color: var(--md-sys-color-surface, #ffffff);
+  }
+
+  .fragment-view {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* 窗口内覆盖层设置模态框（居中大视窗 + 背景遮罩） */
+  .hub-overlay-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: var(--layer-modal, 600);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 36px 32px 24px;
+    background-color: rgba(15, 17, 21, 0.42);
+    backdrop-filter: blur(4px);
+    -webkit-app-region: no-drag;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity 0.18s cubic-bezier(0.2, 0, 0, 1), visibility 0.18s ease;
+  }
+
+  :global([data-theme='dark']) .hub-overlay-backdrop {
+    background-color: rgba(0, 0, 0, 0.64);
+  }
+
+  .hub-overlay-backdrop.is-open {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+  }
+
+  .hub-modal-shell {
+    width: min(1040px, calc(100vw - 64px));
+    height: min(740px, calc(100vh - 84px));
+    max-width: 100%;
+    max-height: 100%;
+    border-radius: 16px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    background-color: var(--md-sys-color-surface, #ffffff);
+    color: var(--md-sys-color-on-surface, #1a1b21);
+    border: 1px solid var(--md-sys-color-outline-variant, #e0e3e7);
+    box-shadow:
+      0 24px 64px rgba(0, 0, 0, 0.24),
+      0 6px 18px rgba(0, 0, 0, 0.12);
+    transform: scale(0.97) translateY(8px);
+    transition: transform 0.22s cubic-bezier(0.2, 0, 0, 1);
+  }
+
+  .hub-overlay-backdrop.is-open .hub-modal-shell {
+    transform: scale(1) translateY(0);
+  }
+
+  @media (max-width: 820px) {
+    .hub-overlay-backdrop {
+      padding: 40px 12px 12px;
+    }
+
+    .hub-modal-shell {
+      width: calc(100vw - 24px);
+      height: calc(100vh - 56px);
+      border-radius: 12px;
+    }
+  }
+</style>

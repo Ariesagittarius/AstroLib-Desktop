@@ -1,0 +1,74 @@
+---
+/**
+ * src/components/m3/M3TextField.astro
+ * ============================================================================
+ * Official Material Design 3 Outlined Text Field (@material/web)
+ * ============================================================================
+ */
+import M3Icon from './M3Icon.astro';
+
+interface Props {
+  label?: string;
+  value?: string;
+  placeholder?: string;
+  type?: 'text' | 'search' | 'tel' | 'url' | 'email' | 'password';
+  leadingIcon?: string;
+  trailingIcon?: string;
+  disabled?: boolean;
+  required?: boolean;
+  error?: boolean;
+  errorText?: string;
+  class?: string;
+  id?: string;
+  name?: string;
+}
+
+const {
+  label,
+  value,
+  placeholder,
+  type = 'text',
+  leadingIcon,
+  trailingIcon,
+  disabled = false,
+  required = false,
+  error = false,
+  errorText,
+  class: className = '',
+  id,
+  name,
+} = Astro.props;
+---
+
+<md-outlined-text-field
+  class:list={['m3-declarative-textfield', className]}
+  id={id}
+  name={name}
+  label={label}
+  value={value}
+  placeholder={placeholder}
+  type={type}
+  disabled={disabled ? true : undefined}
+  required={required ? true : undefined}
+  error={error ? true : undefined}
+  error-text={errorText}
+>
+  {leadingIcon && (
+    <M3Icon name={leadingIcon} slot="leading-icon" size={20} />
+  )}
+  {trailingIcon && (
+    <M3Icon name={trailingIcon} slot="trailing-icon" size={20} />
+  )}
+  <slot />
+</md-outlined-text-field>
+
+<script>
+  import '@material/web/textfield/outlined-text-field.js';
+</script>
+
+<style>
+  .m3-declarative-textfield {
+    --md-outlined-text-field-container-shape: var(--md-shape-corner-medium, 12px);
+    width: 100%;
+  }
+</style>

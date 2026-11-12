@@ -13,6 +13,11 @@
 | `npm run build:exercises` | `node scripts/build-exercise-data.mjs` | 单独预编译题库数据与 KaTeX 静态 HTML |
 | `npm run build:all` | `node scripts/generate-epub.mjs && npm run build` | 一键生成全书离线 EPUB 产物并完成全站生产打包 |
 | `npm run preview` | `astro preview` | 本地托管预览 `dist/` 生产静态构建目录 |
+| `npm run pack:book` | `node scripts/pack-book-abp.mjs` | 将教材 MDX 编译为符合 ABP Schema 1.0.0 的标准离线内容包 |
+| `npm run electron:build:scripts` | `node scripts/build-electron.mjs` | 单独预编译 Electron 主进程与预加载脚本输出至 `dist-electron/` |
+| `npm run electron:dev` | `npm run electron:build:scripts && electron .` | 启动本地 Electron 桌面端窗口与开发调试服务 |
+| `npm run electron:pack`| `npm run build && ... && electron-builder --dir` | 编译可直接运行的绿色免安装桌面版 (`release/win-unpacked/AstroLib.exe`) |
+| `npm run electron:build`| `npm run build && ... && electron-builder --win` | 完整打包 Windows NSIS 安装包与单文件便携版 (`release/*.exe`) |
 | `npm run epub` | `node scripts/generate-epub.mjs` | 执行全书离线 EPUB3 打包流水线 |
 | `npm run check:katex` | `node scripts/fix-katex-metrics.mjs --check` | 检查全站数学公式排版度量衡规范（只读检查） |
 | `npm run fix:katex` | `node scripts/fix-katex-metrics.mjs` | 自动修复全站数学公式度量衡与微调参数 |
@@ -90,6 +95,28 @@
 
   # 仅打包指定图书
   node scripts/generate-epub.mjs --only engineering_analysis
+  ```
+
+#### `scripts/pack-book-abp.mjs`
+- **功能**：AstroLib 官方标准 ABP 内容包编译器。用于落实框架与内容解耦架构，将教材 MDX 章节编译为符合 ABP Schema 1.0.0 的标准离线包。执行 KaTeX 纯 HTML 预渲染（保留 `data-latex` 源码回填）、marked GFM/Breaks Markdown 语法编译、`<Solution>` 折叠组件与数字资源卡片语义化抽取、以及结构化多级大纲树生成。
+- **输出**：
+  - 散列流式分发目录：`public/abp-packs/{colSlug}-{bookSlug}/` 与 `dist/abp-packs/{colSlug}-{bookSlug}/`
+  - 单文件离线压缩包：`public/abp-packs/{colSlug}-{bookSlug}.abp` (Gzip 压缩)
+  - 总书库清单：`public/abp-packs/catalog.json`
+- **执行示例**：
+  ```bash
+  # 批量编译全站所有 12 本教材为 ABP 包
+  node scripts/pack-book-abp.mjs --all
+
+  # 单独编译指定书籍
+  node scripts/pack-book-abp.mjs content-sources/collections/math/linear_algebra_geometry
+  ```
+
+#### `scripts/build-electron.mjs`
+- **功能**：Electron 主进程（`electron/main.ts`）与预加载脚本（`electron/preload.ts`）构建工具。基于 esbuild 快速打包输出为生产环境可直接加载的 `dist-electron/main.mjs` 与 `dist-electron/preload.cjs`。
+- **执行示例**：
+  ```bash
+  node scripts/build-electron.mjs
   ```
 
 ---
@@ -182,4 +209,24 @@
 - **Environment Defensive**：依赖外部物理编译器的系统测试在环境未就绪时自动通过 `it.skip()` 优雅跳过，保证在纯 Node.js 的 GitHub Actions CI 容器中 100% 绿灯通过。
 
 > 📘 **深入了解**：完整架构设计与测试编写 SOP 请参阅 [docs/自动化测试套件与类型守卫架构交接文档.md](../自动化测试套件与类型守卫架构交接文档.md) 及 [tests/TESTING.md](../../tests/TESTING.md)。
+
+---
+
+### 2.6 双语语义对齐与评测脚本（Bilingual Alignment & Evaluation）
+
+#### `scripts/evaluate_bilingual_benchmark.ts`
+- **功能**：评估教材多语言/多译本段落语义对齐相似度矩阵与贪心二分匹配准确率。通过对真实教材（如 DPV Algorithms 026 快速 Fourier 变换）提取段落，对比 CPU/AVX2 多语言嵌入与规则对齐效果，计算全章相似度分布（$\ge 0.50$、$\ge 0.70$ 覆盖率与对齐耗时）。
+- **执行方式**：
+  ```bash
+  node scripts/run_evaluate_bilingual_benchmark.mjs
+  ```
+
+#### `scripts/alignment-diagnostics.ts`
+- **功能**：双语段落对齐诊断与断言脚本。对章节多语言 MDX 源码的段落拆分、公式块、标题层级及跨语言断句差异进行静态分析，诊断潜在的语义关联断裂点。
+- **执行方式**：
+  ```bash
+  node scripts/run-alignment-diagnostics.mjs
+  ```
+
+> 📘 **深入了解**：双语对齐系统底层细节与教材重构规范请参阅 [docs/双语段落语义对齐系统与真实教材教学逻辑重构交接文档.md](../双语段落语义对齐系统与真实教材教学逻辑重构交接文档.md)。
 

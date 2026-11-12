@@ -9,8 +9,9 @@ AstroLib 是一个以 Astro 和 Starlight 为基础的学术数字书库。它�
 
 ## 面向读者的主要能力
 
-- **Material You 风格**：界面使用 Material 3 组件和动态主题，支持亮暗模式、字体选择与窄屏布局。
+- **Material You 风格**：界面深度采用 Google Material 3 规范与官方 `@material/web` 组件，动态响应主题色，支持亮暗模式、字体选择与窄屏布局。
 - **数学排版**：Markdown/MDX 中的 LaTeX 数学公式由 KaTeX 渲染，并可复制源码或导出为图片。
+- **双语内联对照与段落语义对齐**：支持同一教材的多语言/译本（英文原著、中文直译版、中文精译版）在当前阅读页直接并列对比。内置轻量级 CPU/AVX2 多语言 Embedding 引擎（`bilingual-aligner`），对双语段落进行二分图贪心对齐并动态绘制 SVG 贝塞尔连线与关联度热力图底座（Heatmap Sheet）。
 - **章节 LaTeX / PDF 导出**：当前章节可以导出学术排版的 `.tex`、离线编译 ZIP，或在本机调用 XeLaTeX 生成 PDF。
 - **全书 EPUB 导出**：`scripts/generate-epub.mjs` 将书籍 MDX、图片、KaTeX 样式和字体组装为离线电子书。
 - **配套习题册**：题库源数据经过构建脚本转换为静态数据，阅读页中的习题侧栏可按章节筛选、查看解析并请求 AI 讲解。
@@ -18,19 +19,25 @@ AstroLib 是一个以 Astro 和 Starlight 为基础的学术数字书库。它�
 - **知识体系框架**：关系图谱、模块索引和章节检索由构建期索引支持，便于从一处概念回到相关章节。
 - **Agent / MCP 与 AI 问答融合**：AI 问答使用书内索引做检索，再由用户自己的 API Key 调用 Gemini、DeepSeek 或自定义 OpenAI 兼容模型。项目不替用户托管密钥。
 
-## 数据流
+## 数据流与运行时
 
 ```text
 MDX 正文 + images/
         │
-        ├─ collections.config.mjs   书籍元数据、章节入口、卡片规则
-        ├─ features.config.mjs      功能开关与 AI 模型清单
+        ├─ collections.config.ts    书籍元数据、章节入口、卡片规则、多语言版本
+        ├─ features.config.ts       功能开关与 AI 模型清单
         │
         ├─ build-ai-index.mjs       public/ai-index/
         ├─ build-exercise-data.mjs  public/data/exercises/
         ├─ build-cross-ref-data.mjs public/cross-ref/
         ├─ build-relation-graphs.mjs
-        └─ Astro build              dist/
+        │
+        ├─ Astro build              dist/ (生产静态站点)
+        │
+        └─ 开发与运行时服务
+              ├─ /__bilingual__/align   (ONNX Runtime Node CPU/AVX2 段落嵌入与对齐)
+              ├─ /api/proxy/gemini/     (开发期模型代理转发)
+              └─ InPageCompareController (客户端双栏渲染、贝塞尔连线、热力图)
 ```
 
 生成数据可以删除并重建，不能反过来当作原始内容编辑。正文只在 `src/content/docs/collections/` 维护。
@@ -38,6 +45,8 @@ MDX 正文 + images/
 ## 重要边界
 
 - UI 组件不作为书籍或题库模型的来源；模型放在配置、`src/data` 或对应服务层。
+- Sideload 侧载底座为唯一宿主：页面右侧大纲、习题、AI 统一挂载在 `.astrolib-sideload-dock` 中，由 `sideloadManager` 集中调度，严禁并列自造悬浮侧栏。
 - 发布器只处理输入和输出，不依赖阅读页组件。
 - 开发期编辑器可以写回 MDX，但生产运行时不应修改源文件。
+- 双语对比与对齐服务在当前页面内联展开，进入时智能记忆侧栏状态，退出时精确无损还原，不污染静态页面源文件。
 - AI 索引、关系图和题库数据都是派生物；修改正文后应重新运行对应构建脚本。

@@ -1,11 +1,11 @@
 ---
-import { collections, getAllBooks } from '../config/collections.config.mjs';
 import { features } from '../config/features.config.mjs';
 import { cleanSlug } from '../utils/slug.mjs';
-import VpNav from '../components/VpNav.astro';
+import M3TopNavBar from '../components/m3/M3TopNavBar.astro';
 import Analytics from '../components/Analytics.astro';
 import '../styles/pages/library.css';
 import fs from 'node:fs';
+import path from 'node:path';
 
 function getEpubUrl(slug: string) {
   if (!features.epub?.enabled) return null;
@@ -21,8 +21,8 @@ function getEpubUrl(slug: string) {
 }
 
 const siteUrl = (features.seo?.config?.siteUrl || 'https://astrolib.cloud').replace(/\/$/, '');
-const pageTitle = '书目检索与分类索引 · AstroLib';
-const pageDescription = '按学段、资料类别与学科检索 AstroLib 收录的初高中及大学理科教材、教辅与配套习题。收录数学分析、工科数学分析、线性代数、概率统计与大学物理等教材。';
+const pageTitle = '云端书库与扩展中心 · AstroLib';
+const pageDescription = '浏览 AstroLib 云端书库所有可安装的理工科教材、教辅与学术资料，支持一键安装至本地书架即装即读。';
 
 const librarySchema = {
   '@context': 'https://schema.org',
@@ -38,15 +38,51 @@ const librarySchema = {
   },
 };
 
-const allBooks = getAllBooks().map(book => {
-  const epubUrl = getEpubUrl(book.slug);
-  return {
-    ...book,
-    hasEpubFile: !!epubUrl,
-    readUrl: `/collections/${book.collectionSlug}/${book.slug}/${cleanSlug(book.entryPoint)}/`,
-    epubUrl: epubUrl || `/epub/${book.slug}.epub`,
-  };
-});
+let catalogBooks: any[] = [];
+try {
+  const catPath = path.resolve('content-sources/catalog-registry.json');
+  const pubPath = path.resolve('public/abp-packs/catalog.json');
+  const targetPath = fs.existsSync(catPath) ? catPath : pubPath;
+  if (fs.existsSync(targetPath)) {
+    const raw = fs.readFileSync(targetPath, 'utf8');
+    const parsed = JSON.parse(raw);
+    catalogBooks = (parsed.books || []).map((b: any) => {
+      const isSenior = b.slug.includes('senior') || b.category === 'supplement';
+      const stage = isSenior ? 'high-school' : 'university';
+      const stageLabel = isSenior ? '高中' : '大学本科';
+      const categoryLabel = b.category === 'supplement' ? '教辅' : '教材';
+      const cleanEp = cleanSlug(b.entryPoint || '');
+      const epubUrl = getEpubUrl(b.slug);
+      return {
+        id: b.id,
+        slug: b.slug,
+        colSlug: b.colSlug,
+        title: b.title,
+        author: b.author || 'AstroLib',
+        publisher: b.publisher || '高等教育出版社',
+        edition: b.edition || '标准数字化版',
+        isbn: b.isbn || '',
+        stage,
+        stageLabel,
+        category: b.category || 'textbook',
+        categoryLabel,
+        subject: b.subject || b.colSlug || 'math',
+        description: b.description || '',
+        cover: b.cover || '/favicon.png',
+        entryPoint: cleanEp,
+        packFileName: b.packFileName || `${b.colSlug}-${b.slug}.abp`,
+        sizeBytes: b.sizeBytes || 0,
+        readUrl: `/collections/${b.colSlug}/${b.slug}/${cleanEp}/`,
+        hasEpubFile: !!epubUrl,
+        epubUrl: epubUrl || `/epub/${b.slug}.epub`,
+      };
+    });
+  }
+} catch (e) {
+  console.error('[library.astro] 加载 catalog.json 失败:', e);
+}
+
+const allBooks = catalogBooks;
 ---
 
 <!DOCTYPE html>
@@ -85,8 +121,8 @@ const allBooks = getAllBooks().map(book => {
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
   </head>
   <body>
-    <!-- Nav -->
-    <VpNav currentPath="/library/" />
+    <!-- M3 Top App Bar -->
+    <M3TopNavBar currentPath="/library/" />
 
     <main class="lib-container">
       <!-- Breadcrumb -->
@@ -198,7 +234,7 @@ const allBooks = getAllBooks().map(book => {
             <div class="book-details-wrap">
               <div class="book-row-header">
                 <h2 class="book-title">
-                  <a href={book.readUrl}>{book.title}</a>
+                  <span class="book-title-text">{book.title}</span>
                 </h2>
                 <span class="stage-badge">{book.stageLabel}</span>
                 <span class="stage-badge">{book.categoryLabel}</span>
@@ -213,10 +249,16 @@ const allBooks = getAllBooks().map(book => {
 
               <p class="book-desc-text">{book.description}</p>
 
-              <div class="book-row-actions">
-                <a href={book.readUrl} class="btn-read-action">
-                  阅读章节
+              <div class="book-row-actions" data-book-id={book.id} data-col={book.colSlug} data-slug={book.slug} data-pack={book.packFileName} data-entry={book.readUrl}>
+                <button type="button" class="btn-read-action btn-install-action" data-action="install">
+                  📥 安装到书架
+                </button>
+                <a href={book.readUrl} class="btn-read-action btn-enter-action" style="display: none;">
+                  进入阅读 →
                 </a>
+                <button type="button" class="btn-sub-action btn-uninstall-action" data-action="uninstall" style="display: none;">
+                  卸载
+                </button>
                 <button type="button" class="btn-sub-action btn-modal-trigger">
                   详细信息
                 </button>

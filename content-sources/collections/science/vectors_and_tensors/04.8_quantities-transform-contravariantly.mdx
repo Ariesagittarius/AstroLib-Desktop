@@ -1,0 +1,114 @@
+---
+title: '4.8 Quantities that transform contravariantly'
+---
+
+import Guide from '@/components/Guide.astro';
+import Knowledge from '@/components/Knowledge.astro';
+import Example from '@/components/Example.astro';
+import Analysis from '@/components/Analysis.astro';
+import Solution from '@/components/Solution.astro';
+import Variant from '@/components/Variant.astro';
+import Note from '@/components/Note.astro';
+import Block from '@/components/Block.astro';
+import Method from '@/components/Method.astro';
+import Exercise from '@/components/Exercise.astro';
+
+## 4.8 Quantities that transform contravariantly
+
+With the convenience of index notation and the summation convention at your disposal, you should be ready to take the next step in the transition from think ing of vectors as quantities with magnitude and direction to understanding why vectors belong to the class of objects known as tensors. That step begins by asking the question of how a differential element of length $d \vec { s }$ transforms from one coordinate system to another.
+
+In general, the equations relating the coordinates in one system to those in another do not involve simple linear combinations of coordinate values. For example, in transforming from spherical $( r , \theta , \phi )$ to Cartesian $( x , y , z )$ coordinates, it's not possible to write equations such as $x = a _ { 1 1 } r + a _ { 1 2 } \theta + a _ { 1 3 } \phi$ , because x depends on the product of r with the sine of $\theta$ and the cosine of $\phi$ . And $y$ and $z$ have similar non-linear relationships to the spherica coordinates.
+
+If, however, you ask how the differentials of $x , y$ , and z (that is, dx, $d y$ , and $d z )$ depend on the differentials of $r , \theta$ , and $\phi$ (that is, dr, dθ, and $d \phi )$ , you'l find that on this infinitesimally small scale, dx does depend linearly on $d r , d \theta$ and $d \phi$ (as do dy and $d z )$ . So you are able to write
+
+$$
+d x = a _ {1 1} d r + a _ {1 2} d \theta + a _ {1 3} d \phi ,\tag{4.49}
+$$
+
+and likewise for $d y$ and $d z$ .
+
+For any two coordinate systems in which a linear relationship exists between differential length elements, writing the equations which transform between the systems is straightforward. If you call the differentials of one coordinate system dx, $d y$ , and $d z$ and the other coordinate system $d x ^ { \prime } , d y ^ { \prime }$ , and $d z ^ { \prime }$ the transformation equations from the unprimed to the primed systems come directly from the rules of partial differentiation, as shown in the left column below:
+
+$$
+d x ^ {\prime} = \frac {\partial x ^ {\prime}}{\partial x} d x + \frac {\partial x ^ {\prime}}{\partial y} d y + \frac {\partial x ^ {\prime}}{\partial z} d z \Rightarrow d x ^ {\prime 1} = \frac {\partial x ^ {\prime 1}}{\partial x ^ {1}} d x ^ {1} + \frac {\partial x ^ {\prime 1}}{\partial x ^ {2}} d x ^ {2} + \frac {\partial x ^ {\prime 1}}{\partial x ^ {3}} d x ^ {3},
+$$
+
+$$
+d y ^ {\prime} = \frac {\partial y ^ {\prime}}{\partial x} d x + \frac {\partial y ^ {\prime}}{\partial y} d y + \frac {\partial y ^ {\prime}}{\partial z} d z \Rightarrow d x ^ {\prime 2} = \frac {\partial x ^ {\prime 2}}{\partial x ^ {1}} d x ^ {1} + \frac {\partial x ^ {\prime 2}}{\partial x ^ {2}} d x ^ {2} + \frac {\partial x ^ {\prime 2}}{\partial x ^ {3}} d x ^ {3},
+$$
+
+$$
+d z ^ {\prime} = \frac {\partial z ^ {\prime}}{\partial x} d x + \frac {\partial z ^ {\prime}}{\partial y} d y + \frac {\partial z ^ {\prime}}{\partial z} d z \Rightarrow d x ^ {^ {\prime} 3} = \frac {\partial x ^ {^ {\prime} 3}}{\partial x ^ {1}} d x ^ {1} + \frac {\partial x ^ {^ {\prime} 3}}{\partial x ^ {2}} d x ^ {2} + \frac {\partial x ^ {^ {\prime} 3}}{\partial x ^ {3}} d x ^ {3}.\tag{4.50}
+$$
+
+Using the index-notation approach of substituting $x ^ { 1 } , x ^ { 2 }$ , and $x ^ { 3 }$ for x, y, and z results in the column shown on the right.<sup>10</sup> Putting this into matrix notation gives
+
+$$
+\left( \begin{array}{c} d x ^ {' 1} \\ d x ^ {' 2} \\ d x ^ {' 3} \end{array} \right) = \left( \begin{array}{c c c} \frac {\partial x ^ {' 1}}{\partial x ^ {1}} & \frac {\partial x ^ {' 1}}{\partial x ^ {2}} & \frac {\partial x ^ {' 1}}{\partial x ^ {3}} \\ \frac {\partial x ^ {' 2}}{\partial x ^ {1}} & \frac {\partial x ^ {' 2}}{\partial x ^ {2}} & \frac {\partial x ^ {' 2}}{\partial x ^ {3}} \\ \frac {\partial x ^ {' 3}}{\partial x ^ {1}} & \frac {\partial x ^ {' 3}}{\partial x ^ {2}} & \frac {\partial x ^ {' 3}}{\partial x ^ {3}} \end{array} \right) \left( \begin{array}{c} d x ^ {1} \\ d x ^ {2} \\ d x ^ {3} \end{array} \right),\tag{4.51}
+$$
+
+or, using individual equations with summation symbols
+
+$$
+d x ^ {\prime 1} = \sum_ {j = 1} ^ {3} \frac {\partial x ^ {\prime 1}}{\partial x ^ {j}} d x ^ {j}, \quad d x ^ {\prime 2} = \sum_ {j = 1} ^ {3} \frac {\partial x ^ {\prime 2}}{\partial x ^ {j}} d x ^ {j}, \quad d x ^ {\prime 3} = \sum_ {j = 1} ^ {3} \frac {\partial x ^ {\prime 3}}{\partial x ^ {j}} d x ^ {j}.
+$$
+
+If you now allow the letter i to represent each of the numerical values of the index (1, 2, and 3), this can be written as
+
+$$
+d x ^ {' i} = \sum_ {j = 1} ^ {3} \frac {\partial x ^ {' i}}{\partial x ^ {j}} d x ^ {j}.\tag{4.52}
+$$
+
+Since the j index is repeated, a final simplification results from the Einstein summation convention, allowing you to write
+
+$$
+d x ^ {' i} = \frac {\partial x ^ {' i}}{\partial x ^ {j}} d x ^ {j}.\tag{4.53}
+$$
+
+So index notation has allowed the expression in Eq. 4.50, consisting of three equations with three terms in each, to be written as this single equation. More importantly, the form of this equation will help you understand why differential length elements $( d x ^ { i } )$ are considered to be contravariant quantities.
+
+To gain that understanding, it's useful to recall Eq. 4.48 from the previous section:
+
+$$
+A ^ {' i} = a _ {i j} A ^ {j},
+$$
+
+which tells you that the components of a vector in the primed (transformed) coordinate system are the weighted linear combination of the components of that same vector in the unprimed (original) coordinate system. And the weighting factors $a _ { i j }$ are the elements of the transformation matrix.
+
+Now compare Eq. 4.53 to Eq. 4.48. On the left side of both equations, a primed quantity $( d x ^ { ' i }$ or $A ^ { ' i } )$ with free index i appears. On the right side, both equations contain the product of a factor with free index i and dummy index $j ~ ( \frac { \partial x ^ { ' i } } { \partial x ^ { j } }$ or $a _ { i j } )$ with the left-side quantity unprimed and with dummy index $~ j ~ ( d x ^ { j }$ or $A ^ { j } )$ . And you know that the factor $a _ { i j }$ in Eq. 4.48 represents the elements of a transformation matrix for contravariant vector components between the unprimed and the primed coordinate systems. So it seems reasonable to conclude that the $\frac { \partial x ^ { ' i } } { \partial x ^ { j } }$ terms in Eq. 4.53 can be seen as the elements of the transformation matrix for the differential length elements.
+
+So instead of looking at Eq. 4.53 as simply the index-notation version of the chain rule, you should see it as a transformation equation that takes differential length elements from the unprimed to the primed coordinate system (just as Eq. 4.48 does for the contravariant components of vector $\vec { A } )$
+
+And here's the important insight: the $\frac { \partial x ^ { ' i } } { \partial x ^ { j } }$ terms are not only the ele ments of a transformation matrix from the unprimed to the primed coordinate system, they're also the components of the basis vectors tangent to the original (unprimed) coordinate axes, expressed in the new (primed) coordinate system. 11
+
+Furthermore, you know that basis vectors tangent to the original coordinate axes are the covariant basis vectors described earlier. And since contravariant vector components combine with covariant basis vectors to produce invariant quantities, differential length elements must transform as contravariant vector components. This is the reason that the indices are written as superscripts in Eqs. 4.51 through 4.53; the differential length element is the "prototype" of contravariant vector components.
+
+Using index notation and representing the components of the basis vectors as $\frac { \partial x ^ { ' i } } { \partial x ^ { j } }$ , you should now understand why the transformation equation for contravariant components of vector $\vec { A }$ is often written as
+
+$$
+A ^ {' i} = \frac {\partial x ^ {' i}}{\partial x ^ {j}} A ^ {j}.\tag{4.54}
+$$
+
+Many authors present this as the definition of contravariant components.
+
+To see how this notation works in practice, consider the transformation from polar $( r , \theta )$ to two-dimensional Cartesian $( x , y )$ coordinates. In this case, $x ^ { ' 1 } = x , \ x ^ { ' 2 } = y , \ x ^ { 1 } = r$ , and $x ^ { 2 } = \theta$ , and you know that $x = r \cos ( \theta )$ and $y = r \sin ( \theta )$ . So what are the weighting factors (that is, the elements of the transformation matrix) in this case? Taking the appropriate derivatives, you find that
+
+$$
+\frac {\partial x ^ {' 1}}{\partial x ^ {1}} = \frac {\partial x}{\partial r} = \cos (\theta), \quad \frac {\partial x ^ {' 2}}{\partial x ^ {1}} = \frac {\partial y}{\partial r} = \sin (\theta),\tag{4.55}
+$$
+
+$$
+\frac {\partial x ^ {' 1}}{\partial x ^ {2}} = \frac {\partial x}{\partial \theta} = - r \sin (\theta), \quad \frac {\partial x ^ {' 2}}{\partial x ^ {2}} = \frac {\partial y}{\partial \theta} = r \cos (\theta).\tag{4.56}
+$$
+
+Are these really the components of the tangent vectors to the origina $( r , \theta )$ coordinate axes (that is, are they pointing along those axes)? You can see that they are by writing these terms as components in the primed coordinate system (Cartesian in this case):
+
+$$
+\vec {e} _ {1} = \frac {\partial x ^ {' 1}}{\partial x ^ {1}} \hat {\imath} + \frac {\partial x ^ {' 2}}{\partial x ^ {1}} \hat {j} = \cos (\theta) \hat {\imath} + \sin (\theta) \hat {j},\tag{4.57}
+$$
+
+$$
+\vec {e} _ {2} = \frac {\partial x ^ {' 1}}{\partial x ^ {2}} \hat {\imath} + \frac {\partial x ^ {' 2}}{\partial x ^ {2}} \hat {j} = - r \sin (\theta) \hat {\imath} + r \cos (\theta) \hat {j}.\tag{4.58}
+$$
+
+The first of these expressions is a vector pointing radially outward (along the r-direction in polar coordinates) and the second is a vector pointing perpendicular to the radial direction (along the ${ \hat { \theta } } \mathrm { - d i r e c t i o n ) }$ ).<sup>12</sup> This demonstrates that the partial derivatives in Eq. 4.53 do indeed represent components of the original (unprimed) covariant basis vectors expressed in the new (primed) coordinate system.

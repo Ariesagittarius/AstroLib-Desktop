@@ -1,0 +1,60 @@
+---
+/**
+ * src/components/m3/M3Dialog.astro
+ * ============================================================================
+ * Official Material Design 3 Dialog (@material/web)
+ * ============================================================================
+ */
+interface Props {
+  id: string;
+  headline?: string;
+  open?: boolean;
+  class?: string;
+  ariaLabel?: string;
+}
+
+const {
+  id,
+  headline,
+  open = false,
+  class: className = '',
+  ariaLabel,
+} = Astro.props;
+---
+
+<md-dialog
+  class:list={['m3-declarative-dialog', className]}
+  id={id}
+  open={open ? true : undefined}
+  aria-label={ariaLabel}
+>
+  {(headline || Astro.slots.has('headline')) && (
+    <div slot="headline">
+      {headline && <span>{headline}</span>}
+      <slot name="headline" />
+    </div>
+  )}
+
+  <div slot="content">
+    <slot />
+    <slot name="content" />
+  </div>
+
+  {Astro.slots.has('actions') && (
+    <div slot="actions">
+      <slot name="actions" />
+    </div>
+  )}
+</md-dialog>
+
+<script>
+  import '@material/web/dialog/dialog.js';
+</script>
+
+<style>
+  .m3-declarative-dialog {
+    --md-dialog-container-shape: var(--md-shape-corner-extra-large, 24px);
+    --md-dialog-container-color: var(--md-sys-color-surface-container-high, #ececf2);
+    z-index: var(--layer-dialog, 500);
+  }
+</style>

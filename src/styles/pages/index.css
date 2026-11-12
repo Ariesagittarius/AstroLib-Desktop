@@ -595,6 +595,11 @@
       /* ==========================================================================
          Footer — Material You Clean Minimal Footer (无分割线、纯净单行)
          ========================================================================== */
+      /* 桌面应用特化：在 Electron 环境下隐藏首页底部外链与页脚，呈现沉浸应用感 */
+      html.is-electron-app .site-footer {
+        display: none !important;
+      }
+
       .site-footer {
         padding: 2.5rem 0;
         background-color: var(--md-sys-color-surface, #ffffff);

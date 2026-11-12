@@ -1,0 +1,62 @@
+---
+title: '4.10 Chapter 4 problems'
+---
+
+import Guide from '@/components/Guide.astro';
+import Knowledge from '@/components/Knowledge.astro';
+import Example from '@/components/Example.astro';
+import Analysis from '@/components/Analysis.astro';
+import Solution from '@/components/Solution.astro';
+import Variant from '@/components/Variant.astro';
+import Note from '@/components/Note.astro';
+import Block from '@/components/Block.astro';
+import Method from '@/components/Method.astro';
+import Exercise from '@/components/Exercise.astro';
+
+## 4.10 Chapter 4 problems
+## 5 Higher-rank tensors
+
+<Exercise title="Problem 4.1">
+Write the inverse transformation matrix for a $7 0 ^ { \circ }$ rotation of the 2-D Cartesian coordinate axes and the indirect transformation matrix for the rotation of a vector through an angle of $7 0 ^ { \circ }$ degrees. Show that the product of these two transformation matrices is the identity matrix.
+</Exercise>
+
+<Exercise title="Problem 4.2">
+Use the inverse transformation matrix from Problem 4.1 to find the components of vector $\vec { A } = 2 \hat { \imath } + 5 . 5 \hat { \jmath }$ in the rotated coordinate system.
+</Exercise>
+
+<Exercise title="Problem 4.3">
+Use the direct transformation matrix from Problem 4.1 to rotate the origi nal coordinate basis vectors $\hat { \imath }$ and $\hat { \jmath }$ by $7 0 ^ { \circ }$ , so they point along the rotated axes.
+</Exercise>
+
+<Exercise title="Problem 4.4">
+Use a direct transformation matrix to rotate vector $\vec { A }$ from Problem 4.2 through an angle of $- 7 0 ^ { \circ }$ , and compare the x- and y-components of the rotated vector (in the original coordinate system) to the $x ^ { \prime } .$ - and $y ^ { \prime } .$ -components of the unrotated vector in the rotated coordinate system.
+</Exercise>
+
+<Exercise title="Problem 4.5">
+Use the dot product of the original vector $\vec { A }$ with the rotated basis vectors $( \vec { A } \circ \hat { \iota } ^ { \prime }$ and $\vec { A } \circ \hat { J } ^ { \prime } )$ to find the components of $\vec { A }$ in the rotated coordinate system.
+</Exercise>
+
+<Exercise title="Problem 4.6">
+For vector $\vec { A } = - 5 \hat { \imath } + 6 \hat { \jmath }$ and basis vectors $\vec { e } _ { 1 } = \hat { \imath } + 2 \hat { \jmath }$ and $\vec { e } _ { 2 } = - 2 \hat { \imath } - \hat { \jmath }$ find the contravariant components $\vec { A } ^ { 1 }$ and ${ \vec { A } } ^ { 2 }$
+</Exercise>
+
+<Exercise title="Problem 4.7">
+Find the dual basis vectors $\vec { e } ^ { 1 }$ and $\vec { e } ^ { 2 }$ for the basis vectors $\vec { e } _ { 1 }$ and $\vec { e } _ { 2 }$ of Problem 4.6.
+</Exercise>
+
+<Exercise title="Problem 4.8">
+Find the covariant components $\vec { A } _ { 1 }$ and $\vec { A } _ { 2 }$ for vector $\vec { A }$ of Problem 4.6.
+</Exercise>
+
+<Exercise title="Problem 4.9">
+Use the subsitution method and the elimination method to solve the two simultaneous equations that result from vector Eq. 4.26.
+</Exercise>
+
+<Exercise title="Problem 4.10">
+Show that the elements of the Cartesian-to-polar transformation matrix are the components of the basis vectors tangent to the original (Cartesian) coordinate axes.
+
+
+The previous chapter contains several ideas that are important to a full understanding of tensors. The first is that any vector may be represented by components that transform between coordinate systems in one of two ways. "Covariant" components transform in the same manner as the original basis vectors pointing along the coordinate axes, and "contravariant" components transform in the inverse manner of those basis vectors.<sup>1</sup> The second main idea is that coordinate basis vectors are tangent to the coordinate axes, and that there also exist reciprocal or dual basis vectors that are perpendicular to the coordinate axes; these dual basis vectors transform inversely to the coordinate basis vectors. The third idea is that combining contravariant components with original basis vectors and combining covariant components with dual basis vectors produces a result that is invariant under coordinate transformation. That result is the vector itself, and the vector is the same no matter which coordinate system you use for its components.
+
+This chapter extends the concepts of covariance and contravariance beyond vectors and makes it clear that scalars and vectors are members of the class of objects called "tensors."
+</Exercise>

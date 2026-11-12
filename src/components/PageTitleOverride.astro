@@ -32,43 +32,80 @@ const stageSubjectLabel = [
   currentBook?.categoryLabel || currentBook?.subjectLabel
 ].filter(Boolean).join(' · ');
 
-// 双语教材与跨语言对照路由判定
-const isBilingualBook = Boolean(currentBook?.languages && currentBook.languages.length > 1);
-let counterpartUrl: string | null = null;
-let counterpartLabel: string | null = null;
+// 双语教材与多语言/多译本切换判定
+interface VersionOption {
+  id: string;
+  label: string;
+  url: string;
+  isActive: boolean;
+}
 
-if (isBilingualBook && currentCol && currentBook) {
-  const isZh = pathname.includes(`/${currentBook.slug}/zh/`) || entrySlug.includes(`/${currentBook.slug}/zh/`);
+const isBilingualBook = Boolean(currentBook?.languages && currentBook.languages.length > 1);
+const versionOptions: VersionOption[] = [];
+
+if (isBilingualBook && currentCol && currentBook && currentBook.languages) {
   const prefix = `/collections/${currentCol.slug}/${currentBook.slug}`;
 
-  if (isZh) {
-    // 当前为中文对照版 -> 对照版指向英文原著
-    const match = pathname.match(new RegExp(`${prefix}/zh/([^/?#]+)`));
-    const subpath = match ? match[1] : '';
-    let enKey = subpath;
+  // 1. 深度检测当前处于哪一个语言版本 (较长 prefix 优先匹配，防止 zh 截断 zh-wp)
+  const sortedLangs = [...currentBook.languages].sort((a, b) => (b.pathPrefix?.length || 0) - (a.pathPrefix?.length || 0));
+  let currentLang = sortedLangs.find(l => l.pathPrefix && (
+    pathname.includes(`/${currentBook.slug}/${l.pathPrefix}/`) || 
+    entrySlug.includes(`/${currentBook.slug}/${l.pathPrefix}/`)
+  ));
+  if (!currentLang) {
+    currentLang = currentBook.languages.find(l => !l.pathPrefix || l.default) || currentBook.languages[0];
+  }
+
+  // 2. 提取当前章节的基础 key
+  let baseChapterKey = '';
+  if (currentLang.pathPrefix) {
+    const match = pathname.match(new RegExp(`${prefix}/${currentLang.pathPrefix}/([^/?#]+)`));
+    const rawSub = match ? match[1] : '';
+    baseChapterKey = rawSub;
     if (currentBook.tocMapping) {
+      const targetRelPath = `${currentLang.pathPrefix}/${rawSub}`;
       for (const [k, v] of Object.entries(currentBook.tocMapping)) {
-        if (v === `zh/${subpath}` || (Array.isArray(v) && v.includes(`zh/${subpath}`))) {
-          enKey = k;
+        if (v === targetRelPath || (Array.isArray(v) && v.includes(targetRelPath))) {
+          baseChapterKey = k;
           break;
         }
       }
     }
-    counterpartUrl = enKey ? `${prefix}/${enKey}/` : `${prefix}/`;
-    counterpartLabel = 'English (原著)';
   } else {
-    // 当前为英文原著版 -> 对照版指向中文翻译
     const match = pathname.match(new RegExp(`${prefix}/([^/?#]+)`));
-    const subpath = match ? match[1] : '';
-    let zhKey = `zh/${subpath}`;
-    if (currentBook.tocMapping?.[subpath]) {
-      const mapped = currentBook.tocMapping[subpath];
-      zhKey = Array.isArray(mapped) ? mapped[0] : mapped;
+    baseChapterKey = match ? match[1] : '';
+  }
+
+  // 3. 为所有配置的语言版本生成无缝跳转链接
+  for (const lang of currentBook.languages) {
+    const isActive = lang.id === currentLang.id;
+    let targetSub = baseChapterKey;
+
+    if (lang.pathPrefix) {
+      targetSub = `${lang.pathPrefix}/${baseChapterKey}`;
+      if (currentBook.tocMapping?.[baseChapterKey]) {
+        const mapped = currentBook.tocMapping[baseChapterKey];
+        if (Array.isArray(mapped)) {
+          const found = mapped.find(p => p.startsWith(`${lang.pathPrefix}/`));
+          if (found) targetSub = found;
+        } else if (mapped.startsWith(`${lang.pathPrefix}/`)) {
+          targetSub = mapped;
+        }
+      }
     }
-    counterpartUrl = subpath ? `${prefix}/${zhKey}/` : `${prefix}/zh/`;
-    counterpartLabel = '中文对照';
+
+    const url = targetSub ? `${prefix}/${targetSub}/` : `${prefix}/`;
+    versionOptions.push({
+      id: lang.id,
+      label: lang.label,
+      url,
+      isActive,
+    });
   }
 }
+
+const currentVersionOpt = versionOptions.find((o) => o.isActive) || versionOptions[0];
+const targetVersionOptions = versionOptions.filter((o) => !o.isActive);
 ---
 
 {currentBook ? (
@@ -113,34 +150,80 @@ if (isBilingualBook && currentCol && currentBook) {
           </md-assist-chip>
         )}
 
-        {counterpartUrl && counterpartLabel && (
-          <a href={counterpartUrl} class="bilingual-chip-link" title={`切换至 ${counterpartLabel}`}>
+        {versionOptions.map((opt) => (
+          opt.isActive ? (
             <md-assist-chip
-              class="chapter-lang-chip"
-              label={counterpartLabel}
+              class="chapter-lang-chip is-active"
+              label={opt.label}
               has-icon
             >
               <svg slot="icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                <path d="M12.87 15.07l-2.54-2.51.03-.08c1.74-1.94 2.98-4.17 3.71-6.49H17V4h-7V2H8v2H1v1.99h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11.76-2.04zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2l-4.5-12zm-2.62 7l1.62-4.33L19.12 17h-3.24z"/>
+                <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
               </svg>
-              <span class="m3-chip-text">{counterpartLabel}</span>
+              <span class="m3-chip-text">{opt.label}</span>
             </md-assist-chip>
-          </a>
-        )}
+          ) : (
+            <a href={opt.url} class="bilingual-chip-link" title={`切换至 ${opt.label}`}>
+              <md-assist-chip
+                class="chapter-lang-chip"
+                label={opt.label}
+                has-icon
+              >
+                <svg slot="icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                  <path d="M12.87 15.07l-2.54-2.51.03-.08c1.74-1.94 2.98-4.17 3.71-6.49H17V4h-7V2H8v2H1v1.99h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11.76-2.04zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2l-4.5-12zm-2.62 7l1.62-4.33L19.12 17h-3.24z"/>
+                </svg>
+                <span class="m3-chip-text">{opt.label}</span>
+              </md-assist-chip>
+            </a>
+          )
+        ))}
 
-        {isBilingualBook && (
-          <a href="/blank?mode=compare&demo=algorithms" class="bilingual-chip-link" title="在学术工作台中测试两篇文档端侧语义关联与热力图对比">
+        {isBilingualBook && targetVersionOptions.length > 0 && (
+          <div class="bilingual-trigger-wrapper">
             <md-assist-chip
+              id="bilingual-in-page-trigger"
               class="chapter-compare-chip"
               label="双语段落关联对比"
               has-icon
+              data-book-slug={currentBook.slug}
+              data-source-id={currentVersionOpt?.id || 'src'}
+              data-source-label={currentVersionOpt?.label || '当前语言'}
+              data-targets={JSON.stringify(targetVersionOptions)}
+              title="在本页面展开双栏排版对照与端侧语义关联分析"
             >
               <svg slot="icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                 <path d="M9.01 14H2v2h7.01v3L13 15.5 9.01 12v2zm5.98-1v-3H22V8h-7.01V5L11 8.5l3.99 3.5z"/>
               </svg>
               <span class="m3-chip-text">双语段落关联对比</span>
             </md-assist-chip>
-          </a>
+
+            <!-- M3 Expressive Chrome 风格版本选择气泡菜单 (默认彻底隐藏) -->
+            <div id="bilingual-version-popover" class="m3e-version-popover is-hidden" style="display: none;" role="menu" aria-label="选择对比版本">
+              <div class="popover-header">
+                <span class="popover-title">选择要对比的版本</span>
+              </div>
+              <div class="popover-list">
+                {targetVersionOptions.map((t) => (
+                  <button
+                    type="button"
+                    class="m3e-popover-item"
+                    role="menuitem"
+                    data-target-id={t.id}
+                    data-target-label={t.label}
+                    data-target-url={t.url}
+                  >
+                    <svg class="item-icon" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+                      <path fill="currentColor" d="M12.87 15.07l-2.54-2.51.03-.08c1.74-1.94 2.98-4.17 3.71-6.49H17V4h-7V2H8v2H1v1.99h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11.76-2.04zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2l-4.5-12zm-2.62 7l1.62-4.33L19.12 17h-3.24z"/>
+                    </svg>
+                    <span class="item-label">{t.label}</span>
+                  </button>
+                ))}
+              </div>
+              <div class="popover-footer">
+                <span class="popover-tip">系统将记住此选择，可在双栏顶栏随时切换</span>
+              </div>
+            </div>
+          </div>
         )}
 
         {features.translation?.enabled && (
@@ -226,6 +309,14 @@ if (isBilingualBook && currentCol && currentBook) {
       --md-assist-chip-container-color: var(--sl-color-accent-low, rgba(59, 130, 246, 0.15)) !important;
     }
 
+    .chapter-lang-chip.is-active {
+      --md-assist-chip-container-color: var(--sl-color-accent-low, rgba(59, 130, 246, 0.15)) !important;
+      --md-assist-chip-outline-color: var(--sl-color-accent, #3b82f6) !important;
+      --md-assist-chip-label-text-color: var(--sl-color-accent-high, #60a5fa) !important;
+      --md-assist-chip-icon-color: var(--sl-color-accent-high, #60a5fa) !important;
+      font-weight: 600;
+    }
+
     .chapter-compare-chip {
       --md-assist-chip-label-text-color: #38bdf8 !important;
       --md-assist-chip-icon-color: #38bdf8 !important;
@@ -291,5 +382,107 @@ if (isBilingualBook && currentCol && currentBook) {
 <script>
   import '@material/web/chips/chip-set.js';
   import '@material/web/chips/assist-chip.js';
+  import { inPageCompareController } from '../services/bilingual/in-page-compare-controller.ts';
+
+  function initBilingualTrigger() {
+    const trigger = document.getElementById('bilingual-in-page-trigger');
+    const popover = document.getElementById('bilingual-version-popover');
+    if (!trigger) return;
+
+    const bookSlug = trigger.getAttribute('data-book-slug') || '';
+    const sourceId = trigger.getAttribute('data-source-id') || '';
+    const sourceLabel = trigger.getAttribute('data-source-label') || '';
+    const targetsRaw = trigger.getAttribute('data-targets') || '[]';
+    let availableTargets: any[] = [];
+    try {
+      availableTargets = JSON.parse(targetsRaw);
+    } catch {
+      availableTargets = [];
+    }
+
+    const storageKey = `astrolib_bilingual_target_${bookSlug}`;
+
+    const launchTarget = (target: any) => {
+      try {
+        localStorage.setItem(storageKey, target.id);
+      } catch {}
+      if (popover) {
+        popover.classList.add('is-hidden');
+        popover.style.display = 'none';
+      }
+      trigger.classList.add('is-active');
+      inPageCompareController.open({
+        bookSlug,
+        sourceId,
+        sourceLabel,
+        target,
+        availableTargets,
+      });
+    };
+
+    trigger.addEventListener('click', (e) => {
+      e.stopPropagation();
+
+      // 如果当前已经是激活状态，点击则是切换关闭
+      if (inPageCompareController.getIsActive()) {
+        inPageCompareController.close();
+        trigger.classList.remove('is-active');
+        return;
+      }
+
+      // 检查是否有记住的选择
+      const savedTargetId = localStorage.getItem(storageKey);
+      const matchedSaved = savedTargetId ? availableTargets.find((t: any) => t.id === savedTargetId) : null;
+
+      if (matchedSaved) {
+        // 已经有记住的选择：直接展开
+        launchTarget(matchedSaved);
+      } else if (availableTargets.length === 1) {
+        // 只有一种可选目标：直接展开并记住
+        launchTarget(availableTargets[0]);
+      } else {
+        // 首次且有多个选项：展示 M3E Chrome 风格气泡选单
+        if (popover) {
+          const isHidden = popover.style.display === 'none' || popover.classList.contains('is-hidden');
+          if (isHidden) {
+            popover.style.display = 'flex';
+            popover.classList.remove('is-hidden');
+          } else {
+            popover.style.display = 'none';
+            popover.classList.add('is-hidden');
+          }
+        }
+      }
+    });
+
+    // 气泡选单项点击
+    popover?.addEventListener('click', (e) => {
+      const item = (e.target as HTMLElement).closest('.m3e-popover-item') as HTMLElement | null;
+      if (!item) return;
+
+      const targetId = item.getAttribute('data-target-id');
+      const targetLabel = item.getAttribute('data-target-label');
+      const targetUrl = item.getAttribute('data-target-url');
+
+      if (targetId && targetLabel && targetUrl) {
+        launchTarget({ id: targetId, label: targetLabel, url: targetUrl });
+      }
+    });
+
+    // 点击外部关闭气泡
+    document.addEventListener('click', (e) => {
+      if (popover && popover.style.display !== 'none' && !popover.contains(e.target as Node) && !trigger.contains(e.target as Node)) {
+        popover.style.display = 'none';
+        popover.classList.add('is-hidden');
+      }
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initBilingualTrigger);
+  } else {
+    initBilingualTrigger();
+  }
+  document.addEventListener('astro:page-load', initBilingualTrigger);
 </script>
 

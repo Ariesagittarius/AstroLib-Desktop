@@ -1,0 +1,558 @@
+---
+/**
+ * src/components/m3/M3TopNavBar.astro
+ * ============================================================================
+ * Official Material 3 & Expressive Top Navigation Bar (App Bar)
+ * ============================================================================
+ * 规范：
+ * 1. 严格遵循 Material Design 3 (Material You / Expressive) Top App Bar 规范；
+ * 2. 彻底移除旧版 VitePress 遗留命名，使用统一 m3-* 声明式架构；
+ * 3. 20px 物理光学尺寸 Google Material Symbols 官方矢量净标；
+ * 4. 完美响应式断点：桌面端双栏/三栏，移动端平滑折叠至 M3 侧滑抽屉；
+ * 5. 全面解耦布局和交互逻辑。
+ * ============================================================================
+ */
+import M3Icon from './M3Icon.astro';
+
+interface Props {
+  currentPath?: string;
+  siteTitle?: string;
+  showSearch?: boolean;
+  showThemeToggle?: boolean;
+  showHubButton?: boolean;
+  showGithubLink?: boolean;
+  class?: string;
+}
+
+const {
+  currentPath = '/',
+  siteTitle = 'AstroLib',
+  showSearch = true,
+  showThemeToggle = true,
+  showHubButton = true,
+  showGithubLink = true,
+  class: className = '',
+} = Astro.props;
+---
+
+<header class:list={['m3-app-bar', 'vp-nav', className]} id="m3-main-app-bar">
+  <div class="m3-app-bar__container vp-nav-container">
+    <!-- Brand Logo & Title -->
+    <a href="/" class="m3-brand vp-brand" aria-label={`${siteTitle} 首页`}>
+      <div class="m3-brand__logo-wrap vp-logo-wrap" aria-hidden="true">
+        <img src="/astrolib-logo.webp" class="m3-brand__logo vp-logo-img" alt={`${siteTitle} 徽标`} width="31" height="24" />
+      </div>
+      <div class="m3-brand__text-wrap vp-brand-text">
+        <span class="m3-brand__title vp-site-name">{siteTitle}</span>
+        <slot name="brand-extra" />
+      </div>
+    </a>
+
+    <!-- Quick Search Trigger (Chrome Omnibox Pill Style) -->
+    {showSearch && (
+      <div class="m3-search-pill vp-search-wrap">
+        <slot name="search">
+          <a href="/library/?focus=search" class="m3-omnibox-trigger vp-nav-search-btn" title="检索书目 (快捷键 / 或 ⌘K)">
+            <M3Icon name="search" size={18} class="m3-search-icon" />
+            <span class="m3-search-placeholder">Search / 检索书目...</span>
+            <kbd class="m3-search-kbd">⌘K</kbd>
+          </a>
+        </slot>
+      </div>
+    )}
+
+    <!-- Navigation Actions Group -->
+    <div class="m3-app-bar__actions vp-nav-actions">
+      <!-- Desktop Navigation Links -->
+      <nav class="m3-nav-links vp-nav-links" aria-label="主要导航">
+        <slot name="nav-links">
+          <a href="/library/" class:list={['m3-nav-link', 'vp-nav-link', { active: currentPath.startsWith('/library') }]}>
+            书目检索
+          </a>
+          <a href="/dev/" class:list={['m3-nav-link', 'vp-nav-link', { active: currentPath.startsWith('/dev') }]}>
+            开发文档
+          </a>
+        </slot>
+      </nav>
+
+      <!-- Vertical Divider -->
+      <div class="m3-nav-divider vp-nav-divider" aria-hidden="true"></div>
+
+      <!-- Action Slots / Extra Controls -->
+      <slot name="actions" />
+
+      <!-- Theme Switcher (M3 Circular Outlined Button) -->
+      {showThemeToggle && (
+        <div class="m3-action-item vp-theme-switch-container">
+          <button
+            type="button"
+            class="m3-icon-btn vp-theme-btn"
+            id="m3-theme-toggle-btn"
+            role="switch"
+            aria-label="切换亮/暗色主题"
+            title="切换亮/暗色主题"
+          >
+            <!-- Google Material Symbols 官方 Outlined light_mode -->
+            <svg class="m3-mode-icon sun-icon theme-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="4"></circle>
+              <line x1="12" y1="2" x2="12" y2="4"></line>
+              <line x1="12" y1="20" x2="12" y2="22"></line>
+              <line x1="4.93" y1="4.93" x2="6.34" y2="6.34"></line>
+              <line x1="17.66" y1="17.66" x2="19.07" y2="19.07"></line>
+              <line x1="2" y1="12" x2="4" y2="12"></line>
+              <line x1="20" y1="12" x2="22" y2="12"></line>
+              <line x1="6.34" y1="17.66" x2="4.93" y2="19.07"></line>
+              <line x1="19.07" y1="4.93" x2="17.66" y2="6.34"></line>
+            </svg>
+            <!-- Google Material Symbols 官方 Outlined dark_mode -->
+            <svg class="m3-mode-icon moon-icon theme-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path>
+            </svg>
+          </button>
+        </div>
+      )}
+
+      <!-- Control Center & Extensions Hub (M3 Circular Outlined Button) -->
+      {showHubButton && (
+        <button
+          type="button"
+          class="m3-icon-btn vp-hub-btn"
+          id="m3-hub-btn"
+          aria-label="控制中心与扩展仓库"
+          title="控制中心与扩展仓库"
+        >
+          <M3Icon name="tune" size={20} class="m3-hub-icon" />
+        </button>
+      )}
+
+      <!-- GitHub Link (Primer Octicon in 34px Circular Base) -->
+      {showGithubLink && (
+        <a
+          href="https://github.com/Ariesagittarius/AstroLib"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="m3-icon-btn vp-nav-social-btn"
+          aria-label="GitHub 仓库"
+          title="GitHub 仓库"
+        >
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" class="social-icon" aria-hidden="true">
+            <path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"></path>
+          </svg>
+        </a>
+      )}
+
+      <!-- Mobile Hamburger Button -->
+      <button type="button" class="m3-hamburger vp-hamburger" id="m3-hamburger-btn" aria-label="展开导航菜单" aria-expanded="false">
+        <span class="m3-hamburger__bar"></span>
+        <span class="m3-hamburger__bar"></span>
+        <span class="m3-hamburger__bar"></span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Mobile Dropdown Menu -->
+  <div class="m3-mobile-drawer vp-mobile-menu" id="m3-mobile-drawer">
+    <div class="m3-mobile-links vp-mobile-links">
+      <slot name="mobile-links">
+        <a href="/library/" class="m3-mobile-link vp-mobile-link">书目检索与分类</a>
+        <a href="/dev/" class="m3-mobile-link vp-mobile-link">项目开发文档</a>
+        <a href="https://github.com/Ariesagittarius/AstroLib" target="_blank" rel="noopener noreferrer" class="m3-mobile-link vp-mobile-link">GitHub 仓库</a>
+      </slot>
+    </div>
+  </div>
+</header>
+
+<script>
+  function setupM3TopNavBar() {
+    // 1. Theme toggle synchronization
+    const themeBtn = document.getElementById('m3-theme-toggle-btn') || document.getElementById('vp-nav-theme-btn');
+    if (themeBtn) {
+      themeBtn.addEventListener('click', () => {
+        const doc = document.documentElement;
+        const current = doc.dataset.theme === 'dark' ? 'dark' : 'light';
+        const next = current === 'dark' ? 'light' : 'dark';
+        doc.dataset.theme = next;
+        try {
+          localStorage.setItem('starlight-theme', next);
+          window.dispatchEvent(new CustomEvent('starlight-theme-change', { detail: { theme: next } }));
+        } catch {}
+      });
+    }
+
+    // 2. Hub button secondary window trigger
+    const hubBtn = document.getElementById('m3-hub-btn') || document.getElementById('vp-nav-hub-btn');
+    if (hubBtn) {
+      hubBtn.addEventListener('click', () => {
+        if ((window as any).electronAPI?.openHubWindow) {
+          (window as any).electronAPI.openHubWindow();
+        } else {
+          window.location.href = '/hub/';
+        }
+      });
+    }
+
+    // 3. Mobile hamburger drawer
+    const hamburger = document.getElementById('m3-hamburger-btn') || document.getElementById('vp-nav-hamburger');
+    const drawer = document.getElementById('m3-mobile-drawer') || document.getElementById('vp-mobile-menu');
+    if (hamburger && drawer) {
+      hamburger.addEventListener('click', () => {
+        const isOpen = drawer.classList.toggle('is-open');
+        hamburger.setAttribute('aria-expanded', String(isOpen));
+      });
+
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && drawer.classList.contains('is-open')) {
+          drawer.classList.remove('is-open');
+          hamburger.setAttribute('aria-expanded', 'false');
+        }
+      });
+    }
+
+    // 4. Omnibox search trigger keyboard shortcut (/ or ⌘K)
+    document.addEventListener('keydown', (e) => {
+      if ((e.key === '/' || ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k')) &&
+          !['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement)?.tagName)) {
+        e.preventDefault();
+        const searchTrigger = document.querySelector<HTMLAnchorElement>('.m3-omnibox-trigger, .vp-nav-search-btn');
+        if (searchTrigger) {
+          searchTrigger.click();
+        }
+      }
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', setupM3TopNavBar);
+  } else {
+    setupM3TopNavBar();
+  }
+  document.addEventListener('astro:page-load', setupM3TopNavBar);
+</script>
+
+<style>
+  .m3-app-bar {
+    position: sticky;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: var(--layer-sticky, 100);
+    height: var(--sl-nav-height, 3rem);
+    background-color: var(--md-sys-color-surface, #ffffff);
+    border-bottom: 1px solid var(--md-sys-color-outline-variant, #e0e3e7);
+    transition: border-color 0.2s ease, background-color 0.2s ease;
+  }
+
+  :global([data-theme='dark']) .m3-app-bar {
+    background-color: var(--md-sys-color-surface-container-low, #131314);
+    border-bottom-color: var(--md-sys-color-outline-variant, #3c4043);
+  }
+
+  .m3-app-bar__container {
+    max-width: 1376px;
+    height: 100%;
+    margin: 0 auto;
+    padding: 0 1.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+  }
+
+  /* Brand Logo & Title */
+  .m3-brand {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    text-decoration: none;
+    color: inherit;
+    flex-shrink: 0;
+  }
+  .m3-brand__logo-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .m3-brand__logo {
+    width: 1.65rem;
+    height: auto;
+    max-height: 1.5rem;
+    object-fit: contain;
+    flex-shrink: 0;
+    display: block;
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.08));
+    transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1);
+  }
+  .m3-brand:hover .m3-brand__logo {
+    transform: scale(1.06);
+  }
+  .m3-brand__text-wrap {
+    display: flex;
+    align-items: center;
+  }
+  .m3-brand__title {
+    font-family: var(--md-sys-typescale-title-medium-font, 'Google Sans', 'Plus Jakarta Sans', system-ui, sans-serif);
+    font-size: 1.05rem;
+    font-weight: 600;
+    letter-spacing: -0.015em;
+    color: var(--md-sys-color-on-surface, #1f1f1f);
+    white-space: nowrap;
+  }
+  :global([data-theme='dark']) .m3-brand__title {
+    color: var(--md-sys-color-on-surface, #e3e3e3);
+  }
+
+  /* Chrome Omnibox Style Search Trigger */
+  .m3-search-pill {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    max-width: 18rem;
+    margin-left: 0.5rem;
+  }
+  .m3-omnibox-trigger {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    width: 100%;
+    height: 2.25rem;
+    padding: 0 0.85rem;
+    background-color: var(--md-sys-color-surface-container-high, #e8eaed);
+    border: 1px solid transparent;
+    border-radius: var(--md-shape-corner-full, 9999px);
+    font-size: 0.8125rem;
+    font-family: inherit;
+    color: var(--md-sys-color-on-surface-variant, #444746);
+    text-decoration: none;
+    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+    cursor: pointer;
+  }
+  :global([data-theme='dark']) .m3-omnibox-trigger {
+    background-color: var(--md-sys-color-surface-container-high, #28292a);
+    color: var(--md-sys-color-on-surface-variant, #c4c7c5);
+  }
+  .m3-omnibox-trigger:hover {
+    background-color: var(--md-sys-color-surface-container-highest, #dadce0);
+    color: var(--md-sys-color-on-surface, #1f1f1f);
+    box-shadow: var(--md-elevation-level-1, 0 1px 2px rgba(60, 64, 67, 0.1));
+  }
+  :global([data-theme='dark']) .m3-omnibox-trigger:hover {
+    background-color: var(--md-sys-color-surface-container-highest, #333537);
+    color: var(--md-sys-color-on-surface, #e3e3e3);
+  }
+  .m3-search-placeholder {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .m3-search-kbd {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 1.25rem;
+    padding: 0 0.4rem;
+    margin-left: auto;
+    font-size: 0.6875rem;
+    font-family: inherit;
+    font-weight: 500;
+    color: var(--md-sys-color-outline, #72777d);
+    background-color: var(--md-sys-color-surface, #ffffff);
+    border: 1px solid var(--md-sys-color-outline-variant, #dadce0);
+    border-radius: var(--md-shape-corner-extra-small, 4px);
+  }
+  :global([data-theme='dark']) .m3-search-kbd {
+    background-color: var(--md-sys-color-surface, #1e1f20);
+    border-color: var(--md-sys-color-outline-variant, #3c4043);
+    color: var(--md-sys-color-outline, #8e918f);
+  }
+
+  /* Right Actions */
+  .m3-app-bar__actions {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    flex-shrink: 0;
+  }
+
+  .m3-nav-links {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+  }
+  .m3-nav-link {
+    display: inline-flex;
+    align-items: center;
+    height: 2rem;
+    padding: 0 0.875rem;
+    border-radius: var(--md-shape-corner-full, 9999px);
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--md-sys-color-on-surface-variant, #444746);
+    text-decoration: none;
+    transition: background-color 0.15s ease, color 0.15s ease;
+  }
+  :global([data-theme='dark']) .m3-nav-link {
+    color: var(--md-sys-color-on-surface-variant, #c4c7c5);
+  }
+  .m3-nav-link:hover {
+    background-color: var(--md-sys-color-surface-container-high, #e8eaed);
+    color: var(--md-sys-color-on-surface, #1f1f1f);
+  }
+  :global([data-theme='dark']) .m3-nav-link:hover {
+    background-color: var(--md-sys-color-surface-container-high, #28292a);
+    color: var(--md-sys-color-on-surface, #e3e3e3);
+  }
+  .m3-nav-link.active {
+    color: var(--md-sys-color-primary, #0b57d0);
+    font-weight: 600;
+  }
+  :global([data-theme='dark']) .m3-nav-link.active {
+    color: var(--md-sys-color-primary, #a8c7fa);
+  }
+
+  .m3-nav-divider {
+    width: 1px;
+    height: 1.25rem;
+    margin: 0 0.35rem;
+    background-color: var(--md-sys-color-outline-variant, #e0e3e7);
+  }
+  :global([data-theme='dark']) .m3-nav-divider {
+    background-color: var(--md-sys-color-outline-variant, #3c4043);
+  }
+
+  /* 34px Circular Action Buttons */
+  .m3-icon-btn {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.125rem;
+    height: 2.125rem;
+    border-radius: var(--md-shape-corner-full, 9999px);
+    border: none;
+    background: transparent;
+    color: var(--md-sys-color-on-surface-variant, #444746);
+    padding: 0;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background-color 0.15s ease, color 0.15s ease, transform 0.1s ease;
+    flex-shrink: 0;
+  }
+  :global([data-theme='dark']) .m3-icon-btn {
+    color: var(--md-sys-color-on-surface-variant, #c4c7c5);
+  }
+  .m3-icon-btn:hover {
+    background-color: var(--md-sys-color-surface-container-high, #e8eaed);
+    color: var(--md-sys-color-on-surface, #1f1f1f);
+  }
+  :global([data-theme='dark']) .m3-icon-btn:hover {
+    background-color: var(--md-sys-color-surface-container-high, #28292a);
+    color: var(--md-sys-color-on-surface, #e3e3e3);
+  }
+  .m3-icon-btn:active {
+    transform: scale(0.94);
+  }
+
+  /* Theme Switcher Sun/Moon Toggle */
+  .m3-mode-icon {
+    transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1), opacity 0.2s ease;
+  }
+  .moon-icon { display: none; }
+  .sun-icon { display: block; }
+  :global([data-theme='dark']) .sun-icon { display: none; }
+  :global([data-theme='dark']) .moon-icon { display: block; }
+
+  /* Mobile Hamburger */
+  .m3-hamburger {
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 4px;
+    width: 2.125rem;
+    height: 2.125rem;
+    border-radius: var(--md-shape-corner-full, 9999px);
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    padding: 0;
+    color: var(--md-sys-color-on-surface-variant, #444746);
+  }
+  .m3-hamburger__bar {
+    display: block;
+    width: 16px;
+    height: 1.5px;
+    background-color: currentColor;
+    border-radius: 1px;
+    transition: transform 0.2s ease, opacity 0.2s ease;
+  }
+
+  /* Mobile Drawer */
+  .m3-mobile-drawer {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background-color: var(--md-sys-color-surface-container, #f0f2f5);
+    border-bottom: 1px solid var(--md-sys-color-outline-variant, #e0e3e7);
+    padding: 1rem 1.25rem;
+    box-shadow: var(--md-elevation-level-2, 0 4px 8px rgba(60, 64, 67, 0.15));
+  }
+  :global([data-theme='dark']) .m3-mobile-drawer {
+    background-color: var(--md-sys-color-surface-container, #1e1f20);
+    border-bottom-color: var(--md-sys-color-outline-variant, #3c4043);
+  }
+  .m3-mobile-drawer.is-open {
+    display: block;
+    animation: m3-drawer-slide-down 0.2s cubic-bezier(0.2, 0, 0, 1);
+  }
+  @keyframes m3-drawer-slide-down {
+    from { opacity: 0; transform: translateY(-8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .m3-mobile-links {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  .m3-mobile-link {
+    display: flex;
+    align-items: center;
+    height: 2.5rem;
+    padding: 0 1rem;
+    border-radius: var(--md-shape-corner-medium, 12px);
+    font-size: 0.9375rem;
+    font-weight: 500;
+    color: var(--md-sys-color-on-surface, #1f1f1f);
+    text-decoration: none;
+    background-color: var(--md-sys-color-surface, #ffffff);
+    border: 1px solid var(--md-sys-color-outline-variant, #e0e3e7);
+  }
+  :global([data-theme='dark']) .m3-mobile-link {
+    color: var(--md-sys-color-on-surface, #e3e3e3);
+    background-color: var(--md-sys-color-surface-container-low, #18191a);
+    border-color: var(--md-sys-color-outline-variant, #3c4043);
+  }
+
+  /* Responsive Rules */
+  @media (max-width: 768px) {
+    .m3-search-pill {
+      max-width: 12rem;
+    }
+    .m3-nav-links,
+    .m3-nav-divider {
+      display: none;
+    }
+    .m3-hamburger {
+      display: flex;
+    }
+  }
+
+  @media (max-width: 520px) {
+    .m3-search-pill {
+      display: none;
+    }
+  }
+</style>

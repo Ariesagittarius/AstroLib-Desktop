@@ -1,0 +1,54 @@
+---
+title: '5.2 协变、逆变和混变分量'
+---
+
+import Guide from '@/components/Guide.astro';
+import Knowledge from '@/components/Knowledge.astro';
+import Example from '@/components/Example.astro';
+import Analysis from '@/components/Analysis.astro';
+import Solution from '@/components/Solution.astro';
+import Variant from '@/components/Variant.astro';
+import Note from '@/components/Note.astro';
+import Block from '@/components/Block.astro';
+import Method from '@/components/Method.astro';
+import Exercise from '@/components/Exercise.astro';
+
+## 5.2 协变、逆变和混变分量
+
+应该明白表达式：
+
+$$
+A ^ {\prime i} = \frac {\partial x ^ {i ^ {\prime}}}{\partial x ^ {j}} A ^ {j}.\tag{5.1}
+$$
+
+表示矢量 $\vec{A}$ 在新坐标系中（带撇坐标系）的逆变分量是 $(A^{\prime i})$ 是其在原坐标系（不带撇坐标系）中逆变分量（ $A^{j}$ ）的加权线性组合。加权因子 $\left(\frac{\partial x^{i'}}{\partial x^{j}}\right)$ 是从不带撇坐标系到带撇坐标系的变换矩阵的矩阵元，表示沿原坐标轴的基矢量分量。类比下来，张量表达式，如：
+
+$$
+A ^ {\prime i j} = \frac {\partial x ^ {i ^ {\prime}}}{\partial x ^ {k}} \frac {\partial x ^ {j ^ {\prime}}}{\partial x ^ {l}} A ^ {k l}.\tag{5.2}
+$$
+
+应该有一些可识别的元素，可以推测， $A^{'ij}$ 表示张量在新坐标系中的逆变分量，而 $A^{kl}$ 表示在原坐标系中的逆变分量， $\frac{\partial x^{i'}}{\partial x^k}$ 和 $\frac{\partial x^{j'}}{\partial x^l}$ 都是原坐标系和新坐标系之间变换矩阵的矩阵元。与方程（5.1）一样，直接变换矩阵元表示沿原坐标轴的基矢量分量，但是方程（5.1）中每个分量与一个基矢量对应，而方程（5.2）中的每个分量对应两个基矢量。这也是合理的，因为第1章中的基本定义中说矢量有一个方向而张量有两个或更多方向。
+
+方程（5.1）是矢量的逆变分量表示法（如用上角标表示的 $A^{i}$ 和 $A^{j}$ ），不过还存在另一种等效的表示方法，即协变分量表示法：
+
+$$
+A _ {i} ^ {\prime} = \frac {\partial x ^ {j}}{\partial x ^ {i ^ {\prime}}} A _ {j}\tag{5.3}
+$$
+
+该方程中，矢量 $\vec{A}$ 在变换坐标系（带撇坐标系）中的协变分量 $(A_{i}^{\prime})$ 是矢量 $\vec{A}$ 在原坐标系（不带撇坐标系）中协变分量 $(A_{j})$ 的加权线性组合。这种情况下，加权因子 $\left(\frac{\partial x^{j}}{\partial x^{i^{\prime}}}\right)$ 是不带撇坐标系到带撇坐标系的逆变矩阵的矩阵元，表示与原坐标轴垂直的对偶基矢量的分量。
+
+把该结论扩展到二阶张量，变换方程如下：
+
+$$
+A _ {i j} ^ {\prime} = \frac {\partial x ^ {k}}{\partial x ^ {i ^ {\prime}}} \frac {\partial x ^ {l}}{\partial x ^ {j ^ {\prime}}} A _ {k l}\tag{5.4}
+$$
+
+表达式中 $A_{ij}^{\prime}$ 是张量在新坐标系中的协变分量， $A_{kl}$ 是张量在原坐标系中的协变分量， $\frac{\partial x^k}{\partial x^{i'}}$ 和 $\frac{\partial x^l}{\partial x^{j'}}$ 是原坐标系和新坐标系之间变换矩阵的矩阵元。与方程（5.3）一样，变换矩阵的矩阵元表示与原坐标轴垂直的对偶基矢量在新坐标系中的分量。
+
+如你所料，张量还有另外一种可能的表达形式：
+
+$$
+A _ {j} ^ {\prime i} = \frac {\partial x ^ {i ^ {\prime}}}{\partial x ^ {k}} \frac {\partial x ^ {l}}{\partial x ^ {j ^ {\prime}}} A _ {l} ^ {k}.\tag{5.5}
+$$
+
+这种情况下张量 $\vec{A}$ 有一个逆变分量和一个协变分量，分别用各自的变换矩阵完成坐标系之间的变换.

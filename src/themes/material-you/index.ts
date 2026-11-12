@@ -70,6 +70,15 @@ export function upgradeSwitchesToMaterialWeb(): void {
       if (input.hasAttribute('data-theme-transition')) {
         mdSwitch.setAttribute('data-theme-transition', '');
       }
+      if (input.hasAttribute('data-lite-mode')) {
+        mdSwitch.setAttribute('data-lite-mode', '');
+      }
+      if (input.hasAttribute('data-typography-indent')) {
+        mdSwitch.setAttribute('data-typography-indent', '');
+      }
+      if (input.hasAttribute('data-sidebar-hover-prefetch')) {
+        mdSwitch.setAttribute('data-sidebar-hover-prefetch', '');
+      }
       if (input.hasAttribute('data-action')) {
         mdSwitch.setAttribute('data-action', input.getAttribute('data-action')!);
       }
@@ -286,7 +295,7 @@ export async function openMaterialThemeDialog(): Promise<void> {
 
         <div style="border-top: 1px solid var(--md-sys-color-outline-variant); padding-top: 0.75rem;">
           <div style="font-size: 0.75rem; color: var(--md-sys-color-on-surface-variant); line-height: 1.4;">
-            💡 提示：无论切换何种 UI 视觉主题，数学公式、KaTeX 排版与教材正文均受严格保护，保持学术级规范。
+            提示：无论切换何种 UI 视觉主题，数学公式、KaTeX 排版与教材正文均受严格保护，保持学术级规范。
           </div>
         </div>
       </div>

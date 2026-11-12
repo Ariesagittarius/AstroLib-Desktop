@@ -67,44 +67,29 @@ export function buildTwoTierSidebar(
     const currentColSlug = bookMatch[1];
     const currentBookSlug = bookMatch[2];
 
-    return collections.map((col) => {
-      const isCurrentCol = col.slug === currentColSlug;
-      const colLabel = col.title === '数学' ? '大学数学' : (col.title === '物理' ? '大学物理' : col.title);
+    const currentCol = collections.find((c) => c.slug === currentColSlug);
+    const currentBook = currentCol?.books?.find((b: any) => b.slug === currentBookSlug);
+    const entryUrl = currentBook
+      ? `/collections/${currentColSlug}/${currentBook.slug}/${cleanSlug(currentBook.entryPoint)}/`
+      : pathname;
+    const chapters = getBookEntries(sidebar, currentColSlug, currentBookSlug);
 
-      const bookEntries = col.books.map((book: any) => {
-        const isCurrentBook = isCurrentCol && book.slug === currentBookSlug;
-        const entryUrl = `/collections/${col.slug}/${book.slug}/${cleanSlug(book.entryPoint)}/`;
-        const chapters = isCurrentBook ? getBookEntries(sidebar, col.slug, book.slug) : null;
-
-        if (chapters && chapters.length > 0) {
-          return {
-            type: 'group',
-            label: book.title,
-            href: entryUrl,
-            isBook: true,
-            isCurrentBook: true,
-            collapsed: false,
-            entries: chapters,
-          };
-        }
-
-        return {
-          type: 'link',
-          label: book.title,
+    if (currentBook && chapters && chapters.length > 0) {
+      return [
+        {
+          type: 'group',
+          label: currentBook.title,
           href: entryUrl,
           isBook: true,
-          isCurrentBook: false,
-        };
-      });
-
-      return {
-        type: 'group',
-        label: colLabel,
-        isCategory: true,
-        collapsed: !isCurrentCol,
-        entries: bookEntries,
-      };
-    });
+          isCurrentBook: true,
+          collapsed: false,
+          entries: chapters,
+        },
+      ];
+    }
+    if (chapters && chapters.length > 0) {
+      return chapters;
+    }
   }
 
   if (pathname.startsWith('/dev')) {

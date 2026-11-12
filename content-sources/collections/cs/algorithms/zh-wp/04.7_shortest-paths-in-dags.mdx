@@ -1,0 +1,45 @@
+---
+title: '4.7 有向无环图中的最短路径'
+---
+
+import Guide from '@/components/Guide.astro';
+import Knowledge from '@/components/Knowledge.astro';
+import Example from '@/components/Example.astro';
+import Analysis from '@/components/Analysis.astro';
+import Solution from '@/components/Solution.astro';
+import Variant from '@/components/Variant.astro';
+import Note from '@/components/Note.astro';
+import Block from '@/components/Block.astro';
+import Method from '@/components/Method.astro';
+import Exercise from '@/components/Exercise.astro';
+import Algorithm from '@/components/Algorithm.astro';
+
+## 4.7 有向无环图中的最短路径
+
+图论问题中有两类图直接排除了负环存在的可能性：一类是不含负边的图，另一类是没有环的图。我们已经了解如何针对前一类图，有效地求出其最短路径。我们现在来讨论在有向无环图(dag)的情况下，如何在线性时间内解决单源最短路径问题。
+
+如前所述，我们需要执行一个更新操作序列，其中每个最短路径作为一个子序列。这种算法思想的效率主要来源于以下事实：
+
+在dag的任意路径中，顶点是按照图线性化产生的顶点序列的升序排列的。
+
+因此，进行以下步骤足矣：通过深度优先搜索线性化(即拓扑排序)有向无环图，然后按照得到的顶点顺序访问顶点，对从当前访问顶点出发的边执行更新操作。相应的算法在图4-15中给出。
+
+请注意，该算法并不要求边的长度是正数。因此，特别地，我们可以通过该算法找到有向无环图中的最长路径：只需将每条边的长度设为其负值即可。
+
+```txt
+procedure dag-shortest-paths(G,l,s)
+Input: Dag G=(V,E);
+    edge lengths {le:e∈E}; vertex s∈V
+Output: For all vertices u reachable from s, dist(u) is set to the distance from s to u.
+
+for all u∈V:
+    dist(u)=∞
+    prev(u)=nil
+
+dist(s)=0
+Linearize G
+for each u∈V, in linearized order:
+    for all edges (u,v)∈E:
+    update(u,v)
+```  
+图 4-15 针对有向无环图的单源最短路径算法

@@ -29,10 +29,46 @@ const { initialThreshold = 0.6 } = Astro.props;
       </button>
       <span class="sheet-title">关联度热力图 (Heatmap)</span>
       <span id="heatmap-links-badge" class="sheet-badge">0 对关联</span>
+      <div id="heatmap-engine-badge" class="sheet-engine-badge is-ready" title="当前使用的向量对齐推理模型" role="status" aria-live="polite">
+        <span class="engine-status-dot" aria-hidden="true"></span>
+        <span class="engine-model-name">MiniLM-L12</span>
+        <span class="engine-meta-tag engine-device-tag">CPU</span>
+        <span class="engine-meta-tag engine-dim-tag">384维</span>
+        <span class="engine-time-tag">--ms</span>
+      </div>
     </div>
 
-    <!-- 阈值控制器 -->
+    <!-- 阈值与模型控制器 -->
     <div class="sheet-controls">
+      <!-- 向量模型选择器 (Material 3 Filter Chips) -->
+      <div class="sheet-model-group" title="选择段落语义嵌入推理模型">
+        <span class="control-label">模型:</span>
+        <div class="model-chip-set" role="radiogroup" aria-label="向量模型选择">
+          <button
+            type="button"
+            class="m3-filter-chip is-active"
+            data-model-id="minilm-l12"
+            role="radio"
+            aria-checked="true"
+            title="MiniLM-L12 (117MB): 轻量级端侧量化，CPU/AVX2 推理，低配流畅"
+          >
+            <span class="chip-text">MiniLM (轻量)</span>
+          </button>
+          <button
+            type="button"
+            class="m3-filter-chip"
+            data-model-id="qwen3-0.6b"
+            role="radio"
+            aria-checked="false"
+            title="Qwen3-Embedding-0.6B (1024维): 0.6B参数因果大模型，消除各向异性底噪，跨语言超高精度"
+          >
+            <span class="chip-text">Qwen3-0.6B (高精)</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="sheet-control-divider"></div>
+
       <label for="heatmap-threshold-slider" class="control-label">
         相似度阈值: <span id="heatmap-threshold-val">{initialThreshold.toFixed(2)}</span>
       </label>
@@ -45,6 +81,11 @@ const { initialThreshold = 0.6 } = Astro.props;
         step="0.05"
         value={initialThreshold.toString()}
       />
+      <button id="heatmap-sheet-close" class="sheet-toggle-btn sheet-close-btn" aria-label="关闭热力图" type="button" title="关闭热力图">
+        <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+          <path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+        </svg>
+      </button>
     </div>
   </header>
 
@@ -62,26 +103,34 @@ const { initialThreshold = 0.6 } = Astro.props;
 
 <style>
   .bilingual-heatmap-sheet {
+    display: none;
     position: fixed;
     bottom: 0;
     left: 50%;
     transform: translateX(-50%);
-    width: min(92vw, 1200px);
-    max-height: 280px;
+    width: min(94vw, 1280px);
+    max-height: min(520px, 52vh);
+    padding-bottom: max(16px, env(safe-area-inset-bottom, 16px));
     background: var(--sl-color-bg);
     border: 1px solid var(--sl-color-hairline);
     border-bottom: none;
     border-radius: 16px 16px 0 0;
-    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.08);
+    box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.12);
     z-index: var(--layer-drawer);
     transition: transform 0.28s cubic-bezier(0.2, 0, 0, 1), max-height 0.28s cubic-bezier(0.2, 0, 0, 1);
-    display: flex;
     flex-direction: column;
     overflow: hidden;
   }
 
+  :global(body.bilingual-in-page-active) .bilingual-heatmap-sheet,
+  :global(.scratchpad-workspace) .bilingual-heatmap-sheet,
+  :global(.bilingual-reader-wrapper) .bilingual-heatmap-sheet {
+    display: flex;
+  }
+
   .bilingual-heatmap-sheet.is-collapsed {
     max-height: 44px;
+    padding-bottom: 0;
     box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.04);
   }
 
@@ -140,10 +189,149 @@ const { initialThreshold = 0.6 } = Astro.props;
     font-weight: 500;
   }
 
+  .sheet-engine-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.70rem;
+    line-height: 1.2;
+    padding: 2px 8px;
+    border-radius: 12px;
+    background: var(--sl-color-gray-6);
+    color: var(--sl-color-gray-2);
+    border: 1px solid var(--sl-color-hairline);
+    font-family: var(--sl-font-mono, monospace);
+    transition: all 0.2s ease-in-out;
+  }
+
+  .engine-status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background-color: var(--sl-color-gray-4);
+    display: inline-block;
+    flex-shrink: 0;
+    transition: background-color 0.2s, box-shadow 0.2s;
+  }
+
+  /* 状态 1：在线就绪 (Green) */
+  .sheet-engine-badge.is-ready .engine-status-dot {
+    background-color: #10b981;
+    box-shadow: 0 0 6px rgba(16, 185, 129, 0.6);
+  }
+
+  /* 状态 2：推理/加载中 (Pulsing Accent) */
+  .sheet-engine-badge.is-loading {
+    border-color: var(--sl-color-accent, #3b82f6);
+    background: var(--sl-color-accent-low, rgba(59, 130, 246, 0.08));
+    color: var(--sl-color-text);
+  }
+
+  .sheet-engine-badge.is-loading .engine-status-dot {
+    background-color: var(--sl-color-accent, #3b82f6);
+    box-shadow: 0 0 8px var(--sl-color-accent, #3b82f6);
+    animation: engine-pulse 1s infinite alternate ease-in-out;
+  }
+
+  @keyframes engine-pulse {
+    0% { transform: scale(0.85); opacity: 0.5; }
+    100% { transform: scale(1.3); opacity: 1; }
+  }
+
+  /* 状态 3：降级模式 (Amber) */
+  .sheet-engine-badge.is-fallback {
+    border-color: rgba(245, 158, 11, 0.5);
+    background: rgba(245, 158, 11, 0.08);
+  }
+
+  .sheet-engine-badge.is-fallback .engine-status-dot {
+    background-color: #f59e0b;
+    box-shadow: 0 0 6px rgba(245, 158, 11, 0.6);
+  }
+
+  /* 状态 4：离线/错误 (Red) */
+  .sheet-engine-badge.is-error {
+    border-color: rgba(239, 68, 68, 0.5);
+    background: rgba(239, 68, 68, 0.08);
+  }
+
+  .sheet-engine-badge.is-error .engine-status-dot {
+    background-color: #ef4444;
+  }
+
+  .engine-model-name {
+    font-weight: 600;
+    color: var(--sl-color-text);
+  }
+
+  .engine-meta-tag {
+    font-size: 0.65rem;
+    padding: 0 4px;
+    border-radius: 4px;
+    background: var(--sl-color-gray-5);
+    color: var(--sl-color-gray-2);
+    border: 1px solid var(--sl-color-hairline);
+  }
+
+  .engine-device-tag {
+    color: var(--sl-color-accent-high, #38bdf8);
+    background: var(--sl-color-accent-low, rgba(56, 189, 248, 0.1));
+  }
+
+  .engine-time-tag {
+    font-size: 0.65rem;
+    color: var(--sl-color-gray-3);
+  }
+
   .sheet-controls {
     display: flex;
     align-items: center;
     gap: 0.75rem;
+  }
+
+  .sheet-model-group {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  .model-chip-set {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    background: var(--sl-color-gray-6);
+    padding: 2px;
+    border-radius: 8px;
+    border: 1px solid var(--sl-color-hairline);
+  }
+
+  .m3-filter-chip {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-size: 0.72rem;
+    font-weight: 500;
+    color: var(--sl-color-gray-2);
+    transition: background-color 0.15s, color 0.15s, box-shadow 0.15s;
+  }
+
+  .m3-filter-chip:hover {
+    color: var(--sl-color-text);
+  }
+
+  .m3-filter-chip.is-active {
+    background: var(--md-sys-color-primary, var(--sl-color-accent));
+    color: var(--md-sys-color-on-primary, #ffffff);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  }
+
+  .sheet-control-divider {
+    width: 1px;
+    height: 16px;
+    background: var(--sl-color-hairline);
+    margin: 0 0.1rem;
   }
 
   .control-label {
@@ -167,11 +355,15 @@ const { initialThreshold = 0.6 } = Astro.props;
 
   .heatmap-matrix-scroll-wrapper {
     width: 100%;
-    height: 210px;
+    height: 100%;
+    min-height: 260px;
     overflow: auto;
     border: 1px solid var(--sl-color-hairline);
     border-radius: 8px;
     background: var(--sl-color-bg-inline-code);
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 
   .heatmap-canvas {

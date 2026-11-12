@@ -1,0 +1,77 @@
+---
+title: '5.3 Horn 公式'
+---
+
+import Guide from '@/components/Guide.astro';
+import Knowledge from '@/components/Knowledge.astro';
+import Example from '@/components/Example.astro';
+import Analysis from '@/components/Analysis.astro';
+import Solution from '@/components/Solution.astro';
+import Variant from '@/components/Variant.astro';
+import Note from '@/components/Note.astro';
+import Block from '@/components/Block.astro';
+import Method from '@/components/Method.astro';
+import Exercise from '@/components/Exercise.astro';
+import Algorithm from '@/components/Algorithm.astro';
+
+## 5.3 Horn公式
+
+要使计算机显示出人类水平的智能，使其具有一定的逻辑推理能力是必不可少的。作为与之相关的一个语言框架，Horn公式为表达逻辑事实以及进行推理提供了途径。
+
+Horn 公式中最基本的对象是取值为 true 或 false 的布尔变量。例如，变量 x, y 和 z 代表如下的可能：
+
+$$
+\begin{array}{r l} & {x \equiv \text {   厨房中发生了谋杀   }} \\ & {y \equiv \text {   屠夫是无辜的   }} \\ & {z \equiv \text {   上校晚上8点时在睡觉   }} \end{array}
+$$
+
+我们称一个变量 $x$ 或者其否定 $\bar{x}$ (“非 $x$ ”) 为一个文字。在 Horn 公式中，关于变量的知识通过两类子句表达：
+
+1. 蕴涵式。其左侧为任意肯定文字的并(AND)，右侧为一个单独的肯定文字，表达的基本含义为“如果左侧的条件成立，则右侧必为真”。例如：
+
+$$
+(z \land w) \Rightarrow u
+$$
+
+表示“如果上校晚上8点在睡觉，且谋杀发生在晚上8点，那么上校是无辜的”。蕴涵式的一种退化形式称为独元子句，形如“ $\Rightarrow x$ ”，含义为“ $x$ 为真”，表示：“谋杀确实发生在厨房。”
+
+2. 纯否定子句。它包含任意多个否定文字的或(OR)，形如：
+
+$$
+(\bar {u} \vee \bar {v} \vee \bar {y})
+$$
+
+(意为“他们不可能都是无辜的”)。
+
+给定某个由以上两类子句构成的集合，我们需要判断是否存在一个一致的解释，也即一组使得所有子句都满足的变量(true/false)赋值。该解释通常也称为该 Horn 公式的一个可满足赋值。
+
+在求解过程中，两类子句将我们推向不同的方向。蕴涵子句告诉我们只需使部分的变量为 true，而否定子句则需要所有的变量为 false。因此，我们采用如下的求解策略：从所有变量为 false 开始，一个接一个地将其中的部分变量置为 true，置为 true 的前提简单地说就是：“只需且不得不”这样做以使得某个蕴涵式满足；而一旦所有的蕴涵式都得到了满足，再回头检查是否所有否定子句仍然满足。
+
+换句话说，我们的算法将采用一种贪心的方式(也许称之为吝啬的更为形象生动):
+
+<div class="mineru-algorithm">
+Input: a Horn formula
+Output: a satisfying assignment, if one exists
+
+set all variables to false
+
+while there is an implication that is not satisfied:
+    set the right-hand variable of the implication to true
+
+if all pure negative clauses are satisfied:
+    return the assignment
+else: return "formula is not satisfiable"
+
+举例来说，对以下的公式
+
+ $(w \land y \land z) \Rightarrow x, (x \land z) \Rightarrow w, x \Rightarrow y, \Rightarrow x, (x \land y) \Rightarrow w, (\overline{w} \lor \overline{x} \lor \overline{y}), (\overline{z})$
+</div>
+
+首先将 $x, y, z, w$ 都置为 false。注意到存在独元子句 $\Rightarrow x$ ，因此将 $x$ 置为 true。又由于 $x \Rightarrow y$ ，故 $y$ 也应置为 true。如此继续。
+
+这个算法为什么是正确的？注意到如果返回了一个赋值，这个赋值使得蕴涵式和否定子句都得到满足，则它当然就是所输入的 Horn 公式的一个可满足赋值。因此，我们只需要说明一点，即该算法不可能输出不满足的赋值。原因很简单，因为我们的“吝啬”做法保持了以下的不变性：
+
+如果某组变量被置为 true，则它们在任意的满足赋值中都应该为 true。
+
+因此，如果算法中 while 循环后得到的赋值不能满足所有否定子句，就不可能存在其他的满足赋值了。
+
+Horn 公式是 Prolog(“逻辑程序设计”，即 programming by logic)语言的核心。该语言的编程方式就是使用简单的逻辑表达式来描述所期望输入的性质。Prolog 解释器的动力核心正是我们的可满足性贪心算法。而且，这一算法可以很便利地在与公式长度相关的线性时间内实现。您知道是为什么吗(参见习题 5.32)?

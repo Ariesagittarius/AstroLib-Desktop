@@ -45,24 +45,8 @@ const { title = "查看解析与步骤" } = Astro.props;
     display: none;
   }
   summary::after {
-    content: '›';
-    display: inline-block;
-    font-size: 0.95rem;
-    font-weight: 400;
-    color: var(--sl-color-gray-3);
-    margin-left: 0.25rem;
-    transition: transform 0.18s ease, color 0.18s ease;
-    line-height: 1;
-  }
-  summary:hover::after {
-    color: var(--academic-color-heading, var(--sl-color-white));
-  }
-  .solution-details[open] > summary {
-    border-bottom-color: var(--sl-color-hairline);
-  }
-  .solution-details[open] > summary::after {
-    transform: rotate(90deg);
-    color: var(--sl-color-gray-2);
+    content: none;
+    display: none;
   }
   .solution-content {
     border: none;

@@ -1,0 +1,54 @@
+---
+title: '5.2 Covariant, contravariant, and mixed tensors'
+---
+
+import Guide from '@/components/Guide.astro';
+import Knowledge from '@/components/Knowledge.astro';
+import Example from '@/components/Example.astro';
+import Analysis from '@/components/Analysis.astro';
+import Solution from '@/components/Solution.astro';
+import Variant from '@/components/Variant.astro';
+import Note from '@/components/Note.astro';
+import Block from '@/components/Block.astro';
+import Method from '@/components/Method.astro';
+import Exercise from '@/components/Exercise.astro';
+
+## 5.2 Covariant, contravariant, and mixed tensors
+
+You should by this point understand that the expression
+
+$$
+A ^ {' i} = \frac {\partial x ^ {i ^ {\prime}}}{\partial x ^ {j}} A ^ {j}\tag{5.1}
+$$
+
+presents the contravariant components of vector $\vec { A }$ in the transformed (primed) coordinate system $( A ^ { ' i } )$ as a weighted sum of the components of $\vec { A }$ in the original (unprimed) coordinate system $( A ^ { j } )$ . The weighting factors $( \frac { \partial x ^ { i ^ { \prime } } } { \partial x ^ { j } } )$ ) are simply the elements of the transformation matrix from the unprimed to the primed coordinate systems, and those elements represent the components of the basis vectors tangent to the original coordinate axes. With that understanding, a tensor expression such as
+
+$$
+A ^ {' i j} = \frac {\partial x ^ {i ^ {\prime}}}{\partial x ^ {k}} \frac {\partial x ^ {j ^ {\prime}}}{\partial x ^ {l}} A ^ {k l}\tag{5.2}
+$$
+
+should have some recognizable elements. As you can probably surmise, in this expression $A ^ { ' i j }$ are the contravariant tensor components in the new coordinate system, $A ^ { k l }$ are the contravariant tensor components in the original coordinate system, and $\frac { \partial x ^ { i ^ { \prime } } } { \partial x ^ { k } }$ as well as $\frac { \partial x ^ { j ^ { \prime } } } { \partial x ^ { l } }$ are elements of the transforma tion matrix between the original and new coordinate systems. And just as in Eq. 5.1, the elements of the direct transformation matrix also represent the basis vectors tangent to the original coordinate axes. But in the vector expression Eq. 5.1 each component pertains to a single basis vector, whereas the components in the tensor expression Eq. 5.2 pertain to two basis vectors. This should seem reasonable to you, since the basic definitions in Chapter 1 state that vectors involve a single direction while higher-rank tensors involve two or more directions.
+
+The vector Eq. 5.1 involves contravariant components (as indicated by the use of superscripted indices in $A ^ { ' i }$ and $A ^ { j } )$ ), but you know that an equivalent expression exists for the covariant components:
+
+$$
+A _ {i} ^ {\prime} = \frac {\partial x ^ {j}}{\partial x ^ {i ^ {\prime}}} A _ {j}.\tag{5.3}
+$$
+
+In this equation, the covariant components of vector $\vec { A }$ in the transformed (primed) coordinate system $( A _ { i } ^ { \prime } )$ are expressed as a weighted sum of the covariant components of $\vec { A }$ in the original (unprimed) coordinate system $( A _ { j } )$ . In this case, the weighting factors $\big ( \frac { \partial x ^ { j } } { \partial x ^ { i ^ { \prime } } } \big )$ are the elements of the inverse transformation matrix from the unprimed to the primed coordinate systems, and those elements represent the dual basis vectors perpendicular to the original coordinate axes.
+
+Extending this to a second-rank tensor gives a transformation equation such as this:
+
+$$
+A _ {i j} ^ {\prime} = \frac {\partial x ^ {k}}{\partial x ^ {i ^ {\prime}}} \frac {\partial x ^ {l}}{\partial x ^ {j ^ {\prime}}} A _ {k l}.\tag{5.4}
+$$
+
+In this expression, $A _ { i j } ^ { \prime }$ are the covariant tensor components in the new coordinate system, $A _ { k l }$ are the covariant tensor components in the original coordinate system, and $\frac { \partial x ^ { k } } { \partial x ^ { i ^ { \prime } } }$ as well as $\frac { \partial x ^ { l } } { \partial x ^ { j ^ { \prime } } }$ are elements of the transformation matrix between the original and new coordinate systems. And much as in Eq. 5.3, the elements of the transformation matrix represent the dual basis vectors perpendicular to the original coordinate axes.
+
+As you may have anticipated, another possibility exists for second-rank tensors:
+
+$$
+A _ {j} ^ {' i} = \frac {\partial x ^ {i ^ {\prime}}}{\partial x ^ {k}} \frac {\partial x ^ {l}}{\partial x ^ {j ^ {\prime}}} A _ {l} ^ {k},\tag{5.5}
+$$
+
+in which the tensor $\vec { \vec { A } }$ is represented by one contravariant and one covariant index; each uses the transformation matrix appropriate for its type.

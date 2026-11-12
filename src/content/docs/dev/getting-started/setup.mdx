@@ -5,9 +5,9 @@ description: 在 Windows、macOS 或 Linux 上安装依赖、启动开发服务�
 
 ## 前置条件
 
-- Node.js 版本以 Astro 7 支持范围为准，建议使用当前 LTS。
+- Node.js 版本以 Astro 7 支持范围为准，建议使用当前 LTS（Node.js 20+ 或 22+）。
 - npm 与 Git。
-- 若要编译 PDF，需要额外安装 XeLaTeX（例如 TeX Live）；网站运行本身不依赖 LaTeX。
+- 若要编译本地 LaTeX PDF，需要额外安装 XeLaTeX（例如 TeX Live）；网站运行本身不依赖 LaTeX。
 - 若要运行 Python 导入或视觉脚本，需要 Python 3 和脚本所列的依赖。
 
 ## 安装与运行
@@ -32,11 +32,17 @@ npm run preview
 
 Gemini 在开发模式下默认使用 `/api/proxy/gemini/...`，由 Vite 插件转发到 Google 端点；这主要用于浏览器跨域和网络环境处理。生产构建会使用 Google 官方 OpenAI 兼容端点。使用 Gemini 时，仍需要自己的 API Key，并且访问 Google 服务通常需要可用的代理或网络出口。
 
-## 本地检查
+## 本地质量检查与测试
 
 ```powershell
-npm run check:katex
-node scripts/scan-mdx.mjs src/content/docs/collections/math/math_analysis
+# 1. 严格 TypeScript 类型检查 (0 错误)
+npm run check:types
+
+# 2. 自动化测试套件 (49 套测试全量通过)
+npm test
+
+# 3. 针对特定章节或书籍执行 MDX 语法与公式扫描
+node scripts/scan-mdx.mjs src/content/docs/collections/cs/algorithms
 ```
 
-不要把 API Key 写入 `.env`、MDX 或 Git。当前问答设置由浏览器本地存储保存，详见[配置 AI 问答 API Key](/dev/appendix/ai-api-key/)。
+在提交代码前，建议直接运行 `npm run check:all` 执行合并门禁校验。不要把 API Key 写入 `.env`、MDX 或 Git。当前问答设置由浏览器本地存储保存，详见[配置 AI 问答 API Key](/dev/appendix/ai-api-key/)。

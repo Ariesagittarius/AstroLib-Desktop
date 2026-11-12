@@ -214,11 +214,11 @@ describe('SideloadManager AI 面板与侧载状态流转', () => {
     const path = await import('node:path');
 
     // 1. 正文微动效必须纯净无 translateY 跳动
-    const vpCss = fs.readFileSync(path.resolve('src/styles/vitepress-theme.css'), 'utf-8');
-    const vpMatch = vpCss.match(/@keyframes vp-content-enter\s*\{([\s\S]*?)\}/);
-    expect(vpMatch).toBeTruthy();
-    expect(vpMatch![1]).not.toContain('translateY');
-    expect(vpMatch![1]).not.toContain('translate3d');
+    const m3TokensCss = fs.readFileSync(path.resolve('src/themes/material-you/tokens.css'), 'utf-8');
+    const m3ContentMatch = m3TokensCss.match(/@keyframes m3-content-enter\s*\{([\s\S]*?)\}/);
+    expect(m3ContentMatch).toBeTruthy();
+    expect(m3ContentMatch![1]).not.toContain('translateY');
+    expect(m3ContentMatch![1]).not.toContain('translate3d');
 
     // 2. 右侧栏大纲入场动效必须无 translateY 跳动
     const exCss = fs.readFileSync(path.resolve('src/styles/components/exercise-m3.css'), 'utf-8');

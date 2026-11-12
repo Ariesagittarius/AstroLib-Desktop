@@ -28,6 +28,7 @@
  */
 
 import { visit } from 'unist-util-visit';
+import { sourceCollections } from '../../config/collections.config.ts';
 
 /* ------------------------------------------------------------------ *
  *  通用工具
@@ -83,16 +84,19 @@ function parseTitleFromConfig(title, modules) {
 /** 从文件路径/URL 推断当前书标识（collections/<col>/<book>），非内容页返回 null */
 function resolveBookKey(file) {
   if (!file || !file.path) return null;
-  const m = String(file.path).match(/collections[\\/]([^\\/]+)[\\/]([^\\/]+)[\\/]/);
+  const m = String(file.path).match(/(?:collections|preset-books-source)[\\/]([^\\/]+)[\\/]([^\\/]+)[\\/]/);
   return m ? `${m[1]}/${m[2]}` : null;
 }
 
-/** 由书标识在 collections 配置中查找 book 配置 */
+/** 由书标识在 collections 配置中查找 book 配置 (带 sourceCollections 回退) */
 function findBook(collections, bookKey) {
-  if (!collections) return null;
-  for (const col of collections) {
-    for (const book of col.books) {
-      if (`${col.slug}/${book.slug}` === bookKey) return book;
+  const candidateLists = [collections, sourceCollections];
+  for (const list of candidateLists) {
+    if (!list || !Array.isArray(list)) continue;
+    for (const col of list) {
+      for (const book of col.books || []) {
+        if (`${col.slug}/${book.slug}` === bookKey) return book;
+      }
     }
   }
   return null;

@@ -276,6 +276,9 @@ import '../../../styles/components/bilingual-reader.css';
       </div>
 
       <div class="scratchpad-compare-grid">
+        <!-- 全局跨中缝 SVG 连线画布 -->
+        <svg id="compare-svg-canvas" class="bilingual-svg-canvas"></svg>
+
         <!-- 文档 A -->
         <div class="compare-doc-box">
           <div class="doc-box-header">文档 A (英文/原文)</div>
@@ -283,10 +286,8 @@ import '../../../styles/components/bilingual-reader.css';
           <div id="compare-preview-a" class="compare-preview sl-markdown-content" data-col="source"></div>
         </div>
 
-        <!-- 中缝连线画布 -->
-        <div class="compare-gutter">
-          <svg id="compare-svg-canvas" class="bilingual-svg-canvas"></svg>
-        </div>
+        <!-- 中缝留白区 -->
+        <div class="compare-gutter"></div>
 
         <!-- 文档 B -->
         <div class="compare-doc-box">

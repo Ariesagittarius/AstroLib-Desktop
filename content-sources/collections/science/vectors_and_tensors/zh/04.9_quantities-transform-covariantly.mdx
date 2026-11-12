@@ -1,0 +1,62 @@
+---
+title: '4.9 协变量'
+---
+
+import Guide from '@/components/Guide.astro';
+import Knowledge from '@/components/Knowledge.astro';
+import Example from '@/components/Example.astro';
+import Analysis from '@/components/Analysis.astro';
+import Solution from '@/components/Solution.astro';
+import Variant from '@/components/Variant.astro';
+import Note from '@/components/Note.astro';
+import Block from '@/components/Block.astro';
+import Method from '@/components/Method.astro';
+import Exercise from '@/components/Exercise.astro';
+
+## 4.9 协变量
+
+如果说上一节所讲的长度微分元素是矢量逆变分量的"原型"，
+
+那么，协变量是否也有类似的"原型"。我们不妨考虑类似某个区域上温度随距离变化（度每米）这样的量，也就是第2章所讲的梯度。长度微分元素的量纲与坐标的量纲直接相关，但是梯度这类量的量纲则包含的是坐标量纲的倒数（在空间坐标下，每单位长度而不是长度）。从量纲这个角度考虑，梯度也许就可以作为矢量协变分量的原型。从指标表示法来看就很好理解了。
+
+假设函数 $f(x, y, z)$ 表示标量在各个点处的值，比如温度或者密度等；该量在 $x$ 方向的变化率为 $\frac{\partial f}{\partial x}$ ，在 $y$ 方向的变化率为 $\frac{\partial f}{\partial y}$ ，在 $z$ 方向的变化率为 $\frac{\partial f}{\partial z}$ 。那么，当坐标系改变了，这些变化率又有怎样的变化？要回答这个问题，可以像处理长度微分元素的过程一样，运用偏导数的链式法则以及指标表示法，即：
+
+$$
+\begin{array}{r l} & \frac {\partial f}{\partial x ^ {\prime}} = \frac {\partial f}{\partial x} \frac {\partial x}{\partial x ^ {\prime}} + \frac {\partial f}{\partial y} \frac {\partial y}{\partial x ^ {\prime}} + \frac {\partial f}{\partial z} \frac {\partial z}{\partial x ^ {\prime}} \\ & \Rightarrow \frac {\partial f}{\partial x ^ {\prime 1}} = \frac {\partial f}{\partial x ^ {1}} \frac {\partial x ^ {1}}{\partial x ^ {\prime 1}} + \frac {\partial f}{\partial x ^ {2}} \frac {\partial x ^ {2}}{\partial x ^ {\prime 1}} + \frac {\partial f}{\partial x ^ {3}} \frac {\partial x ^ {3}}{\partial x ^ {\prime 1}} \\ & \frac {\partial f}{\partial y ^ {\prime}} = \frac {\partial f}{\partial x} \frac {\partial x}{\partial y ^ {\prime}} + \frac {\partial f}{\partial y} \frac {\partial y}{\partial y ^ {\prime}} + \frac {\partial f}{\partial z} \frac {\partial z}{\partial y ^ {\prime}} \\ & \Rightarrow \frac {\partial f}{\partial x ^ {\prime 2}} = \frac {\partial f}{\partial x ^ {1}} \frac {\partial x ^ {1}}{\partial x ^ {\prime 2}} + \frac {\partial f}{\partial x ^ {2}} \frac {\partial x ^ {2}}{\partial x ^ {\prime 2}} + \frac {\partial f}{\partial x ^ {3}} \frac {\partial x ^ {3}}{\partial x ^ {\prime 2}} \\ & \frac {\partial f}{\partial z ^ {\prime}} = \frac {\partial f}{\partial x} \frac {\partial x}{\partial z ^ {\prime}} + \frac {\partial f}{\partial y} \frac {\partial y}{\partial z ^ {\prime}} + \frac {\partial f}{\partial z} \frac {\partial z}{\partial z ^ {\prime}} \\ & \Rightarrow \frac {\partial f}{\partial x ^ {\prime 3}} = \frac {\partial f}{\partial x ^ {1}} \frac {\partial x ^ {1}}{\partial x ^ {\prime 3}} + \frac {\partial f}{\partial x ^ {2}} \frac {\partial x ^ {2}}{\partial x ^ {\prime 3}} + \frac {\partial f}{\partial x ^ {3}} \frac {\partial x ^ {3}}{\partial x ^ {\prime 3}} \end{array}
+$$
+
+同前面一样，上式可以写成矩阵方程：
+
+$$
+\left( \begin{array}{c} \frac {\partial f}{\partial x ^ {\prime 1}} \\ \frac {\partial f}{\partial x ^ {\prime 2}} \\ \frac {\partial f}{\partial x ^ {\prime 3}} \end{array} \right) = \left( \begin{array}{c c c} \frac {\partial x ^ {1}}{\partial x ^ {\prime 1}} & \frac {\partial x ^ {2}}{\partial x ^ {\prime 1}} & \frac {\partial x ^ {3}}{\partial x ^ {\prime 1}} \\ \frac {\partial x ^ {1}}{\partial x ^ {\prime 2}} & \frac {\partial x ^ {2}}{\partial x ^ {\prime 2}} & \frac {\partial x ^ {3}}{\partial x ^ {\prime 2}} \\ \frac {\partial x ^ {1}}{\partial x ^ {\prime 3}} & \frac {\partial x ^ {2}}{\partial x ^ {\prime 3}} & \frac {\partial x ^ {3}}{\partial x ^ {\prime 3}} \end{array} \right) \left( \begin{array}{c} \frac {\partial f}{\partial x ^ {1}} \\ \frac {\partial f}{\partial x ^ {2}} \\ \frac {\partial f}{\partial x ^ {3}} \end{array} \right).\tag{4.59}
+$$
+
+或者，用求和符号分别表示成三个独立方程：
+
+$$
+\frac {\partial f}{\partial x ^ {\prime 1}} = \sum_ {j = 1} ^ {3} \frac {\partial x ^ {j}}{\partial x ^ {\prime 1}} \frac {\partial f}{\partial x ^ {j}}, \frac {\partial f}{\partial x ^ {\prime 2}} = \sum_ {j = 1} ^ {3} \frac {\partial x ^ {j}}{\partial x ^ {\prime 2}} \frac {\partial f}{\partial x ^ {j}}, \frac {\partial f}{\partial x ^ {\prime 3}} = \sum_ {j = 1} ^ {3} \frac {\partial x ^ {j}}{\partial x ^ {\prime 3}} \frac {\partial f}{\partial x ^ {j}}.
+$$
+
+然后，用 $i$ 表示自由指标，有：
+
+$$
+\frac {\partial f}{\partial x ^ {\prime i}} = \sum_ {j = 1} ^ {3} \frac {\partial x ^ {j}}{\partial x ^ {\prime i}} \frac {\partial f}{\partial x ^ {j}},\tag{4.60}
+$$
+
+又，根据爱因斯坦求和约定，最终简写为
+
+$$
+\frac {\partial f}{\partial x ^ {\prime i}} = \frac {\partial x ^ {j}}{\partial x ^ {\prime i}} \frac {\partial f}{\partial x ^ {j}}.\tag{4.61}
+$$
+
+将式（4.61）与长度微分元素对应的等式（4.53）对比，再次说明了变换坐标系中的矢量分量是原坐标系中矢量分量的加权线性组合。但是，本例中变换矩阵的元素 $\left(\frac{\partial x^j}{\partial x'^i}\right)$ 是长度微分元素变换矩阵的元素 $\left(\frac{\partial x'^i}{\partial x^j}\right)$ 取倒数，并且后者的 $\frac{\partial x'^i}{\partial x^j}$ 项表示指向原坐标轴方向的矢量分量，本例中 $\frac{\partial x^j}{\partial x'^i}$ 项表示垂直于原坐标面的矢量分量。因此，本例中加权因子为（逆变）对偶基矢量的分量，也就是梯度矢量的分量是协变分量。当然，在正交坐标系中，原基矢量和对偶基矢量的长度和方向是完全一样的，并且矢量协变分量和矢量逆变分量也没有什么区别。但是在非正交坐标系中，二者之间的区别非常重要。
+
+再次运用指标表示法并以 $\frac{\partial x^j}{\partial x'^i}$ 作为对偶基矢量，我们可能就可以理解为什么许多作者会根据式（4.62）来定义矢量 $\vec{A}$ 的协变分量了.
+
+$$
+A _ {i} ^ {\prime} = \frac {\partial x ^ {j}}{\partial x ^ {\prime i}} A _ {i}.\tag{4.62}
+$$
+
+这个时候，我们就应该确信矢量不仅是一个既有大小又有方向的箭头，它们也是在坐标系之间以某种方式变换的量。具体来说，每一个矢量都有以可预测方式变换的逆变分量和协变分量。逆变分量变换的方式与指向原坐标轴方向的基矢量相反，而协变分量变换的方式与这些基矢量相同。最重要的是，由矢量的逆变分量与原基矢量组合或者矢量的协变分量与对偶基矢量组合，得到的结果（矢量本身）在所有坐标变换下保持不变．正是由于矢量的这个特征，矢量才归入张量的行列.
+
+因为矢量是一种张量，所以理解了矢量协变分量与矢量逆变分量之间的区别才能更好的理解张量。特别地，一个矢量的所有分量用一个指标就可以表示，所以矢量是一阶张量。同样的定义方式下，标量是一个数并且不需要指标就可以表示，所以标量是零阶张量。二阶以及二阶以上的张量又是什么呢？这就是第5章的内容—高阶张量。

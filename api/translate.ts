@@ -268,6 +268,119 @@ async function handleNode(req: any, res: any) {
   return sendNodeJson(res, 405, { ok: false, error: 'Method Not Allowed' });
 }
 
+function normalizePos(raw: string): string {
+  const lower = raw.trim().toLowerCase();
+  if (lower.startsWith('noun') || lower === 'n') return 'n.';
+  if (lower.startsWith('verb') || lower === 'v') return 'v.';
+  if (lower.startsWith('adj') || lower === 'adjective') return 'adj.';
+  if (lower.startsWith('adv') || lower === 'adverb') return 'adv.';
+  if (lower.startsWith('prep') || lower === 'preposition') return 'prep.';
+  if (lower.startsWith('conj') || lower === 'conjunction') return 'conj.';
+  if (lower.startsWith('pron') || lower === 'pronoun') return 'pron.';
+  if (lower.startsWith('interj') || lower === 'interjection') return 'int.';
+  return lower.endsWith('.') ? lower : `${lower}.`;
+}
+
+async function fetchYoudaoJsonApi(word: string) {
+  const url = `https://dict.youdao.com/jsonapi?q=${encodeURIComponent(word)}`;
+  const res = await fetch(url, {
+    headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' },
+  });
+  if (!res.ok) return null;
+
+  const d = await res.json();
+  const simpleWord = d.simple?.word?.[0];
+  const phonetic = simpleWord?.usphone ? `/${simpleWord.usphone}/` : (simpleWord?.ukphone ? `/${simpleWord.ukphone}/` : undefined);
+  const audioUrl = `https://dict.youdao.com/dictvoice?audio=${encodeURIComponent(word)}&type=2`;
+  const trs = d.ec?.word?.[0]?.trs;
+  const meanings: Array<{ partOfSpeech: string; definitions: string[] }> = [];
+
+  if (Array.isArray(trs)) {
+    for (const item of trs) {
+      const text = item?.tr?.[0]?.l?.i?.[0] || '';
+      if (!text) continue;
+      const m = text.match(/^([a-z]+\.)\s*(.+)$/i);
+      if (m) {
+        const pos = normalizePos(m[1]);
+        const defs = m[2].split(/[,，、；;]/).map((s: string) => s.trim()).filter(Boolean);
+        if (defs.length > 0) {
+          meanings.push({ partOfSpeech: pos, definitions: defs.slice(0, 5) });
+        }
+      } else {
+        meanings.push({ partOfSpeech: '', definitions: [text] });
+      }
+    }
+  }
+
+  if (meanings.length === 0) return null;
+
+  return {
+    ok: true,
+    word,
+    phonetic,
+    audioUrl,
+    meanings,
+    source: 'youdao-jsonapi',
+  };
+}
+
+async function fetchGoogleDictForWord(word: string) {
+  const gtxUrl = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=zh-CN&dt=t&dt=bd&dt=rm&q=${encodeURIComponent(word)}`;
+  const res = await fetch(gtxUrl, {
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36',
+    },
+  });
+  if (!res.ok) return null;
+
+  const data = await res.json();
+  if (!Array.isArray(data)) return null;
+
+  const meanings: Array<{ partOfSpeech: string; definitions: string[] }> = [];
+  let phonetic: string | undefined;
+
+  if (Array.isArray(data[1])) {
+    for (const group of data[1]) {
+      if (!Array.isArray(group)) continue;
+      const pos = normalizePos(group[0] || '');
+      const defs = [];
+      if (Array.isArray(group[1])) {
+        defs.push(...group[1].filter((d: any) => typeof d === 'string' && d.trim()));
+      }
+      if (defs.length > 0) {
+        meanings.push({ partOfSpeech: pos, definitions: defs.slice(0, 5) });
+      }
+    }
+  }
+
+  if (Array.isArray(data[0])) {
+    for (const item of data[0]) {
+      if (Array.isArray(item) && typeof item[3] === 'string' && item[3].trim()) {
+        phonetic = item[3].trim();
+        break;
+      }
+    }
+  }
+
+  if (meanings.length === 0 && Array.isArray(data[0]) && data[0][0] && typeof data[0][0][0] === 'string') {
+    const basic = data[0][0][0].trim();
+    if (basic && basic.toLowerCase() !== word) {
+      meanings.push({ partOfSpeech: '', definitions: [basic] });
+    }
+  }
+
+  if (meanings.length === 0) return null;
+
+  return {
+    ok: true,
+    word,
+    phonetic: phonetic ? `/${phonetic.replace(/^\/|\/$/g, '')}/` : undefined,
+    audioUrl: `https://translate.google.com/translate_tts?ie=UTF-8&tl=en&client=tw-ob&q=${encodeURIComponent(word)}`,
+    meanings,
+    source: 'google-dict',
+  };
+}
+
 /**
  * Web Standard Request / Edge Runtime Handler
  */
@@ -276,7 +389,25 @@ async function handleWeb(req: Request): Promise<Response> {
     return new Response(null, { status: 204, headers: CORS_HEADERS });
   }
 
+  const url = new URL(req.url);
+
   if (req.method === 'GET') {
+    const wordParam = (url.searchParams.get('word') || '').trim();
+    if (url.pathname.endsWith('/dict') || wordParam) {
+      if (!wordParam || !/^[a-zA-Z\-'’]+$/.test(wordParam)) {
+        return Response.json({ ok: false, error: '缺少有效的英文单词参数 (word)' }, { status: 400, headers: CORS_HEADERS });
+      }
+      const word = wordParam.toLowerCase();
+      let result = await fetchYoudaoJsonApi(word).catch(() => null);
+      if (!result || result.meanings.length === 0) {
+        result = await fetchGoogleDictForWord(word).catch(() => null);
+      }
+      if (!result || result.meanings.length === 0) {
+        return Response.json({ ok: false, word, meanings: [], error: '未能检索到释义' }, { status: 404, headers: CORS_HEADERS });
+      }
+      return Response.json(result, { status: 200, headers: CORS_HEADERS });
+    }
+
     return Response.json(
       {
         ok: true,
@@ -292,7 +423,55 @@ async function handleWeb(req: Request): Promise<Response> {
   if (req.method === 'POST') {
     try {
       const body = await req.json().catch(() => ({}));
-      const { text, paragraphs, provider, sourceLang, targetLang, apiKey, endpoint, model } = body;
+      const { text, paragraphs, provider, sourceLang, targetLang, apiKey, endpoint, model, word, sentence } = body;
+
+      // 词典学术语境解析支持: POST /api/translate/dict/context 或 POST /api/translate 带 word
+      if (word && sentence) {
+        let explanation = '';
+        const rawSentence = (sentence || word).trim();
+        try {
+          const transSingle = await translateText(rawSentence, { provider, apiKey, endpoint, model, sourceLang: 'en', targetLang: 'zh-CN' });
+          const translatedSentence = (transSingle?.translatedText || '').trim();
+          let dict: any = await fetchYoudaoJsonApi(word);
+          if (!dict) dict = await fetchGoogleDictForWord(word);
+
+          let matched: { keyword: string; fullDef: string; pos?: string } | null = null;
+          if (translatedSentence && dict && dict.meanings?.length > 0) {
+            for (const m of dict.meanings) {
+              for (const def of m.definitions) {
+                const candidates = def.split(/[/；，、\s]+/);
+                for (const cand of candidates) {
+                  const cleanKeyword = cand.trim().replace(/[的地理于着]+$/, '');
+                  if (cleanKeyword.length >= 1 && translatedSentence.includes(cleanKeyword)) {
+                    if (!matched || cleanKeyword.length > matched.keyword.length) {
+                      matched = { keyword: cleanKeyword, fullDef: def, pos: m.partOfSpeech };
+                    }
+                  }
+                }
+              }
+            }
+          }
+
+          if (matched && translatedSentence) {
+            const highlighted = translatedSentence.replace(matched.keyword, `【${matched.keyword}】`);
+            const posText = matched.pos ? `（${matched.pos}）` : '';
+            explanation = `在当前学术语境中，**${word}** 意为“**${matched.fullDef}**”${posText}。\n\n**原句译文**：${highlighted}`;
+          } else if (translatedSentence) {
+            const primaryDef = dict?.meanings?.[0]?.definitions?.slice(0, 3).join(' / ') || '学术专业术语';
+            explanation = `**原句译文**：${translatedSentence}\n\n**学术取义**：在当前语境中通常取“**${primaryDef}**”之义，用于学术论证与修辞。`;
+          } else {
+            explanation = `在当前学术语境中，**${word}** 充当关键学术术语。`;
+          }
+        } catch {
+          explanation = `在当前学术原句中，**${word}** 具有特定专业论述作用。`;
+        }
+
+        return Response.json({
+          ok: true,
+          word,
+          explanation,
+        }, { headers: CORS_HEADERS });
+      }
 
       if (Array.isArray(paragraphs)) {
         const results = await Promise.all(

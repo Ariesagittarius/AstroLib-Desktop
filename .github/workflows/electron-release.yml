@@ -1,0 +1,72 @@
+name: AstroLib Desktop Release (Electron)
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: '发布版本 Tag (例如 v1.0.0)'
+        required: true
+        default: 'v1.0.0'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-desktop:
+    name: 🖥️ Build & Package Windows Desktop (NSIS & Portable)
+    runs-on: windows-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js Runtime
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Execute Strict Quality Gates (TypeScript & Unit/Contract/Acceptance Tests)
+        run: |
+          npm run check:types
+          npm test
+
+      - name: Build AstroLib Static Web Bundle (dist/)
+        run: npm run build
+        env:
+          NODE_OPTIONS: '--max-old-space-size=4096'
+
+      - name: Compile Electron Main Process & Preload Scripts
+        run: node scripts/build-electron.mjs
+
+      - name: Package Windows Installers with electron-builder
+        run: npx electron-builder --win
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create GitHub Release and Upload Artifacts
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
+        with:
+          name: AstroLib Desktop ${{ github.ref_name || inputs.tag }}
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+          files: |
+            release/*.exe
+            release/*.zip
+            release/*.blockmap
+            release/latest.yml
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

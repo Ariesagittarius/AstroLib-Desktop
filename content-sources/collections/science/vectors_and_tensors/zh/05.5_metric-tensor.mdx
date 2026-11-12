@@ -1,0 +1,266 @@
+---
+title: '5.5 度规张量'
+---
+
+import Guide from '@/components/Guide.astro';
+import Knowledge from '@/components/Knowledge.astro';
+import Example from '@/components/Example.astro';
+import Analysis from '@/components/Analysis.astro';
+import Solution from '@/components/Solution.astro';
+import Variant from '@/components/Variant.astro';
+import Note from '@/components/Note.astro';
+import Block from '@/components/Block.astro';
+import Method from '@/components/Method.astro';
+import Exercise from '@/components/Exercise.astro';
+
+## 5.5 度规张量
+
+当涉及矢量或张量的协变分量和逆变分量时，不应该忽略一个事实是：只有当选定一个坐标系时，这些分量才有意义。为什么需要坐标系？因为坐标系定义了一个算术空间，也就是说在定义的工作空间中，它们提供了一种将算术规则应用于研究目标的方法。这个空间可以是我们日常生活中的三维空间，也可以是爱因斯坦的四维时空，或者是其他任意想像出来的空间。所选的坐标系可以是直线坐标轴、轴间夹角是直角，也可以是曲线坐标轴、轴间夹角是任意角度。
+
+然而，当选择一个计算空间时，总存在一个张量允许在不同的位置以相同的方式定义一些基本量，如长度和角度。这种在所关注空间的给定坐标系中"提供度量"的张量称为基本张量或度规张量，标准符号用小写字母"g"表示，也可以用 $\vec{g}$ 或g表示．度规张量有逆变分量 $g^{ij}$ 和协变分量 $g_{ij}$ .
+
+为了理解度规张量的作用，考虑由无穷小线元 ds 分隔的两点，如果矢量 $d\vec{r}$ 从一点指向另一点，那么线元的平方可以写成 $ds<sup>2</sup> = d\vec{r} \cdot d\vec{r}$ ，矢量 $d\vec{r}$ 可以用逆变分量和坐标基矢量 $(\vec{e}_{i})$ 表示成
+
+$$
+\mathrm{d} \vec {r} = \vec {e} _ {i} \mathrm{d} x ^ {i},
+$$
+
+因为 $ds<sup>2</sup>$ 是 $d\vec{r}$ 和它本身的点积，可以选择点乘号两侧都用逆变分量 $dx^{i}$ ：
+
+$$
+\begin{array}{r l} \mathrm{d} s ^ {2} = \mathrm{d} \vec {r} \cdot \mathrm{d} \vec {r} & = \vec {e} _ {i} \mathrm{d} x ^ {i} \cdot \vec {e} _ {j} \mathrm{d} x ^ {j} \\ & = (\vec {e} _ {i} \cdot \vec {e} _ {j}) \mathrm{d} x ^ {i} \mathrm{d} x ^ {j} \\ & = g _ {i j} \mathrm{d} x ^ {i} \mathrm{d} x ^ {j}, \end{array}
+$$
+
+其中， $g_{ij}$ 是度规张量的协变分量。另外，也可以选择点乘号两侧都用协变分量 $dx_{i}$ ：
+
+$$
+\begin{array}{r l} \mathrm{d} s ^ {2} = \mathrm{d} \vec {r} \cdot \mathrm{d} \vec {r} & = \vec {e} ^ {i} \mathrm{d} x _ {i} \cdot \vec {e} ^ {j} \mathrm{d} x _ {j} \\ & = (\vec {e} ^ {i} \cdot \vec {e} ^ {j}) \mathrm{d} x _ {i} \mathrm{d} x _ {j} \\ & = g ^ {i j} \mathrm{d} x _ {i} \mathrm{d} x _ {j}, \end{array}
+$$
+
+其中， $g^{ij}$ 是度规张量的逆变分量。第三种选择是点乘号的一侧用逆变分量另一则用协变分量：
+
+$$
+\begin{array}{r l} \mathrm{d} s ^ {2} & = \vec {e} _ {i} \mathrm{d} x ^ {i} \cdot \vec {e} ^ {j} \mathrm{d} x _ {j} \\ & = (\vec {e} _ {i} \cdot \vec {e} ^ {j}) \mathrm{d} x ^ {i} \mathrm{d} x _ {j} \\ & = \mathrm{d} x ^ {i} \mathrm{d} x _ {j}. \end{array}
+$$
+
+注意在这种情况下没有度规张量，因为由对偶基矢量的定义可知 $\vec{e}_i\cdot$ $\vec{e}^j$ 要么等于1（当 $i = j$ 时），要么等于零（当 $i\neq j$ 时）.
+
+不管 $\mathrm{ds}^2$ 写成 $g_{ij}\mathrm{dx}^i\mathrm{dx}^j$ 、 $g^{ij}\mathrm{dx}_i\mathrm{dx}_j$ 还是 $\mathrm{dx}^i\mathrm{dx}_j$ ，有一件事是确定的，即无论选择哪个坐标系，也不管采用逆变分量、协变分量还是混变分量来表示 $\mathrm{ds}^2$ ，这两点之间的距离是不会变的．因此，度规张量 $\vec{g}$ 及其分量 $g^{ij}$ 和 $g_{ij}$ 的任务是将坐标增量的乘积用逆变分量或协变分量表示成
+
+两点之间不变的距离. 这就是度规张量可以定义几何空间的本质原因.
+
+矢量的几何表示需要使用长度和角度，所以在理解度规张量可以定义一个矢量 $\vec{A}$ 的长度和两个矢量 $\vec{A}$ 和 $\vec{B}$ 之间夹角时，几何表示是很有用的。与分离矢量 $\mathrm{d}\vec{r}$ 点乘它自己可以得到线元ds一样，矢量 $\vec{A}$ 的长度可以由 $\vec{A} \cdot \vec{A}$ 得到，而且方法不止一种。
+
+一种选择是仅用矢量 $\vec{A}$ 的逆变分量求解：
+
+$$
+\begin{array}{r l} \left| \vec {A} \right| & = \sqrt {\vec {A} \cdot \vec {A}} = \sqrt {A ^ {i} \vec {e} _ {i} \cdot A ^ {j} \vec {e} _ {j}} \\ & = \sqrt {(\vec {e} _ {i} \cdot \vec {e} _ {j}) A ^ {i} A ^ {j}} = \sqrt {g _ {i j} A ^ {i} A ^ {j}}. \end{array}
+$$
+
+另一种选择是仅用协变分量求解：
+
+$$
+\begin{array}{r l} \left| \vec {A} \right| & = \sqrt {\vec {A} \cdot \vec {A}} = \sqrt {A _ {i} \vec {e} ^ {i} \cdot A _ {j} \vec {e} ^ {j}} \\ & = \sqrt {(\vec {e} ^ {i} \cdot \vec {e} ^ {j}) A _ {i} A _ {j}} = \sqrt {g ^ {i j} A _ {i} A _ {j}}. \end{array}
+$$
+
+最后一个选择是用混变分量求解：
+
+$$
+\begin{array}{r l} \vert \vec {A} \vert & = \sqrt {\vec {A} \cdot \vec {A}} = \sqrt {A ^ {i} \vec {e} _ {i} \cdot A _ {j} \vec {e} ^ {j}} \\ & = \sqrt {(\vec {e} _ {i} \cdot \vec {e} ^ {j}) A ^ {i} A _ {j}} = \sqrt {A ^ {i} A _ {j}}. \end{array}
+$$
+
+就像 $\mathrm{d}\vec{r}$ 表示线元ds一样，度规张量可以保证矢量 $\vec{A}$ 的长度始终保持不变.
+
+为了理解度规张量在定义角度中的作用，考虑两个矢量的点积 $\vec{A}\cdot\vec{B}$ ，还是一样，点积的表示方法不止一种，也就是说矢量 $\vec{A}$ 和 $\vec{B}$ 之间的夹角有以下几种表达形式：
+
+$$
+\begin{array}{r l} \cos \theta & = \frac {\vec {A} \cdot \vec {B}}{| \vec {A} | | \vec {B} |} \\ & = \frac {g _ {i j} A ^ {i} B ^ {j}}{\sqrt {g _ {i j} A ^ {i} A ^ {j}} \sqrt {g _ {i j} B ^ {i} B ^ {j}}} \\ & = \frac {A _ {i} B ^ {j}}{\sqrt {A _ {i} A ^ {i}} \sqrt {B _ {i} B ^ {i}}} \\ & = \frac {g ^ {i j} A _ {i} B _ {j}}{\sqrt {g ^ {i j} A _ {i} A _ {j}} \sqrt {g ^ {i j} B _ {i} B _ {j}}}. \end{array}
+$$
+
+这就可以解释为什么你可能会遇到这样的说法：度规张量提供了一个"点积"空间，即你只要知道怎么求点积，就可以定义长度和角度了.
+
+为了理解度规张量的性质，考虑分离矢量增量 $d \vec{r}$ 的逆变分量变换：
+
+$$
+\mathrm{d} x ^ {\prime i} = \frac {\partial x ^ {\prime i}}{\partial x ^ {j}} \mathrm{d} x ^ {j},
+$$
+
+这意味着线元增量的平方（ $\mathrm{ds}^2$ ）变为：
+
+$$
+\begin{array}{r l} \mathrm{d} s ^ {2} & = \left[ \frac {\partial x ^ {\prime 1}}{\partial x ^ {1}} \frac {\partial x ^ {\prime 1}}{\partial x ^ {1}} + \frac {\partial x ^ {\prime 2}}{\partial x ^ {1}} \frac {\partial x ^ {\prime 2}}{\partial x ^ {1}} + \frac {\partial x ^ {\prime 3}}{\partial x ^ {1}} \frac {\partial x ^ {\prime 3}}{\partial x ^ {1}} \right] \mathrm{d} x ^ {1} \mathrm{d} x ^ {1} \\ & + \left[ \frac {\partial x ^ {\prime 1}}{\partial x ^ {2}} \frac {\partial x ^ {\prime 1}}{\partial x ^ {2}} + \frac {\partial x ^ {\prime 2}}{\partial x ^ {2}} \frac {\partial x ^ {\prime 2}}{\partial x ^ {2}} + \frac {\partial x ^ {\prime 3}}{\partial x ^ {2}} \frac {\partial x ^ {\prime 3}}{\partial x ^ {2}} \right] \mathrm{d} x ^ {2} \mathrm{d} x ^ {2} \\ & + \left[ \frac {\partial x ^ {\prime 1}}{\partial x ^ {3}} \frac {\partial x ^ {\prime 1}}{\partial x ^ {3}} + \frac {\partial x ^ {\prime 2}}{\partial x ^ {3}} \frac {\partial x ^ {\prime 2}}{\partial x ^ {3}} + \frac {\partial x ^ {\prime 3}}{\partial x ^ {3}} \frac {\partial x ^ {\prime 3}}{\partial x ^ {3}} \right] \mathrm{d} x ^ {3} \mathrm{d} x ^ {3} \\ & + \left[ \frac {\partial x ^ {\prime 1}}{\partial x ^ {1}} \frac {\partial x ^ {\prime 1}}{\partial x ^ {2}} + \frac {\partial x ^ {\prime 2}}{\partial x ^ {1}} \frac {\partial x ^ {\prime 2}}{\partial x ^ {2}} + \frac {\partial x ^ {\prime 3}}{\partial x ^ {1}} \frac {\partial x ^ {\prime 3}}{\partial x ^ {2}} \right] \mathrm{d} x ^ {1} \mathrm{d} x ^ {2} \\ & + \left[ \frac {\partial x ^ {\prime 1}}{\partial x ^ {2}} \frac {\partial x ^ {\prime 1}}{\partial x ^ {1}} + \frac {\partial x ^ {\prime 2}}{\partial x ^ {2}} \frac {\partial x ^ {\prime 2}}{\partial x ^ {1}} + \frac {\partial x ^ {\prime 3}}{\partial x ^ {2}} \frac {\partial x ^ {\prime 3}}{\partial x ^ {1}} \right] \mathrm{d} x ^ {2} \mathrm{d} x ^ {1} \\ & + \left[ \frac {\partial x ^ {\prime 1}}{\partial x ^ {1}} \frac {\partial x ^ {\prime 1}}{\partial x ^ {3}} + \frac {\partial x ^ {\prime 2}}{\partial x ^ {1}} \frac {\partial x ^ {\prime 2}}{\partial x ^ {3}} + \frac {\partial x ^ {\prime 3}}{\partial x ^ {1}} \frac {\partial x ^ {\prime 3}}{\partial x ^ {3}} \right] \mathrm{d} x ^ {1} \mathrm{d} x ^ {3} \\ & + \left[ \frac {\partial x ^ {\prime 1}}{\partial x ^ {3}} \frac {\partial x ^ {\prime 1}}{\partial x ^ {1}} + \frac {\partial x ^ {\prime 2}}{\partial x ^ {3}} \frac {\partial x ^ {\prime 2}}{\partial x ^ {1}} + \frac {\partial x ^ {\prime 3}}{\partial x ^ {3}} \frac {\partial x ^ {\prime 3}}{\partial x ^ {1}} \right] \mathrm{d} x ^ {3} \mathrm{d} x ^ {1} \\ & + \left[ \frac {\partial x ^ {\prime 1}}{\partial x ^ {2}} \frac {\partial x ^ {\prime 1}}{\partial x ^ {3}} + \frac {\partial x ^ {\prime 2}}{\partial x ^ {2}} \frac {\partial x ^ {\prime 2}}{\partial x ^ {3}} + \frac {\partial x ^ {\prime 3}}{\partial x ^ {2}} \frac {\partial x ^ {\prime 3}}{\partial x ^ {3}} \right] \mathrm{d} x ^ {2} \mathrm{d} x ^ {3} \\ & + \left[ \frac {\partial x ^ {\prime 1}}{\partial x ^ {3}} \frac {\partial x ^ {\prime 1}}{\partial x ^ {2}} + \frac {\partial x ^ {\prime 2}}{\partial x ^ {3}} \frac {\partial x ^ {\prime 2}}{\partial x ^ {2}} + \frac {\partial x ^ {\prime 3}}{\partial x ^ {3}} \frac {\partial x ^ {\prime 3}}{\partial x ^ {2}} \right] \mathrm{d} x ^ {3} \mathrm{d} x ^ {2}. \end{array}\tag{5.12}
+$$
+
+如果你能意识到每个括号内的项都是变换系坐标（ $x'^1$ 、 $x'^2$ 和 $x'^3$ ）对原坐标系（ $x^1$ 、 $x^2$ 和 $x^3$ ）中两个坐标的偏导数之和，这个令人生畏的表达式会变得很容易理解。更具体地说，每一个括号里三项中的每一项都是与原坐标轴相切的基矢量分量的乘积（回想下 $\frac{\partial x'^1}{\partial x^i}$ 、 $\frac{\partial x'^2}{\partial x^i}$ 和 $\frac{\partial x'^3}{\partial x^i}$ 都是与原坐标系中第 $i$ 个坐标轴相切的基矢量在变换坐标系中的分量）。
+
+如果用变量 $g$ 表示括号里的项，并用两个下标表示与求导有关的坐标，则有：
+
+$$
+g _ {1 1} = \left[ \frac {\partial x ^ {\prime 1}}{\partial x ^ {1}} \frac {\partial x ^ {\prime 1}}{\partial x ^ {1}} + \frac {\partial x ^ {\prime 2}}{\partial x ^ {1}} \frac {\partial x ^ {\prime 2}}{\partial x ^ {1}} + \frac {\partial x ^ {\prime 3}}{\partial x ^ {1}} \frac {\partial x ^ {\prime 3}}{\partial x ^ {1}} \right],
+$$
+
+$$
+g _ {2 2} = \left[ \frac {\partial x ^ {\prime 1}}{\partial x ^ {2}} \frac {\partial x ^ {\prime 1}}{\partial x ^ {2}} + \frac {\partial x ^ {\prime 2}}{\partial x ^ {2}} \frac {\partial x ^ {\prime 2}}{\partial x ^ {2}} + \frac {\partial x ^ {\prime 3}}{\partial x ^ {2}} \frac {\partial x ^ {\prime 3}}{\partial x ^ {2}} \right],
+$$
+
+$$
+g _ {3 3} = \left[ \frac {\partial x ^ {\prime 1}}{\partial x ^ {3}} \frac {\partial x ^ {\prime 1}}{\partial x ^ {3}} + \frac {\partial x ^ {\prime 2}}{\partial x ^ {3}} \frac {\partial x ^ {\prime 2}}{\partial x ^ {3}} + \frac {\partial x ^ {\prime 3}}{\partial x ^ {3}} \frac {\partial x ^ {\prime 3}}{\partial x ^ {3}} \right],
+$$
+
+$$
+g _ {1 2} = \left[ \frac {\partial x ^ {\prime 1}}{\partial x ^ {1}} \frac {\partial x ^ {\prime 1}}{\partial x ^ {2}} + \frac {\partial x ^ {\prime 2}}{\partial x ^ {1}} \frac {\partial x ^ {\prime 2}}{\partial x ^ {2}} + \frac {\partial x ^ {\prime 3}}{\partial x ^ {1}} \frac {\partial x ^ {\prime 3}}{\partial x ^ {2}} \right],
+$$
+
+$$
+g _ {1 3} = \left[ \frac {\partial x ^ {\prime 1}}{\partial x ^ {1}} \frac {\partial x ^ {\prime 1}}{\partial x ^ {3}} + \frac {\partial x ^ {\prime 2}}{\partial x ^ {1}} \frac {\partial x ^ {\prime 2}}{\partial x ^ {3}} + \frac {\partial x ^ {\prime 3}}{\partial x ^ {1}} \frac {\partial x ^ {\prime 3}}{\partial x ^ {3}} \right],
+$$
+
+$$
+g _ {2 3} = \left[ \frac {\partial x ^ {\prime 1}}{\partial x ^ {2}} \frac {\partial x ^ {\prime 1}}{\partial x ^ {3}} + \frac {\partial x ^ {\prime 2}}{\partial x ^ {2}} \frac {\partial x ^ {\prime 2}}{\partial x ^ {3}} + \frac {\partial x ^ {\prime 3}}{\partial x ^ {2}} \frac {\partial x ^ {\prime 3}}{\partial x ^ {3}} \right].
+$$
+
+因为乘法与次序无关，所以 $g_{21}=g_{12}$ 、 $g_{31}=g_{13}$ 且 $g_{32}=g_{23}$ 。将这些代入方程（5.12）中 $ds<sup>2</sup>$ 的表达式中，则：
+
+$$
+\begin{array}{r l} \mathrm{d} s ^ {2} & = g _ {1 1} \mathrm{d} x ^ {1} \mathrm{d} x ^ {1} + g _ {2 2} \mathrm{d} x ^ {2} \mathrm{d} x ^ {2} + g _ {3 3} \mathrm{d} x ^ {3} \mathrm{d} x ^ {3} + g _ {1 2} \mathrm{d} x ^ {1} \mathrm{d} x ^ {2} + g _ {2 1} \mathrm{d} x ^ {2} \mathrm{d} x ^ {1} \\ & + g _ {1 3} \mathrm{d} x ^ {1} \mathrm{d} x ^ {3} + g _ {3 1} \mathrm{d} x ^ {3} \mathrm{d} x ^ {1} + g _ {2 3} \mathrm{d} x ^ {2} \mathrm{d} x ^ {3} + g _ {3 2} \mathrm{d} x ^ {3} \mathrm{d} x ^ {2}. \end{array}
+$$
+
+这可以通过指标表示法和求和约定进一步简化：
+
+$$
+\mathrm{d} s ^ {2} = g _ {i j} \mathrm{d} x ^ {i} \mathrm{d} x ^ {j}.\tag{5.13}
+$$
+
+方程中 $g_{ij}$ 满足 2 阶张量的所有要求，但是它不只是一个张量。因为它把各个方向的坐标差和在所有坐标变换下保持不变的量联系了起来，所以这种张量被称为度规张量或基本张量一点都不奇怪了。
+
+为了理解度规张量的基本原理，回想下 $g_{ij}$ 的矩阵元由偏导数组成，表示沿原坐标轴的基矢量分量：
+
+$$
+\begin{array}{l} \vec {e} _ {1} = \left(\frac {\partial x ^ {\prime 1}}{\partial x ^ {1}}, \frac {\partial x ^ {\prime 2}}{\partial x ^ {1}}, \frac {\partial x ^ {\prime 3}}{\partial x ^ {1}}\right), \\ \vec {e} _ {2} = \left(\frac {\partial x ^ {\prime 1}}{\partial x ^ {2}}, \frac {\partial x ^ {\prime 2}}{\partial x ^ {2}}, \frac {\partial x ^ {\prime 3}}{\partial x ^ {2}}\right), \\ \vec {e} _ {3} = \left(\frac {\partial x ^ {\prime 1}}{\partial x ^ {3}}, \frac {\partial x ^ {\prime 2}}{\partial x ^ {3}}, \frac {\partial x ^ {\prime 3}}{\partial x ^ {3}}\right). \end{array}\tag{5.14}
+$$
+
+又因为
+
+$$
+g _ {i j} = \left[ \frac {\partial x ^ {\prime 1}}{\partial x ^ {i}} \frac {\partial x ^ {\prime 1}}{\partial x ^ {j}} + \frac {\partial x ^ {\prime 2}}{\partial x ^ {i}} \frac {\partial x ^ {\prime 2}}{\partial x ^ {j}} + \frac {\partial x ^ {\prime 3}}{\partial x ^ {i}} \frac {\partial x ^ {\prime 3}}{\partial x ^ {j}} \right].\tag{5.15}
+$$
+
+另外一种表示度规张量的方法是 $g_{ij} = \vec{e}_i\cdot \vec{e}_j$ （沿坐标轴的基矢量的内积）．因为内积与一个矢量在另一个矢量方向上的投影及两个矢量的长度有关，所以 $g_{ij}$ 的矩阵元明确了坐标轴之间的关系，其关系由坐标空间的形状决定.
+
+通过考虑从球极坐标系 $(r,\theta,\phi)$ 向笛卡儿坐标系 $(x,y,z)$ 的转换很容易理解度规张量的性质，这种情况下
+
+$$
+\begin{array}{l} x ^ {\prime 1} = x = r \sin (\theta) \cos (\phi) = x ^ {1} \sin (x ^ {2}) \cos (x ^ {3}), \\ x ^ {\prime 2} = y = r \sin (\theta) \sin (\phi) = x ^ {1} \sin (x ^ {2}) \sin (x ^ {3}), \\ x ^ {\prime 3} = z = r \cos (\theta) = x ^ {1} \cos (x ^ {2}). \end{array}\tag{5.16}
+$$
+
+在度规张量的元素中出现的偏导数是
+
+$$
+\frac {\partial x ^ {\prime 1}}{\partial x ^ {1}} = \sin (x ^ {2}) \cos (x ^ {3}) = \sin (\theta) \cos (\phi),
+$$
+
+$$
+\frac {\partial x ^ {\prime 1}}{\partial x ^ {2}} = x ^ {1} \cos (x ^ {2}) \cos (x ^ {3}) = r \cos (\theta) \cos (\phi),
+$$
+
+$$
+\frac {\partial x ^ {\prime 2}}{\partial x ^ {1}} = \sin (x ^ {2}) \sin (x ^ {3}) = \sin (\theta) \sin (\phi),
+$$
+
+$$
+\frac {\partial x ^ {\prime 2}}{\partial x ^ {2}} = x ^ {1} \cos (x ^ {2}) \sin (x ^ {3}) = r \cos (\theta) \sin (\phi),
+$$
+
+$$
+\frac {\partial x ^ {3}}{\partial x ^ {1}} = \cos (x ^ {2}) = \cos (\theta),
+$$
+
+$$
+\frac {\partial x ^ {\prime 3}}{\partial x ^ {2}} = - x ^ {1} \sin (x ^ {2}) = - r \sin (\theta).
+$$
+
+且
+
+$$
+\frac {\partial x ^ {\prime 1}}{\partial x ^ {3}} = - x ^ {1} \sin (x ^ {2}) \sin (x ^ {3}) = - r \sin (\theta) \sin (\phi),
+$$
+
+$$
+\frac {\partial x ^ {\prime 2}}{\partial x ^ {3}} = x ^ {1} \sin (x ^ {2}) \cos (x ^ {3}) = r \sin (\theta) \cos (\phi),
+$$
+
+$$
+\frac {\partial x ^ {\prime 3}}{\partial x ^ {3}} = 0.
+$$
+
+把这些值插入到 $g_{ij}$ 方程（5.15）的表达式中可以得到对角项 $^{\ominus}$ ：
+
+$$
+g _ {1 1} = \left[ \frac {\partial x ^ {\prime 1}}{\partial x ^ {1}} \frac {\partial x ^ {\prime 1}}{\partial x ^ {1}} + \frac {\partial x ^ {\prime 2}}{\partial x ^ {1}} \frac {\partial x ^ {\prime 2}}{\partial x ^ {1}} + \frac {\partial x ^ {\prime 3}}{\partial x ^ {1}} \frac {\partial x ^ {\prime 3}}{\partial x ^ {1}} \right] = 1,
+$$
+
+$$
+g _ {2 2} = \left[ \frac {\partial x ^ {\prime 1}}{\partial x ^ {2}} \frac {\partial x ^ {\prime 1}}{\partial x ^ {2}} + \frac {\partial x ^ {\prime 2}}{\partial x ^ {2}} \frac {\partial x ^ {\prime 2}}{\partial x ^ {2}} + \frac {\partial x ^ {\prime 3}}{\partial x ^ {2}} \frac {\partial x ^ {\prime 3}}{\partial x ^ {2}} \right] = r ^ {2},
+$$
+
+$$
+g _ {3 3} = \left[ \frac {\partial x ^ {\prime 1}}{\partial x ^ {3}} \frac {\partial x ^ {\prime 1}}{\partial x ^ {3}} + \frac {\partial x ^ {\prime 2}}{\partial x ^ {3}} \frac {\partial x ^ {\prime 2}}{\partial x ^ {3}} + \frac {\partial x ^ {\prime 3}}{\partial x ^ {3}} \frac {\partial x ^ {\prime 3}}{\partial x ^ {3}} \right] = r ^ {2} \sin^ {2} (\theta).
+$$
+
+非对角项
+
+$$
+g _ {1 2} = \left[ \frac {\partial x ^ {\prime 1}}{\partial x ^ {1}} \frac {\partial x ^ {\prime 1}}{\partial x ^ {2}} + \frac {\partial x ^ {\prime 2}}{\partial x ^ {1}} \frac {\partial x ^ {\prime 2}}{\partial x ^ {2}} + \frac {\partial x ^ {\prime 3}}{\partial x ^ {1}} \frac {\partial x ^ {\prime 3}}{\partial x ^ {2}} \right] = 0,
+$$
+
+$$
+g _ {1 3} = \left[ \frac {\partial x ^ {\prime 1}}{\partial x ^ {1}} \frac {\partial x ^ {\prime 1}}{\partial x ^ {3}} + \frac {\partial x ^ {\prime 2}}{\partial x ^ {1}} \frac {\partial x ^ {\prime 2}}{\partial x ^ {3}} + \frac {\partial x ^ {\prime 3}}{\partial x ^ {1}} \frac {\partial x ^ {\prime 3}}{\partial x ^ {3}} \right] = 0,
+$$
+
+$$
+g _ {2 3} = \left[ \frac {\partial x ^ {\prime 1}}{\partial x ^ {2}} \frac {\partial x ^ {\prime 1}}{\partial x ^ {3}} + \frac {\partial x ^ {\prime 2}}{\partial x ^ {2}} \frac {\partial x ^ {\prime 2}}{\partial x ^ {3}} + \frac {\partial x ^ {\prime 3}}{\partial x ^ {2}} \frac {\partial x ^ {\prime 3}}{\partial x ^ {3}} \right] = 0.
+$$
+
+因此球极坐标系中度规张量为
+
+$$
+g _ {i j} = \left[ \begin{array}{c c c} g _ {1 1} & g _ {1 2} & g _ {1 3} \\ g _ {2 1} & g _ {2 2} & g _ {2 3} \\ g _ {3 1} & g _ {3 2} & g _ {3 3} \end{array} \right] = \left[ \begin{array}{c c c} 1 & 0 & 0 \\ 0 & r ^ {2} & 0 \\ 0 & 0 & r ^ {2} \sin^ {2} (\theta) \end{array} \right].\tag{5.17}
+$$
+
+仔细观察度量张量可以发现所使用的坐标系的一些性质，例如：在这种情况下所有非对角矩阵元都是零，说明球极坐标轴虽然是曲线轴，但却是正交的（即 $r, \theta, \phi$ 的增量方向是相互正交的）。此外，将这些数值代入方程（5.13）中则有
+
+$$
+\mathrm{d} s ^ {2} = \mathrm{d} r ^ {2} + r ^ {2} \mathrm{d} \theta^ {2} + r ^ {2} \sin^ {2} \theta \mathrm{d} \phi^ {2}.\tag{5.18}
+$$
+
+这个表达式清楚地表明，度规张量的矩阵元怎样把 $r$ ， $\theta$ ， $\phi$ 的增量变化转化为距离的变化．例如， $\mathrm{dr}^2$ 前面的因子1表示 $r$ 的变化就是距离的变化．但是天顶角（ $\theta$ ）的变化必须乘以因子 $r$ 才能变成距离的变化，而与方位角 $\phi$ 对应的距离变化与天顶角 $(g_{33}$ 中的 $\sin\theta$ 项）和相对于原点的径向距离 $(g_{33}$ 中的 r 项）都有关.
+
+其他坐标系需要其他因子将每一个坐标值的变化转化为距离的变化，且这些因子是该坐标系度规张量的矩阵元．对正交坐标系，度规张量对角矩阵元（ $\sqrt{g_{22}}$ 、 $\sqrt{g_{22}}$ 和 $\sqrt{g_{33}}$ ）的平方根被称为该坐标系的"度规因子"（ $h_1$ 、 $h_2$ 和 $h_3$ ）。因此球极坐标系的度规因子分别是 $h_1 = \sqrt{g_{11}} = 1$ 、 $h_2 = \sqrt{g_{22}} = r$ 、 $h_3 = \sqrt{g_{33}} = r\sin \theta$ 。
+
+一旦你熟悉了度规张量和度规因子的概念，你就能够很容易在任何正交坐标系（曲线坐标系或直线坐标系）中求微分算子梯度、散度、旋度和拉普拉斯算子。例如，梯度公式由下式给出
+
+$$
+\vec {\nabla} \phi = \frac {1}{h _ {1}} \frac {\partial \phi}{\partial x ^ {1}} \hat {e} _ {1} + \frac {1}{h _ {2}} \frac {\partial \phi}{\partial x ^ {2}} \hat {e} _ {2} + \frac {1}{h _ {3}} \frac {\partial \phi}{\partial x ^ {3}} \hat {e} _ {3}.
+$$
+
+散度可以写成
+
+$$
+\vec {\nabla} \times \vec {A} = \frac {1}{h _ {1} h _ {2} h _ {3}} \left| \begin{array}{c c c} h _ {1} \hat {e} _ {1} & h _ {2} \hat {e} _ {2} & h _ {3} \hat {e} _ {3} \\ \frac {\partial}{\partial x ^ {1}} & \frac {\partial}{\partial x ^ {2}} & \frac {\partial}{\partial x ^ {3}} \\ h _ {1} A _ {1} & h _ {2} A _ {2} & h _ {3} A _ {3} \end{array} \right|,
+$$
+
+可以展开为
+
+$$
+\begin{array}{r l} \vec {\nabla} \times \vec {A} & = \frac {1}{h _ {1} h _ {2} h _ {3}} \left[ \left(\frac {\partial h _ {3} A _ {3}}{\partial x ^ {2}} - \frac {\partial h _ {2} A _ {2}}{\partial x ^ {3}}\right) h _ {1} \hat {e} _ {1} \right. \\ & \quad + \left(\frac {\partial h _ {1} A _ {1}}{\partial x ^ {3}} - \frac {\partial h _ {3} A _ {3}}{\partial x ^ {1}}\right) h _ {2} \hat {e} _ {2} + \left(\frac {\partial h _ {2} A _ {2}}{\partial x ^ {1}} - \frac {\partial h _ {1} A _ {1}}{\partial x ^ {2}}\right) h _ {3} \hat {e} _ {3} \Bigg ]. \end{array}
+$$
+
+拉普拉斯算子
+
+$$
+\nabla^ {2} \phi = \frac {1}{h _ {1} h _ {2} h _ {3}} \left[ \frac {\partial}{\partial x ^ {1}} \left(\frac {h _ {2} h _ {3}}{h _ {1}} \frac {\partial \phi}{\partial x ^ {1}}\right) + \frac {\partial}{\partial x ^ {2}} \left(\frac {h _ {1} h _ {3}}{h _ {2}} \frac {\partial \phi}{\partial x ^ {2}}\right) + \frac {\partial}{\partial x ^ {3}} \left(\frac {h _ {1} h _ {2}}{h _ {3}} \frac {\partial \phi}{\partial x ^ {3}}\right) \right].
+$$
+
+如果你想了解如何使用这些表达式的示例，查阅本章最后的习题及线
+
+上解答 <sup>①</sup> .

@@ -110,6 +110,76 @@ describe('BilingualOnnxEngine', () => {
     expect(matrix.length).toBe(2);
     expect(matrix[0].length).toBe(2);
   });
+
+  it('accurately aligns English paragraphs with their Google translated Chinese counterparts', async () => {
+    const engine = BilingualOnnxEngine.getInstance();
+    const en = [
+      'How do we multiply two numbers? The algorithm we all learned in school takes O(n^2) time to multiply two n-bit integers. Can we do better?',
+      'In 1960, Anatoly Karatsuba discovered a revolutionary divide-and-conquer algorithm. By cleverly splitting each number into two halves of n/2 bits, Karatsuba realized we only need three multiplications instead of four.',
+    ];
+    const zh = [
+      '我们如何将两个数字相乘？我们在学校学过的算法需要 O(n^2) 时间来将两个 n 位整数相乘。我们可以做得更好吗？',
+      '1960 年，苏联数学家卡拉楚巴（Anatoly Karatsuba）提出了一种极具启发性的分治策略。他将 n 位大整数均分为高位与低位两部分，巧妙地将原本朴素展开所必需的 4 次半长整数乘法精简为 3 次乘法。',
+    ];
+
+    const result = await engine.alignParagraphs(en, zh);
+    expect(result.matrix.length).toBe(2);
+    expect(result.matrix[0].length).toBe(2);
+
+    // 对角线对应段落的跨语言相似度必须显著高于阈值 0.70
+    expect(result.matrix[0][0]).toBeGreaterThan(0.7);
+    expect(result.matrix[1][1]).toBeGreaterThan(0.7);
+
+    // 对角线相似度必须显著高于非对应错位段落
+    expect(result.matrix[0][0]).toBeGreaterThan(result.matrix[0][1]);
+    expect(result.matrix[1][1]).toBeGreaterThan(result.matrix[1][0]);
+  }, 30000);
+
+  it('exposes multi-model registry containing MiniLM and Qwen3-Embedding-0.6B', async () => {
+    const engine = BilingualOnnxEngine.getInstance();
+    const models = await engine.getAvailableModels();
+
+    expect(models.length).toBeGreaterThanOrEqual(2);
+    const minilm = models.find((m) => m.id === 'minilm-l12');
+    const qwen = models.find((m) => m.id === 'qwen3-0.6b');
+
+    expect(minilm).toBeDefined();
+    expect(minilm?.dim).toBe(384);
+    expect(minilm?.isAvailable).toBe(true);
+
+    expect(qwen).toBeDefined();
+    expect(qwen?.dim).toBe(1024);
+    expect(qwen?.isAvailable).toBe(true);
+  });
+
+  it('accurately aligns bilingual paragraphs using Qwen3-Embedding-0.6B with wide dynamic contrast', async () => {
+    const engine = BilingualOnnxEngine.getInstance();
+    const en = [
+      'How do we multiply two numbers? The algorithm we all learned in school takes O(n^2) time to multiply two n-bit integers. Can we do better?',
+      'Fast Fourier Transform optimizes discrete convolution to O(n log n).',
+    ];
+    const zh = [
+      '我们如何将两个数字相乘？我们在学校学过的算法需要 O(n^2) 时间来将两个 n 位整数相乘。我们可以做得更好吗？',
+      '西红柿炒鸡蛋是一道经典的家常菜，鲜嫩多汁。', // 完全不相关的干扰段落
+    ];
+
+    const result = await engine.alignParagraphs(en, zh, { model: 'qwen3-0.6b' });
+    expect(result.matrix.length).toBe(2);
+    expect(result.matrix[0].length).toBe(2);
+    expect(result.engine.toLowerCase()).toContain('qwen3');
+    expect(result.modelId).toBe('qwen3-0.6b');
+    expect(result.dim).toBe(1024);
+
+    // 1. 真实翻译对的相似度极高 (>= 0.85)
+    expect(result.matrix[0][0]).toBeGreaterThan(0.85);
+
+    // 2. 跨领域无关段落（算法 vs 西红柿炒鸡蛋）必须被强力压制至 0.30 以下，杜绝各向异性底噪
+    expect(result.matrix[0][1]).toBeLessThan(0.30);
+    expect(result.matrix[1][1]).toBeLessThan(0.30);
+
+    // 3. 动态对比度跨度必须大于 0.55
+    expect(result.matrix[0][0] - result.matrix[0][1]).toBeGreaterThan(0.55);
+  }, 45000);
 });
 
 describe('BilingualAlignerClient (Multilingual Paragraph Tokenizer & Fallback)', () => {

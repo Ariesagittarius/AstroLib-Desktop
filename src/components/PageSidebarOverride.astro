@@ -5,6 +5,7 @@ import { collections } from '../config/collections.config.mjs';
 import { features, crossRefRefs } from '../config/features.config.mjs';
 import '../styles/components/page-sidebar.css';
 import '../styles/components/translation-dock.css';
+import '../styles/components/info-highlight.css';
 
 // 引用联动模式：'interactive'（默认，可点击/跨页联动）| 'static'（统一静态 chip）。
 const refsMode = crossRefRefs() === 'static' ? 'static' : 'interactive';
@@ -25,10 +26,10 @@ for (const col of collections) {
 
 // 2. 备用安全降级方案
 if (!currentBook) {
-  currentCol = collections[0];
-  currentBook = collections[0].books[0];
+  currentCol = collections[0] || null;
+  currentBook = collections[0]?.books?.[0] || null;
 }
-const bookConfigJson = JSON.stringify(currentBook);
+const bookConfigJson = JSON.stringify(currentBook || {});
 ---
 
 <aside class="astrolib-sideload-dock custom-page-sidebar" id="astrolib-sideload-dock" data-book-key={`${currentCol?.slug || 'math'}/${currentBook?.slug || 'linear_algebra_geometry'}`} data-refs-mode={refsMode} data-book-config={bookConfigJson}>
@@ -212,7 +213,7 @@ const bookConfigJson = JSON.stringify(currentBook);
                 </button>
               </div>
               <div class="trans-settings-mode-tip">
-                💡 切换为「段落下方显示」后，译文直接呈现在各段落下方，右侧边栏保持显示本节大纲。
+                切换为「段落下方显示」后，译文直接呈现在各段落下方，右侧边栏保持显示本节大纲。
               </div>
             </div>
 
@@ -238,7 +239,7 @@ const bookConfigJson = JSON.stringify(currentBook);
             </div>
 
             <div class="trans-settings-tip" id="trans-settings-tip">
-              💡 密钥仅保存在本地浏览器。若留空，将自动使用服务端默认配置。
+              密钥仅保存在本地浏览器。若留空，将自动使用服务端默认配置。
             </div>
             <div class="trans-settings-alert" id="trans-settings-alert" style="display: none;"></div>
 
@@ -325,10 +326,123 @@ const bookConfigJson = JSON.stringify(currentBook);
       </div>
     </div>
   </section>
+
+  <!-- 面板 5: 关注点透镜与信息高亮专属侧载面板 -->
+  <section class="sideload-panel-view" data-panel-id="focus" aria-hidden="true">
+    <div class="focus-sidebar-panel" id="focus-sidebar-panel" aria-hidden="true">
+      <div class="focus-sidebar-header">
+        <div class="focus-sidebar-title-group">
+          <!-- 返回本章大纲快捷按钮 -->
+          <button
+            type="button"
+            class="sideload-back-btn"
+            id="focus-back-to-toc"
+            title="返回本节大纲 (Esc)"
+            aria-label="返回本节大纲"
+          >
+            <md-icon class="sideload-back-icon" aria-hidden="true">arrow_back</md-icon>
+          </button>
+          <h3 class="focus-sidebar-title">关注点透镜</h3>
+          <span class="focus-hardware-badge" id="focus-hardware-badge">Qwen 0.6B</span>
+        </div>
+        <div class="focus-sidebar-actions">
+          <button
+            type="button"
+            class="focus-action-btn"
+            id="focus-sidebar-close"
+            title="关闭透镜并恢复大纲 (Esc)"
+            aria-label="关闭透镜"
+          >
+            <md-icon class="focus-action-icon" aria-hidden="true">close</md-icon>
+          </button>
+        </div>
+      </div>
+
+      <div class="focus-sidebar-content">
+        <!-- 状态指示 -->
+        <div class="focus-status-card">
+          <span class="focus-status" id="focus-status-text">就绪</span>
+        </div>
+
+        <!-- 模式切换 -->
+        <div>
+          <div class="focus-section-label">渲染模式</div>
+          <div class="focus-mode-chips" role="radiogroup" aria-label="选择透镜高亮模式">
+            <button type="button" class="focus-chip is-active" data-focus-mode="fade" title="智能淡化低信息词语，快速跳读学术实体">
+              智能淡化 (Fade)
+            </button>
+            <button type="button" class="focus-chip" data-focus-mode="block" title="按香农惊异度梯度施加色块聚焦">
+              柔和色块 (Block)
+            </button>
+            <button type="button" class="focus-chip" data-focus-mode="underline" title="高惊异度学术关键词下划线">
+              重点下划线 (Underline)
+            </button>
+          </div>
+        </div>
+
+        <!-- 过滤阈值滑块 -->
+        <div class="focus-slider-block">
+          <div class="focus-slider-header">
+            <span>信息密度过滤阈值 (CI)</span>
+            <span class="focus-slider-val" id="focus-threshold-val">35%</span>
+          </div>
+          <input
+            type="range"
+            min="10"
+            max="80"
+            value="35"
+            step="5"
+            id="focus-threshold-slider"
+            class="focus-slider"
+            aria-label="信息密度过滤阈值"
+          />
+        </div>
+
+        <!-- 操作按钮 -->
+        <div class="focus-btn-group">
+          <button type="button" class="focus-analyze-btn" id="focus-analyze-btn" title="分析当前章节并高亮关注点">
+            <md-icon class="focus-btn-icon" aria-hidden="true">auto_awesome</md-icon>
+            分析本章关注点
+          </button>
+          <button type="button" class="focus-clear-btn" id="focus-clear-btn" title="清除正文高亮">
+            清除高亮
+          </button>
+        </div>
+
+        <!-- 遥测监控卡片 -->
+        <div class="focus-telemetry-box" id="focus-telemetry-box" style="display: none;">
+          <div class="focus-stat-item">
+            <span class="focus-stat-label">推理延迟</span>
+            <span class="focus-stat-value" id="focus-stat-time">-</span>
+          </div>
+          <div class="focus-stat-item">
+            <span class="focus-stat-label">词元数量</span>
+            <span class="focus-stat-value" id="focus-stat-tokens">-</span>
+          </div>
+          <div class="focus-stat-item">
+            <span class="focus-stat-label">计算后端</span>
+            <span class="focus-stat-value" id="focus-stat-device">CUDA</span>
+          </div>
+          <div class="focus-stat-item">
+            <span class="focus-stat-label">显存占用</span>
+            <span class="focus-stat-value" id="focus-stat-vram">1.14 GB</span>
+          </div>
+        </div>
+
+        <!-- 提取的核心关键词 -->
+        <div>
+          <div class="focus-section-label">高惊异度实体提取</div>
+          <div class="focus-keywords-container" id="focus-keywords-list">
+            <span style="font-size: 0.75rem; color: var(--sl-color-gray-3);">暂无分析结果</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
 </aside>
 
-<!-- 移动端本地导航 VPLocalNav（VitePress 移植：顶部 sticky 条 + 大纲 popup 下拉面板） -->
-<div class="vp-local-nav" data-vp-local-nav>
+<!-- 移动端本地导航 M3LocalNav（Material 3 规范：顶部 sticky 条 + 大纲 popup 下拉面板） -->
+<div class="m3-local-nav vp-local-nav" data-vp-local-nav>
   <div class="vp-local-nav-container">
     <button class="vp-local-nav-btn" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="vp-local-nav-panel" aria-label="本章大纲" title="本章大纲">
       <md-icon class="header-mdicon vp-local-nav-mdicon" aria-hidden="true">toc</md-icon>
@@ -396,6 +510,7 @@ const bookConfigJson = JSON.stringify(currentBook);
   import { initExerciseSidebarTriggerDelegation, probeActiveExerciseSession } from './exercises/lazy-exercise-sidebar';
   import { sideloadManager } from './sideload/sideload-manager';
   import '../services/translation/client/translation-dock-controller';
+  import { infoHighlightClient } from '../services/info-highlight/client';
 
   function syncRelationGraphButtonVisibility() {
     const isShow = localStorage.getItem('astro-show-relation-graph-btn') !== 'false';
@@ -414,6 +529,24 @@ const bookConfigJson = JSON.stringify(currentBook);
     initImageBlur();
     initExerciseSidebarTriggerDelegation();
     probeActiveExerciseSession();
+
+    // 绑定关注点透镜侧载面板控制与返回大纲
+    const focusBack = document.getElementById('focus-back-to-toc');
+    const focusClose = document.getElementById('focus-sidebar-close');
+    focusBack?.addEventListener('click', () => sideloadManager.switchToDefault());
+    focusClose?.addEventListener('click', () => sideloadManager.switchToDefault());
+    infoHighlightClient.bindUi();
+
+    // 全局数据属性触发器
+    document.querySelectorAll('[data-focus-trigger]').forEach((el) => {
+      if (!(el as any).__focusBound) {
+        (el as any).__focusBound = true;
+        el.addEventListener('click', (e) => {
+          e.preventDefault();
+          sideloadManager.toggle('focus');
+        });
+      }
+    });
 
     // 绑定侧载抽屉遮罩点击关闭
     const scrim = document.getElementById('astrolib-sideload-scrim');

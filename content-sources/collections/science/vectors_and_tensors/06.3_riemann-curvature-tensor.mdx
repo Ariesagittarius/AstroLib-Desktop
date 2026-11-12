@@ -1,0 +1,334 @@
+---
+title: '6.3 The Riemann curvature tensor'
+---
+
+import Guide from '@/components/Guide.astro';
+import Knowledge from '@/components/Knowledge.astro';
+import Example from '@/components/Example.astro';
+import Analysis from '@/components/Analysis.astro';
+import Solution from '@/components/Solution.astro';
+import Variant from '@/components/Variant.astro';
+import Note from '@/components/Note.astro';
+import Block from '@/components/Block.astro';
+import Method from '@/components/Method.astro';
+import Exercise from '@/components/Exercise.astro';
+
+## 6.3 The Riemann curvature tensor
+
+In the decade after publishing his Theory of Special Relativity in 1905, Albert Einstein turned his attention to what he called a "deficiency" in classical mechanics: the lack of an explanation for the precise equality of inertial and gravitational mass. An object's inertial mass determines its resistance to accel eration, and its gravitational mass determines its response to a gravitational field. The equality of these differently defined masses cannot be explained by classical mechanics, and Einstein's scientific instincts told him that the resolution of this deficiency could be achieved by "an extension of the principle of relativity to spaces of reference which are not in uniform motion relative to one another."<sup>7</sup> He applied the word "General" to this extension of his theory of relativity because this new theory would not be restricted to the non-accelerating reference frames of Special Relativity.
+
+Early in his work on the General Theory, Einstein constructed a Gedankenexperiment (that is, a mental exercise) in which he imagined a group of objects with different mass far away from the Earth and from all other masses – you can think of this as a bunch of rocks far out in space. The behavior of these objects is observed from two reference systems, one of which is called system K and is "inertial" or non-accelerating with respect to the rocks. The other system, called system $\mathrm { K } ^ { \prime }$ , is in uniform acceleration with respect to the first. For an observer in the $\mathrm { K } ^ { \prime }$ system, the objects all accelerate in the same direction (opposite to the direction of the acceleration of the $\mathrm { K } ^ { \prime }$ system) and at the same rate (equal to the rate of acceleration of the $\mathrm { K } ^ { \prime }$ system). Seeing all objects accelerating in the same direction and at the same rate, that observer would be entirely justified in concluding that the acceleration of the objects is produced by an external gravitational field and that the $\mathrm { K } ^ { \prime }$ system is at rest. Einstein realized that both the K and the $\mathrm { K } ^ { \prime }$ systems are valid frames of reference, and he termed the complete equivalence of such systems the "principle of equivalence."
+
+Einstein's next step was to overlay the ${ z ^ { \prime } \mathrm { - } \mathrm { a x i s } }$ of $\mathrm { K } ^ { \prime }$ system with the z-axis of the K system and then to allow the $\mathrm { K } ^ { \prime }$ system to rotate about the ${ z ^ { \prime } { \mathrm { - } } { \mathrm { a x i s } } }$ with uniform angular speed (recall that a rotating object experiences centripetal acceleration, so rotation makes $\mathrm { K } ^ { \prime }$ an accelerated system). If system $\mathrm { K } ^ { \prime }$ were not rotating, the size of objects and rate of time flow measured in the K and $\mathrm { K } ^ { \prime }$ systems would be the same. But when system $\mathrm { K } ^ { \prime }$ is rotating, objects at rest in $\mathrm { K } ^ { \prime }$ will be moving when measured in the K system and will therefore experience length contraction and time dilation, and the amount of contraction and dilation will depend on the location of the objects (since objects farther from the rotation axis will have higher velocity). Since the principle of equivalence demands that an accelerated system and a system at rest in a gravitational field are equivalent, Einstein was forced to conclude that length contraction and time dilation could also be produced by gravity, or as he put it "the gravitational field influences and even determines the metrical laws of the space–time continuum."
+
+Those metrical laws are expressed using tensors, so the General Theory of Relativity relies on tensor formulation of physical laws and on concepts described in earlier chapters, such as the metric tensor, Christoffel symbols, and covariant derivatives. The most important tensor in General Relativity is the Riemann curvature tensor, sometimes called the Riemann–Christoffel tensor after the nineteenth-century German mathematicians Bernhard Riemann and Elwin Bruno Christoffel. The importance of this tensor stems from the fact that non-zero components are the hallmark of curvature; the vanishing of the Riemann tensor is both a necessary and a sufficient condition for Euclidean (flat) space.
+
+Most texts use one of two ways to derive the Riemann curvature tensor: parallel transport or the commutator of the covariant derivative. To understand the parallel-transport approach, you should first understand that "parallel transport" refers to a method of moving a vector around a space while keeping the length and direction of the vector the same. In Cartesian flat space, making sure the vector's magnitude and direction don't change is straightforward – just move the vector around without allowing the x-, y-, or -z components to change. If the components don't change, then the length and the direction of the vector don't change, and this satisfies the requirements of parallel transport.
+
+In curved spaced, the situation is more complex. For one thing, "pointing in the same direction" becomes more difficult to define. Consider the two dimensional space that is the surface of the Earth (and pretend for the moment that it's perfectly smooth). Imagine a vector that is initially at the equator (say a bit north of Quito, Ecuador) and is pointing due north, directly along the meridian line. Now imagine transporting that vector toward the north pole, all the while making sure it remains pointed exactly along the meridian line. Remember, the entire space is the surface of the Earth, so the vector must remain tangent to the surface (that is, locally horizontal) as you move it. If you continue moving your vector along the meridian line and pass over the North Pole and then "down" the other side of the Earth, you will eventually reach the equator again somewhere near the middle of Indonesia. Your vector will still be pointing along the meridian, but now it will be pointing south. So although you've kept your vector pointing "in the same direction" (that is, along the meridian) over the entire trip, it's gone from pointing north to pointing south.
+
+Now imagine making another trip, also starting with a north-pointing vector at the equator near Quito, but this time moving along the equator instead of over the North Pole. Once again, as you move you make sure that your vector continues to point north (along the local meridian). After a long journey, you arrive in the middle of Indonesia, but this time you find that your vector is pointing north. Hence the direction of the vector at the end of the journey depends on the path taken, even though you used parallel transport in each case. And whenever the result of parallel transport is a change in the direction of a vector, you can be sure you're dealing with a curved space.
+
+This raises a larger issue: it's not possible to add, subtract, multiply, or in any way compare vectors at different locations – you have to transport one of the vectors to the location of the other before you can perform such operations. That's no problem in flat space, because you can parallel-transport a vector to any other location simply by keeping its coefficients constant (ensuring that the vector's length is constant and that it remains pointed in the same direction). But while "pointed in the same direction" is easily defined at different locations in flat space, you've just seen that this phrase is problematic in curved space. Hence a more-general definition of parallel transport is required.
+
+In that definition, "parallel transport" is defined as transport for which the covariant derivative is zero. Remember that the covariant derivative is the com bination of two terms, the first of which is the usual partial derivative, and the second of which involves a Christoffel symbol. As described in Section 5.7 in Chapter 5, the purpose of that second term is to account for changes in the basis vectors. Holding the covariant derivative at zero while transporting a
+
+The Riemann curvature tensor falls naturally out of the commutator of the covariant derivative of a vector. In this usage, "commutator" refers to the dif ference that results from performing two operations first in one order and then in the reverse order. So if one operator is denoted by A and another operator by B, the commutator is defined as $[ \mathbf { A B } ] = \mathbf { A B - B A }$ . Thus if the sequence of the two operations has no impact on the result, the commutator has a value of zero.
+
+To get to the Riemann tensor, the operation of choice is covariant differenti ation. That's because in a flat space the order of covariant differentiation makes no difference, so the commutator must yield zero. Any non-zero result of applying the commutator to covariant differentiation can therefore be attributed to the curvature of the space.
+
+To begin this process, take the covariant derivative of vector $V _ { \alpha }$ first with respect to $x ^ { \beta }$ :
+
+$$
+V _ {\alpha ; \beta} = \frac {\partial V _ {\alpha}}{\partial x ^ {\beta}} - \Gamma_ {\alpha \beta} ^ {\sigma} V _ {\sigma}.\tag{6.21}
+$$
+
+Now call this result $V _ { \alpha \beta }$ and take another covariant derivative (this time with respect to $x ^ { \gamma } )$ :
+
+$$
+V _ {\alpha \beta ; \gamma} = \frac {\partial V _ {\alpha \beta}}{\partial x ^ {\gamma}} - \Gamma_ {\alpha \gamma} ^ {\tau} V _ {\tau \beta} - \Gamma_ {\beta \gamma} ^ {\eta} V _ {\alpha \eta}.\tag{6.22}
+$$
+
+Substituting the expression from Eq. 6.21 into this equation gives
+
+$$
+\begin{array}{c} V _ {\alpha \beta ; \gamma} = \frac {\partial^ {2} V _ {\alpha}}{\partial x ^ {\gamma} \partial x ^ {\beta}} - \frac {\partial \Gamma_ {\alpha \beta} ^ {\sigma}}{\partial x ^ {\gamma}} V _ {\sigma} - \Gamma_ {\alpha \beta} ^ {\sigma} \frac {\partial V _ {\sigma}}{\partial x ^ {\gamma}} \\ - \Gamma_ {\alpha \gamma} ^ {\tau} \left(\frac {\partial V _ {\tau}}{\partial x ^ {\beta}} - \Gamma_ {\tau \beta} ^ {\sigma} V _ {\sigma}\right) \\ - \Gamma_ {\beta \gamma} ^ {\eta} \left(\frac {\partial V _ {\alpha}}{\partial x ^ {\eta}} - \Gamma_ {\alpha \eta} ^ {\sigma} V _ {\sigma}\right). \end{array}\tag{6.23}
+$$
+
+It's not easy to see the physical significance in this expression, but remembe how you got here: first by finding the incremental change in $V _ { \alpha }$ as you take a small step in the $x ^ { \beta } .$ -direction, and then finding the change in that quantity as you take a small step in the $x ^ { \gamma }$ -direction. And now you're going to compare the result of these two operations with the result you get when you take the steps in reverse order – from the same starting point, you'll first find the incremental change in $V _ { \alpha }$ as you take a small step in the $x ^ { \gamma }$ -direction, after which you'll find the change in that quantity as you take a small step in the $x ^ { \beta }$ -direction.
+
+To take the covariant derivatives in the opposite order, differentiate first with respect to $x ^ { \gamma }$ :
+
+$$
+V _ {\alpha ; \gamma} = \frac {\partial V _ {\alpha}}{\partial x ^ {\gamma}} - \Gamma_ {\alpha \gamma} ^ {\sigma} V _ {\sigma}.\tag{6.24}
+$$
+
+Call this result $V _ { \alpha \gamma }$ and take another covariant derivative (this time with respect to $x ^ { \beta } )$ :
+
+$$
+V _ {\alpha \gamma ; \beta} = \frac {\partial V _ {\alpha \gamma}}{\partial x ^ {\beta}} - \Gamma_ {\alpha \beta} ^ {\tau} V _ {\tau \gamma} - \Gamma_ {\gamma \beta} ^ {\eta} V _ {\alpha \eta}.\tag{6.25}
+$$
+
+As before, you can substitute the expression from Eq. 6.24 into this equation to get
+
+$$
+\begin{array}{r l} & V _ {\alpha \gamma ; \beta} = \frac {\partial^ {2} V _ {\alpha}}{\partial x ^ {\beta} \partial x ^ {\gamma}} - \frac {\partial \Gamma_ {\alpha \gamma} ^ {\sigma}}{\partial x ^ {\beta}} V _ {\sigma} - \Gamma_ {\alpha \gamma} ^ {\sigma} \frac {\partial V _ {\sigma}}{\partial x ^ {\beta}} \\ & \qquad - \Gamma_ {\alpha \beta} ^ {\tau} \left(\frac {\partial V _ {\tau}}{\partial x ^ {\gamma}} - \Gamma_ {\tau \gamma} ^ {\sigma} V _ {\sigma}\right) \\ & \qquad - \Gamma_ {\gamma \beta} ^ {\eta} \left(\frac {\partial V _ {\alpha}}{\partial x ^ {\eta}} - \Gamma_ {\alpha \eta} ^ {\sigma} V _ {\sigma}\right). \end{array}\tag{6.26}
+$$
+
+In flat space, the order of covariant differentiation should make no differ ence, so Eq. 6.26 should be identical to Eq. 6.23. Any differences between these equations can therefore be attributed to the curvature of the space. Examining these two equations term by term, the first terms are equal:
+
+$$
+\frac {\partial^ {2} V _ {\alpha}}{\partial x ^ {\gamma} \partial x ^ {\beta}} = \frac {\partial^ {2} V _ {\alpha}}{\partial x ^ {\beta} \partial x ^ {\gamma}},
+$$
+
+(these terms are equal because the order of normal partial derivatives does not matter). Hence these terms cancel in the commutator. Now comparing the second terms,
+
+$$
+- \frac {\partial \Gamma_ {\alpha \beta} ^ {\sigma}}{\partial x ^ {\gamma}} V _ {\sigma} \neq - \frac {\partial \Gamma_ {\alpha \gamma} ^ {\sigma}}{\partial x ^ {\beta}} V _ {\sigma},
+$$
+
+so these terms do not cancel one another. Comparing the third term of Eq. 6.23 to the fourth term of Eq. 6.26, they're found to be equal:
+
+$$
+- \Gamma_ {\alpha \beta} ^ {\sigma} \frac {\partial V _ {\sigma}}{\partial x ^ {\gamma}} = - \Gamma_ {\alpha \beta} ^ {\tau} \frac {\partial V _ {\tau}}{\partial x ^ {\gamma}},
+$$
+
+because the symbols used for dummy indices (σ and $\tau )$ are irrelevant. The fourth term of Eq. 6.23 equals the third term of Eq. 6.26:
+
+$$
+- \Gamma_ {\alpha \gamma} ^ {\tau} \frac {\partial V _ {\tau}}{\partial x ^ {\beta}} = - \Gamma_ {\alpha \gamma} ^ {\sigma} \frac {\partial V _ {\sigma}}{\partial x ^ {\beta}},
+$$
+
+for the same reason. The fifth terms are not equal:
+
+$$
+\Gamma_ {\alpha \gamma} ^ {\tau} \Gamma_ {\tau \beta} ^ {\sigma} V _ {\sigma} \neq \Gamma_ {\alpha \beta} ^ {\tau} \Gamma_ {\tau \gamma} ^ {\sigma} V _ {\sigma}.
+$$
+
+But the sixth terms are equal:
+
+$$
+- \Gamma_ {\beta \gamma} ^ {\eta} \frac {\partial V _ {\alpha}}{\partial x ^ {\eta}} = - \Gamma_ {\gamma \beta} ^ {\eta} \frac {\partial V _ {\alpha}}{\partial x ^ {\eta}},
+$$
+
+because Christoffel symbols are symmetric in their lower indices. The seventh terms are equal for the same reason:
+
+$$
+\Gamma_ {\beta \gamma} ^ {\eta} \Gamma_ {\alpha \eta} ^ {\sigma} V _ {\sigma} = \Gamma_ {\gamma \beta} ^ {\eta} \Gamma_ {\alpha \eta} ^ {\sigma} V _ {\sigma}.
+$$
+
+So when the commutator AB BA is formed, most of the terms cancel out, but the second and fifth terms remain after subtraction. Those terms are
+
+$$
+\begin{array}{r} V _ {\alpha \beta ; \gamma} - V _ {\alpha \gamma ; \beta} = - \frac {\partial \Gamma_ {\alpha \beta} ^ {\sigma}}{\partial x ^ {\gamma}} V _ {\sigma} + \frac {\partial \Gamma_ {\alpha \gamma} ^ {\sigma}}{\partial x ^ {\beta}} V _ {\sigma} + \Gamma_ {\alpha \gamma} ^ {\tau} \Gamma_ {\tau \beta} ^ {\sigma} V _ {\sigma} - \Gamma_ {\alpha \beta} ^ {\tau} \Gamma_ {\tau \gamma} ^ {\sigma} V _ {\sigma} \\ = \left(\frac {\partial \Gamma_ {\alpha \gamma} ^ {\sigma}}{\partial x ^ {\beta}} - \frac {\partial \Gamma_ {\alpha \beta} ^ {\sigma}}{\partial x ^ {\gamma}} + \Gamma_ {\alpha \gamma} ^ {\tau} \Gamma_ {\tau \beta} ^ {\sigma} - \Gamma_ {\alpha \beta} ^ {\tau} \Gamma_ {\tau \gamma} ^ {\sigma}\right) V _ {\sigma}. \end{array}\tag{6.27}
+$$
+
+The terms within the parentheses define the Riemann curvature tensor:
+
+$$
+R _ {\alpha \beta \gamma} ^ {\sigma} \equiv \frac {\partial \Gamma_ {\alpha \gamma} ^ {\sigma}}{\partial x ^ {\beta}} - \frac {\partial \Gamma_ {\alpha \beta} ^ {\sigma}}{\partial x ^ {\gamma}} + \Gamma_ {\alpha \gamma} ^ {\tau} \Gamma_ {\tau \beta} ^ {\sigma} - \Gamma_ {\alpha \beta} ^ {\tau} \Gamma_ {\tau \gamma} ^ {\sigma}.\tag{6.28}
+$$
+
+If you're wondering why the curvature tensor involves the derivative of Christoffel symbols, consider this: in any space, you can always define a coordinate system for which the Christoffel symbols are all zero at some point. But unless the space is flat, the Christoffel symbols will not be zero at all other locations, which means that the partial derivatives of the Christoffel symbols will not be zero. So a necessary and sufficient condition for flat space is that
+
+$$
+R _ {\alpha \beta \gamma} ^ {\sigma} = 0.\tag{6.29}
+$$
+
+Another tensor related to the Riemann curvature tensor is the Ricci ten sor, which you can find by contracting the Riemann tensor along the $\sigma$ and $\beta$ indices. In four dimensions, this is
+
+$$
+R _ {\alpha \gamma} \equiv R _ {\alpha \sigma \gamma} ^ {\sigma} = R _ {\alpha 1 \gamma} ^ {1} + R _ {\alpha 2 \gamma} ^ {2} + R _ {\alpha 3 \gamma} ^ {3} + R _ {\alpha 4 \gamma} ^ {4}.\tag{6.30}
+$$
+
+If you contract the Ricci tensor by raising one index and setting it equal to the other, the result is the Ricci scalar. Again in four dimensions, this is
+
+$$
+R \equiv g ^ {\alpha \gamma} R _ {\alpha \gamma} = R _ {\gamma} ^ {\gamma} = R _ {1} ^ {1} + R _ {2} ^ {2} + R _ {3} ^ {3} + R _ {4} ^ {4}.\tag{6.31}
+$$
+
+Finally, the tensor known as the "Einstein tensor" can be written as a combination of the Ricci tensor, the Ricci scalar, and the metric:
+
+$$
+G _ {\alpha \gamma} \equiv R _ {\alpha \gamma} - \frac {1}{2} R g _ {\alpha \gamma}.\tag{6.32}
+$$
+
+This is the tensor that appears in Einstein's field equation for General Relativity, often written as
+
+$$
+G _ {\mu \nu} + \Gamma g _ {\mu \nu} = \frac {8 \pi G}{c ^ {4}} T _ {\mu \nu},\tag{6.33}
+$$
+
+where $T _ { \mu \nu }$ is the energy-momentum tensor and  is the "cosmological con stant" introduced by Einstein to maintain a static Universe. It is this equation that gives rise to the first half of the concise statement of General Relativity: "Matter tells spacetime how to curve, and spacetime tells matter how to move."
+
+To appreciate the full content of the Riemann tensor, consider a twodimensional space that is the surface of a sphere. The metric for such a space is
+
+$$
+d s ^ {2} = a ^ {2} d \theta^ {2} + a ^ {2} \sin^ {2} (\theta) d \phi^ {2},
+$$
+
+from which the components of the metric tensor may be found to be
+
+$$
+\begin{array}{l} {g _ {\theta \theta} = a ^ {2},} \\ {g _ {\theta \phi} = g _ {\phi \theta} = 0,} \\ {g _ {\phi \phi} = a ^ {2} \sin^ {2} (\theta).} \end{array}\tag{6.34}
+$$
+
+Inserting these values into the equation for Christoffel symbols gives
+
+$$
+\Gamma_ {i j} ^ {l} = \frac {1}{2} g ^ {k l} \left[ \frac {\partial g _ {i k}}{\partial x ^ {j}} + \frac {\partial g _ {j k}}{\partial x ^ {i}} - \frac {\partial g _ {i j}}{\partial x ^ {k}} \right].
+$$
+
+Even in two dimensions, writing out all the terms of the Christoffel symbols can be something of a chore:
+
+$$
+\begin{array}{r l} & {\Gamma_ {\theta \theta} ^ {\theta} = \frac {1}{2} \left[ g ^ {\theta \theta} \frac {\partial g _ {\theta \theta}}{\partial \theta} + g ^ {\phi \theta} \frac {\partial g _ {\theta \phi}}{\partial \theta} + g ^ {\theta \theta} \frac {\partial g _ {\theta \theta}}{\partial \theta} + g ^ {\phi \theta} \frac {\partial g _ {\theta \phi}}{\partial \theta} - g ^ {\theta \theta} \frac {\partial g _ {\theta \theta}}{\partial \theta} - g ^ {\phi \theta} \frac {\partial g _ {\theta \theta}}{\partial \phi} \right],} \\ & {\Gamma_ {\theta \phi} ^ {\theta} = \frac {1}{2} \left[ g ^ {\theta \theta} \frac {\partial g _ {\theta \theta}}{\partial \phi} + g ^ {\phi \theta} \frac {\partial g _ {\theta \phi}}{\partial \phi} + g ^ {\theta \theta} \frac {\partial g _ {\phi \theta}}{\partial \theta} + g ^ {\phi \theta} \frac {\partial g _ {\phi \phi}}{\partial \theta} - g ^ {\theta \theta} \frac {\partial g _ {\theta \phi}}{\partial \theta} - g ^ {\phi \theta} \frac {\partial g _ {\theta \phi}}{\partial \phi} \right],} \\ & {\Gamma_ {\phi \theta} ^ {\theta} = \frac {1}{2} \left[ g ^ {\theta \theta} \frac {\partial g _ {\phi \theta}}{\partial \theta} + g ^ {\phi \theta} \frac {\partial g _ {\phi \phi}}{\partial \theta} + g ^ {\theta \theta} \frac {\partial g _ {\theta \theta}}{\partial \phi} + g ^ {\phi \theta} \frac {\partial g _ {\theta \phi}}{\partial \phi} - g ^ {\theta \theta} \frac {\partial g _ {\phi \theta}}{\partial \theta} - g ^ {\phi \theta} \frac {\partial g _ {\phi \theta}}{\partial \phi} \right],} \\ & {\Gamma_ {\theta \theta} ^ {\phi} = \frac {1}{2} \left[ g ^ {\theta \phi} \frac {\partial g _ {\theta \theta}}{\partial \theta} + g ^ {\phi \phi} \frac {\partial g _ {\theta \phi}}{\partial \theta} + g ^ {\theta \phi} \frac {\partial g _ {\theta \theta}}{\partial \theta} + g ^ {\phi \phi} \frac {\partial g _ {\theta \phi}}{\partial \theta} - g ^ {\theta \phi} \frac {\partial g _ {\theta \theta}}{\partial \theta} - g ^ {\phi \phi} \frac {\partial g _ {\theta \theta}}{\partial \phi} \right],} \end{array}
+$$
+
+$$
+\begin{array}{r l} & {\Gamma_ {\theta \phi} ^ {\phi} = \frac {1}{2} \bigg [ g ^ {\theta \phi} \frac {\partial g _ {\theta \theta}}{\partial \phi} + g ^ {\phi \phi} \frac {\partial g _ {\theta \phi}}{\partial \phi} + g ^ {\theta \phi} \frac {\partial g _ {\phi \theta}}{\partial \theta} + g ^ {\phi \phi} \frac {\partial g _ {\phi \phi}}{\partial \theta} - g ^ {\theta \phi} \frac {\partial g _ {\theta \phi}}{\partial \theta} - g ^ {\phi \phi} \frac {\partial g _ {\theta \phi}}{\partial \phi} \bigg ],} \\ & {\Gamma_ {\phi \theta} ^ {\phi} = \frac {1}{2} \bigg [ g ^ {\theta \phi} \frac {\partial g _ {\phi \theta}}{\partial \theta} + g ^ {\phi \phi} \frac {\partial g _ {\phi \phi}}{\partial \theta} + g ^ {\theta \phi} \frac {\partial g _ {\theta \theta}}{\partial \phi} + g ^ {\phi \phi} \frac {\partial g _ {\theta \phi}}{\partial \phi} - g ^ {\theta \phi} \frac {\partial g _ {\phi \theta}}{\partial \theta} - g ^ {\phi \phi} \frac {\partial g _ {\phi \theta}}{\partial \phi} \bigg ],} \\ & {\Gamma_ {\phi \phi} ^ {\theta} = \frac {1}{2} \bigg [ g ^ {\theta \theta} \frac {\partial g _ {\phi \theta}}{\partial \phi} + g ^ {\phi \theta} \frac {\partial g _ {\phi \phi}}{\partial \phi} + g ^ {\theta \theta} \frac {\partial g _ {\phi \theta}}{\partial \phi} + g ^ {\phi \theta} \frac {\partial g _ {\phi \phi}}{\partial \phi} - g ^ {\theta \theta} \frac {\partial g _ {\phi \phi}}{\partial \theta} - g ^ {\phi \theta} \frac {\partial g _ {\phi \phi}}{\partial \phi} \bigg ],} \\ & {\Gamma_ {\phi \phi} ^ {\phi} = \frac {1}{2} \bigg [ g ^ {\theta \phi} \frac {\partial g _ {\phi \theta}}{\partial \phi} + g ^ {\phi \phi} \frac {\partial g _ {\phi \phi}}{\partial \phi} + g ^ {\theta \phi} \frac {\partial g _ {\phi \theta}}{\partial \phi} + g ^ {\phi \phi} \frac {\partial g _ {\phi \phi}}{\partial \phi} - g ^ {\theta \phi} \frac {\partial g _ {\phi \phi}}{\partial \theta} - g ^ {\phi \phi} \frac {\partial g _ {\phi \phi}}{\partial \phi} \bigg ].} \end{array}
+$$
+
+But given the metric tensor components shown in Eq. 6.34, all the partia derivatives except those involving $\frac { \partial g _ { \phi \phi } } { \partial \theta }$ are zero, as are any terms involving $g _ { \theta \phi }$ or $g _ { \phi \theta }$ . That leaves only three non-zero Christoffel symbols, which are
+
+$$
+\begin{array}{l} \Gamma_ {\theta \phi} ^ {\phi} = \left(\frac {1}{2}\right) g ^ {\phi \phi} \frac {\partial g _ {\phi \phi}}{\partial \theta} \\ \qquad = \left(\frac {1}{2}\right) \frac {1}{a ^ {2} \sin^ {2} (\theta)} [ 2 a ^ {2} \sin (\theta) \cos (\theta) ] = \frac {\cos (\theta)}{\sin (\theta)} = \cot (\theta), \\ \Gamma_ {\phi \theta} ^ {\phi} = \left(\frac {1}{2}\right) g ^ {\phi \phi} \frac {\partial g _ {\phi \phi}}{\partial \theta} \\ \qquad = \cot (\theta), \\ \Gamma_ {\phi \phi} ^ {\theta} = \left(\frac {1}{2}\right) - g ^ {\theta \theta} \frac {\partial g _ {\phi \phi}}{\partial \theta} \\ \qquad = - \left(\frac {1}{2}\right) \frac {1}{a ^ {2}} [ 2 a ^ {2} \sin (\theta) \cos (\theta) ] = - \sin (\theta) \cos (\theta). \end{array}
+$$
+
+With the Christoffel symbols for the spherical surface in hand, the components of the Riemann curvature tensor may be found using
+
+$$
+R _ {\alpha \beta \gamma} ^ {\sigma} \equiv \frac {\partial \Gamma_ {\alpha \gamma} ^ {\sigma}}{\partial x ^ {\beta}} - \frac {\partial \Gamma_ {\alpha \beta} ^ {\sigma}}{\partial x ^ {\gamma}} + \Gamma_ {\alpha \gamma} ^ {\tau} \Gamma_ {\tau \beta} ^ {\sigma} - \Gamma_ {\alpha \beta} ^ {\tau} \Gamma_ {\tau \gamma} ^ {\sigma}.
+$$
+
+As in most tensor equations, the full content of this tensor can only be appreciated by writing out the components. Not only must you allow each of the indices $\sigma , \alpha , \beta ,$ and $\gamma$ to represent both $\theta$ and $\phi _ { : }$ , you must also allow the dummy index $\tau$ to represent both $\theta$ and $\phi$ and then sum those terms. Hence in two-dimensional space, the last two terms of the Riemann tensor equation (those involving the products of the Christoffel symbols) become four terms, making a total of six terms for each set of indices. The first eight components of the Riemann tensor can be found by setting $\sigma$ equal to $\theta$ and letting the other indices represent both $\theta$ and $\phi \mathrm { : }$ :
+
+$$
+\begin{array}{r} R _ {\theta \theta \theta} ^ {\theta} = \frac {\partial \Gamma_ {\theta \theta} ^ {\theta}}{\partial \theta} - \frac {\partial \Gamma_ {\theta \theta} ^ {\theta}}{\partial \theta} + \Gamma_ {\theta \theta} ^ {\theta} \Gamma_ {\theta \theta} ^ {\theta} + \Gamma_ {\theta \theta} ^ {\phi} \Gamma_ {\phi \theta} ^ {\theta} - \Gamma_ {\theta \theta} ^ {\theta} \Gamma_ {\theta \theta} ^ {\theta} - \Gamma_ {\theta \theta} ^ {\phi} \Gamma_ {\phi \theta} ^ {\theta}, \\ R _ {\theta \theta \phi} ^ {\theta} = \frac {\partial \Gamma_ {\theta \phi} ^ {\theta}}{\partial \theta} - \frac {\partial \Gamma_ {\theta \theta} ^ {\theta}}{\partial \phi} + \Gamma_ {\theta \phi} ^ {\theta} \Gamma_ {\theta \theta} ^ {\theta} + \Gamma_ {\theta \phi} ^ {\phi} \Gamma_ {\phi \theta} ^ {\theta} - \Gamma_ {\theta \theta} ^ {\theta} \Gamma_ {\theta \phi} ^ {\theta} - \Gamma_ {\theta \theta} ^ {\phi} \Gamma_ {\phi \phi} ^ {\theta}, \end{array}
+$$
+
+$$
+R _ {\theta \phi \theta} ^ {\theta} = \frac {\partial \Gamma_ {\theta \theta} ^ {\theta}}{\partial \phi} - \frac {\partial \Gamma_ {\theta \phi} ^ {\theta}}{\partial \theta} + \Gamma_ {\theta \theta} ^ {\theta} \Gamma_ {\theta \phi} ^ {\theta} + \Gamma_ {\theta \theta} ^ {\phi} \Gamma_ {\phi \phi} ^ {\theta} - \Gamma_ {\theta \phi} ^ {\theta} \Gamma_ {\theta \theta} ^ {\theta} - \Gamma_ {\theta \phi} ^ {\phi} \Gamma_ {\phi \theta} ^ {\theta},
+$$
+
+$$
+R _ {\phi \theta \theta} ^ {\theta} = \frac {\partial \Gamma_ {\phi \theta} ^ {\theta}}{\partial \theta} - \frac {\partial \Gamma_ {\phi \theta} ^ {\theta}}{\partial \phi} + \Gamma_ {\phi \theta} ^ {\theta} \Gamma_ {\theta \theta} ^ {\theta} + \Gamma_ {\phi \theta} ^ {\phi} \Gamma_ {\phi \theta} ^ {\theta} - \Gamma_ {\phi \theta} ^ {\theta} \Gamma_ {\theta \theta} ^ {\theta} - \Gamma_ {\phi \theta} ^ {\phi} \Gamma_ {\phi \theta} ^ {\theta},
+$$
+
+$$
+R _ {\theta \phi \phi} ^ {\theta} = \frac {\partial \Gamma_ {\theta \phi} ^ {\theta}}{\partial \phi} - \frac {\partial \Gamma_ {\theta \phi} ^ {\theta}}{\partial \phi} + \Gamma_ {\theta \phi} ^ {\theta} \Gamma_ {\theta \phi} ^ {\theta} + \Gamma_ {\theta \phi} ^ {\phi} \Gamma_ {\phi \phi} ^ {\theta} - \Gamma_ {\theta \phi} ^ {\theta} \Gamma_ {\theta \phi} ^ {\theta} - \Gamma_ {\theta \phi} ^ {\phi} \Gamma_ {\phi \phi} ^ {\theta},
+$$
+
+$$
+R _ {\phi \theta \phi} ^ {\theta} = \frac {\partial \Gamma_ {\phi \phi} ^ {\theta}}{\partial \theta} - \frac {\partial \Gamma_ {\phi \theta} ^ {\theta}}{\partial \phi} + \Gamma_ {\phi \phi} ^ {\theta} \Gamma_ {\theta \theta} ^ {\theta} + \Gamma_ {\phi \phi} ^ {\phi} \Gamma_ {\phi \theta} ^ {\theta} - \Gamma_ {\phi \theta} ^ {\theta} \Gamma_ {\theta \phi} ^ {\theta} - \Gamma_ {\phi \theta} ^ {\phi} \Gamma_ {\phi \phi} ^ {\theta},
+$$
+
+$$
+R _ {\phi \phi \theta} ^ {\theta} = \frac {\partial \Gamma_ {\phi \theta} ^ {\theta}}{\partial \phi} - \frac {\partial \Gamma_ {\phi \phi} ^ {\theta}}{\partial \theta} + \Gamma_ {\phi \theta} ^ {\theta} \Gamma_ {\theta \phi} ^ {\theta} + \Gamma_ {\phi \theta} ^ {\phi} \Gamma_ {\phi \phi} ^ {\theta} - \Gamma_ {\phi \phi} ^ {\theta} \Gamma_ {\theta \theta} ^ {\theta} - \Gamma_ {\phi \phi} ^ {\phi} \Gamma_ {\phi \theta} ^ {\theta},
+$$
+
+$$
+R _ {\phi \phi \phi} ^ {\theta} = \frac {\partial \Gamma_ {\phi \phi} ^ {\theta}}{\partial \phi} - \frac {\partial \Gamma_ {\phi \phi} ^ {\theta}}{\partial \phi} + \Gamma_ {\phi \phi} ^ {\theta} \Gamma_ {\theta \phi} ^ {\theta} + \Gamma_ {\phi \phi} ^ {\phi} \Gamma_ {\phi \phi} ^ {\theta} - \Gamma_ {\phi \phi} ^ {\theta} \Gamma_ {\theta \phi} ^ {\theta} - \Gamma_ {\phi \phi} ^ {\phi} \Gamma_ {\phi \phi} ^ {\theta}.
+$$
+
+Inserting the Christoffel symbols found above, you can see that the non-zero components are
+
+$$
+R _ {\phi \theta \phi} ^ {\theta} = \frac {\partial \Gamma_ {\phi \phi} ^ {\theta}}{\partial \theta} - \Gamma_ {\phi \theta} ^ {\phi} \Gamma_ {\phi \phi} ^ {\theta},
+$$
+
+$$
+R _ {\phi \phi \theta} ^ {\theta} = - \frac {\partial \Gamma_ {\phi \phi} ^ {\theta}}{\partial \theta} + \Gamma_ {\phi \theta} ^ {\phi} \Gamma_ {\phi \phi} ^ {\theta}.
+$$
+
+And since
+
+$$
+\frac {\partial \Gamma_ {\phi \phi} ^ {\theta}}{\partial \theta} = \sin^ {2} (\theta) - \cos^ {2} (\theta),
+$$
+
+and
+
+$$
+\Gamma_ {\phi \theta} ^ {\phi} \Gamma_ {\phi \phi} ^ {\theta} = - \cos^ {2} (\theta),
+$$
+
+this means the surviving terms from the $\sigma = \theta$ group are
+
+$$
+R _ {\phi \theta \phi} ^ {\theta} = [ \sin^ {2} (\theta) - \cos^ {2} (\theta) ] - [ - \cos^ {2} (\theta) ] = \sin^ {2} (\theta),
+$$
+
+$$
+R _ {\phi \phi \theta} ^ {\theta} = - [ \sin^ {2} (\theta) - \cos^ {2} (\theta) ] + [ - \cos^ {2} (\theta) ] = - \sin^ {2} (\theta).
+$$
+
+Now allowing $\sigma$ to equal $\phi .$ , the other eight terms are
+
+$$
+R _ {\theta \theta \theta} ^ {\phi} = \frac {\partial \Gamma_ {\theta \theta} ^ {\phi}}{\partial \theta} - \frac {\partial \Gamma_ {\theta \theta} ^ {\phi}}{\partial \theta} + \Gamma_ {\theta \theta} ^ {\theta} \Gamma_ {\theta \theta} ^ {\phi} + \Gamma_ {\theta \theta} ^ {\phi} \Gamma_ {\phi \theta} ^ {\phi} - \Gamma_ {\theta \theta} ^ {\theta} \Gamma_ {\theta \theta} ^ {\phi} - \Gamma_ {\theta \theta} ^ {\phi} \Gamma_ {\phi \theta} ^ {\phi},
+$$
+
+$$
+R _ {\theta \theta \phi} ^ {\phi} = \frac {\partial \Gamma_ {\theta \phi} ^ {\phi}}{\partial \theta} - \frac {\partial \Gamma_ {\theta \theta} ^ {\phi}}{\partial \phi} + \Gamma_ {\theta \phi} ^ {\theta} \Gamma_ {\theta \theta} ^ {\phi} + \Gamma_ {\theta \phi} ^ {\phi} \Gamma_ {\phi \theta} ^ {\phi} - \Gamma_ {\theta \theta} ^ {\theta} \Gamma_ {\theta \phi} ^ {\phi} - \Gamma_ {\theta \theta} ^ {\phi} \Gamma_ {\phi \phi} ^ {\phi},
+$$
+
+$$
+R _ {\theta \phi \theta} ^ {\phi} = \frac {\partial \Gamma_ {\theta \theta} ^ {\phi}}{\partial \phi} - \frac {\partial \Gamma_ {\theta \phi} ^ {\phi}}{\partial \theta} + \Gamma_ {\theta \theta} ^ {\theta} \Gamma_ {\theta \phi} ^ {\phi} + \Gamma_ {\theta \theta} ^ {\phi} \Gamma_ {\phi \phi} ^ {\phi} - \Gamma_ {\theta \phi} ^ {\theta} \Gamma_ {\theta \theta} ^ {\phi} - \Gamma_ {\theta \phi} ^ {\phi} \Gamma_ {\phi \theta} ^ {\phi},
+$$
+
+$$
+R _ {\phi \theta \theta} ^ {\phi} = \frac {\partial \Gamma_ {\phi \theta} ^ {\phi}}{\partial \theta} - \frac {\partial \Gamma_ {\phi \theta} ^ {\phi}}{\partial \theta} + \Gamma_ {\phi \theta} ^ {\theta} \Gamma_ {\theta \theta} ^ {\phi} + \Gamma_ {\phi \theta} ^ {\phi} \Gamma_ {\phi \theta} ^ {\phi} - \Gamma_ {\phi \theta} ^ {\theta} \Gamma_ {\theta \theta} ^ {\phi} - \Gamma_ {\phi \theta} ^ {\phi} \Gamma_ {\phi \theta} ^ {\phi},
+$$
+
+$$
+R _ {\theta \phi \phi} ^ {\phi} = \frac {\partial \Gamma_ {\theta \phi} ^ {\phi}}{\partial \phi} - \frac {\partial \Gamma_ {\theta \phi} ^ {\phi}}{\partial \phi} + \Gamma_ {\theta \phi} ^ {\theta} \Gamma_ {\theta \phi} ^ {\phi} + \Gamma_ {\theta \phi} ^ {\phi} \Gamma_ {\phi \phi} ^ {\phi} - \Gamma_ {\phi \theta} ^ {\theta} \Gamma_ {\theta \phi} ^ {\phi} - \Gamma_ {\theta \phi} ^ {\phi} \Gamma_ {\phi \phi} ^ {\phi},
+$$
+
+$$
+R _ {\phi \theta \phi} ^ {\phi} = \frac {\partial \Gamma_ {\phi \phi} ^ {\phi}}{\partial \theta} - \frac {\partial \Gamma_ {\phi \theta} ^ {\phi}}{\partial \phi} + \Gamma_ {\phi \phi} ^ {\theta} \Gamma_ {\theta \theta} ^ {\phi} + \Gamma_ {\phi \phi} ^ {\phi} \Gamma_ {\phi \theta} ^ {\phi} - \Gamma_ {\phi \theta} ^ {\theta} \Gamma_ {\theta \phi} ^ {\phi} - \Gamma_ {\phi \theta} ^ {\phi} \Gamma_ {\phi \phi} ^ {\phi},
+$$
+
+$$
+R _ {\phi \phi \theta} ^ {\phi} = \frac {\partial \Gamma_ {\phi \theta} ^ {\phi}}{\partial \phi} - \frac {\partial \Gamma_ {\phi \phi} ^ {\phi}}{\partial \theta} + \Gamma_ {\phi \theta} ^ {\theta} \Gamma_ {\theta \phi} ^ {\phi} + \Gamma_ {\phi \theta} ^ {\phi} \Gamma_ {\phi \phi} ^ {\phi} - \Gamma_ {\phi \phi} ^ {\theta} \Gamma_ {\theta \theta} ^ {\phi} - \Gamma_ {\phi \phi} ^ {\phi} \Gamma_ {\phi \theta} ^ {\phi},
+$$
+
+$$
+R _ {\phi \phi \phi} ^ {\phi} = \frac {\partial \Gamma_ {\phi \phi} ^ {\phi}}{\partial \phi} - \frac {\partial \Gamma_ {\phi \phi} ^ {\phi}}{\partial \phi} + \Gamma_ {\phi \phi} ^ {\theta} \Gamma_ {\theta \phi} ^ {\phi} + \Gamma_ {\phi \phi} ^ {\phi} \Gamma_ {\phi \phi} ^ {\phi} - \Gamma_ {\phi \phi} ^ {\theta} \Gamma_ {\theta \phi} ^ {\phi} - \Gamma_ {\phi \phi} ^ {\phi} \Gamma_ {\phi \phi} ^ {\phi}.
+$$
+
+Again inserting the Christoffel symbols, the non-zero terms are found to be
+
+$$
+R _ {\theta \theta \phi} ^ {\phi} = \frac {\partial \Gamma_ {\theta \phi} ^ {\phi}}{\partial \theta} + \Gamma_ {\theta \phi} ^ {\phi} \Gamma_ {\phi \theta} ^ {\phi},
+$$
+
+$$
+R _ {\theta \phi \theta} ^ {\phi} = - \frac {\partial \Gamma_ {\theta \phi} ^ {\phi}}{\partial \theta} - \Gamma_ {\theta \phi} ^ {\phi} \Gamma_ {\phi \theta} ^ {\phi}.
+$$
+
+And since
+
+$$
+\frac {\partial \Gamma_ {\theta \phi} ^ {\phi}}{\partial \theta} = - \frac {\sin (\theta)}{\sin (\theta)} - \frac {\cos^ {2} (\theta)}{\sin^ {2} (\theta)} = - [ 1 + \cot^ {2} (\theta) ],
+$$
+
+and
+
+$$
+\Gamma_ {\theta \phi} ^ {\phi} \Gamma_ {\phi \theta} ^ {\phi} = \cot^ {2} (\theta),
+$$
+
+the surviving terms are
+
+$$
+R _ {\theta \theta \phi} ^ {\phi} = - [ 1 + \cot^ {2} (\theta) ] + \cot^ {2} (\theta) = - 1,
+$$
+
+$$
+R _ {\theta \phi \theta} ^ {\phi} = [ 1 + \cot^ {2} (\theta) ] - \cot^ {2} (\theta) = 1.
+$$
+
+As expected, a two-dimensional space with the metric of a sphere $( d s ^ { 2 } =$ $a ^ { 2 } d \theta ^ { 2 } + a ^ { 2 } \sin ^ { 2 } ( \theta ) d \phi ^ { 2 } )$ has non-zero components of the Riemann curvature tensor, confirming that this space is non-Euclidean.
+
+You can see how to use these results to find the Ricci tensor and the Ricc scalar in the on-line solutions to the problems at the end of this chapter.

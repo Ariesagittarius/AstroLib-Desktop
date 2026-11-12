@@ -145,9 +145,39 @@ export function ingestDevServerPlugin() {
               return sendJson(res, 400, { error: '缺少 taskId' });
             }
 
+            // 提取客户端传递的 Token (Header 优先，Body 兜底)
+            const authHeader = req.headers['authorization'] || '';
+            const bearerToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : '';
+            const passedToken = bearerToken || (typeof body.token === 'string' ? body.token.trim() : '');
+
+            if (passedToken) {
+              taskManager.getApiClient().setToken(passedToken);
+              try {
+                fs.writeFileSync(path.join(process.cwd(), '.mineru.json'), JSON.stringify({ token: passedToken }, null, 2), 'utf-8');
+              } catch {}
+            }
+
             const engine = body.engine === 'local' ? 'local' : body.engine === 'agent' ? 'agent' : 'api';
-            const updatedTask = taskManager.startParse(taskId, engine);
+            const updatedTask = taskManager.startParse(taskId, engine, { token: passedToken });
             return sendJson(res, 200, { success: true, task: updatedTask });
+          }
+
+          // 4.0 同步与获取 MinerU Token /api/ingest/token
+          if (pathname === `${INGEST_PATH_PREFIX}/token`) {
+            if (req.method === 'POST') {
+              const body = await readJsonBody(req);
+              const token = (body.token || '').trim();
+              if (token) {
+                taskManager.getApiClient().setToken(token);
+                try {
+                  fs.writeFileSync(path.join(process.cwd(), '.mineru.json'), JSON.stringify({ token }, null, 2), 'utf-8');
+                } catch {}
+              }
+              return sendJson(res, 200, { success: true });
+            } else if (req.method === 'GET') {
+              const currentToken = taskManager.getApiClient().getToken() || '';
+              return sendJson(res, 200, { token: currentToken });
+            }
           }
 
           // 4.1 AI Agent 专用免密极速轻量解析 /api/ingest/agent-parse
@@ -172,6 +202,12 @@ export function ingestDevServerPlugin() {
             } finally {
               fs.rmSync(tempDir, { recursive: true, force: true });
             }
+          }
+
+          // 4.9 获取所有任务列表 /api/ingest/tasks
+          if (req.method === 'GET' && pathname === `${INGEST_PATH_PREFIX}/tasks`) {
+            const tasks = taskManager.listTasks();
+            return sendJson(res, 200, { success: true, tasks });
           }
 
           // 5. 查询任务状态 /api/ingest/status

@@ -1,0 +1,116 @@
+---
+/**
+ * src/features/search-rec/ui/SearchModal.astro
+ * 官方覆盖 Starlight 默认搜索组件：AstroLib 跨书知识整合与三模态推荐系统
+ * 严格遵循学术克制规约，去除一切 Emoji，采用 Material 3 纯净学术交互
+ */
+import './search-modal.css';
+---
+
+<site-search class="astrolib-search-root">
+  <!-- 1. 顶栏触发器 (Google Drive 胶囊药丸风格) -->
+  <button
+    type="button"
+    class="astrolib-search-trigger vp-nav-search-btn"
+    id="astrolib-search-trigger"
+    aria-label="搜索全书库知识与学术推导 (Ctrl+K)"
+    title="搜索全书库知识与学术推导 (Ctrl+K)"
+  >
+    <svg class="search-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <circle cx="11" cy="11" r="8"></circle>
+      <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+    </svg>
+    <span class="search-placeholder">全书库知识整合与跨书检索...</span>
+    <span class="search-kbd-group" aria-hidden="true">
+      <kbd>Ctrl</kbd>
+      <kbd>K</kbd>
+    </span>
+  </button>
+
+  <!-- 2. 全站统一 Material 3 搜索与推荐模态框 -->
+  <dialog class="astrolib-search-dialog" id="astrolib-search-dialog" aria-modal="true" aria-label="全站图书知识整合检索">
+    <div class="astrolib-search-dialog-inner">
+      <!-- 头部：输入框 -->
+      <div class="astrolib-search-header">
+        <div class="astrolib-search-input-box">
+          <svg class="search-input-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          <input
+            type="search"
+            id="astrolib-search-input"
+            class="astrolib-search-input"
+            placeholder="搜索概念、章节、LaTeX 公式 (如 \lim) 或定理代号..."
+            autocomplete="off"
+            spellcheck="false"
+          />
+          <button type="button" class="astrolib-search-clear-btn" id="astrolib-search-clear" style="display: none;" title="清空输入" aria-label="清空输入">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+          </button>
+          <button type="button" class="astrolib-search-close-btn" id="astrolib-search-close" title="关闭 (Esc)" aria-label="关闭 (Esc)">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+          </button>
+        </div>
+
+        <!-- 范围筛选行 (Material 3 Filter Chips) -->
+        <div class="astrolib-search-scope-bar" role="radiogroup" aria-label="检索范围">
+          <span class="astrolib-scope-label">范围：</span>
+          <div class="astrolib-scope-chips" id="astrolib-scope-chips">
+            <button type="button" class="astrolib-scope-chip is-active" data-scope="all">全学科图书</button>
+            <button type="button" class="astrolib-scope-chip" data-scope="current" id="astrolib-scope-current-btn">当前图书</button>
+            <select class="astrolib-book-select" id="astrolib-book-select" title="指定其他图书">
+              <option value="">指定其他图书...</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- 模式切换 Chip-Set (纯文本，学术克制，严禁 Emoji) -->
+        <div class="astrolib-search-chips" id="astrolib-mode-chips">
+          <button type="button" class="astrolib-mode-chip is-active" data-mode="neural">
+            <span>语义推荐</span>
+          </button>
+          <button type="button" class="astrolib-mode-chip" data-mode="exact">
+            <span>精确公式</span>
+          </button>
+          <button type="button" class="astrolib-mode-chip" data-mode="fuzzy">
+            <span>模糊检索</span>
+          </button>
+          <span class="astrolib-match-hint" id="astrolib-match-mode-hint">语义向量与多任务召回</span>
+        </div>
+      </div>
+
+      <!-- 中间：知识卡片探索流容器 -->
+      <div class="astrolib-search-results" id="astrolib-search-results">
+        <!-- 动态由 search-modal-client.ts 渲染 -->
+      </div>
+
+      <!-- 底部：键盘操作指引与统计 -->
+      <div class="astrolib-search-footer">
+        <div class="astrolib-footer-keys">
+          <span><kbd>↑</kbd><kbd>↓</kbd> 切换</span>
+          <span class="footer-divider">|</span>
+          <span><kbd>↵</kbd> 跳转</span>
+          <span class="footer-divider">|</span>
+          <span><kbd>Esc</kbd> 关闭</span>
+        </div>
+        <div class="astrolib-footer-count" id="astrolib-match-count">
+          全书库 13 本教材
+        </div>
+      </div>
+    </div>
+  </dialog>
+</site-search>
+
+<script>
+  import { initSearchModalClient } from './search-modal-client.ts';
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initSearchModalClient);
+  } else {
+    initSearchModalClient();
+  }
+
+  // 兼容 Astro 视图转换
+  document.addEventListener('astro:page-load', initSearchModalClient);
+</script>

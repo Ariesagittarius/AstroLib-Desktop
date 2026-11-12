@@ -1,0 +1,95 @@
+---
+/**
+ * src/components/m3/M3Button.astro
+ * ============================================================================
+ * Official Material Design 3 Web Component Button (@material/web)
+ * ============================================================================
+ * 提供符合 Google Material 3 规范的声明式按钮：
+ * - filled: 强调主操作 (<md-filled-button>)
+ * - outlined: 次要描边操作 (<md-outlined-button>)
+ * - tonal: 柔和背景填充操作 (<md-tonal-button>)
+ * - text: 极简纯文字按钮 (<md-text-button>)
+ * - elevated: 轻微阴影浮动按钮 (<md-elevated-button>)
+ * ============================================================================
+ */
+import M3Icon from './M3Icon.astro';
+
+interface Props {
+  variant?: 'filled' | 'outlined' | 'tonal' | 'text' | 'elevated';
+  href?: string;
+  disabled?: boolean;
+  icon?: string;
+  trailingIcon?: boolean;
+  type?: 'button' | 'submit' | 'reset';
+  class?: string;
+  id?: string;
+  title?: string;
+  ariaLabel?: string;
+  target?: string;
+  rel?: string;
+}
+
+const {
+  variant = 'filled',
+  href,
+  disabled = false,
+  icon,
+  trailingIcon = false,
+  type = 'button',
+  class: className = '',
+  id,
+  title,
+  ariaLabel,
+  target,
+  rel,
+} = Astro.props;
+
+const Tag = variant === 'outlined'
+  ? 'md-outlined-button'
+  : variant === 'tonal'
+  ? 'md-tonal-button'
+  : variant === 'text'
+  ? 'md-text-button'
+  : variant === 'elevated'
+  ? 'md-elevated-button'
+  : 'md-filled-button';
+---
+
+<Tag
+  class:list={['m3-declarative-btn', className]}
+  id={id}
+  href={href}
+  disabled={disabled ? true : undefined}
+  type={href ? undefined : type}
+  title={title}
+  aria-label={ariaLabel}
+  target={target}
+  rel={rel}
+>
+  {icon && !trailingIcon && (
+    <M3Icon name={icon} slot="icon" size={18} />
+  )}
+  <slot />
+  {icon && trailingIcon && (
+    <M3Icon name={icon} slot="icon" size={18} />
+  )}
+</Tag>
+
+<script>
+  import '@material/web/button/filled-button.js';
+  import '@material/web/button/outlined-button.js';
+  import '@material/web/button/tonal-button.js';
+  import '@material/web/button/text-button.js';
+  import '@material/web/button/elevated-button.js';
+</script>
+
+<style>
+  .m3-declarative-btn {
+    --md-filled-button-container-shape: var(--md-shape-corner-full, 9999px);
+    --md-outlined-button-container-shape: var(--md-shape-corner-full, 9999px);
+    --md-tonal-button-container-shape: var(--md-shape-corner-full, 9999px);
+    --md-text-button-container-shape: var(--md-shape-corner-full, 9999px);
+    font-family: var(--md-sys-typescale-label-large-font, 'Google Sans', system-ui, sans-serif);
+    font-weight: 500;
+  }
+</style>

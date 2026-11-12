@@ -1,0 +1,473 @@
+/**
+ * src/features/search-rec/ui/search-modal.css
+ * AstroLib 全站知识整合与推荐模态框 Material 3 纯净学术样式
+ * 严格遵循 AGENTS.md 极端减法与学术克制规约，去除一切 Emoji 与多余视觉噪音
+ */
+
+/* 1. 顶栏触发胶囊条 (Google Drive 风格) */
+.astrolib-search-root {
+  display: block;
+  width: 100%;
+  min-width: 0;
+}
+
+.astrolib-search-trigger {
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.625rem !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  height: 2.25rem !important;
+  padding: 0 0.875rem !important;
+  background-color: var(--md-sys-color-surface-container-high, rgba(255, 255, 255, 0.06)) !important;
+  border: 1px solid var(--sl-color-hairline, rgba(255, 255, 255, 0.12)) !important;
+  border-radius: 9999px !important;
+  font-family: inherit !important;
+  font-size: 0.8125rem !important;
+  color: var(--sl-color-gray-2, #cbd5e1) !important;
+  cursor: pointer !important;
+  transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease !important;
+}
+
+.astrolib-search-trigger:hover {
+  background-color: var(--md-sys-color-surface-container-highest, rgba(255, 255, 255, 0.1)) !important;
+  color: var(--sl-color-white, #ffffff) !important;
+  border-color: var(--sl-color-text-accent, #6366f1) !important;
+}
+
+.astrolib-search-trigger .search-icon {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  color: var(--sl-color-gray-3, #94a3b8);
+}
+
+.astrolib-search-trigger .search-placeholder {
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  user-select: none;
+}
+
+.astrolib-search-trigger .search-kbd-group {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  flex-shrink: 0;
+}
+
+@media (max-width: 560px) {
+  .astrolib-search-trigger .search-kbd-group {
+    display: none;
+  }
+}
+
+.astrolib-search-trigger kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.25rem;
+  height: 1.25rem;
+  padding: 0 0.35rem;
+  font-size: 0.6875rem;
+  font-family: inherit;
+  font-weight: 500;
+  color: var(--sl-color-gray-3, #94a3b8);
+  background-color: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--sl-color-hairline, rgba(255, 255, 255, 0.14));
+  border-radius: 4px;
+}
+
+/* 2. 模态对话框与遮罩 */
+.astrolib-search-dialog {
+  position: fixed;
+  inset: 0;
+  margin: auto;
+  width: min(46rem, 92vw);
+  max-height: 82vh;
+  padding: 0;
+  background-color: var(--md-sys-color-surface-container, #1e1f20);
+  color: var(--sl-color-white, #f8fafc);
+  border: 1px solid var(--md-sys-color-outline-variant, rgba(255, 255, 255, 0.14));
+  border-radius: 18px;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+  z-index: var(--layer-dialog, 500);
+}
+
+.astrolib-search-dialog::backdrop {
+  background-color: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(6px);
+}
+
+.astrolib-search-dialog-inner {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  max-height: 82vh;
+}
+
+/* 3. 头部搜索输入区 */
+.astrolib-search-header {
+  padding: 0.85rem 1.15rem 0.65rem;
+  background-color: var(--md-sys-color-surface-container-high, rgba(255, 255, 255, 0.03));
+  border-bottom: 1px solid var(--sl-color-hairline, rgba(255, 255, 255, 0.08));
+}
+
+.astrolib-search-input-box {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.45rem 0.85rem;
+  background-color: var(--md-sys-color-surface-container-high, rgba(255, 255, 255, 0.06));
+  border: 1.5px solid transparent;
+  border-radius: 12px;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.astrolib-search-input-box:focus-within {
+  border-color: var(--sl-color-text-accent, #6366f1);
+  background-color: var(--md-sys-color-surface-container-highest, rgba(255, 255, 255, 0.09));
+}
+
+.astrolib-search-input-box .search-input-icon {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  color: var(--sl-color-gray-3, #94a3b8);
+}
+
+.astrolib-search-input-box input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  font-size: 0.95rem;
+  color: var(--sl-color-white, #f8fafc);
+  outline: none;
+  font-family: inherit;
+}
+
+/* 彻底隐蔽 Chromium 原生在 input[type="search"] 上自带的删除小圆叉，防止多出伪影按钮 */
+.astrolib-search-input-box input[type="search"]::-webkit-search-cancel-button,
+.astrolib-search-input-box input[type="search"]::-webkit-search-decoration,
+.astrolib-search-input-box input[type="search"]::-webkit-search-results-button,
+.astrolib-search-input-box input[type="search"]::-webkit-search-results-decoration {
+  -webkit-appearance: none !important;
+  display: none !important;
+}
+
+.astrolib-search-input-box input::placeholder {
+  color: var(--sl-color-gray-3, #94a3b8);
+}
+
+.astrolib-search-clear-btn,
+.astrolib-search-close-btn {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 1.75rem !important;
+  min-width: 1.75rem !important;
+  max-width: 1.75rem !important;
+  height: 1.75rem !important;
+  padding: 0 !important;
+  border: none !important;
+  background: transparent !important;
+  color: var(--sl-color-gray-3, #94a3b8) !important;
+  border-radius: 50% !important;
+  cursor: pointer !important;
+  flex-shrink: 0 !important;
+  transition: background-color 0.12s ease, color 0.12s ease;
+}
+
+.astrolib-search-clear-btn:hover,
+.astrolib-search-close-btn:hover {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  color: var(--sl-color-white, #ffffff) !important;
+}
+
+/* 4. 范围筛选条 (Material 3 Filter Chips) */
+.astrolib-search-scope-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.65rem;
+  padding-bottom: 0.25rem;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.astrolib-search-scope-bar::-webkit-scrollbar {
+  display: none;
+}
+
+.astrolib-scope-label {
+  font-size: 0.75rem;
+  color: var(--sl-color-gray-3, #94a3b8);
+  flex-shrink: 0;
+  user-select: none;
+}
+
+.astrolib-scope-chips {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex-wrap: nowrap;
+}
+
+.astrolib-scope-chip {
+  display: inline-flex !important;
+  align-items: center !important;
+  width: auto !important;
+  height: auto !important;
+  gap: 0.35rem;
+  padding: 0.25rem 0.65rem !important;
+  font-size: 0.75rem !important;
+  font-weight: 500;
+  border-radius: 9999px !important;
+  border: 1px solid var(--sl-color-hairline, rgba(255, 255, 255, 0.12)) !important;
+  background-color: transparent !important;
+  color: var(--sl-color-gray-2, #cbd5e1) !important;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.astrolib-scope-chip:hover {
+  background-color: rgba(255, 255, 255, 0.06) !important;
+  color: #ffffff !important;
+}
+
+.astrolib-scope-chip.is-active {
+  background-color: var(--sl-color-accent-low, rgba(99, 102, 241, 0.18)) !important;
+  border-color: var(--sl-color-text-accent, #6366f1) !important;
+  color: var(--sl-color-text-accent, #818cf8) !important;
+  font-weight: 600;
+}
+
+.astrolib-book-select {
+  background-color: var(--md-sys-color-surface-container-high, rgba(255, 255, 255, 0.06));
+  border: 1px solid var(--sl-color-hairline, rgba(255, 255, 255, 0.12));
+  border-radius: 9999px;
+  color: var(--sl-color-gray-2, #cbd5e1);
+  padding: 0.2rem 0.65rem;
+  font-size: 0.75rem;
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.15s ease;
+}
+
+.astrolib-book-select:focus {
+  border-color: var(--sl-color-text-accent, #6366f1);
+}
+
+.astrolib-book-select option {
+  background-color: #1e1f20;
+  color: #f8fafc;
+}
+
+/* 5. 模态切换 Chip-Set (纯文本，严禁 Emoji) */
+.astrolib-search-chips {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.astrolib-search-chips::-webkit-scrollbar {
+  display: none;
+}
+
+.astrolib-mode-chip {
+  display: inline-flex !important;
+  align-items: center !important;
+  width: auto !important;
+  height: auto !important;
+  gap: 0.35rem;
+  padding: 0.25rem 0.75rem !important;
+  font-size: 0.75rem !important;
+  font-weight: 500;
+  border-radius: 9999px !important;
+  border: 1px solid var(--sl-color-hairline, rgba(255, 255, 255, 0.12)) !important;
+  background-color: transparent !important;
+  color: var(--sl-color-gray-2, #cbd5e1) !important;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.astrolib-mode-chip:hover {
+  background-color: rgba(255, 255, 255, 0.06) !important;
+  color: #ffffff !important;
+}
+
+.astrolib-mode-chip.is-active {
+  background-color: var(--sl-color-accent-low, rgba(99, 102, 241, 0.18)) !important;
+  border-color: var(--sl-color-text-accent, #6366f1) !important;
+  color: var(--sl-color-text-accent, #818cf8) !important;
+  font-weight: 600;
+}
+
+.astrolib-match-hint {
+  margin-inline-start: auto;
+  font-size: 0.72rem;
+  color: var(--sl-color-gray-3, #94a3b8);
+  white-space: nowrap;
+  user-select: none;
+}
+
+/* 6. 结果与即时探索流容器 */
+.astrolib-search-results {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0.75rem 1.15rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  min-height: 14rem;
+}
+
+.astrolib-search-section-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--sl-color-text-accent, #818cf8);
+  letter-spacing: 0.02em;
+  padding: 0.25rem 0.25rem 0.15rem;
+  user-select: none;
+}
+
+.astrolib-search-empty-hint {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 12rem;
+  color: var(--sl-color-gray-3, #94a3b8);
+  font-size: 0.88rem;
+  text-align: center;
+  line-height: 1.6;
+  gap: 0.35rem;
+}
+
+/* 7. 学术片段卡片 (极端减法：克制纯净) */
+.astrolib-search-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 0.75rem 0.95rem;
+  background-color: var(--md-sys-color-surface-container-low, rgba(255, 255, 255, 0.02));
+  border: 1px solid var(--sl-color-hairline, rgba(255, 255, 255, 0.08));
+  border-radius: 12px;
+  text-decoration: none;
+  color: inherit;
+  transition: all 0.15s ease;
+}
+
+.astrolib-search-card:hover,
+.astrolib-search-card.is-selected {
+  background-color: var(--md-sys-color-surface-container-highest, rgba(255, 255, 255, 0.08));
+  border-color: var(--sl-color-text-accent, #6366f1);
+  transform: translateY(-1px);
+}
+
+.astrolib-card-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.72rem;
+  color: var(--sl-color-gray-3, #94a3b8);
+}
+
+.astrolib-card-book {
+  font-weight: 600;
+  color: var(--sl-color-text-accent, #818cf8);
+}
+
+.astrolib-card-type-chip {
+  padding: 0.08rem 0.4rem;
+  background-color: rgba(99, 102, 241, 0.14);
+  border-radius: 4px;
+  font-weight: 600;
+  color: var(--sl-color-text-accent, #818cf8);
+}
+
+.astrolib-card-reason {
+  margin-inline-start: auto;
+  font-size: 0.7rem;
+  color: var(--sl-color-text-accent, #818cf8);
+  opacity: 0.85;
+}
+
+.astrolib-card-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--sl-color-white, #f8fafc);
+  line-height: 1.4;
+}
+
+.astrolib-card-title mark,
+.astrolib-card-snippet mark {
+  background-color: transparent;
+  color: var(--sl-color-text-accent, #818cf8);
+  font-weight: 700;
+  text-decoration: underline;
+}
+
+.astrolib-card-snippet {
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: var(--sl-color-gray-2, #cbd5e1);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* 8. 底部导航与快捷键指引栏 */
+.astrolib-search-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.6rem 1.15rem;
+  background-color: var(--md-sys-color-surface-container-high, rgba(0, 0, 0, 0.15));
+  border-top: 1px solid var(--sl-color-hairline, rgba(255, 255, 255, 0.08));
+  font-size: 0.75rem;
+  color: var(--sl-color-gray-3, #94a3b8);
+  user-select: none;
+}
+
+.astrolib-footer-keys {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.astrolib-footer-keys kbd {
+  background-color: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 3px;
+  padding: 0.1rem 0.35rem;
+  font-size: 0.7rem;
+  color: var(--sl-color-gray-2, #cbd5e1);
+}
+
+.footer-divider {
+  opacity: 0.35;
+}
+
+.astrolib-footer-count {
+  font-size: 0.75rem;
+  color: var(--sl-color-gray-3, #94a3b8);
+}

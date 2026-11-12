@@ -20,7 +20,20 @@ export type TaskStatus =
 
 export interface LayoutBlock {
   id: string;
-  type: 'title' | 'text' | 'equation' | 'image' | 'table' | 'header' | 'footer' | 'figure' | 'list' | 'aside';
+  type:
+    | 'title'
+    | 'text'
+    | 'equation'
+    | 'image'
+    | 'table'
+    | 'header'
+    | 'footer'
+    | 'figure'
+    | 'list'
+    | 'aside'
+    | 'page_divider'
+    | 'page_meta'
+    | 'footnote';
   pageIndex: number;
   bbox: [number, number, number, number]; // [x0, y0, x1, y1] (72 DPI pt or normalized)
   pageWidth?: number;
@@ -31,6 +44,15 @@ export interface LayoutBlock {
   markdownRefId?: string;
   caption?: string;
   level?: number;
+  // 结构化学术增强字段
+  pageNumber?: string;
+  fnIndex?: string;
+  refIds?: string[];
+  metaInfo?: {
+    header?: string;
+    footer?: string;
+    aside?: string;
+  };
 }
 
 export interface IngestTaskMeta {
@@ -63,4 +85,5 @@ export interface ParseResultResponse {
   status: TaskStatus;
   engine: IngestEngineType;
   durationMs?: number;
+  rawJson?: string;
 }

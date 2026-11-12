@@ -32,19 +32,19 @@
 :root {
   /* 基础学术字体栈：
      1. 拉丁/数字段：优先采用经典数学教材衬线 Times New Roman / Georgia；
-     2. 中文正文段：优先匹配本地已安装的思源宋体 (Source Han Serif / Noto Serif SC)，
+     2. 中文正文段：优先匹配思源宋体 (Source Han Serif / Noto Serif SC)，
         并以自托管的 'Noto Serif SC Variable' (@fontsource) 作为高质量无缝兜底；
      3. 传统中易宋体 (SimSun) 仅置于最末端作为系统兜底，绝不优先匹配。 */
   --academic-font-body: 'Times New Roman', Georgia,
-    local('Source Han Serif SC'), local('Source Han Serif CN'),
-    local('Noto Serif SC'), local('Noto Serif CJK SC'), local('思源宋体'),
+    'Source Han Serif SC', 'Source Han Serif CN',
+    'Noto Serif SC', 'Noto Serif CJK SC', '思源宋体',
     'Noto Serif SC Variable', 'Songti SC', 'STSong', 'SimSun', serif;
 
   /* 学术标题/环境标签字体栈：严肃经典大学教材黑体体系（高教社/科学社权威质感） */
-  --academic-font-heading: 'Plus Jakarta Sans Variable', -apple-system, BlinkMacSystemFont, 'Segoe UI',
-    local('Source Han Sans SC'), local('Source Han Sans CN'),
-    local('Noto Sans SC'), local('Noto Sans CJK SC'),
-    'Noto Sans SC Variable', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+  --academic-font-heading: 'Google Sans', 'Google Sans Text',
+    'Source Han Sans SC', 'Source Han Sans CN',
+    'Noto Sans SC', 'Noto Sans CJK SC', '思源黑体',
+    'Noto Sans SC Variable', 'PingFang SC', sans-serif;
 
   --academic-font-latin: 'Times New Roman', Georgia, serif;
   --academic-font-math: 'KaTeX_Math', 'KaTeX_Main', 'Times New Roman', serif;
@@ -73,31 +73,31 @@
    1. 底层可定制字体段 —— 想单独调英文或中文，只改这里即可
    -------------------------------------------------------------------------- */
 :root {
-  /* 无衬线拉丁段：纯西文段，不带尾部通用族名，避免提前拦截汉字回退 */
-  --font-latin-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial;
+  /* 无衬线拉丁段：统一采用 Google Sans 官方无衬线体系；纯西文段，不带尾部通用族名，避免提前拦截汉字回退 */
+  --font-latin-sans: 'Google Sans', 'Google Sans Text';
   /* 品牌英文展示字体（Logo、大标题、Hero，跨端一致的高品质几何无衬线） */
-  --font-brand: 'Plus Jakarta Sans Variable', 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-brand: 'Plus Jakarta Sans Variable', 'Plus Jakarta Sans', 'Google Sans', sans-serif;
   /* 衬线拉丁段：使用纯正学术 Times New Roman / Georgia；纯西文段，不带尾部通用族名 */
   --font-latin-serif: 'Times New Roman', Georgia;
   /* KaTeX 公式字体段：KaTeX_Main（Computer Modern 衬线），与页面公式同款；纯西文段，不带尾部通用族名 */
   --font-latin-katex: 'KaTeX_Main', 'Times New Roman', Georgia;
 
-  /* 系统无衬线中文段（纯系统原生黑体，零 webfont 下载） */
-  --font-cjk-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
-  /* 系统衬线中文段（纯系统原生宋体，零 webfont 下载） */
+  /* 系统无衬线中文段（优先思源黑体，绝不回退微软雅黑） */
+  --font-cjk-sans: 'Noto Sans SC Variable', 'Source Han Sans SC', 'Source Han Sans CN', 'Noto Sans SC', 'Noto Sans CJK SC', '思源黑体', 'PingFang SC', sans-serif;
+  /* 系统衬线中文段（纯系统原生宋体） */
   --font-cjk-serif: 'Songti SC', 'STSong', 'SimSun', serif;
-  /* 思源黑体中文段（自托管 Noto Sans SC webfont 优先） */
-  --font-cjk-han-sans: 'Noto Sans SC Variable', local('Source Han Sans SC'), local('Source Han Sans CN'), local('Noto Sans SC'), local('Noto Sans CJK SC'), local('思源黑体'), var(--font-cjk-sans);
-  /* 思源宋体中文段（自托管 Noto Serif SC webfont 优先） */
-  --font-cjk-han-serif: 'Noto Serif SC Variable', local('Source Han Serif SC'), local('Source Han Serif CN'), local('Noto Serif SC'), local('Noto Serif CJK SC'), local('思源宋体'), var(--font-cjk-serif);
+  /* 思源黑体中文段（自托管 Noto Sans SC webfont 与系统思源黑体绝对优先） */
+  --font-cjk-han-sans: 'Noto Sans SC Variable', 'Source Han Sans SC', 'Source Han Sans CN', 'Noto Sans SC', 'Noto Sans CJK SC', '思源黑体', 'PingFang SC', sans-serif;
+  /* 思源宋体中文段（自托管 Noto Serif SC webfont 与系统思源宋体优先） */
+  --font-cjk-han-serif: 'Noto Serif SC Variable', 'Source Han Serif SC', 'Source Han Serif CN', 'Noto Serif SC', 'Noto Serif CJK SC', '思源宋体', 'Songti SC', 'STSong', 'SimSun', serif;
 }
 
 /* --------------------------------------------------------------------------
    2. 各段当前值 —— 由 data-font-latin / data-font-cjk 驱动（默认学术衬线体系）
    -------------------------------------------------------------------------- */
 :root {
-  --font-latin: var(--font-latin-serif);
-  --font-cjk: var(--font-cjk-serif);
+  --font-latin: var(--font-latin-sans);
+  --font-cjk: var(--font-cjk-han-sans);
 }
 :root[data-font-latin='sans'] {
   --font-latin: var(--font-latin-sans);

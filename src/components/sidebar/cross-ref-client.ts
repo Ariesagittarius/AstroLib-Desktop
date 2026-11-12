@@ -388,7 +388,9 @@ export function linkPageElements(
       const text = node.textContent || '';
       let modified = false;
 
+      globalRefRegex.lastIndex = 0;
       if (globalRefRegex.test(text)) {
+        globalRefRegex.lastIndex = 0;
         const span = document.createElement('span');
 
         span.innerHTML = text.replace(globalRefRegex, (_match, matchedType, matchedNum) => {
@@ -464,7 +466,9 @@ export function linkPageElements(
         const tPattern = meta.aliases.map(escapeRegExp).join('|');
         const refRegex = new RegExp(`(${tPattern})\\s*(\\d+\\s*[-－]\\s*\\d+)`, 'g');
 
+        refRegex.lastIndex = 0;
         if (refRegex.test(text)) {
+          refRegex.lastIndex = 0;
           const span = document.createElement('span');
           span.innerHTML = text.replace(refRegex, (_match, _matchedType, matchedNum) => {
             const figNum = matchedNum.replace(/\s+/g, '');

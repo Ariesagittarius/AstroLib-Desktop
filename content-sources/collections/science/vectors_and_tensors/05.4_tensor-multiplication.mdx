@@ -1,0 +1,90 @@
+---
+title: '5.4 Tensor multiplication'
+---
+
+import Guide from '@/components/Guide.astro';
+import Knowledge from '@/components/Knowledge.astro';
+import Example from '@/components/Example.astro';
+import Analysis from '@/components/Analysis.astro';
+import Solution from '@/components/Solution.astro';
+import Variant from '@/components/Variant.astro';
+import Note from '@/components/Note.astro';
+import Block from '@/components/Block.astro';
+import Method from '@/components/Method.astro';
+import Exercise from '@/components/Exercise.astro';
+
+## 5.4 Tensor multiplication
+
+As described in Chapter 2, there are several different ways to multiply vectors – the scalar (dot) product and vector (cross) product both take two vectors as inputs and produce a result that depends on the magnitudes and directions of those two vectors. Not mentioned in that chapter was another form of vector product called the "outer" product between a column vector $( \vec { A } )$ and a row vector $( { \vec { B } } )$ , which operates like this:
+
+$$
+\vec {A} \otimes \vec {B} = \left( \begin{array}{c} A _ {1} \\ A _ {2} \\ A _ {3} \end{array} \right) (B _ {1} B _ {2} B _ {3}) = \left( \begin{array}{c c c} A _ {1} B _ {1} & A _ {1} B _ {2} & A _ {1} B _ {3} \\ A _ {2} B _ {1} & A _ {2} B _ {2} & A _ {2} B _ {3} \\ A _ {3} B _ {1} & A _ {3} B _ {2} & A _ {3} B _ {3} \end{array} \right).
+$$
+
+Note that the outer product of two rank-1 tensors (vectors) is a rank-2 tensor, formed simply by multiplying the individual components of the two vectors. The outer product is indicated with the $\otimes$ symbol in some texts; others just write the two vectors or tensors next to one another, such as $A ^ { i } B ^ { j } = C ^ { i j }$
+
+The outer-product operation may also be performed on higher-order tensors:
+
+$$
+A _ {j} ^ {i} B _ {l m} ^ {k} = C _ {j l m} ^ {i k}.
+$$
+
+In this case, the outer product of a rank-2 tensor and a rank-3 tensor is a rank-5 tensor. This illustrates the fact that the covariant rank of the outer-product ten sor is the sum of the covariant ranks of the input tensors, and the contravariant rank of the outer-product tensor is the sum of the contravariant ranks of the input tensors.
+
+The result of the outer-product operation is easily shown to be a tensor by considering how tensors $\hat { \vec { A } } , \vec { \vec { B } } .$ , and $\vec { \vec { C } }$ transform from the unprimed to the primed coordinate system. The transform of tensors $\vec { \vec { A } }$ and $\vec { \vec { B } }$ is given by
+
+$$
+A _ {o} ^ {' n} = \frac {\partial x ^ {' n}}{\partial x ^ {i}} \frac {\partial x ^ {j}}{\partial x ^ {' o}} A _ {j} ^ {i},
+$$
+
+$$
+B _ {q r} ^ {' p} = \frac {\partial x ^ {' p}}{\partial x ^ {k}} \frac {\partial x ^ {l}}{\partial x ^ {' q}} \frac {\partial x ^ {m}}{\partial x ^ {' r}} B _ {l m} ^ {k}.
+$$
+
+Multiplying these expressions gives
+
+$$
+\begin{array}{r} A _ {o} ^ {' n} B _ {q r} ^ {' p} = \frac {\partial x ^ {' n}}{\partial x ^ {i}} \frac {\partial x ^ {j}}{\partial x ^ {' o}} A _ {j} ^ {i} \frac {\partial x ^ {' p}}{\partial x ^ {k}} \frac {\partial x ^ {l}}{\partial x ^ {' q}} \frac {\partial x ^ {m}}{\partial x ^ {' r}} B _ {l m} ^ {k} \\ = \frac {\partial x ^ {' n}}{\partial x ^ {i}} \frac {\partial x ^ {j}}{\partial x ^ {' o}} \frac {\partial x ^ {' p}}{\partial x ^ {k}} \frac {\partial x ^ {l}}{\partial x ^ {' q}} \frac {\partial x ^ {m}}{\partial x ^ {' r}} A _ {j} ^ {i} B _ {l m} ^ {k}. \end{array}
+$$
+
+So if $A _ { j } ^ { i } B _ { l m } ^ { k } = C _ { j l m } ^ { i k }$ and $A _ { o } ^ { ^ { \prime } n } B _ { q r } ^ { ^ { \prime } p } = C _ { o q r } ^ { ^ { \prime } n p }$ , then
+
+$$
+C _ {o q r} ^ {' n p} = \frac {\partial x ^ {' n}}{\partial x ^ {i}} \frac {\partial x ^ {j}}{\partial x ^ {' o}} \frac {\partial x ^ {' p}}{\partial x ^ {k}} \frac {\partial x ^ {l}}{\partial x ^ {' q}} \frac {\partial x ^ {m}}{\partial x ^ {' r}} C _ {j l m} ^ {i k},\tag{5.11}
+$$
+
+and the result of the outer product operation does indeed meet the transforma tion requirements for a tensor.
+
+Another way to multiply tensors is called the "inner product," which you can think of as a generalization of the scalar or dot product discussed in Section 2.1. As described in that section, the dot product between two vectors produces a scalar result, so you might expect the inner product between two tensors to produce a tensor of lower rank. That's exactly right, but to understand how it happens, you first need to understand the process of tensor contraction.
+
+To contract a tensor, simply set one contravariant index equal to a covarian index (or vice versa) and then sum over the repeated index. This leads to a tensor with a rank that is two less than the rank of the tensor with which you started.
+
+To see how this works in practice, consider the rank-4 tensor $C _ { k l } ^ { i j }$ . To contract this tensor in the second and third indices, set the index k equal to the index $j$ , resulting in
+
+$$
+C _ {j l} ^ {i j} = C _ {1 l} ^ {i 1} + C _ {2 l} ^ {i 2} + C _ {3 l} ^ {i 3} = D _ {l} ^ {i},
+$$
+
+assuming that the indices j and k run from 1 to 3. Note that the rank is reduced by two because you made one index the same as another (reducing the rank by one) and then you summed over that index (reducing the rank by one more). Note also that contraction produces another tensor only when the two indices that are made equal are in different positions (one superscript and one subscript).
+
+The reason for this becomes clear if you consider the contraction of the tensor that resulted from the outer-product operation in Eq. 5.11. Contracting this tensor in the first and fourth indices by setting q equal to n gives
+
+$$
+\begin{array}{r} C _ {o n r} ^ {' n p} = \frac {\partial x ^ {' n}}{\partial x ^ {i}} \frac {\partial x ^ {j}}{\partial x ^ {' o}} \frac {\partial x ^ {' p}}{\partial x ^ {k}} \frac {\partial x ^ {l}}{\partial x ^ {' n}} \frac {\partial x ^ {m}}{\partial x ^ {' r}} C _ {j l m} ^ {i k} \\ = \frac {\partial x ^ {' n}}{\partial x ^ {i}} \frac {\partial x ^ {l}}{\partial x ^ {' n}} \frac {\partial x ^ {j}}{\partial x ^ {' o}} \frac {\partial x ^ {' p}}{\partial x ^ {k}} \frac {\partial x ^ {m}}{\partial x ^ {' r}} C _ {j l m} ^ {i k} \\ = \frac {\partial x ^ {l}}{\partial x ^ {i}} \frac {\partial x ^ {j}}{\partial x ^ {' o}} \frac {\partial x ^ {' p}}{\partial x ^ {k}} \frac {\partial x ^ {m}}{\partial x ^ {' r}} C _ {j l m} ^ {i k}. \end{array}
+$$
+
+But the derivative $\frac { \partial x ^ { l } } { \partial x ^ { i } }$ involves only coordinates in the same (unprimed) sys tem, and coordinates within the same system must be independent of one another. Hence this derivative must equal zero unless $l = i$ , in which case it must equal one. This is most easily expressed using the Kronecker Delta function, defined by
+
+$$
+\delta_ {j} ^ {i} = \left\{ \begin{array}{l l} 1 & i = j \\ 0 & i \neq j \end{array} \right..
+$$
+
+Thus
+
+$$
+\begin{array}{r} C _ {o n r} ^ {' n p} = \delta_ {l} ^ {i} \frac {\partial x ^ {j}}{\partial x ^ {' o}} \frac {\partial x ^ {' p}}{\partial x ^ {k}} \frac {\partial x ^ {m}}{\partial x ^ {' r}} C _ {j l m} ^ {i k} \\ = \frac {\partial x ^ {j}}{\partial x ^ {' o}} \frac {\partial x ^ {' p}}{\partial x ^ {k}} \frac {\partial x ^ {m}}{\partial x ^ {' r}} C _ {j i m} ^ {i k}, \end{array}
+$$
+
+which is a tensor of rank 3, as expected. But note that this reduction from 5 to 3 in rank required that two of the partial derivatives combine to produce the delta function, which then invoked the summation process. That derivative combination only works if one of the contracted indices is a superscript and the other a subscript.
+
+In this last example, the contraction was performed on a tensor that was the result of an outer product. That two-step process (outer-product multiplication followed by contraction) is called the "inner product" of two tensors. So if you start with two vectors (tensors of rank 1), form their outer product (producing a tensor of rank 2), and then contract the result, you end up with a tensor of rank zero – a scalar. This illustrates why the inner-product process can be considered to be a generalization of the dot product between two vectors.

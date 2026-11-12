@@ -3,10 +3,10 @@
 import { features } from '../config/features.config.mjs';
 ---
 
-<div class="vp-tools-wrapper" id="vp-tools-wrapper">
+<div class="m3-tools-wrapper vp-tools-wrapper" id="vp-tools-wrapper">
   <button
     type="button"
-    class="vp-tools-btn"
+    class="m3-icon-btn m3-tools-btn vp-tools-btn"
     id="vp-tools-trigger"
     aria-haspopup="true"
     aria-expanded="false"
@@ -18,11 +18,19 @@ import { features } from '../config/features.config.mjs';
     <md-icon class="vp-tools-grid-icon header-mdicon" aria-hidden="true">apps</md-icon>
   </button>
 
-  <!-- 聚合弹出菜单 (Google Drive 风格) -->
-  <div class="vp-tools-menu" id="vp-tools-menu" role="menu" aria-hidden="true">
-    <div class="vp-tools-menu-title">书籍与学习工具</div>
+  <!-- 聚合弹出菜单 (Material 3 Expressive 风格) -->
+  <div class="m3-tools-menu vp-tools-menu" id="vp-tools-menu" role="menu" aria-hidden="true">
+    <div class="m3-tools-menu-title vp-tools-menu-title">书籍与学习工具</div>
 
-    <div class="vp-tools-list">
+    <div class="m3-tools-list vp-tools-list">
+      {features.infoHighlight?.enabled && (
+        <button type="button" class="vp-tools-item" role="menuitem" data-focus-trigger title="开启本地 Qwen 关注点透镜与信息高亮 (Alt+I)">
+          <md-icon class="vp-tools-icon" aria-hidden="true">center_focus_strong</md-icon>
+          <span class="vp-tools-label">关注点透镜 (信息高亮)</span>
+          <kbd class="vp-tools-kbd">Alt+I</kbd>
+        </button>
+      )}
+
       {features.translation?.enabled && (
         <button type="button" class="vp-tools-item" role="menuitem" data-translation-trigger title="开启章节双语对照与学术翻译 (Alt+Y)">
           <md-icon class="vp-tools-icon" aria-hidden="true">translate</md-icon>

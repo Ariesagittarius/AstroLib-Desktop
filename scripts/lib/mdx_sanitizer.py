@@ -33,15 +33,11 @@ class MdxSanitizer:
         'table', 'thead', 'tbody', 'tfoot', 'tr', 'td', 'th',
         'sup', 'sub', 'br', 'p', 'a', 'span', 'img', 'div',
         'b', 'i', 'u', 'strong', 'em', 'code', 'pre', 'ul', 'ol', 'li',
-        'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+        'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'figure', 'figcaption',
         'Example', 'Knowledge', 'Solution', 'Note', 'Block',
         'Guide', 'Analysis', 'Variant', 'Method', 'Exercise',
-        'SideNote', 'MarginNote',
+        'SideNote', 'MarginNote', 'details', 'summary'
     }
-
-    def __init__(self):
-        self.display = False
-        self.inline = False
 
     MATH_HTML_ENTITIES = {
         '&gt;': '>',
@@ -66,6 +62,10 @@ class MdxSanitizer:
         'varphi', 'chi', 'psi', 'omega', 'Gamma', 'Delta', 'Theta', 'Lambda',
         'Xi', 'Pi', 'Sigma', 'Upsilon', 'Phi', 'Psi', 'Omega'
     )
+
+    def __init__(self):
+        self.display = False
+        self.inline = False
 
     @classmethod
     def sanitize_math(cls, math_str: str) -> str:
@@ -96,22 +96,65 @@ class MdxSanitizer:
         # 6. 修复双重 \tag 冲突（保留后一个或有效公式编号）
         s = re.sub(r'\\tag\s*\{[^}]*\}\s*(\\tag\s*\{[^}]*\})', r'\1', s)
 
-        # 7. 修复 \hline 在单元格花括号内部或非法位置报错
+        # 7. 修复 MinerU 常见畸变公式标签 \tag{\((*)\}, \tag{\(\left(*_{\alpha}\right)\}, etc.
+        def _tag_repl(m: re.Match) -> str:
+            raw = m.group(0)
+            if 'alpha' in raw:
+                return r'\tag{($*_{\alpha}$)}'
+            m_stars = re.search(r'\*+', raw)
+            if m_stars:
+                return rf'\tag{{({m_stars.group(0)})}}'
+            return raw
+        s = re.sub(r'\\tag\s*\{[^\n$]+?(?=\$\$|\n|$)', _tag_repl, s)
+
+        # 8. 修复双上标与素数导数标记 (Double superscript KaTeX 拦截)
+        s = re.sub(r'\\dprime\b', r'\\prime\\prime', s)
+        s = re.sub(r'\^\s*\{\s*\\prime\s*\}\s*\^\s*\{\s*\\prime\s*\}', r'^{\\prime\\prime}', s)
+        s = re.sub(r'\^\\prime\s*\^\\prime', r'^{\\prime\\prime}', s)
+        s = re.sub(r'\^\s*\{\s*(?:\\prime|\\?\'|′)\s*(?:\\prime|\\?\'|′)\s*(?:\\prime|\\?\'|′)\s*\}', r'^{\\prime\\prime\\prime}', s)
+        s = re.sub(r'\^\s*\{\s*(?:\\prime|\\?\'|′)\s*(?:\\prime|\\?\'|′)\s*\}', r'^{\\prime\\prime}', s)
+        s = re.sub(r'\^\s*\{\s*(?:\\prime|\\?\'|′)\s*\}', r'^{\\prime}', s)
+        s = re.sub(r'\^\s*(?:\\?\'|′)(?:\\?\'|′)(?:\\?\'|′)', r'^{\\prime\\prime\\prime}', s)
+        s = re.sub(r'\^\s*(?:\\?\'|′)(?:\\?\'|′)', r'^{\\prime\\prime}', s)
+        s = re.sub(r'\^\s*(?:\\?\'|′)', r'^\\prime', s)
+
+        # 9. 修复多余转义的反斜杠花括号 \left\\{ -> \left\{
+        s = re.sub(r'\\left\s*\\\\\s*\{', r'\\left\\{', s)
+        s = re.sub(r'\\right\s*\\\\\s*\}', r'\\right\\}', s)
+        s = re.sub(r'\\left\s*\{\s*\\\\\s*\{', r'\\left\\{', s)
+        s = re.sub(r'\\right\s*\}\s*\\\\\s*\}', r'\\right\\}', s)
+
+        # 10. 修复环境名称被误转义 \begin\{matrix\} -> \begin{matrix}
+        s = re.sub(r'\\(begin|end)\s*\\\{([a-zA-Z*]+)\\\}', r'\\\1{\2}', s)
+        s = re.sub(r'\\(begin|end)\s*\{([a-zA-Z*]+)\\\}', r'\\\1{\2}', s)
+        s = re.sub(r'\\(begin|end)\s*\\\{([a-zA-Z*]+)\}', r'\\\1{\2}', s)
+
+        # 11. 修复集合记号未转义右花括号 \{ ... } -> \{ ... \}
+        s = re.sub(r'\\\{\s*([^{}\\]*?(?:\\(?![}])[^{}\\]*?)*?)\s*\}', r'\\{\1\\}', s)
+
+        # 12. 修复 \hline 在单元格花括号内部或非法位置报错
         s = re.sub(r'\\\\\s*&\s*\{\s*\\hline\s*([^}]+)\}', r'\\\\ \\hline & \1', s)
         s = re.sub(r'\\\\\s*\{\s*\\hline\s*([^}]+)\}', r'\\\\ \\hline \1', s)
         s = re.sub(r'\{\s*\\hline\s*([^}]*)\}', r'\\hline \1', s)
         s = re.sub(r'\\\\\s*&\s*\\hline\b', r'\\\\ \\hline &', s)
+
+        # 13. 仅对非转义花括号进行自动闭合
+        open_cnt = len(re.findall(r'(?<!\\)\{', s))
+        close_cnt = len(re.findall(r'(?<!\\)\}', s))
+        if open_cnt > close_cnt:
+            s += '}' * (open_cnt - close_cnt)
+        elif close_cnt > open_cnt:
+            s = '{' * (close_cnt - open_cnt) + s
 
         return s
 
     @classmethod
     def fn_mark_to_sup(cls, text: str) -> str:
         text = cls.FN_MARK_RE.sub(lambda m: f"<sup>{m.group(1) or m.group(2)}</sup>", text)
-        text = re.sub(r'\$([^\$\n]+?)\^\{\\textcircled\{([①-⑳])\}\}\$', r'$\1$<sup>\2</sup>', text)
-        text = re.sub(r'\$([^\$\n]+?)\^\{\\text\{([①-⑳])\}\}\$', r'$\1$<sup>\2</sup>', text)
-        text = re.sub(r'\$([^\$\n]+?)\^\{([①-⑳])\}\$', r'$\1$<sup>\2</sup>', text)
-        text = re.sub(r'\$([^\$\n]+?)\^([①-⑳])\$', r'$\1$<sup>\2</sup>', text)
-        text = re.sub(r'(?<!\\)\$(.+?)(?<!\\)\$', lambda m: f"${cls.sanitize_math(m.group(1))}$", text)
+        text = re.sub(r'(?<!\$)(?<!\\)\$([^\$\n]+?)\^\{\\textcircled\{([①-⑳])\}\}(?!\$)', r'$\1$<sup>\2</sup>', text)
+        text = re.sub(r'(?<!\$)(?<!\\)\$([^\$\n]+?)\^\{\\text\{([①-⑳])\}\}(?!\$)', r'$\1$<sup>\2</sup>', text)
+        text = re.sub(r'(?<!\$)(?<!\\)\$([^\$\n]+?)\^\{([①-⑳])\}(?!\$)', r'$\1$<sup>\2</sup>', text)
+        text = re.sub(r'(?<!\$)(?<!\\)\$([^\$\n]+?)\^([①-⑳])(?!\$)', r'$\1$<sup>\2</sup>', text)
         return text
 
     def is_valid_html_tag(self, tag_str: str, tag_name: str) -> bool:
@@ -124,60 +167,93 @@ class MdxSanitizer:
                 return False
         return True
 
-    def sanitize_line(self, line: str) -> str:
-        s = line.strip()
-        if s == '$$':
-            self.display = not self.display
-            return line
-        if self.display:
-            return line
-
-        if '<table' in line or '</table>' in line or '<tr>' in line or '<td>' in line or '<th>' in line:
-            line = line.replace('~', '～')
-
-        out = []
-        i = 0
-        n = len(line)
-        while i < n:
-            ch = line[i]
-            if ch == '$':
-                self.inline = not self.inline
-                out.append(ch)
-                i += 1
-                continue
-            if self.inline:
-                out.append(ch)
-                i += 1
-                continue
-
-            if ch == '<':
-                m = self.HTML_TAG_RE.match(line[i:])
-                if m and self.is_valid_html_tag(m.group(0), m.group(1)):
-                    tag_str = m.group(0)
-                    out.append(tag_str)
-                    i += len(tag_str)
-                    continue
-                out.append('&lt;')
-                i += 1
-            elif ch == '{':
-                out.append('\\{')
-                i += 1
-            elif ch == '}':
-                out.append('\\}')
-                i += 1
-            else:
-                out.append(ch)
-                i += 1
-        return ''.join(out)
-
     def sanitize_body(self, lines: list[str] | str) -> str:
-        """多行文本清洗转义，保持段落内的原始单换行与段落间的双换行。"""
-        if isinstance(lines, str):
-            lines = lines.splitlines()
-        out = [self.sanitize_line(line) for line in lines]
-        text = '\n'.join(out)
-        text = re.sub(r'(?<!\\)\$\$(.+?)(?<!\\)\$\$', lambda m: f"$${self.sanitize_math(m.group(1))}$$", text, flags=re.DOTALL)
-        return self.fn_mark_to_sup(text)
+        """多行文本清洗转义，保持段落内的原始单换行与段落间的双换行。
+        使用占位符彻底隔离公式与普通文本，杜绝误转义公式内部环境。
+        """
+        if isinstance(lines, list):
+            text = '\n'.join(lines)
+        else:
+            text = lines
+
+        # 1. 保护代码块 ``` ... ```
+        code_blocks = []
+        def replace_code(m):
+            idx = len(code_blocks)
+            code_blocks.append(m.group(0))
+            return f"%%MDX_CODE_BLOCK_{idx}%%"
+        text = re.sub(r'```[\s\S]*?```', replace_code, text)
+
+        # 2. 保护显示公式 $$ ... $$
+        math_blocks = []
+        def replace_block(m):
+            idx = len(math_blocks)
+            clean = self.sanitize_math(m.group(1).strip())
+            math_blocks.append(f"$$\n{clean}\n$$")
+            return f"%%MDX_MATH_BLOCK_{idx}%%"
+        text = re.sub(r'(?<!\\)\$\$([\s\S]*?)(?<!\\)\$\$', replace_block, text)
+
+        # 3. 保护行内公式 $ ... $ (负向瞻前顾后，严防匹配 $$)
+        math_inlines = []
+        def replace_inline(m):
+            idx = len(math_inlines)
+            clean = self.sanitize_math(m.group(1).strip())
+            math_inlines.append(f"${clean}$")
+            return f"%%MDX_MATH_INLINE_{idx}%%"
+        text = re.sub(r'(?<!\$)(?<!\\)\$([^\$\n\r]+?)(?<!\\)\$(?!\$)', replace_inline, text)
+
+        # 4. 在剩余纯文本中进行转义
+        # 4.1 表格中的 ~ 替换为 ～
+        def replace_table_tilde(m):
+            return m.group(0).replace('~', '～')
+        text = re.sub(r'(?:<table[\s\S]*?</table>|<tr>[\s\S]*?</tr>)', replace_table_tilde, text)
+
+        # 4.2 非 JSX 标签的 < 转义为 &lt;，非公式的花括号转义
+        def escape_special_chars(line):
+            out = []
+            i = 0
+            n = len(line)
+            while i < n:
+                ch = line[i]
+                if ch == '<':
+                    m = self.HTML_TAG_RE.match(line[i:])
+                    if m and self.is_valid_html_tag(m.group(0), m.group(1)):
+                        tag_str = m.group(0)
+                        out.append(tag_str)
+                        i += len(tag_str)
+                        continue
+                    out.append('&lt;')
+                    i += 1
+                elif ch == '{':
+                    out.append('\\{')
+                    i += 1
+                elif ch == '}':
+                    out.append('\\}')
+                    i += 1
+                else:
+                    out.append(ch)
+                    i += 1
+            return ''.join(out)
+
+        lines_out = [escape_special_chars(l) for l in text.splitlines()]
+        text = '\n'.join(lines_out)
+
+        # 4.3 脚注转换
+        text = self.fn_mark_to_sup(text)
+
+        # 5. 还原占位符
+        for idx, inline in enumerate(math_inlines):
+            text = text.replace(f"%%MDX_MATH_INLINE_{idx}%%", inline)
+        for idx, block in enumerate(math_blocks):
+            text = text.replace(f"%%MDX_MATH_BLOCK_{idx}%%", block)
+        for idx, code in enumerate(code_blocks):
+            text = text.replace(f"%%MDX_CODE_BLOCK_{idx}%%", code)
+
+        return text
+
+    def sanitize_line(self, line: str) -> str:
+        """单行清洗接口，直接代理到 sanitize_body。"""
+        return self.sanitize_body(line)
 
     @staticmethod
     def safe_title(s: str) -> str:

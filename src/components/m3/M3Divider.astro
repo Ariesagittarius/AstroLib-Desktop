@@ -1,0 +1,49 @@
+---
+/**
+ * src/components/m3/M3Divider.astro
+ * ============================================================================
+ * Official Material Design 3 Divider (@material/web)
+ * ============================================================================
+ */
+interface Props {
+  inset?: boolean;
+  insetStart?: boolean;
+  insetEnd?: boolean;
+  vertical?: boolean;
+  class?: string;
+  id?: string;
+}
+
+const {
+  inset = false,
+  insetStart = false,
+  insetEnd = false,
+  vertical = false,
+  class: className = '',
+  id,
+} = Astro.props;
+---
+
+<md-divider
+  class:list={['m3-declarative-divider', { 'm3-divider--vertical': vertical }, className]}
+  id={id}
+  inset={inset ? true : undefined}
+  inset-start={insetStart ? true : undefined}
+  inset-end={insetEnd ? true : undefined}
+></md-divider>
+
+<script>
+  import '@material/web/divider/divider.js';
+</script>
+
+<style>
+  .m3-declarative-divider {
+    --md-divider-color: var(--md-sys-color-outline-variant, #e0e3e7);
+  }
+  .m3-divider--vertical {
+    display: inline-block;
+    width: 1px;
+    height: 1.5rem;
+    vertical-align: middle;
+  }
+</style>

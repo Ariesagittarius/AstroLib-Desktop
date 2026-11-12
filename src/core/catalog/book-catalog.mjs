@@ -27,7 +27,7 @@ import { cleanSlug } from '../../utils/slug.mjs';
  * @param {string} directoryPath - 教材物理文件夹路径
  * @returns {BookCatalog}
  */
-export function buildBookCatalog(directoryPath) {
+export function buildBookCatalog(directoryPath, options = {}) {
   const absolutePath = path.resolve(directoryPath);
   if (!fs.existsSync(absolutePath)) return [];
 
@@ -44,11 +44,18 @@ export function buildBookCatalog(directoryPath) {
     if (stat.isDirectory()) {
       // 如果是嵌套子文件夹，递归生成子领域目录
       if (file !== 'images' && file !== '.git') {
-        const subItems = buildBookCatalog(fullPath);
+        const subItems = buildBookCatalog(fullPath, options);
         if (subItems.length > 0) {
           let groupTitle = file.replace(/^\d+[_-]/, '').replace(/_/g, ' ');
-          if (file.toLowerCase() === 'zh') {
-            groupTitle = '中文对照';
+          const matchedLang = options?.languages?.find(
+            (l) => l.pathPrefix?.toLowerCase() === file.toLowerCase() || l.id?.toLowerCase() === file.toLowerCase()
+          );
+          if (matchedLang?.label) {
+            groupTitle = matchedLang.label;
+          } else if (file.toLowerCase() === 'zh') {
+            groupTitle = '中文 (直译版)';
+          } else if (file.toLowerCase() === 'zh-wp') {
+            groupTitle = '中文 (王沛等译)';
           } else if (file.toLowerCase() === 'en') {
             groupTitle = '英文原版';
           }

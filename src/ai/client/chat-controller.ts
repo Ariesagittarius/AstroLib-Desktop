@@ -58,6 +58,7 @@ export interface ReferencedChapter {
 }
 import { parseAiError, renderErrorCardHtml } from '../error-handler';
 import { createM3LoadingHtml } from '../../components/common/m3-loading-helper';
+import { renderTitleHtml } from '../../utils/render-title.ts';
 import { initChatResizer } from './chat-resizer';
 import {
   ThreadStore,
@@ -322,10 +323,12 @@ export class AIAskElement extends HTMLElement {
     window.addEventListener('keydown', this._onKeyDownAltD);
     window.addEventListener('keydown', this._onKeyDownEsc);
 
-    // 订阅侧载管理器状态变更：若非 AI 面板激活（如 Esc 或切回大纲），自动将 DOM 归位并关闭浮窗
+    // 订阅侧载管理器状态变更：若非 AI 面板激活（如 Esc 或切回大纲），自动将 DOM 归位并关闭浮窗；若为 AI 面板则停靠
     this._unsubSideload = sideloadManager.subscribe((state) => {
       if (state.activePanelId !== 'ai' && this._isDocked) {
         this._undockInternal(false);
+      } else if (state.activePanelId === 'ai' && !this._isDocked) {
+        this.dockToSidebar(true);
       }
     });
 
@@ -1415,7 +1418,13 @@ export class AIAskElement extends HTMLElement {
     }
 
     // 探测并平滑恢复侧载停靠态
-    if (typeof localStorage !== 'undefined' && localStorage.getItem(DOCKED_STORAGE_KEY) === 'true') {
+    const isAiDocked = sideloadManager.getActivePanelId() === 'ai' ||
+      (typeof localStorage !== 'undefined' && (
+        localStorage.getItem('astrolib_sideload_active_panel') === 'ai' ||
+        localStorage.getItem(DOCKED_STORAGE_KEY) === 'true'
+      ));
+
+    if (isAiDocked) {
       const mountEl = document.getElementById('ai-sidebar-panel');
       if (mountEl) {
         requestAnimationFrame(() => {
@@ -1852,9 +1861,41 @@ export class AIAskElement extends HTMLElement {
       const a = document.createElement('a');
       a.className = 'ask-source';
       a.id = `ai-cite-${i + 1}`;
-      a.href = safeLink(h.chunk.url);
+      const targetUrl = safeLink(h.chunk.url);
+      a.href = targetUrl;
       a.target = openNew ? '_blank' : '_self';
       a.rel = openNew ? 'noopener' : '';
+
+      // 绑定来源点击事件：同页平滑定位，跨页原地导航，杜绝 Electron 弹空窗 404
+      a.addEventListener('click', (e) => {
+        if (!targetUrl) return;
+        const currentPath = window.location.pathname.replace(/\/$/, '') || '/';
+        const urlParts = targetUrl.split('#');
+        const targetPath = (urlParts[0] || '').replace(/\/$/, '');
+        const targetHash = urlParts[1] ? decodeURIComponent(urlParts[1]) : '';
+
+        if (!targetPath || targetPath === currentPath) {
+          e.preventDefault();
+          if (targetHash) {
+            const targetEl = document.getElementById(targetHash);
+            if (targetEl) {
+              targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              targetEl.classList.add('card-ref-flash');
+              setTimeout(() => targetEl.classList.remove('card-ref-flash'), 700);
+              return;
+            }
+          }
+        }
+
+        // 跨章节跳转
+        e.preventDefault();
+        if (typeof (window as any).__spaNavigate === 'function') {
+          (window as any).__spaNavigate(targetUrl);
+        } else {
+          window.location.href = targetUrl;
+        }
+      });
+
       const head = document.createElement('div');
       head.className = 'ask-source-head';
       const type = document.createElement('span');
@@ -1862,16 +1903,18 @@ export class AIAskElement extends HTMLElement {
       type.textContent = `${i + 1}·${h.chunk.type || '正文'}`;
       const t = document.createElement('span');
       t.className = 'ask-source-title';
-      t.textContent = h.chunk.title || `${h.chunk.type || '正文'}（第 ${i + 1} 条）`;
+      const rawTitle = h.chunk.title || `${h.chunk.type || '正文'}（第 ${i + 1} 条）`;
+      t.innerHTML = renderTitleHtml(rawTitle);
       head.appendChild(type);
       head.appendChild(t);
       a.appendChild(head);
       if (h.chunk.text) {
         const snip = document.createElement('div');
         snip.className = 'ask-source-snip';
-        snip.textContent = capSnippet(h.chunk.text);
+        snip.innerHTML = renderTitleHtml(capSnippet(h.chunk.text));
         a.appendChild(snip);
       }
+      this._typeMath(a);
       el.appendChild(a);
     });
   }

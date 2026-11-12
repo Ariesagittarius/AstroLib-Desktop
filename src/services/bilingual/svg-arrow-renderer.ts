@@ -108,6 +108,17 @@ export class SvgArrowRenderer {
       const srcRect = srcEl.getBoundingClientRect();
       const tgtRect = tgtEl.getBoundingClientRect();
 
+      const isSourceActive = options.activeSourceId === link.sourceId;
+      const isTargetActive = options.activeTargetIds?.includes(link.targetId);
+
+      // 视口剔除（Phase 6 优化）：仅当源节点或目标节点至少有一个位于当前可视区域时才绘制连线
+      // 避免由于文章过长在离屏区域绘制数千个无用 SVG DOM 节点
+      const isSrcVisible = srcRect.bottom >= svgRect.top - 100 && srcRect.top <= svgRect.bottom + 100;
+      const isTgtVisible = tgtRect.bottom >= svgRect.top - 100 && tgtRect.top <= svgRect.bottom + 100;
+      if (!isSrcVisible && !isTgtVisible && !isSourceActive && !isTargetActive) {
+        return;
+      }
+
       // 计算相对于 SVG 容器的坐标
       const x0 = srcRect.right - svgRect.left;
       const y0 = srcRect.top + srcRect.height / 2 - svgRect.top;
@@ -128,8 +139,6 @@ export class SvgArrowRenderer {
       path.setAttribute('data-similarity', link.similarity.toString());
 
       // 计算类名与高亮状态
-      const isSourceActive = options.activeSourceId === link.sourceId;
-      const isTargetActive = options.activeTargetIds?.includes(link.targetId);
       const isHovered = options.hoveredLinkId === `${link.sourceId}->${link.targetId}`;
 
       let classNames = ['bilingual-arrow-path'];

@@ -23,18 +23,19 @@ for (const col of collections) {
 }
 
 if (!currentBook || !currentCol) {
-  currentCol = collections[0];
-  currentBook = collections[0]?.books[0];
+  currentCol = collections[0] || null;
+  currentBook = collections[0]?.books?.[0] || null;
 }
 
 const bookKey = `${currentCol?.slug ?? 'math'}/${currentBook?.slug ?? 'math_senior'}`;
 const colSlug = currentCol?.slug ?? 'math';
 const bookSlug = currentBook?.slug ?? 'math_senior';
+const bookTitle = currentBook?.title ?? '知识图谱';
 import '../styles/relation-graph.css';
 ---
 
 {
-  features.relationGraph.enabled && (
+  features.relationGraph.enabled && currentBook && (
     <div id="book-relation-graph-root" class="brg-root" data-feature="relationGraph" data-book-key={bookKey} data-col={colSlug} data-book={bookSlug} aria-label="全书各章节内联关系图谱">
       <div class="brg-backdrop"></div>
       <div class="brg-modal" role="dialog" aria-label="全书章节内联关系图谱与知识导图">
@@ -51,7 +52,7 @@ import '../styles/relation-graph.css';
               </svg>
             </span>
             <div class="brg-header-title-box">
-              <h2 class="brg-header-title">{currentBook.title} · 章节内联关系图谱</h2>
+              <h2 class="brg-header-title">{bookTitle} · 章节内联关系图谱</h2>
               <div class="brg-header-stats-pill">
                 <span class="brg-stat-tag" id="brg-stat-chapters">0 章节</span>
                 <span class="brg-stat-tag" id="brg-stat-cross-refs">0 跨章引用</span>

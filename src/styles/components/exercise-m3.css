@@ -385,7 +385,9 @@ html[data-sideload-active='exercises'] .sideload-panel-view[data-panel-id='exerc
 html[data-sideload-active='ai'] .sideload-panel-view[data-panel-id='ai'],
 .custom-page-sidebar.has-ai-active .sideload-panel-view[data-panel-id='ai'],
 html[data-sideload-active='translate'] .sideload-panel-view[data-panel-id='translate'],
-.custom-page-sidebar.has-translate-active .sideload-panel-view[data-panel-id='translate'] {
+.custom-page-sidebar.has-translate-active .sideload-panel-view[data-panel-id='translate'],
+html[data-sideload-active='focus'] .sideload-panel-view[data-panel-id='focus'],
+.custom-page-sidebar.has-focus-active .sideload-panel-view[data-panel-id='focus'] {
   display: flex !important;
 }
 

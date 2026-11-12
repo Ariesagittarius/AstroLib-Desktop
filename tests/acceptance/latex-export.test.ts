@@ -133,7 +133,15 @@ describe('LaTeX Export Acceptance Suite', () => {
   });
 
   describe('真实教材章节 MDX 导出 book.tex 架构特征与 ZIP 打包', () => {
-    const sampleMdxPath = path.join(
+    const sampleMdxSources = path.join(
+      root,
+      'content-sources',
+      'collections',
+      'math',
+      'engineering_analysis',
+      '2.2_求导的基本法则.mdx'
+    );
+    const sampleMdxPrimary = path.join(
       root,
       'src',
       'content',
@@ -143,6 +151,19 @@ describe('LaTeX Export Acceptance Suite', () => {
       'engineering_analysis',
       '2.2_求导的基本法则.mdx'
     );
+    const sampleMdxBackup = path.join(
+      root,
+      'backup',
+      'preset-books-source',
+      'math',
+      'engineering_analysis',
+      '2.2_求导的基本法则.mdx'
+    );
+    const sampleMdxPath = fs.existsSync(sampleMdxSources)
+      ? sampleMdxSources
+      : fs.existsSync(sampleMdxPrimary)
+      ? sampleMdxPrimary
+      : sampleMdxBackup;
     const mdxSource = fs.readFileSync(sampleMdxPath, 'utf8');
 
     const exportResult = exportChapterToLatex({

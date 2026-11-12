@@ -1,0 +1,70 @@
+---
+title: '4.9 Quantities that transform covariantly'
+---
+
+import Guide from '@/components/Guide.astro';
+import Knowledge from '@/components/Knowledge.astro';
+import Example from '@/components/Example.astro';
+import Analysis from '@/components/Analysis.astro';
+import Solution from '@/components/Solution.astro';
+import Variant from '@/components/Variant.astro';
+import Note from '@/components/Note.astro';
+import Block from '@/components/Block.astro';
+import Method from '@/components/Method.astro';
+import Exercise from '@/components/Exercise.astro';
+
+## 4.9 Quantities that transform covariantly
+
+If the differential length element of the previous section serves as the "proto type" for quantities that transform as contravariant vector components, you may be wondering if there's a similar "prototype" for covariant quantities. You can answer that question by considering a quantity such as the change in temperature with distance (degrees per meter) over some region, which you may recognize from Chapter 2 as the gradient of that quantity. Unlike the differential length element, which has dimensions directly related to the coordinate dimensions, quantities such as the gradient have dimensions that include the inverse of the coordinate dimensions (per unit length rather than length in the case of spatial coordinates). This dimensional consideration sug gests that the gradient may be a good candidate for the prototype of quantities that transform as covariant vector components. And index notation makes this easy to see.
+
+Imagine a scalar quantity such as temperature or density whose value at various positions is given by the function $f ( x , y , z )$ ; the rate of change of that quantity is $\frac { \partial f } { \partial x }$ in the x-direction, $\frac { \partial f } { \partial y }$ in the y-direction, and $\frac { \partial f } { \partial z }$ in the $z -$ direction. It's reasonable to ask how these rates of change vary if the coordinate system is changed. To answer that question, you can proceed as we did for the differential length element, using the chain rule for partial derivatives and then employing index notation as follows:
+
+$$
+\begin{array}{c} \frac {\partial f}{\partial x ^ {\prime}} = \frac {\partial f}{\partial x} \frac {\partial x}{\partial x ^ {\prime}} + \frac {\partial f}{\partial y} \frac {\partial y}{\partial x ^ {\prime}} + \frac {\partial f}{\partial z} \frac {\partial z}{\partial x ^ {\prime}} \\ \Rightarrow \frac {\partial f}{\partial x ^ {\prime 1}} = \frac {\partial f}{\partial x ^ {1}} \frac {\partial x ^ {1}}{\partial x ^ {\prime 1}} + \frac {\partial f}{\partial x ^ {2}} \frac {\partial x ^ {2}}{\partial x ^ {\prime 1}} + \frac {\partial f}{\partial x ^ {3}} \frac {\partial x ^ {3}}{\partial x ^ {\prime 1}}, \end{array}
+$$
+
+$$
+\begin{array}{c} \frac {\partial f}{\partial y ^ {\prime}} = \frac {\partial f}{\partial x} \frac {\partial x}{\partial y ^ {\prime}} + \frac {\partial f}{\partial y} \frac {\partial y}{\partial y ^ {\prime}} + \frac {\partial f}{\partial z} \frac {\partial z}{\partial y ^ {\prime}} \\ \Rightarrow \frac {\partial f}{\partial x ^ {\prime 2}} = \frac {\partial f}{\partial x ^ {1}} \frac {\partial x ^ {1}}{\partial x ^ {\prime 2}} + \frac {\partial f}{\partial x ^ {2}} \frac {\partial x ^ {2}}{\partial x ^ {\prime 2}} + \frac {\partial f}{\partial x ^ {3}} \frac {\partial x ^ {3}}{\partial x ^ {\prime 2}}, \end{array}
+$$
+
+$$
+\begin{array}{c} \frac {\partial f}{\partial z ^ {\prime}} = \frac {\partial f}{\partial x} \frac {\partial x}{\partial z ^ {\prime}} + \frac {\partial f}{\partial y} \frac {\partial y}{\partial z ^ {\prime}} + \frac {\partial f}{\partial z} \frac {\partial z}{\partial z ^ {\prime}} \\ \Rightarrow \frac {\partial f}{\partial x ^ {\prime 3}} = \frac {\partial f}{\partial x ^ {1}} \frac {\partial x ^ {1}}{\partial x ^ {\prime 3}} + \frac {\partial f}{\partial x ^ {2}} \frac {\partial x ^ {2}}{\partial x ^ {\prime 3}} + \frac {\partial f}{\partial x ^ {3}} \frac {\partial x ^ {3}}{\partial x ^ {\prime 3}}. \end{array}
+$$
+
+As before, you can write this as a matrix equation
+
+$$
+\left( \begin{array}{c} \frac {\partial f}{\partial x ^ {' 1}} \\ \frac {\partial f}{\partial x ^ {' 2}} \\ \frac {\partial f}{\partial x ^ {' 3}} \end{array} \right) = \left( \begin{array}{c c c} \frac {\partial x ^ {1}}{\partial x ^ {' 1}} & \frac {\partial x ^ {2}}{\partial x ^ {' 1}} & \frac {\partial x ^ {3}}{\partial x ^ {' 1}} \\ \frac {\partial x ^ {1}}{\partial x ^ {' 2}} & \frac {\partial x ^ {2}}{\partial x ^ {' 2}} & \frac {\partial x ^ {3}}{\partial x ^ {' 2}} \\ \frac {\partial x ^ {1}}{\partial x ^ {' 3}} & \frac {\partial x ^ {2}}{\partial x ^ {' 3}} & \frac {\partial x ^ {3}}{\partial x ^ {' 3}} \end{array} \right) \left( \begin{array}{c} \frac {\partial f}{\partial x ^ {1}} \\ \frac {\partial f}{\partial x ^ {2}} \\ \frac {\partial f}{\partial x ^ {3}} \end{array} \right),\tag{4.59}
+$$
+
+or as individual equations using the summation symbol:
+
+$$
+\frac {\partial f}{\partial x ^ {^ {\prime} 1}} = \sum_ {j = 1} ^ {3} \frac {\partial x ^ {j}}{\partial x ^ {^ {\prime} 1}} \frac {\partial f}{\partial x ^ {j}}, \quad \frac {\partial f}{\partial x ^ {^ {\prime} 2}} = \sum_ {j = 1} ^ {3} \frac {\partial x ^ {j}}{\partial x ^ {^ {\prime} 2}} \frac {\partial f}{\partial x ^ {j}}, \quad \frac {\partial f}{\partial x ^ {^ {\prime} 3}} = \sum_ {j = 1} ^ {3} \frac {\partial x ^ {j}}{\partial x ^ {^ {\prime} 3}} \frac {\partial f}{\partial x ^ {j}}.
+$$
+
+Once again employing i as the free index gives
+
+$$
+\frac {\partial f}{\partial x ^ {^ {\prime} i}} = \sum_ {j = 1} ^ {3} \frac {\partial x ^ {j}}{\partial x ^ {^ {\prime} i}} \frac {\partial f}{\partial x ^ {j}},\tag{4.60}
+$$
+
+and the Einstein summation convention simplifies this to
+
+$$
+\frac {\partial f}{\partial x ^ {' i}} = \frac {\partial x ^ {j}}{\partial x ^ {' i}} \frac {\partial f}{\partial x ^ {j}}.\tag{4.61}
+$$
+
+Comparing this to the equivalent expression for the differential length element (Eq. 4.53) suggests that once again the vector components in the primed coordinate system are the weighted linear combination of the components in the original coordinate system. But in this case the elements of the transformation matrix $\textstyle { \big ( } { \frac { \partial x ^ { j } } { \partial x ^ { ' i } } } { \big ) }$ are the inverse of those in the transformation of the differen tial length elements (which are $\textstyle { \frac { \partial x ^ { ' } i } { \partial x ^ { j } } } )$ . And just as in that case the $\frac { \partial x ^ { ' i } } { \partial x ^ { j } }$ terms represent the components of vectors that point along the original coordinate axes, in this case the $\frac { \partial x ^ { j } } { \partial x ^ { ' i } }$ terms represent the components of vectors that are perpendicular to the original coordinate surfaces. Hence in this case the weighting factors are the components of the (contravariant) dual basis vectors, which means that the components of the gradient vector transform as covariant components. Of course, for orthonormal coordinate systems the lengths and directions of the original and dual basis vectors are exactly the same, and there is no difference between the covariant and contravariant vector com ponents. In non-orthonormal coordinate systems, this distinction is critically important.
+
+Again using index notation and representing the dual basis vectors as $\frac { \partial x ^ { j } } { \partial x ^ { ' i } }$ you probably won't find it surprising that many authors define the covariant components of vector $\vec { A }$ as components that transform according to the equation
+
+$$
+A _ {i} ^ {\prime} = \frac {\partial x ^ {j}}{\partial x ^ {' i}} A _ {i}.\tag{4.62}
+$$
+
+At this point you should be convinced that vectors are more than just lit tle arrows with magnitude and direction; they're quantities that transform in certain ways between coordinate systems. Specifically, every vector has both contravariant and covariant components that transform in predictable ways.
+
+The contravariant components vary in the opposite manner to the basis vectors pointing along the original coordinate axes, and the covariant components vary in the same manner as those basis vectors. Most importantly, by combin ing the vector's contravariant components with the original basis vectors, or by combining the vector's covariant components with the dual basis vectors, the resulting quantity (the vector itself) remains invariant under all coordinate transformations. It is this characteristic that qualifies vectors to join the ranks of tensors.
+
+Understanding the distinction between contravariant and covariant vector components is extremely helpful in understanding tensors, because vectors are tensors. Specifically, since all the components of a vector can be delineated using only a single index, vectors are tensors of rank one. Under this definition, scalars are tensors of rank zero, since scalars are single numbers and require no index at all. And of what use are tensors of rank two and higher? You'll encounter those in Chapter 5.

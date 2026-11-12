@@ -1,0 +1,34 @@
+---
+title: '5.6 指标的升降'
+---
+
+import Guide from '@/components/Guide.astro';
+import Knowledge from '@/components/Knowledge.astro';
+import Example from '@/components/Example.astro';
+import Analysis from '@/components/Analysis.astro';
+import Solution from '@/components/Solution.astro';
+import Variant from '@/components/Variant.astro';
+import Note from '@/components/Note.astro';
+import Block from '@/components/Block.astro';
+import Method from '@/components/Method.astro';
+import Exercise from '@/components/Exercise.astro';
+
+## 5.6 指标的升降
+
+度规张量有许多有用的功能，其中之一就是它可以实现其他张量协变分量和逆变分量之间的相互转化。假设已知张量的逆变分量和基矢量，求其协变分量，一种选择是使用第4章介绍的方法，但是使用度规张量是另外一种选择。可以利用如下关系式
+
+$$
+g _ {i j} A ^ {j} = A _ {i}\tag{5.19}
+$$
+
+把逆变指标转化为协变指标（因此称为"降"指标）。另外，如果你想把协变指标转化为逆变指标，可以使用 $g_{ij}$ 的逆矩阵（也就是 $g^{ij}$ ）来实现，即：
+
+$$
+g ^ {i j} B _ {i} = B ^ {j}.\tag{5.20}
+$$
+
+这个过程同样适用于高阶张量：
+
+$$
+\begin{array}{l} g ^ {i j} A _ {i k} = A _ {k} ^ {j}, \\ C _ {j k} ^ {i} = g _ {j s} C _ {k} ^ {i s}, \\ T ^ {i j k} = g ^ {i l} T _ {l} ^ {j k}. \end{array}\tag{5.21}
+$$

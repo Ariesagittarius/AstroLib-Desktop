@@ -13,8 +13,10 @@
  */
 
 import { translationService } from '../../../services/translation/service.ts';
+import { dictionaryService } from '../../../services/dictionary/dictionary-service.ts';
 
 const PROXY_PATH_PREFIX = '/api/translate';
+const DICT_PATH_PREFIX = '/api/dict';
 
 function sendJson(res, statusCode, data) {
   res.writeHead(statusCode, {
@@ -43,7 +45,7 @@ export function translationDevServerPlugin() {
     configureServer(server) {
       server.middlewares.use(async (req, res, next) => {
         const rawUrl = req.url || '';
-        if (!rawUrl.startsWith(PROXY_PATH_PREFIX)) {
+        if (!rawUrl.startsWith(PROXY_PATH_PREFIX) && !rawUrl.startsWith(DICT_PATH_PREFIX)) {
           return next();
         }
 
@@ -132,6 +134,27 @@ export function translationDevServerPlugin() {
               ok: true,
               paragraphs: results,
             });
+          }
+
+          // 6. 单词释义查询: GET /api/dict?word=... 或 GET /api/translate/dict?word=...
+          if (req.method === 'GET' && (pathname === DICT_PATH_PREFIX || pathname === `${PROXY_PATH_PREFIX}/dict`)) {
+            const word = parsedUrl.searchParams.get('word') || '';
+            if (!word.trim()) {
+              return sendJson(res, 400, { ok: false, error: '缺少待查询单词参数 (word)' });
+            }
+            const dictResult = await dictionaryService.lookup(word);
+            return sendJson(res, dictResult.ok ? 200 : 404, dictResult);
+          }
+
+          // 7. 学术语境解析: POST /api/dict/context 或 POST /api/translate/dict/context
+          if (req.method === 'POST' && (pathname === `${DICT_PATH_PREFIX}/context` || pathname === `${PROXY_PATH_PREFIX}/dict/context`)) {
+            const body = await readJsonBody(req);
+            const { word, sentence, provider, apiKey, endpoint, model } = body;
+            if (!word) {
+              return sendJson(res, 400, { ok: false, error: '缺少目标单词 (word)' });
+            }
+            const contextResult = await dictionaryService.explainInContext({ word, sentence, provider, apiKey, endpoint, model });
+            return sendJson(res, contextResult.ok ? 200 : 500, contextResult);
           }
 
           // 其他路径 404

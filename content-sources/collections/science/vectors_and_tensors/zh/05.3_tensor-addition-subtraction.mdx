@@ -1,0 +1,64 @@
+---
+title: '5.3 张量的加法和减法'
+---
+
+import Guide from '@/components/Guide.astro';
+import Knowledge from '@/components/Knowledge.astro';
+import Example from '@/components/Example.astro';
+import Analysis from '@/components/Analysis.astro';
+import Solution from '@/components/Solution.astro';
+import Variant from '@/components/Variant.astro';
+import Note from '@/components/Note.astro';
+import Block from '@/components/Block.astro';
+import Method from '@/components/Method.astro';
+import Exercise from '@/components/Exercise.astro';
+
+## 5.3 张量的加法和减法
+
+通过 1.4 节的学习可知，两个或两个以上的矢量相加，可以简单地通过相加其对应的分量来实现。因此一个矢量方程如：
+
+$$
+\vec {C} = \vec {A} + \vec {B}.\tag{5.6}
+$$
+
+实际上包括三个方程（三维空间中），因为合矢量 $\vec{C}$ 的每个分量必须是矢量 $\vec{A}$ 和 $\vec{B}$ 相对应分量的和，即：
+
+$$
+\begin{array}{l} C _ {x} = A _ {x} + B _ {x}, \\ C _ {y} = A _ {y} + B _ {y}, \\ C _ {z} = A _ {z} + B _ {z}. \end{array}\tag{5.7}
+$$
+
+高阶张量具有相同的加法法则，条件是相加的张量需具有相同的结构（也就是说它们具有相同的阶、相同数量的协变指标和相同数量的逆变指标）。张量的和也是一个张量，合张量与参与相加的张量具有相同的结构：
+
+$$
+\begin{array}{l} C _ {i j} = A _ {i j} + B _ {i j}, \\ C ^ {i j} = A ^ {i j} + B ^ {i j}, \\ C _ {j} ^ {i} = A _ {j} ^ {i} + B _ {j} ^ {i}. \end{array}\tag{5.8}
+$$
+
+注意，每一个表达式代表的都不止一个方程，具体数目取决于每个指标可能取值的数目。另外，只要参与相加的张量各类指标相同，具有任意协变指标和逆变指标的张量都可以相加。
+
+可以看出两个张量相加符合张量的定义，考虑张量的分量 $A_{j}^{i}$ 和 $B_{j}^{i}$ 变换到另一个坐标系：
+
+$$
+\begin{array}{l} A _ {l} ^ {\prime k} = \frac {\partial x ^ {\prime k}}{\partial x ^ {i}} \frac {\partial x ^ {j}}{\partial x ^ {l ^ {\prime}}} A _ {j} ^ {i}, \\ B _ {l} ^ {\prime k} = \frac {\partial x ^ {\prime k}}{\partial x ^ {i}} \frac {\partial x ^ {j}}{\partial x ^ {l ^ {\prime}}} B _ {j} ^ {i}. \end{array}\tag{5.9}
+$$
+
+因此
+
+$$
+\begin{array}{r l} A _ {l} ^ {\prime k} + B _ {l} ^ {\prime k} & = \frac {\partial x ^ {\prime k}}{\partial x ^ {i}} \frac {\partial x ^ {j}}{\partial x ^ {\prime l}} A _ {j} ^ {i} + \frac {\partial x ^ {\prime k}}{\partial x ^ {i}} \frac {\partial x ^ {j}}{\partial x ^ {\prime l}} B _ {j} ^ {i} \\ & = \frac {\partial x ^ {\prime k}}{\partial x ^ {i}} \frac {\partial x ^ {j}}{\partial x ^ {\prime l}} (A _ {j} ^ {i} + B _ {j} ^ {i}). \end{array}
+$$
+
+如果把最后一个表达式与张量分量 $C_{j}^{i}$ 从原坐标系到新坐标系的变换式相比：
+
+$$
+C _ {l} ^ {\prime k} = \frac {\partial x ^ {\prime k}}{\partial x ^ {i}} \frac {\partial x ^ {j}}{\partial x ^ {\prime l}} C _ {j} ^ {i}.
+$$
+
+可以看出 $A_{j}^{i}$ 和 $B_{j}^{i}$ 相加的结果是 $C_{j}^{i}$ 满足张量变换要求.
+
+张量的减法同样简单，对应分量分别相减而不是相加：
+
+$$
+\begin{array}{l} C _ {i j} = A _ {i j} - B _ {i j}, \\ C ^ {i j} = A ^ {i j} - B ^ {i j}, \\ C _ {j} ^ {i} = A _ {j} ^ {i} - B _ {j} ^ {i}. \end{array}\tag{5.10}
+$$
+
+张量相减的结果仍然是一个张量，可以参照本章最后相关题目.

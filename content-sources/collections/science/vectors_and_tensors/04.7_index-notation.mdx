@@ -1,0 +1,70 @@
+---
+title: '4.7 Index notation'
+---
+
+import Guide from '@/components/Guide.astro';
+import Knowledge from '@/components/Knowledge.astro';
+import Example from '@/components/Example.astro';
+import Analysis from '@/components/Analysis.astro';
+import Solution from '@/components/Solution.astro';
+import Variant from '@/components/Variant.astro';
+import Note from '@/components/Note.astro';
+import Block from '@/components/Block.astro';
+import Method from '@/components/Method.astro';
+import Exercise from '@/components/Exercise.astro';
+
+## 4.7 Index notation
+
+You've seen the first glimmerings of index notation in the earlier section of this chapter describing coordinate transformations. As you may recall, the angles between the transformed (rotated) coordinate axes and the origina (non-rotated) axes of a two-dimensional coordinate system were called $\alpha _ { 1 1 }$ $\alpha _ { 1 2 } , \alpha _ { 2 1 }$ , and $\alpha _ { 2 2 }$ . These angles could just as well have been designated $\alpha _ { x ^ { \prime } x }$ , $\alpha _ { x ^ { \prime } y } , \alpha _ { y ^ { \prime } x }$ , and the like, but there are several good reasons to use the index num bers 1, 2, and 3 rather than the letters x, y, and z to refer to coordinate axes and vector components. One of those reasons is that many problems in physics and engineering involve a number of dimensions greater than 3, and although everyone agrees that "4" comes after "3," a consensus hasn't been reached on what comes after "z." Another reason is that index notation enables the great convenience of the summation convention that you can read about later in this section.
+
+Using index notation, the coordinates of a point in three-dimensional space are written as $( x _ { 1 } , x _ { 2 } , x _ { 3 } )$ or $( x ^ { 1 } , x ^ { 2 } , x ^ { 3 } )$ rather than $( x , y , z )$ , and the components of a vector are written as $( A _ { 1 } , A _ { 2 } , A _ { 3 } )$ or $( A ^ { 1 } , A ^ { 2 } , A ^ { 3 } )$ rather than $( A _ { x } , A _ { y } , A _ { z } )$ or $( A ^ { x } , A ^ { y } , A ^ { z } )$ . This system is easily extended to N-dimensional space, in which the coordinates become $( x _ { 1 } , x _ { 2 } , \ldots , x _ { N } )$ or $( x ^ { 1 } , x ^ { 2 } , \ldots , x ^ { N } )$ and the vector components become $( A _ { 1 } , A _ { 2 } , \dotsc , A _ { N } )$ ) or $( A ^ { 1 } , A ^ { 2 } , \dotsc , A ^ { N } )$
+
+Applying this notation to the equation for the transformation of contravariant vector components produced by a rotation of two-dimensional axes, Eq. 4.6 becomes
+
+$$
+\binom{A ^ {' 1}}{A ^ {' 2}} = \left( \begin{array}{c c} \cos {(\alpha_ {1 1})} & \cos {(\alpha_ {1 2})} \\ \cos {(\alpha_ {2 1})} & \cos {(\alpha_ {2 2})} \end{array} \right) \binom{A ^ {1}}{A ^ {2}}.\tag{4.43}
+$$
+
+In three dimensions, this is
+
+$$
+\left( \begin{array}{c} A ^ {' 1} \\ A ^ {' 2} \\ A ^ {' 3} \end{array} \right) = \left( \begin{array}{c c c} \cos {(\alpha_ {1 1})} & \cos {(\alpha_ {1 2})} & \cos {(\alpha_ {1 3})} \\ \cos {(\alpha_ {2 1})} & \cos {(\alpha_ {2 2})} & \cos {(\alpha_ {2 3})} \\ \cos {(\alpha_ {3 1})} & \cos {(\alpha_ {3 2})} & \cos {(\alpha_ {3 3})} \end{array} \right) \left( \begin{array}{c} A ^ {1} \\ A ^ {2} \\ A ^ {3} \end{array} \right).\tag{4.44}
+$$
+
+Designating the elements of the transformation matrix $a _ { 1 1 } , a _ { 1 2 } , a _ { 1 3 }$ , and so forth allows you to write Eq. 4.44 as
+
+$$
+\begin{array}{r} A ^ {' 1} = a _ {1 1} A ^ {1} + a _ {1 2} A ^ {2} + a _ {1 3} A ^ {3}, \\ A ^ {' 2} = a _ {2 1} A ^ {1} + a _ {2 2} A ^ {2} + a _ {2 3} A ^ {3}, \\ A ^ {' 3} = a _ {3 1} A ^ {1} + a _ {3 2} A ^ {2} + a _ {3 3} A ^ {3}, \end{array}\tag{4.45}
+$$
+
+or
+
+$$
+A ^ {' 1} = \sum_ {j = 1} ^ {3} a _ {1 j} A ^ {j},
+$$
+
+$$
+A ^ {' 2} = \sum_ {j = 1} ^ {3} a _ {2 j} A ^ {j},\tag{4.46}
+$$
+
+$$
+A ^ {' 3} = \sum_ {j = 1} ^ {3} a _ {3 j} A ^ {j}.
+$$
+
+Allowing $\mathbf { \ddot { \rho } } _ { i } \mathbf { \vec { \rho } } _ { \mathrm { 3 } } ,$ to stand for any of the indices 1, 2, or 3 makes this:
+
+$$
+A ^ {' i} = \sum_ {j = 1} ^ {3} a _ {i j} A ^ {j}. \quad i = 1, 2, 3\tag{4.47}
+$$
+
+As a final simplification, whenever an index appears twice in the same term, once as a superscript and once as a subscript (as $^ { \ast } j ^ { \ast }$ does in Eq. 4.47), you can omit the summation symbol and write simply
+
+$$
+A ^ {' i} = a _ {i j} A ^ {j},\tag{4.48}
+$$
+
+in which the reader knows to sum over the repeated index (j in this case). Such repeated indices are often called "dummy" indices, since any letter may be used for that index and the result will be the same.<sup>8</sup> It was Albert Einstein who first suggested this summation convention, which he jokingly called his "great discovery in mathematics."<sup>9</sup> Whatever you call it, this idea certainly has saved a lot of ink and time since Einstein proposed it in 1916.
+
+Before moving on, you should take a careful look at Eq. 4.48 and make sure you understand that these few symbols mean exactly the same thing as the many terms in the three separate equations of Eq. 4.45. They tell you that each component in the primed coordinate system is a weighted linear combi nation of the components in the original (unprimed) coordinate system, with the transformation matrix elements $( a _ { i j } )$ providing the weighting factors fo each term.
+
+And if you want to know the exact meaning of each of those factors in the transformation of covariant and contravariant vector components, the next section will help with that.

@@ -1,0 +1,54 @@
+---
+title: '5.1 Definitions (advanced)'
+---
+
+import Guide from '@/components/Guide.astro';
+import Knowledge from '@/components/Knowledge.astro';
+import Example from '@/components/Example.astro';
+import Analysis from '@/components/Analysis.astro';
+import Solution from '@/components/Solution.astro';
+import Variant from '@/components/Variant.astro';
+import Note from '@/components/Note.astro';
+import Block from '@/components/Block.astro';
+import Method from '@/components/Method.astro';
+import Exercise from '@/components/Exercise.astro';
+
+## 5.1 Definitions (advanced)
+
+In the basic definitions of Chapter 1, scalars, vectors, and tensors were defined by the number of directions involved: zero for scalars, one for vectors, and more than one for tensors.<sup>2</sup> Now that you've seen the concepts of components, basis vectors, and the transformation properties of each, you're in a position to understand the more-advanced definitions of scalars, vectors, and tensors. Specifically:
+
+A scalar is a single value with no directional indicator that represents a quantity that does not vary as the coordinate system is changed.
+
+So for a scalar with value $\phi$ in one coordinate system and value $\phi ^ { \prime }$ in another coordinate system, you can be certain that the quantity represented by $\phi$ (combined with the relevant unit) and $\phi ^ { \prime }$ (combined with its unit) is the same no matter which system you use to represent it. Thus 1 inch and 2.54 centimeters represent the same quantity of length.
+
+A vector is an array of three values (in 3-D space) called "vector compo nents" that combine with directional indicators ("basis vectors") to form a quantity that does not vary as the coordinate system is changed.
+
+So vector $\vec { A }$ represents the same entity whether it is expressed using contravari ant components $A ^ { i }$ or covariant components $A _ { i }$ :
+
+$$
+\vec {A} = A ^ {i} \vec {e} _ {i} = A _ {i} \vec {e} ^ {i},
+$$
+
+where $\vec { e } _ { i }$ represents a covariant basis vector and ${ \vec { e } } ^ { i }$ represents a contravariant basis vector.
+
+In transforming between coordinate systems, a vector with contravariant components $A ^ { j }$ in the original (unprimed) coordinate system and contravarian components $A ^ { ' i }$ in the new (primed) coordinate system transforms as
+
+$$
+A ^ {' i} = \frac {\partial x ^ {i ^ {\prime}}}{\partial x ^ {j}} A ^ {j},
+$$
+
+where the $\frac { \partial x ^ { i ^ { \prime } } } { \partial x ^ { j } }$ terms represent the components in the new coordinate system of the basis vectors tangent to the original axes.
+
+Likewise, for a vector with covariant components $A _ { j }$ in the origina (unprimed) coordinate system and covariant components $A _ { i } ^ { \prime }$ in the new (primed) coordinate system, the transformation equation is
+
+$$
+A _ {i} ^ {\prime} = \frac {\partial x ^ {j}}{\partial x ^ {i ^ {\prime}}} A _ {j},
+$$
+
+where the $\frac { \partial x ^ { j } } { \partial x ^ { i ^ { \prime } } }$ terms represent the components in the new coordinate system of the (dual) basis vectors perpendicular to the original axes.
+
+A tensor of rank n is an array of $3 ^ { n }$ values (in 3-D space) called "tensor com ponents" that combine with multiple directional indicators (basis vectors) to form a quantity that does not vary as the coordinate system is changed.
+
+From this definition, you can see that a second-rank tensor has $3 ^ { 2 } = 9$ components in three-dimensional space. Note that a tensor of rank 0 is a scalar and a tensor of rank 1 is a vector.
+
+There is no standard notation for tensors; you may see a tensor represented with double overhead arrows (such as $\vec { \vec { T } } )$ or with a tilde or two-directional arrow above or below (such as $\tilde { T } , \overleftrightarrow { T }$ or $\mathcal { L } _ {  } )$ . Many authors don't bother with arrows or tildes and represent tensors simply by writing the letter signifying the tensor with "placeholder" indices to indicate the contravariant and covariant rank of the tensor (such as $T ^ { i j }$ or $T _ { b } ^ { a } )$ ).

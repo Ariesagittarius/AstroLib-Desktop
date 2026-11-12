@@ -1,0 +1,248 @@
+/**
+ * src/styles/components/notice-framework.css
+ * ============================================================================
+ * AstroLib 全局通用学术提示条与 Wiki 样式 (NoticeFramework & WikiNotice)
+ * ============================================================================
+ */
+
+.astrolib-notice-framework {
+  max-width: 62rem;
+  width: 100%;
+  margin: 0 auto 1.15rem auto;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+}
+
+@media (max-width: 49.999rem) {
+  .astrolib-notice-framework {
+    max-width: 100%;
+    margin-bottom: 0.85rem;
+  }
+}
+
+@media print {
+  .astrolib-notice-framework {
+    display: none !important;
+  }
+}
+
+.astrolib-notice-card.astrolib-notice-wiki {
+  --wiki-accent-color: #ea580c;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  background-color: var(--md-sys-color-surface-container-low, #f9f9fb);
+  border: 1px solid var(--md-sys-color-outline-variant, rgba(0, 0, 0, 0.08));
+  border-left: 4.5px solid var(--wiki-accent-color);
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+  border-top-right-radius: 8px;
+  border-bottom-right-radius: 8px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+  margin-bottom: 0.65rem;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+  overflow: hidden;
+}
+
+:root[data-theme='dark'] .astrolib-notice-card.astrolib-notice-wiki,
+[data-theme='dark'] .astrolib-notice-card.astrolib-notice-wiki {
+  background-color: var(--md-sys-color-surface-container, #1e1f20);
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+}
+
+.astrolib-notice-card.severity-warning {
+  --wiki-accent-color: #ea580c;
+}
+.astrolib-notice-card.severity-info {
+  --wiki-accent-color: #0284c7;
+}
+.astrolib-notice-card.severity-accent {
+  --wiki-accent-color: var(--md-sys-color-primary, #0b57d0);
+}
+.astrolib-notice-card.severity-neutral {
+  --wiki-accent-color: var(--md-sys-color-outline, #74777f);
+}
+
+:root[data-theme='dark'] .astrolib-notice-card.severity-warning,
+[data-theme='dark'] .astrolib-notice-card.severity-warning {
+  --wiki-accent-color: #f97316;
+}
+:root[data-theme='dark'] .astrolib-notice-card.severity-info,
+[data-theme='dark'] .astrolib-notice-card.severity-info {
+  --wiki-accent-color: #38bdf8;
+}
+:root[data-theme='dark'] .astrolib-notice-card.severity-accent,
+[data-theme='dark'] .astrolib-notice-card.severity-accent {
+  --wiki-accent-color: var(--md-sys-color-primary, #a8c7fa);
+}
+:root[data-theme='dark'] .astrolib-notice-card.severity-neutral,
+[data-theme='dark'] .astrolib-notice-card.severity-neutral {
+  --wiki-accent-color: #8e918f;
+}
+
+.wiki-main-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.65rem 0.9rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.wiki-icon-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  margin-top: 1px;
+  color: var(--wiki-accent-color);
+}
+
+.wiki-icon-wrap svg,
+.notice-svg {
+  width: 19px;
+  height: 19px;
+}
+
+.wiki-content-col {
+  flex: 1;
+  min-width: 0;
+}
+
+.wiki-text-line {
+  font-size: 0.85rem;
+  line-height: 1.55;
+  color: var(--md-sys-color-on-surface, #1f1f1f);
+  word-break: break-word;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+:root[data-theme='dark'] .wiki-text-line,
+[data-theme='dark'] .wiki-text-line {
+  color: var(--md-sys-color-on-surface, #e3e3e3);
+}
+
+.wiki-msg-text,
+.wiki-message {
+  font-weight: 450;
+}
+
+.wiki-tag {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.72rem;
+  font-weight: 500;
+  padding: 0.1rem 0.45rem;
+  border-radius: 4px;
+  background-color: var(--md-sys-color-surface-container-high, rgba(0, 0, 0, 0.05));
+  border: 1px solid var(--md-sys-color-outline-variant, rgba(0, 0, 0, 0.12));
+  color: var(--md-sys-color-on-surface-variant, #444746);
+}
+
+:root[data-theme='dark'] .wiki-tag,
+[data-theme='dark'] .wiki-tag {
+  background-color: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.14);
+  color: #c4c7c5;
+}
+
+.wiki-action-col,
+.wiki-actions-col {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  flex-shrink: 0;
+  margin-top: -2px;
+}
+
+.notice-action-btn,
+.toggle-expand-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: 50%;
+  color: var(--md-sys-color-outline, #74777f);
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease, transform 0.2s ease;
+}
+
+.notice-action-btn:hover,
+.toggle-expand-btn:hover {
+  background-color: var(--md-sys-color-surface-container-highest, rgba(0, 0, 0, 0.08));
+  color: var(--md-sys-color-on-surface, #1f1f1f);
+}
+
+:root[data-theme='dark'] .notice-action-btn:hover,
+:root[data-theme='dark'] .toggle-expand-btn:hover,
+[data-theme='dark'] .notice-action-btn:hover,
+[data-theme='dark'] .toggle-expand-btn:hover {
+  background-color: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+}
+
+.action-icon,
+.chevron-svg,
+.chevron-icon {
+  width: 16px;
+  height: 16px;
+  transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1);
+}
+
+.toggle-expand-btn[aria-expanded='true'] .chevron-svg,
+.toggle-expand-btn[aria-expanded='true'] .chevron-icon {
+  transform: rotate(180deg);
+}
+
+.wiki-expand-panel {
+  padding: 0 0.9rem 0.65rem 0.9rem;
+}
+
+.wiki-expand-divider {
+  border-top: 1px dashed var(--md-sys-color-outline-variant, rgba(0, 0, 0, 0.08));
+  margin-bottom: 0.45rem;
+}
+
+:root[data-theme='dark'] .wiki-expand-divider,
+[data-theme='dark'] .wiki-expand-divider {
+  border-top-color: rgba(255, 255, 255, 0.08);
+}
+
+.wiki-items-list,
+.wiki-item-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.wiki-list-item,
+.wiki-item-li {
+  display: flex;
+  align-items: baseline;
+  gap: 0.45rem;
+  font-size: 0.8rem;
+  line-height: 1.45;
+  color: var(--md-sys-color-on-surface-variant, #444746);
+}
+
+:root[data-theme='dark'] .wiki-list-item,
+:root[data-theme='dark'] .wiki-item-li,
+[data-theme='dark'] .wiki-list-item,
+[data-theme='dark'] .wiki-item-li {
+  color: #c4c7c5;
+}

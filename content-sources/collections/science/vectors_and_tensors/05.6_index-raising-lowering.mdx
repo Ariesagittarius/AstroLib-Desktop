@@ -1,0 +1,34 @@
+---
+title: '5.6 Index raising and lowering'
+---
+
+import Guide from '@/components/Guide.astro';
+import Knowledge from '@/components/Knowledge.astro';
+import Example from '@/components/Example.astro';
+import Analysis from '@/components/Analysis.astro';
+import Solution from '@/components/Solution.astro';
+import Variant from '@/components/Variant.astro';
+import Note from '@/components/Note.astro';
+import Block from '@/components/Block.astro';
+import Method from '@/components/Method.astro';
+import Exercise from '@/components/Exercise.astro';
+
+## 5.6 Index raising and lowering
+
+One of the many useful functions of the metric tensor is to convert between the covariant and contravariant components of other tensors. Imagine that you're given the contravariant components and original basis vectors of a tensor and you wish to determine the covariant components. One approach is to use the techniques described in Chapter 4 (finding the dual basis vectors, performing parallel and perpendicular projections, and the like), but with the metric tensor, you have another option. You can use relations such as
+
+$$
+g _ {i j} A ^ {j} = A _ {i}\tag{5.19}
+$$
+
+to convert a contravariant index to a covariant one (thus "lowering" an index). Furthermore, if you wish to convert a covariant index to a contravariant index, you can use the inverse of $g _ { i j }$ (which is just $g ^ { i j } )$ to perform operations like this:
+
+$$
+g ^ {i j} B _ {i} = B ^ {j}.\tag{5.20}
+$$
+
+And this same process works for higher-order tensors:
+
+$$
+\begin{array}{r} g ^ {i j} A _ {i k} = A _ {k} ^ {j}, \\ C _ {j k} ^ {i} = g _ {j s} C _ {k} ^ {i s}, \\ T ^ {i j k} = g ^ {i l} T _ {l} ^ {j k}. \end{array}\tag{5.21}
+$$

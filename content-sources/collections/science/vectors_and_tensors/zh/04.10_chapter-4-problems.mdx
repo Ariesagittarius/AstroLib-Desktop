@@ -1,0 +1,60 @@
+---
+title: '4.10 习题'
+---
+
+import Guide from '@/components/Guide.astro';
+import Knowledge from '@/components/Knowledge.astro';
+import Example from '@/components/Example.astro';
+import Analysis from '@/components/Analysis.astro';
+import Solution from '@/components/Solution.astro';
+import Variant from '@/components/Variant.astro';
+import Note from '@/components/Note.astro';
+import Block from '@/components/Block.astro';
+import Method from '@/components/Method.astro';
+import Exercise from '@/components/Exercise.astro';
+
+## 4.10 习题
+
+<Exercise title="习题 4.1">
+写出二维笛卡儿坐标轴旋转 $70^{\circ}$ 的逆变换矩阵以及矢量旋转 $70^{\circ}$ 的直接变换矩阵. 证明：这两个变换矩阵的乘积是单位矩阵.
+</Exercise>
+
+<Exercise title="习题 4.2">
+利用习题 4.1 中的逆变换矩阵求出矢量 $\vec{A}=2\hat{i}+5.5\hat{j}$ 在旋转后坐标系中的分量.
+</Exercise>
+
+<Exercise title="习题 4.3">
+利用习题 4.1 的直接变换矩阵将原坐标基矢量 $\hat{i}$ ， $\hat{j}$ 旋转 $70^{\circ}$ ，使得它们指向旋转后的坐标轴.
+</Exercise>
+
+<Exercise title="习题 4.4">
+利用直接变换矩阵将习题 4.2 中的矢量 $\vec{A}$ 旋转 $-70^{\circ}$ ，并且将旋转后矢量的 x 分量和 y 分量（在原坐标系中）与旋转后坐标系中原矢量的 $x'$ 分量和 $y'$ 分量进行比较.
+</Exercise>
+
+<Exercise title="习题 4.5">
+利用原矢量 $\vec{A}$ 与旋转基矢量的点积 $(\vec{A} \cdot \hat{i}'$ 和 $\vec{A} \cdot \hat{j}')$ 求出矢量 $\vec{A}$ 在旋转坐标系中的分量.
+</Exercise>
+
+<Exercise title="习题 4.6">
+已知矢量 $\vec{A} = -5\hat{i} + 6\hat{j}$ ，基矢量 $\vec{e}_{1} = \hat{i} + 2\hat{j}$ ， $\vec{e}_{2} = -2\hat{i} - \hat{j}$ ，求逆变分量 $\vec{A}<sup>1</sup>$ ， $\vec{A}<sup>2</sup>$ .
+</Exercise>
+
+<Exercise title="习题 4.7">
+求习题 4.6 中基矢量 $\vec{e}_{1}$ ， $\vec{e}_{2}$ 的对偶基矢量 $\vec{e}<sup>1</sup>$ ， $\vec{e}<sup>2</sup>$ .
+</Exercise>
+
+<Exercise title="习题 4.8">
+求习题 4.6 中矢量 $\vec{A}$ 的协变分量 $\vec{A}_{1}$ ， $\vec{A}_{2}$ .
+</Exercise>
+
+<Exercise title="习题 4.9">
+利用代入法以及消元法求解从式 4.26 矢量得出的两个联立方程.
+</Exercise>
+
+<Exercise title="习题 4.10">
+证明：笛卡儿到极坐标变换矩阵的元素为与原（笛卡儿）坐标轴相切的基矢量分量.
+
+前一章内容中包含的一些观点对帮助我们充分理解张量是很重要的。首先，任何矢量都可以在坐标系中用分量表示，且分量在不同坐标系之间的变换方式有两种："协变"分量变换和"逆变"分量变换。"协变"分量的变换方式与沿坐标轴方向的基矢量变换方式相同，"逆变"分量的变换方式与基矢量的变换方式相反 <sup>①</sup> 。第二，基矢量的方向与坐标轴的方向一致，"互反"或"对偶"基矢量的方向与坐标轴方向垂直，"对偶"基矢量的变换方式与基矢量的变换方式相反。第三，逆变分量结合基矢量表示的矢量和协变分量结合对偶基矢量表示的矢量在坐标变换下保持不变。即不管你在哪个坐标系中用分量表示矢量，矢量还是那个矢量。
+
+这一章将把协变和逆变的概念延伸到矢量之外，并明确标量和矢量都是"张量"这个家族中的一员.
+</Exercise>

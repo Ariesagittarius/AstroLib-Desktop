@@ -1,0 +1,28 @@
+---
+title: '2.7 Nabla – the del operator'
+---
+
+import Guide from '@/components/Guide.astro';
+import Knowledge from '@/components/Knowledge.astro';
+import Example from '@/components/Example.astro';
+import Analysis from '@/components/Analysis.astro';
+import Solution from '@/components/Solution.astro';
+import Variant from '@/components/Variant.astro';
+import Note from '@/components/Note.astro';
+import Block from '@/components/Block.astro';
+import Method from '@/components/Method.astro';
+import Exercise from '@/components/Exercise.astro';
+
+## 2.7 Nabla – the del operator
+
+The partial derivatives discussed in the previous section can be put to use in a wide range of problems, and when you come across such problems you may find that they involve equations that contain an inverted upper case delta wearing a vector hat $( \vec { \nabla } )$ . This symbol represents a vector differential operator called "nabla" or "del," and its presence instructs you to take derivatives of the quantity on which the operator is acting. The exact form of those derivatives depends on the symbol following the del operator, with $\vec { \nabla } ( )$ signifying gradi ent, $ \vec { \bigtriangledown } 0 ^ { \prime \prime }$ signifying divergence, $\cdots \vec { \bigtriangledown } \times \vec { \bigtriangledown } ^ { , , }$ indicating curl, and $\nabla ^ { 2 } ( \mathbf { \xi } )$ signifying the Laplacian. Each of these operations is discussed in later sections; for now we'll just consider what an operator is and how the del operator can be written in Cartesian coordinates.
+
+Like all good mathematical operators, del is an action waiting to happen. Just as $\sqrt { }$ tells you to take the square root of anything that appears under its roof, $\vec { \nabla }$ is an instruction to take derivatives in three directions. Specifically, in Cartesian coordinates
+
+$$
+\vec {\nabla} \equiv \hat {\imath} \frac {\partial}{\partial x} + \hat {j} \frac {\partial}{\partial y} + \hat {k} \frac {\partial}{\partial z},\tag{2.29}
+$$
+
+where $\hat { \imath } , \ \hat { \jmath } .$ , and $\hat { k }$ are the unit vectors in the direction of the Cartesian coordinates $x , y ,$ , and $z$ .
+
+This expression may appear strange, since in this form it's lacking anything on which it can operate. However, if you follow the del with a scalar or vecto field, you can extract information about how those fields change in space. In this context, "field" refers to an array or collection of values defined at various locations. A scalar field is specified entirely by its magnitude at these locations: examples of scalar fields include the air temperature in a room and the height of terrain above sea level. A vector field is specified by both magnitude and direction at various locations: examples include electric, magnetic, and gravitational fields. Specific examples of how the del operator works on scalar and vector fields are given in the following sections.

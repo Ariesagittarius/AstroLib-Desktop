@@ -37,10 +37,16 @@ import { geminiProxyDevServerPlugin } from './src/server/plugins/gemini-proxy/de
 import { buptProxyDevServerPlugin } from './src/server/plugins/bupt-proxy/dev-server-plugin.mjs';
 // 统一翻译模块：/api/translate/* 本地服务端点（Vite dev server 插件，仅 dev 启用）
 import { translationDevServerPlugin } from './src/server/plugins/translation/dev-server-plugin.mjs';
+// 文档摄取与 MinerU 自动解析服务：/api/ingest/* 本地服务端点（Vite dev server 插件，仅 dev 启用）
+import { ingestDevServerPlugin } from './src/server/plugins/doc-ingestion/dev-server-plugin.mjs';
 // 双语向量关联与热力图推理模块：/__bilingual__/* 本地端点（Vite dev server 插件，仅 dev 启用）
 import { bilingualDevServerPlugin } from './src/server/plugins/bilingual-aligner/dev-server-plugin.mjs';
 // 离线数据包本地服务端点：/offline-packs/* 透明分发端点（Vite dev server 插件，仅 dev 启用）
 import { offlinePackDevServerPlugin } from './src/server/plugins/offline-pack/dev-server-plugin.mjs';
+// 本地 Qwen 信息高亮与关注点透镜端点：/__info_highlight__/*（Vite dev server 插件，仅 dev 启用）
+import { infoHighlightDevServerPlugin } from './src/server/plugins/info-highlight/dev-server-plugin.mjs';
+// 统一研读实体与书库端点：/api/library/* 本地服务端点（Vite dev server 插件，仅 dev 启用）
+import { devLibraryServerPlugin } from './src/server/plugins/library/dev-server-plugin.mjs';
 // Mermaid 图表拦截插件：将 ```mermaid 代码块转化为 .mermaid-container DOM
 import rehypeMermaid from './src/plugins/rehype/rehype-mermaid.mjs';
 // 图像高斯模糊占位插件：为正文图片在构建期生成微型 LQIP Base64 占位并平滑渐显
@@ -67,6 +73,7 @@ const devDocsSidebarGroup = {
       items: [
         { label: '部署、运行与环境变量', link: '/dev/getting-started/setup/' },
         { label: '脚本索引与常用命令', link: '/dev/getting-started/scripts/' },
+        { label: '双语对照与语义对齐', link: '/dev/getting-started/bilingual-aligner/' },
         { label: '添加一本新书', link: '/dev/getting-started/add-book/' },
         { label: '加入一本习题册', link: '/dev/getting-started/add-exercises/' },
       ]
@@ -92,17 +99,17 @@ const devDocsSidebarGroup = {
   ]
 };
 
-// 根据中央图书配置，全自动生成自然排序的树状侧边栏
+// 根据中央图书配置，全自动生成自然排序的树状侧边栏 (Zero-Built-in Books 架构)
 const dynamicSidebar = [
   devDocsSidebarGroup,
   ...collections.map(col => ({
     label: col.title,
     collapsed: true,
-    items: col.books.map(book => ({
+    items: (col.books || []).map(book => ({
       label: book.title,
       collapsed: true,
       // 调用生成器，就地读取目录并进行 1.1 -> 10.1 排序，取代鸡肋的默认 autogenerate
-      items: generateStarlightBookSidebar(`src/content/docs/collections/${col.slug}/${book.slug}`)
+      items: generateStarlightBookSidebar(`content-sources/collections/${col.slug}/${book.slug}`, { languages: book.languages })
     }))
   }))
 ];
@@ -167,8 +174,8 @@ const customCss = [];
 if (features.katex.enabled) customCss.push('katex/dist/katex.min.css');
 customCss.push('./src/styles/tokens/layers.css');
 customCss.push('./src/styles/custom.css');
+customCss.push('./src/styles/components/bilingual-reader.css');
 if (features.theme.enabled) {
-  customCss.push('./src/styles/vitepress-theme.css');
   customCss.push('./src/themes/material-you/theme.css');
 }
 if (features.fonts.enabled) {
@@ -193,6 +200,7 @@ const componentOverrides = {
   TwoColumnContent: './src/components/TwoColumnContentOverride.astro', // 正文两栏布局覆盖：在正文卡片上方挂载 NoticeFramework
   Head: './src/components/HeadOverride.astro', // 全站 SEO 增强：智能 Title 补齐书名、Description 自动合成、Schema.org 与站长验证
   MarkdownContent: './src/components/MarkdownContentOverride.astro', // 正文语义增强：包裹为 <article role="article"> 赋能 Chrome 朗读/阅读模式
+  Search: './src/features/search-rec/ui/SearchModal.astro', // 跨书知识整合、多模态搜索与推荐系统
 };
 if (features.theme.enabled) {
   componentOverrides.ThemeSelect = './src/components/ThemeSelectOverride.astro'; // 顶栏外观与主题切换按钮
@@ -253,12 +261,18 @@ export default defineConfig({
       geminiProxyDevServerPlugin(),
       // 统一学术教材翻译本地服务端点（仅 dev 启用）
       translationDevServerPlugin(),
+      // MinerU 学术文档摄取与自动解析本地服务端点（仅 dev 启用）
+      ingestDevServerPlugin(),
       // 双语向量关联与热力图推理端点（仅 dev 启用）
       bilingualDevServerPlugin(),
       // BUPT AI 本地 Node.js 进程全双工中继反代端点（仅 dev 启用）
       buptProxyDevServerPlugin(),
       // 离线数据包本地开发分发端点（仅 dev 启用）
       offlinePackDevServerPlugin(),
+      // 本地 Qwen 关注点透镜与信息高亮端点（仅 dev 启用）
+      infoHighlightDevServerPlugin(),
+      // 统一研读实体与书库端点（仅 dev 启用）
+      devLibraryServerPlugin(),
     ],
     resolve: {
       alias: {
@@ -272,6 +286,15 @@ export default defineConfig({
       noExternal: ['mermaid'],
     },
     server: {
+      watch: {
+        ignored: [
+          '**/task/**',
+          '**/.temp/**',
+          '**/.astro/**',
+          '**/public/epub/**',
+          '**/dist/**',
+        ],
+      },
       allowedHosts: [
         '.trycloudflare.com',
         '.vaiwan.com',

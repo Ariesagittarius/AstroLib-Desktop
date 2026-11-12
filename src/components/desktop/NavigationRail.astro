@@ -1,0 +1,225 @@
+---
+/**
+ * src/components/desktop/NavigationRail.astro
+ * ============================================================================
+ * AstroLib 桌面端 M3 极简左侧主导航轨 (Desktop Navigation Rail)
+ * ============================================================================
+ * 规范：
+ * 1. 严格对齐 Material Design 3 Navigation Rail 规范（76px 紧凑宽度、圆角指示底座）；
+ * 2. 驱动三大核心 Fragment 调度（1: 纵览大厅，2: 研读书库，3: 研读视窗）；
+ * 3. 底部集成控制中心与设置入口。
+ * ============================================================================
+ */
+
+import M3Icon from '../m3/M3Icon.astro';
+---
+
+<aside class="desktop-nav-rail" id="desktop-nav-rail" aria-label="主功能导航">
+  <!-- 顶部长驻 Brand Logo -->
+  <div class="rail-header">
+    <button type="button" class="rail-brand-btn" id="rail-btn-brand" title="AstroLib 理工科学术教辅系统">
+      <img src="/astrolib-logo.webp" alt="AstroLib" class="rail-brand-img" />
+    </button>
+  </div>
+
+  <!-- 核心 Fragment 切换动作群 -->
+  <nav class="rail-nav-group">
+    <!-- Fragment 1: Agent 纵览 -->
+    <button type="button" class="rail-nav-item" data-fragment="overview" id="nav-btn-overview" title="Agent 纵览大厅">
+      <div class="rail-nav-item__pill">
+        <M3Icon name="smart_toy" size={22} />
+      </div>
+      <span class="rail-nav-item__label">纵览大厅</span>
+    </button>
+
+    <!-- Fragment 2: 学术书库 (Google Play 图书级) -->
+    <button type="button" class="rail-nav-item active" data-fragment="library" id="nav-btn-library" title="学术资料与文献书库">
+      <div class="rail-nav-item__pill">
+        <M3Icon name="auto_stories" size={22} />
+      </div>
+      <span class="rail-nav-item__label">研读书库</span>
+    </button>
+
+    <!-- Fragment 3: 多篇研读中心 (Chrome 多标签 + Win11 分屏) -->
+    <button type="button" class="rail-nav-item" data-fragment="reader" id="nav-btn-reader" title="多篇研读与分屏视窗">
+      <div class="rail-nav-item__pill">
+        <M3Icon name="splitscreen" size={22} />
+      </div>
+      <span class="rail-nav-item__label">研读视窗</span>
+      <span class="rail-nav-badge" id="rail-reader-tab-count" style="display: none;">0</span>
+    </button>
+  </nav>
+
+  <!-- 底部快捷工具与设置 -->
+  <div class="rail-footer">
+    <button type="button" class="rail-nav-item" id="rail-btn-theme" title="切换全局亮暗主题">
+      <div class="rail-nav-item__pill">
+        <span class="rail-theme-icon rail-theme-icon--light" id="rail-theme-icon-light">
+          <M3Icon name="light_mode" size={20} />
+        </span>
+        <span class="rail-theme-icon rail-theme-icon--dark" id="rail-theme-icon-dark">
+          <M3Icon name="dark_mode" size={20} />
+        </span>
+      </div>
+      <span class="rail-nav-item__label" id="rail-theme-label">亮暗切换</span>
+    </button>
+
+    <button type="button" class="rail-nav-item" id="rail-btn-settings" title="全局设置与控制中心 (Ctrl+,)">
+      <div class="rail-nav-item__pill">
+        <M3Icon name="settings" size={22} />
+      </div>
+      <span class="rail-nav-item__label">偏好设置</span>
+    </button>
+  </div>
+</aside>
+
+<style>
+  .desktop-nav-rail {
+    width: 76px;
+    height: 100%;
+    background-color: var(--md-sys-color-surface, #ffffff);
+    border-right: 1px solid var(--md-sys-color-outline-variant, #dfe4e0);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.85rem 0 0.85rem;
+    box-sizing: border-box;
+    flex-shrink: 0;
+    user-select: none;
+    z-index: var(--layer-sticky);
+  }
+
+  .rail-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 1rem;
+  }
+
+  .rail-brand-btn {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    border: none;
+    background: transparent;
+    padding: 0;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1);
+  }
+
+  .rail-brand-btn:hover {
+    transform: scale(1.06);
+  }
+
+  .rail-brand-img {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    object-fit: cover;
+  }
+
+  .rail-nav-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.15rem;
+    flex: 1;
+    width: 100%;
+  }
+
+  .rail-nav-item {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    padding: 0;
+    color: var(--md-sys-color-on-surface-variant, #49454f);
+    position: relative;
+    transition: color 0.15s ease;
+  }
+
+  .rail-nav-item:hover {
+    color: var(--md-sys-color-on-surface, #1d1b20);
+  }
+
+  .rail-nav-item__pill {
+    width: 52px;
+    height: 32px;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s cubic-bezier(0.2, 0, 0, 1), transform 0.15s ease;
+  }
+
+  .rail-nav-item:hover .rail-nav-item__pill {
+    background-color: var(--md-sys-color-surface-container-high, #e6eae5);
+  }
+
+  .rail-nav-item.active {
+    color: var(--md-sys-color-primary);
+  }
+
+  .rail-nav-item.active .rail-nav-item__pill {
+    background-color: var(--md-sys-color-secondary-container);
+    color: var(--md-sys-color-on-secondary-container);
+  }
+
+  .rail-nav-item__label {
+    font-size: 0.72rem;
+    font-weight: 500;
+    margin-top: 0.3rem;
+    letter-spacing: -0.01em;
+    font-family: var(--font-ui, 'Google Sans', 'Google Sans Text', 'Noto Sans SC Variable', 'Source Han Sans SC', 'Noto Sans SC', '思源黑体', sans-serif);
+  }
+
+  .rail-nav-badge {
+    position: absolute;
+    top: -2px;
+    right: 14px;
+    background: var(--md-sys-color-primary);
+    color: var(--md-sys-color-on-primary, #ffffff);
+    font-size: 0.65rem;
+    font-weight: bold;
+    min-width: 16px;
+    height: 16px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 4px;
+  }
+
+  .rail-footer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.85rem;
+    width: 100%;
+  }
+
+  .rail-theme-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .rail-theme-icon--dark {
+    display: none;
+  }
+
+  :global([data-theme='dark']) .rail-theme-icon--light {
+    display: none;
+  }
+
+  :global([data-theme='dark']) .rail-theme-icon--dark {
+    display: inline-flex;
+  }
+</style>

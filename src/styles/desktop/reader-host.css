@@ -1,0 +1,435 @@
+/**
+ * src/styles/desktop/reader-host.css
+ * ============================================================================
+ * AstroLib 桌面端研读中心与分屏全局样式 (Material Design 3 & 极简排版)
+ * ============================================================================
+ */
+
+.fragment-reader-container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--md-sys-color-surface, #ffffff);
+  overflow: hidden;
+  position: relative;
+  user-select: none;
+  font-family: var(--font-ui, 'Google Sans', 'Google Sans Text', 'Noto Sans SC Variable', 'Source Han Sans SC', 'Noto Sans SC', '思源黑体', sans-serif);
+}
+
+/* 核心视窗容器舞台 (占据上方主要空间，无冗余内边距与阴影) */
+.reader-viewport-stage {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  background-color: var(--md-sys-color-surface, #ffffff);
+  display: flex;
+}
+
+/* 空白展台 */
+.reader-empty-stage {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: var(--md-sys-color-outline, #737976);
+  padding: 2rem;
+  text-align: center;
+}
+
+.empty-icon {
+  font-size: 56px;
+  color: var(--md-sys-color-primary);
+  opacity: 0.88;
+  margin-bottom: 1rem;
+}
+
+.empty-title {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 500;
+  color: var(--md-sys-color-on-surface, #1d1b20);
+  font-family: var(--font-ui, 'Google Sans', 'Google Sans Text', 'Noto Sans SC Variable', 'Source Han Sans SC', 'Noto Sans SC', '思源黑体', sans-serif);
+}
+
+.empty-desc {
+  margin: 0.65rem 0 0.25rem;
+  font-size: 0.88rem;
+  max-width: 520px;
+  line-height: 1.6;
+}
+
+.empty-sub {
+  margin: 0 0 1.5rem;
+  font-size: 0.78rem;
+  max-width: 500px;
+  opacity: 0.75;
+}
+
+.empty-jump-btn {
+  background-color: var(--md-sys-color-primary);
+  color: var(--md-sys-color-on-primary, #ffffff);
+  border: none;
+  border-radius: 8px;
+  padding: 0.55rem 1.4rem;
+  font-size: 0.88rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  box-shadow: none !important;
+  font-family: var(--font-ui, 'Google Sans', 'Google Sans Text', 'Noto Sans SC Variable', 'Source Han Sans SC', 'Noto Sans SC', '思源黑体', sans-serif);
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.empty-jump-btn:hover {
+  opacity: 0.92;
+  transform: translateY(-1px);
+  box-shadow: none !important;
+}
+
+/* 动态分屏网格：零边距、零冗余阴影、极细 1px 分割线 */
+.reader-split-grid {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  background-color: var(--md-sys-color-outline-variant, #e0e0e0);
+  margin: 0;
+  padding: 0;
+}
+
+/* 1x1 单屏 (100% 占满) */
+.reader-split-grid.mode-1x1 {
+  grid-template-columns: 1fr;
+  grid-template-rows: 1fr;
+  gap: 0;
+}
+
+/* 1x2 左右双屏 (精确 1px 分割线) */
+.reader-split-grid.mode-1x2 {
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr;
+  gap: 1px;
+}
+
+/* 2x1 上下双屏 (精确 1px 分割线) */
+.reader-split-grid.mode-2x1 {
+  grid-template-columns: 1fr;
+  grid-template-rows: 1fr 1fr;
+  gap: 1px;
+}
+
+/* 2x2 四象限 (精确 1px 分割线) */
+.reader-split-grid.mode-2x2 {
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  gap: 1px;
+}
+
+/* 分屏视窗窗格容器：纯净无边距、无内部标题、无阴影 */
+.split-pane-box {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--md-sys-color-surface, #ffffff);
+  overflow: hidden;
+  position: relative;
+  margin: 0;
+  padding: 0;
+}
+
+.pane-iframe-wrap {
+  width: 100%;
+  height: 100%;
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
+}
+
+.pane-reader-iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+  display: block;
+  margin: 0;
+  padding: 0;
+}
+
+/* 空分屏插槽 (等待用户挑选对照书目/文献) */
+.pane-empty-slot {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--md-sys-color-surface-container-low, #f8fbf6);
+  color: var(--md-sys-color-outline, #737976);
+  gap: 0.75rem;
+  padding: 2rem;
+  text-align: center;
+}
+
+.empty-slot-btn {
+  background: var(--md-sys-color-surface, #ffffff);
+  border: 1px dashed var(--md-sys-color-outline-variant, #cfd8dc);
+  border-radius: 12px;
+  padding: 0.85rem 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.84rem;
+  font-weight: 500;
+  color: var(--md-sys-color-primary);
+  font-family: var(--font-ui, 'Google Sans', 'Google Sans Text', 'Noto Sans SC Variable', 'Source Han Sans SC', 'Noto Sans SC', '思源黑体', sans-serif);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.empty-slot-btn:hover {
+  background-color: var(--md-sys-color-surface-container-high, rgba(0, 0, 0, 0.04));
+  border-color: var(--md-sys-color-primary);
+}
+
+/* ============================================================================
+ * 页面底部标签页栏 (Bottom Chrome-Style Dock) & 折叠机制
+ * ============================================================================
+ */
+.reader-bottom-dock {
+  height: 38px;
+  background-color: var(--md-sys-color-surface-container-low, #f4f7f2);
+  border-top: 1px solid var(--md-sys-color-outline-variant, #dfe4e0);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 0.75rem;
+  flex-shrink: 0;
+  gap: 1rem;
+  box-sizing: border-box;
+  transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1), height 0.2s ease;
+  z-index: 10;
+}
+
+/* 折叠状态 */
+.reader-bottom-dock.is-collapsed {
+  height: 6px;
+  padding: 0;
+  background-color: transparent;
+  border-top: none;
+  overflow: visible;
+  position: relative;
+}
+
+.reader-bottom-dock.is-collapsed .bottom-dock-content {
+  display: none;
+}
+
+/* 浮动展开把手 (当折叠时出现在底部中央) */
+.dock-expand-handle {
+  display: none;
+}
+
+.reader-bottom-dock.is-collapsed .dock-expand-handle {
+  display: flex;
+  position: absolute;
+  bottom: 6px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: var(--md-sys-color-surface-container-high, #e6eae5);
+  border: 1px solid var(--md-sys-color-outline-variant, #dfe4e0);
+  border-radius: 12px;
+  padding: 0.2rem 0.65rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--md-sys-color-on-surface-variant, #49454f);
+  align-items: center;
+  gap: 0.35rem;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  z-index: var(--layer-floating);
+  transition: background-color 0.15s ease;
+}
+
+.reader-bottom-dock.is-collapsed .dock-expand-handle:hover {
+  background-color: var(--md-sys-color-secondary-container);
+  color: var(--md-sys-color-on-secondary-container);
+}
+
+.bottom-dock-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  height: 100%;
+}
+
+.chrome-tabs-scroll {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  height: 100%;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.chrome-tabs-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.chrome-tabs-track {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  gap: 4px;
+}
+
+/* 单个底部标签页 */
+.chrome-tab {
+  height: 28px;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0 0.75rem;
+  min-width: 120px;
+  max-width: 200px;
+  background-color: var(--md-sys-color-surface-container-high, #e6eae5);
+  color: var(--md-sys-color-on-surface-variant, #49454f);
+  border-radius: 14px;
+  font-size: 0.78rem;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: var(--font-ui, 'Google Sans', 'Google Sans Text', 'Noto Sans SC Variable', 'Source Han Sans SC', 'Noto Sans SC', '思源黑体', sans-serif);
+  transition: background-color 0.15s ease, color 0.15s ease;
+  box-sizing: border-box;
+}
+
+.chrome-tab:hover {
+  background-color: var(--md-sys-color-surface-container-highest, #dbe4df);
+  color: var(--md-sys-color-on-surface, #1d1b20);
+}
+
+.chrome-tab.active {
+  background-color: var(--md-sys-color-secondary-container);
+  color: var(--md-sys-color-on-secondary-container);
+  font-weight: 500;
+}
+
+.tab-icon {
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.tab-title {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tab-close-btn {
+  background: transparent;
+  border: none;
+  border-radius: 50%;
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  color: inherit;
+  cursor: pointer;
+  opacity: 0.6;
+  transition: opacity 0.15s ease, background-color 0.15s ease;
+}
+
+.tab-close-btn:hover {
+  opacity: 1;
+  background-color: color-mix(in srgb, currentColor 14%, transparent);
+}
+
+.tab-close-btn .material-symbols-outlined {
+  font-size: 12px;
+}
+
+.chrome-new-tab-btn {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--md-sys-color-on-surface-variant, #49454f);
+  margin-left: 4px;
+  transition: background-color 0.15s ease;
+}
+
+.chrome-new-tab-btn:hover {
+  background-color: var(--md-sys-color-surface-container-high, #e6eae5);
+}
+
+/* 底部右侧动作区：分屏切换 + 折叠按钮 */
+.reader-split-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.split-mode-group {
+  display: flex;
+  background-color: var(--md-sys-color-surface-container-high, #e6eae5);
+  border-radius: 8px;
+  padding: 2px;
+  gap: 2px;
+}
+
+.split-btn {
+  width: 26px;
+  height: 26px;
+  border: none;
+  background: transparent;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--md-sys-color-on-surface-variant, #49454f);
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.split-btn:hover {
+  color: var(--md-sys-color-on-surface, #1d1b20);
+}
+
+.split-btn.active {
+  background-color: var(--md-sys-color-secondary-container);
+  color: var(--md-sys-color-on-secondary-container);
+  box-shadow: none !important;
+}
+
+.dock-collapse-btn {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--md-sys-color-on-surface-variant, #49454f);
+  transition: background-color 0.15s ease;
+}
+
+.dock-collapse-btn:hover {
+  background-color: var(--md-sys-color-surface-container-high, #e6eae5);
+}

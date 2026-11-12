@@ -5,15 +5,17 @@ description: 把一本新书接入 AstroLib 的目录、正文、索引和导出
 
 ## 1. 准备内容目录
 
-在 `src/content/docs/collections/<collection-slug>/<book-slug>/` 放置章节文件和可选的 `images/`。章节使用 `.mdx` 或 `.md`，文件名建议以章节序号开头，便于 EPUB 的自然排序。
+在 `src/content/docs/collections/<collection-slug>/<book-slug>/` 放置章节文件和可选的 `images/`。章节使用 `.mdx` 或 `.md`，文件名建议以章节序号开头（例如 `001_intro.mdx`），便于 EPUB 与侧边栏的自然排序。
 
 先用 `scripts/scan-mdx.mjs` 检查转换结果。图片路径应相对于章节或书籍目录实际存在，不能只在本机引用绝对路径。
 
+如果该书支持多语言或多译本（例如原版英文与多个中文译本），可在书籍目录下建立平行子目录（如 `en/`、`zh-wp/`、`zh-trans/`），保持内部章节文件名严格对齐。
+
 ## 2. 注册书籍元数据
 
-编辑 `src/config/collections.config.mjs`，在合适的 collection 的 `books` 数组加入：
+编辑 `src/config/collections.config.ts`，在合适的 collection 的 `books` 数组加入配置：
 
-```js
+```ts
 {
   id: 'my-book',
   slug: 'my_book',
@@ -31,16 +33,23 @@ description: 把一本新书接入 AstroLib 的目录、正文、索引和导出
   tags: ['主题'],
   entryPoint: '00_内容说明',
   trackClasses: ['.example-card', '.knowledge-card'],
+  // 若包含多语言/多版本对照，配置 variants 数组：
+  variants: [
+    { id: 'en', label: 'English (原著)', dir: 'en' },
+    { id: 'zh-wp', label: '中文 (王沛等译)', dir: 'zh-wp', isDefault: true }
+  ],
   modules: {}
 }
 ```
 
-`slug` 必须与目录名一致，`entryPoint` 必须与实际文件名（不含扩展名）一致。不要修改生成的索引 JSON 来“注册”书籍。
+`slug` 必须与实际目录名一致，`entryPoint` 必须与实际文件名（不含扩展名）一致。严禁通过修改构建派生文件来“注册”书籍。
 
-## 3. 运行构建链
+## 3. 运行构建链与质量校验
 
 ```powershell
 node scripts/scan-mdx.mjs src/content/docs/collections/<collection-slug>/<book-slug>
+npm run check:types
+npm test
 npm run build
 npm run epub
 ```
@@ -52,5 +61,7 @@ npm run epub
 - 书籍元数据和目录 slug 一致。
 - 每个章节可以独立渲染，公式没有明显 KaTeX 错误。
 - 书中引用使用项目的跨引用写法，不手写不稳定的原始文件 URL。
+- 多语言版本章节文件名完全一致，段落教学逻辑相符。
 - 版权、来源和 OCR 不确定性写在书籍说明或 notice 中。
-- 不提交 `public/` 下的临时日志、PDF 中间文件或测试产物。
+- 执行 `npm run check:all` 确保通过类型检查与自动化测试。
+- 绝不提交 `public/` 下的临时日志、PDF 中间文件或测试产物。

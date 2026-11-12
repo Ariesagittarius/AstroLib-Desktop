@@ -43,6 +43,7 @@ export function applyThemeMode(mode?: ThemeMode): void {
         : 'dark'
       : currentMode;
   root.dataset.theme = resolved;
+  root.style.colorScheme = resolved;
 
   if (!animate) {
     requestAnimationFrame(() => {
@@ -57,6 +58,11 @@ export function applyThemeMode(mode?: ThemeMode): void {
   });
 
   window.dispatchEvent(new CustomEvent('starlight-theme-change', { detail: { mode: currentMode, resolved } }));
+
+  // 同步 Electron 桌面端原生标题栏三键色彩与日夜模式
+  if (typeof window !== 'undefined' && (window as any).astrolib?.setThemeMode) {
+    (window as any).astrolib.setThemeMode(resolved);
+  }
 }
 
 export function syncAllThemeModes(): void {

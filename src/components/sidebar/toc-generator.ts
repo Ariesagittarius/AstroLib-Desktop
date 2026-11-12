@@ -16,7 +16,17 @@ const globalIndexCache = new Map<string, Record<string, string>>();
 export function getBookConfig(aside: HTMLElement | null): any {
   const key = aside?.getAttribute('data-book-key') || '';
   if (bookConfigCache.has(key)) return bookConfigCache.get(key);
-  const cfg = JSON.parse(aside?.getAttribute('data-book-config') || '{}');
+  let cfg: any = {};
+  try {
+    const scriptEl = aside?.querySelector('#__book_manifest__') || (typeof document !== 'undefined' ? document.getElementById('__book_manifest__') : null);
+    if (scriptEl && scriptEl.textContent) {
+      cfg = JSON.parse(scriptEl.textContent);
+    } else {
+      cfg = JSON.parse(aside?.getAttribute('data-book-config') || '{}');
+    }
+  } catch {
+    cfg = {};
+  }
   bookConfigCache.set(key, cfg);
   return cfg;
 }
@@ -147,6 +157,14 @@ export function buildBookTOC(
         tocEntries.push({ kind: 'heading', el, level: Number(el.tagName.slice(1)) });
       }
     } else {
+      // 严格排除【解】、题解折叠、查看解析与习题触发卡片
+      if (el.classList.contains('solution-details') || el.classList.contains('exercise-trigger')) {
+        continue;
+      }
+      const rawTitle = (el.getAttribute('data-title') || '').trim();
+      if (/^(?:解|证明|查看解析与步骤|查看解析|解析|分析)$/.test(rawTitle)) {
+        continue;
+      }
       tocEntries.push({ kind: 'card', el });
     }
   }
@@ -363,7 +381,8 @@ export function buildBookTOC(
       headingTextSpan.className = 'toc-heading-text';
       const hClone = hEl.cloneNode(true) as HTMLElement;
       hClone.querySelectorAll('.card-mdicon, .block-mdicon, .note-mdicon, svg, .heading-anchor, .anchor-icon').forEach((s) => s.remove());
-      headingTextSpan.innerHTML = hClone.innerHTML.trim();
+      const cleanHeadingHtml = hClone.innerHTML.replace(/<[^>]+>/g, '').trim();
+      headingTextSpan.innerHTML = cleanHeadingHtml || hRawTitle;
 
       const headingAnchor = createTocAnchor(
         hId,

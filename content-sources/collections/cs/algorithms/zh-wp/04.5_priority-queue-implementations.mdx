@@ -1,0 +1,53 @@
+---
+title: '4.5 优先队列的实现'
+---
+
+import Guide from '@/components/Guide.astro';
+import Knowledge from '@/components/Knowledge.astro';
+import Example from '@/components/Example.astro';
+import Analysis from '@/components/Analysis.astro';
+import Solution from '@/components/Solution.astro';
+import Variant from '@/components/Variant.astro';
+import Note from '@/components/Note.astro';
+import Block from '@/components/Block.astro';
+import Method from '@/components/Method.astro';
+import Exercise from '@/components/Exercise.astro';
+import Algorithm from '@/components/Algorithm.astro';
+
+## 4.5 优先队列的实现
+
+## 4.5.1 数组
+
+优先队列最简单的一种实现方式是使用一个无序数组，其中存储目标元素的键值(在Dijkstra算法中，目标元素即为图的顶点)。初始状态下，数组中的值被设为 $\infty$ 。
+
+哪种堆最好？
+
+Dijkstra 算法的运行时间严重依赖于优先队列的所用的实现方法。以下是几种典型的选择：
+
+<table><tr><td>实现方式</td><td>deletemin</td><td>insert/decreasekey</td><td> $|V| \times \text{deletemin} + (|V| + |E|) \times \text{insert}$ </td></tr><tr><td>数组</td><td> $O(|V|)$ </td><td> $O(1)$ </td><td> $O(|V|^2)$ </td></tr><tr><td>二分堆</td><td> $O(\log |V|)$ </td><td> $O(\log |V|)$ </td><td> $O((|V| + |E|)\log |V|)$ </td></tr><tr><td> $d$ 堆</td><td> $O\left(\frac{d\log|V|}{\log d}\right)$ </td><td> $O\left(\frac{\log|V|}{\log d}\right)$ </td><td> $O\left((|V|\cdot d + |E|)\frac{\log|V|}{\log d}\right)$ </td></tr><tr><td>Fibonacci 堆</td><td> $O(\log |V|)$ </td><td> $O(1)$ (平摊后)</td><td> $O(|V|\log |V| + |E|)$ </td></tr></table>
+
+例如，优先队列的一个简单数组实现将带来相当可观的时间复杂度—— $O(|V|^{2})$ ，而如果使用二分堆，时间复杂度将变成 $O((|V|+|E|)\log|V|)$ 。哪种更可取呢？
+
+这依赖于图是稀疏的(含有少量的边)还是稠密的(含有大量的边)。对所有的图而言， $|E|$ 都将比 $|V|^2$ 小。如果边的数目为 $\Omega(|V|^2)$ ，那么显然数组的实现方式将更快。另一方面，一旦 $|E|$ 低于 $|V|^2/\log|V|$ ，那么二分堆将更可取。
+
+d 堆是二分堆(对应于 d=2 的情况)的一般形式，若选用该数据结构，则算法的运行时间是 d 的函数。最佳的选择是 $d \approx |E| / |V|$ ；换言之，为了达到最优效果，我们必须将堆的度 d 设为图的平均度。这时该结构对于稀疏图和稠密图都适用。对于非常稀疏图，其中 $|E| = O(|V|)$ ，算法运行时间为 $O(|V| \log |V|)$ ，与二分堆的效果一样好。对于稠密图，其中 $|E| = \Omega(|V|^2)$ ，算法运行时间为 $O(|V|^2)$ ，与链表的效果一样好。对于边的密度中等的一般图而言， $|E| = |V|^1 + \delta$ ，算法运行时间是 $O(|E|)$ ，是线性的！
+
+上表中的最后一行给出使用一种复杂数据结构的相应运行时间，该结构被称为Fibonacci堆。尽管其效率给人印象深刻，但是该数据结构相比其他数据结构在实现时需要更多的工作，而这会降低其在实际应用中的吸引力。对该结构我们不过多地加以着墨，只是简单提及它那令人惊奇的时间表现。该数据结构的插入操作耗费的时间不一，但在算法的运行过程中可以保证平均达到 $O(1)!$ 在这种情况下(我们在第5章会碰见的这种情况)，我们称堆插入操作的平摊成本为 $O(1)$ 。
+
+insert 操作或者 decreasekey 操作是很快的，因为它们都只需调整一个键值，从而耗费的时间是 $O(1)$ 。而另一方面，deletemin 操作需要对整个数组进行扫描，从而将耗费线性时间。
+
+## 4.5.2 二分堆
+
+在二分堆的实现方式下，元素被存储在一个完全二叉树中，即二叉树每层上的节点都被从左到右地填满，并且在上一层未填满之前不会出现下一层。另外，需要遵循一种特殊的顺序：树中任意节点的键值必须小于等于其后裔节点的键值。因此，特别的，根节点一定对应着键值最小的元素。图4-11(a)即给出了一个例子。
+
+进行 insert 操作时，将新元素置于树的最底端(最底端最先可用的位置)，然后让它“冒泡”。“冒泡”是一种形象的说法，它是指，如果新元素比其父节点的键值小，则将新元素与其父节点进行交换，并重复该过程(参见图 4-11(b)-(d))，直到树中所有节点满足上面提到的特殊顺序。交换的次数最多等于树的高度，当树中含有 n 个节点时，即为 $\left\lfloor \log_{2} n \right\rfloor$ 。decreasekey 操作与 insert 操作类似，不同的是在 decreasekey操作中，元素已经在树中，因此我们只需让它从其当前位置直接“冒泡”即可。
+
+当进行deletemin操作时，直接返回根节点的键值。将根节点对应元素从堆中删除之后，取出树中的最后一个节点(在树最底端的那一行节点的最右端位置上)，将它置于树根上。再令它“向下过滤”：这也是一种形象的说法，它是指，如果该节点的键值大于它的任何一个子节点，则将它与其键值较小的子节点进行交换，并重复该过程(参见图4-11(e)-(g))，直到树中所有节点满足上面提到的特殊顺序。deletemin操作耗费时间为 $O(\log n)$ 。
+
+完全二叉树结构的完整性使得利用数组的表示方式简单易行。完全二叉树的节点间具备一种自然的顺序：从根节点开始，节点逐行排列，每一行中的节点遵循从左到右的顺序。如果树中有 $n$ 个节点，该顺序即指定了节点在数组中的位置：1、2、...、 $n$ 。我们能够很容易地在数组中模拟树中节点的上下移动，其原因主要在于这样一个事实：位置为 $j$ 的节点的父节点的位置为 $\lfloor j / 2 \rfloor$ ，两个子节点的位置分别为 $2j$ 和 $2j + 1$ (参见习题4.16)。
+
+## 4.5.3 $d$ 堆
+
+d 堆与二分堆类似，只是 d 堆中每个节点拥有 d 个后裔，而不仅仅是 2 个。这使得树的高度(如果树中含有 n 个节点)缩减为 $\Theta(\log_{d}n)=\Theta((\log n)/(\log d))$ 。从而元素的 insert 操作加速了 $\Theta(\log d)$ 倍。不过，deletemin 操作将有所变慢，其耗时变为 $O(d\log_{d}n)$ （您知道这是为什么吗？）。
+
+二分堆的数组表示能够很容易地推广至 $d$ 堆的情况。此时，位置为 $j$ 的节点的父节点位置为 $\left[(j - 1) / d\right]$ ，其子节点的位置为 $\{(j - 1)d + 2, \ldots, \min \{n, (j - 1)d + d + 1\}$ (参见习题4.16)。

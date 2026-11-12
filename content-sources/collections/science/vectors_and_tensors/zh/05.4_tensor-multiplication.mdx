@@ -1,0 +1,90 @@
+---
+title: '5.4 张量的乘法'
+---
+
+import Guide from '@/components/Guide.astro';
+import Knowledge from '@/components/Knowledge.astro';
+import Example from '@/components/Example.astro';
+import Analysis from '@/components/Analysis.astro';
+import Solution from '@/components/Solution.astro';
+import Variant from '@/components/Variant.astro';
+import Note from '@/components/Note.astro';
+import Block from '@/components/Block.astro';
+import Method from '@/components/Method.astro';
+import Exercise from '@/components/Exercise.astro';
+
+## 5.4 张量的乘法
+
+如第2章所述，矢量有几种不同的乘法，两个矢量的标量（点）积和矢量（叉）积结果取决于其大小和方向。但是没有提到矢量的另一种称为"外"积的乘法，一个列矢量 $\vec{A}$ 和一个行矢量 $\vec{B}$ 的外积乘法如下：
+
+$$
+\vec {A} \otimes \vec {B} = \left( \begin{array}{l} A _ {1} \\ A _ {2} \\ A _ {3} \end{array} \right) (B _ {1} B _ {2} B _ {3}) = \left( \begin{array}{l l l} A _ {1} B _ {1} & A _ {1} B _ {2} & A _ {1} B _ {3} \\ A _ {2} B _ {1} & A _ {2} B _ {2} & A _ {2} B _ {3} \\ A _ {3} B _ {1} & A _ {3} B _ {2} & A _ {3} B _ {3} \end{array} \right)
+$$
+
+注意到两个1阶张量（矢量）的外积为2阶张量，由两个矢量的各分量简单相乘得到。有些教材中外积用符号 $\otimes$ 表示，也有些教材只是并列的写两个矢量或张量，如 $A^{i}B^{j} = C^{ij}$
+
+高阶张量也可以进行外积乘法：
+
+$$
+A _ {j} ^ {i} B _ {l m} ^ {k} = C _ {j l m} ^ {i k}.
+$$
+
+这种情况下，一个2阶张量和一个3阶张量的外积是一个5阶张量.该式还说明张量外积的协变阶是参加外积运算的张量协变阶的和，逆变阶是参加外积运算的张量逆变阶的和.
+
+通过考虑张量 $\vec{A}$ ， $\vec{B}$ 和 $\vec{C}$ 怎样从不带撇坐标系变换到带撇坐标系，很容易证明外积的运算结果是一个张量，张量 $\vec{A}$ 和 $\vec{B}$ 变换如下：
+
+$$
+A _ {o} ^ {\prime n} = \frac {\partial x ^ {\prime n}}{\partial x ^ {i}} \frac {\partial x ^ {j}}{\partial x ^ {\prime o}} A _ {j} ^ {i},
+$$
+
+$$
+B _ {q r} ^ {\prime p} = \frac {\partial x ^ {\prime p}}{\partial x ^ {k}} \frac {\partial x ^ {l}}{\partial x ^ {\prime q}} \frac {\partial x ^ {m}}{\partial x ^ {\prime r}} B _ {l m} ^ {k}.
+$$
+
+把这些表达式乘起来得：
+
+$$
+\begin{array}{r l} A _ {o} ^ {\prime n} B _ {q r} ^ {\prime p} & = \frac {\partial x ^ {\prime n}}{\partial x ^ {i}} \frac {\partial x ^ {j}}{\partial x ^ {\prime o}} A _ {j} ^ {i} \frac {\partial x ^ {\prime p}}{\partial x ^ {k}} \frac {\partial x ^ {l}}{\partial x ^ {\prime q}} \frac {\partial x ^ {m}}{\partial x ^ {\prime r}} B _ {l m} ^ {k} \\ & = \frac {\partial x ^ {\prime n}}{\partial x ^ {i}} \frac {\partial x ^ {j}}{\partial x ^ {\prime o}} \frac {\partial x ^ {\prime p}}{\partial x ^ {k}} \frac {\partial x ^ {l}}{\partial x ^ {\prime q}} \frac {\partial x ^ {m}}{\partial x ^ {\prime r}} A _ {j} ^ {i} B _ {l m} ^ {k}, \end{array}
+$$
+
+因此如果 $A_{j}^{i}B_{lm}^{k} = C_{jlm}^{ik}$ 、 $A_{o}^{\prime n}B_{qr}^{\prime p} = C_{oqr}^{\prime np}$ ，那么
+
+$$
+C _ {o q r} ^ {\prime n p} = \frac {\partial x ^ {\prime n}}{\partial x ^ {i}} \frac {\partial x ^ {j}}{\partial x ^ {\prime o}} \frac {\partial x ^ {\prime p}}{\partial x ^ {k}} \frac {\partial x ^ {l}}{\partial x ^ {\prime q}} \frac {\partial x ^ {m}}{\partial x ^ {\prime r}} C _ {j l m} ^ {i k}.\tag{5.11}
+$$
+
+外积运算的结果确实满足张量的变换要求.
+
+张量的另一种乘法称为"内积"，可以将其看成第2.1节中所讨论的标量积或点积的推广。如2.1节所述两个矢量的点积是一个标量，因此你可能会猜测两个张量的内积是一个更低阶的张量。这没错，但是在明白它如何产生之前，首先要明白张量的缩并。
+
+要缩并张量，只需要使逆变指标等于协变指标（反之亦然），然后对重复指标求和即可，其结果是一个比原张量低两阶的张量.
+
+以四阶张量 $C_{kl}^{ij}$ 为例说明如何实现张量的缩并，若要对第二个和第三个指标进行缩并，使指标 k 等于指标 j，其结果
+
+$$
+C _ {j l} ^ {i j} = C _ {1 l} ^ {i 1} + C _ {2 l} ^ {i 2} + C _ {3 l} ^ {i 3} = D _ {l} ^ {i},
+$$
+
+假设指标 $j$ 和 $k$ 取值为1到3，请注意张量会降低两个阶，因为使一个指标等于另一个指标（降低一个阶），然后再对指标求和（又降低一个阶）．还需要注意，只有当张量两个不同位置（一个上标和一个下标）的指标相等时才能缩并成另一个张量.
+
+如果考虑对方程（5.11）中外积的张量进行缩并，缩并的原因就很清楚了，通过设置 $q = n$ 的张量的第一个和第四个指标进行缩并，则
+
+$$
+\begin{array}{r l} C _ {o n r} ^ {\prime n p} & = \frac {\partial x ^ {\prime n}}{\partial x ^ {i}} \frac {\partial x ^ {j}}{\partial x ^ {\prime o}} \frac {\partial x ^ {\prime p}}{\partial x ^ {k}} \frac {\partial x ^ {l}}{\partial x ^ {\prime n}} \frac {\partial x ^ {m}}{\partial x ^ {\prime r}} C _ {j l m} ^ {i k} \\ & = \frac {\partial x ^ {\prime n}}{\partial x ^ {i}} \frac {\partial x ^ {l}}{\partial x ^ {\prime n}} \frac {\partial x ^ {j}}{\partial x ^ {\prime o}} \frac {\partial x ^ {\prime p}}{\partial x ^ {k}} \frac {\partial x ^ {m}}{\partial x ^ {\prime r}} C _ {j l m} ^ {i k} \\ & = \frac {\partial x ^ {l}}{\partial x ^ {i}} \frac {\partial x ^ {j}}{\partial x ^ {\prime o}} \frac {\partial x ^ {\prime p}}{\partial x ^ {k}} \frac {\partial x ^ {m}}{\partial x ^ {\prime r}} C _ {j l m} ^ {i k}. \end{array}
+$$
+
+但是偏导数 $\frac{\partial x^l}{\partial x^i}$ 属于同一个坐标系（不带撇坐标系），同一个坐标系中的坐标必须是相互独立的．因此，该偏导数一定等于0，只有当 $l = i$ 时等于1．这很容易表示成克罗内克 $\delta$ 函数，其定义为
+
+$$
+\delta_ {j} ^ {i} = \left\{ \begin{array}{l l} 1, & i = j, \\ 0, & i \neq j. \end{array} \right.
+$$
+
+因此
+
+$$
+\begin{array}{r l} C _ {o n r} ^ {\prime n p} & = \delta_ {l} ^ {i} \frac {\partial x ^ {j}}{\partial x ^ {\prime o}} \frac {\partial x ^ {\prime p}}{\partial x ^ {k}} \frac {\partial x ^ {m}}{\partial x ^ {\prime r}} C _ {j l m} ^ {i k} \\ & = \frac {\partial x ^ {j}}{\partial x ^ {\prime o}} \frac {\partial x ^ {\prime p}}{\partial x ^ {k}} \frac {\partial x ^ {m}}{\partial x ^ {\prime r}} C _ {j i m} ^ {i k}. \end{array}
+$$
+
+不出意料地变成了一个3阶张量。但需要注意的是张量的阶数从5减到3要求两个偏导数能组合成一个 $\delta$ 函数，然后进行求和过程。且只有当进行缩并的指标一个以上标另一个时下标是两个偏导数才有效。
+
+在上一个例子中，缩并是在张量上进行的，且这个张量是外积的结果。这两步过程（外积运算后再进行缩并）称为两个张量的内积。因此，如果从两个矢量（1阶张量）开始，先进行外积（生成一个2阶张量）运算，再对其结果进行缩并，最后得到一个零阶张量——标量。这说明为什么内积过程可以看作两个矢量点积的推广。

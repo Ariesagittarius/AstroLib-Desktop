@@ -1,0 +1,209 @@
+---
+/**
+ * src/components/m3/M3Card.astro
+ * ============================================================================
+ * Material 3 & Expressive Declarative Card Container
+ * ============================================================================
+ * 规范：
+ * - 遵循 Material 3 Expressive Tonal Surface 规范（轻量低海拔、柔和色调底色、大圆角）
+ * - 支持 elevated（浅阴影）、filled（色调填充）、outlined（细描边）三种风格
+ * - 声明式槽位：leading, header, default, actions
+ * ============================================================================
+ */
+interface Props {
+  variant?: 'elevated' | 'filled' | 'outlined';
+  href?: string;
+  class?: string;
+  id?: string;
+  title?: string;
+  subtitle?: string;
+  interactive?: boolean;
+}
+
+const {
+  variant = 'filled',
+  href,
+  class: className = '',
+  id,
+  title,
+  subtitle,
+  interactive = false,
+} = Astro.props;
+
+const Tag = href ? 'a' : 'div';
+const isInteractive = Boolean(href || interactive);
+---
+
+<Tag
+  class:list={[
+    'm3-card',
+    `m3-card--${variant}`,
+    { 'm3-card--interactive': isInteractive },
+    className,
+  ]}
+  id={id}
+  href={href}
+>
+  {(title || subtitle || Astro.slots.has('header')) && (
+    <div class="m3-card__header">
+      {Astro.slots.has('leading') && (
+        <div class="m3-card__leading">
+          <slot name="leading" />
+        </div>
+      )}
+      <div class="m3-card__title-group">
+        {title && <h3 class="m3-card__title">{title}</h3>}
+        {subtitle && <p class="m3-card__subtitle">{subtitle}</p>}
+        <slot name="header" />
+      </div>
+      {Astro.slots.has('header-action') && (
+        <div class="m3-card__header-action">
+          <slot name="header-action" />
+        </div>
+      )}
+    </div>
+  )}
+
+  <div class="m3-card__content">
+    <slot />
+  </div>
+
+  {Astro.slots.has('actions') && (
+    <div class="m3-card__actions">
+      <slot name="actions" />
+    </div>
+  )}
+</Tag>
+
+<style>
+  .m3-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    border-radius: var(--md-shape-corner-large, 16px);
+    padding: 1.25rem;
+    text-decoration: none;
+    color: var(--md-sys-color-on-surface, #1f1f1f);
+    transition: background-color 0.2s cubic-bezier(0.2, 0, 0, 1),
+                box-shadow 0.2s cubic-bezier(0.2, 0, 0, 1),
+                border-color 0.2s cubic-bezier(0.2, 0, 0, 1),
+                transform 0.2s cubic-bezier(0.2, 0, 0, 1);
+    box-sizing: border-box;
+    overflow: hidden;
+  }
+
+  /* 1. Filled (Tonal Surface - Default) */
+  .m3-card--filled {
+    background-color: var(--md-sys-color-surface-container-low, #f8f9fa);
+    border: 1px solid transparent;
+  }
+  :global([data-theme='dark']) .m3-card--filled {
+    background-color: var(--md-sys-color-surface-container-low, #18191a);
+  }
+
+  /* 2. Outlined (Crisp Border) */
+  .m3-card--outlined {
+    background-color: var(--md-sys-color-surface, #ffffff);
+    border: 1px solid var(--md-sys-color-outline-variant, #e0e3e7);
+  }
+  :global([data-theme='dark']) .m3-card--outlined {
+    background-color: var(--md-sys-color-surface, #1e1f20);
+    border-color: var(--md-sys-color-outline-variant, #3c4043);
+  }
+
+  /* 3. Elevated (Subtle Chrome Shadow) */
+  .m3-card--elevated {
+    background-color: var(--md-sys-color-surface-container-lowest, #ffffff);
+    border: 1px solid transparent;
+    box-shadow: var(--md-elevation-level-1, 0 1px 3px 0 rgba(60, 64, 67, 0.1));
+  }
+  :global([data-theme='dark']) .m3-card--elevated {
+    background-color: var(--md-sys-color-surface-container, #1e1f20);
+    box-shadow: var(--md-elevation-level-1, 0 1px 3px 0 rgba(0, 0, 0, 0.4));
+  }
+
+  /* Interactive States */
+  .m3-card--interactive {
+    cursor: pointer;
+  }
+  .m3-card--interactive:hover {
+    transform: translateY(-2px);
+  }
+  .m3-card--filled.m3-card--interactive:hover {
+    background-color: var(--md-sys-color-surface-container, #f0f2f5);
+  }
+  :global([data-theme='dark']) .m3-card--filled.m3-card--interactive:hover {
+    background-color: var(--md-sys-color-surface-container-high, #28292a);
+  }
+  .m3-card--outlined.m3-card--interactive:hover {
+    border-color: var(--md-sys-color-outline, #72777d);
+    box-shadow: var(--md-elevation-level-1, 0 1px 3px rgba(60, 64, 67, 0.1));
+  }
+  .m3-card--elevated.m3-card--interactive:hover {
+    box-shadow: var(--md-elevation-level-2, 0 2px 6px rgba(60, 64, 67, 0.15));
+  }
+
+  /* Header */
+  .m3-card__header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+  }
+  .m3-card__leading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .m3-card__title-group {
+    flex: 1;
+    min-width: 0;
+  }
+  .m3-card__title {
+    margin: 0;
+    font-family: var(--md-sys-typescale-title-medium-font, 'Google Sans', system-ui, sans-serif);
+    font-size: 1.125rem;
+    font-weight: 600;
+    line-height: 1.4;
+    color: var(--md-sys-color-on-surface, #1f1f1f);
+  }
+  :global([data-theme='dark']) .m3-card__title {
+    color: var(--md-sys-color-on-surface, #e3e3e3);
+  }
+  .m3-card__subtitle {
+    margin: 0.25rem 0 0 0;
+    font-family: var(--md-sys-typescale-body-medium-font, system-ui, sans-serif);
+    font-size: 0.875rem;
+    color: var(--md-sys-color-on-surface-variant, #444746);
+  }
+  :global([data-theme='dark']) .m3-card__subtitle {
+    color: var(--md-sys-color-on-surface-variant, #c4c7c5);
+  }
+  .m3-card__header-action {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+  }
+
+  /* Content */
+  .m3-card__content {
+    flex: 1;
+    font-size: 0.9375rem;
+    line-height: 1.6;
+  }
+
+  /* Actions */
+  .m3-card__actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    margin-top: 1rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--md-sys-color-outline-variant, #e0e3e7);
+  }
+  :global([data-theme='dark']) .m3-card__actions {
+    border-top-color: var(--md-sys-color-outline-variant, #3c4043);
+  }
+</style>

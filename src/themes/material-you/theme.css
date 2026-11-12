@@ -1470,7 +1470,7 @@ html[data-site-theme='material-you'] .vp-search-wrapper {
   }
 }
 
-html[data-site-theme='material-you'] site-search button,
+html[data-site-theme='material-you'] site-search > button,
 html[data-site-theme='material-you'] button.site-search,
 html[data-site-theme='material-you'] .vp-nav-search-btn {
   display: flex !important;
@@ -1490,14 +1490,14 @@ html[data-site-theme='material-you'] .vp-nav-search-btn {
   cursor: pointer !important;
 }
 
-html[data-site-theme='material-you'] site-search button:hover,
+html[data-site-theme='material-you'] site-search > button:hover,
 html[data-site-theme='material-you'] button.site-search:hover,
 html[data-site-theme='material-you'] .vp-nav-search-btn:hover {
   background-color: var(--md-sys-color-surface-container-highest) !important;
   color: var(--md-sys-color-on-surface) !important;
 }
 
-html[data-site-theme='material-you'] site-search button:focus-visible,
+html[data-site-theme='material-you'] site-search > button:focus-visible,
 html[data-site-theme='material-you'] button.site-search:focus-visible,
 html[data-site-theme='material-you'] .vp-nav-search-btn:focus-visible {
   background-color: var(--md-sys-color-surface) !important;
@@ -1507,7 +1507,7 @@ html[data-site-theme='material-you'] .vp-nav-search-btn:focus-visible {
 }
 
 /* Outer kbd container: transparent wrapper pushed to right */
-html[data-site-theme='material-you'] site-search button > kbd,
+html[data-site-theme='material-you'] site-search > button > kbd,
 html[data-site-theme='material-you'] site-search kbd.sl-flex,
 html[data-site-theme='material-you'] .search-kbd {
   background: transparent !important;
@@ -1541,7 +1541,7 @@ html[data-site-theme='material-you'] button.site-search kbd > kbd {
 
 @media (max-width: 49.999rem) {
   /* Hide Ctrl+K shortcut keycaps on mobile viewports */
-  html[data-site-theme='material-you'] site-search button > kbd,
+  html[data-site-theme='material-you'] site-search > button > kbd,
   html[data-site-theme='material-you'] site-search kbd.sl-flex,
   html[data-site-theme='material-you'] .search-kbd,
   html[data-site-theme='material-you'] site-search kbd > kbd,
@@ -1563,7 +1563,7 @@ html[data-site-theme='material-you'] button.site-search kbd > kbd {
     min-width: 0 !important;
   }
 
-  html[data-site-theme='material-you'] site-search button,
+  html[data-site-theme='material-you'] site-search > button,
   html[data-site-theme='material-you'] button.site-search,
   html[data-site-theme='material-you'] .vp-nav-search-btn {
     justify-content: flex-start !important;
@@ -1574,8 +1574,8 @@ html[data-site-theme='material-you'] button.site-search kbd > kbd {
   }
 
   /* Guarantee search magnifier icon is left-aligned and never deforms */
-  html[data-site-theme='material-you'] site-search button svg,
-  html[data-site-theme='material-you'] site-search button .sl-icon,
+  html[data-site-theme='material-you'] site-search > button svg,
+  html[data-site-theme='material-you'] site-search > button .sl-icon,
   html[data-site-theme='material-you'] button.site-search svg {
     width: 1.125rem !important;
     height: 1.125rem !important;
@@ -1587,9 +1587,9 @@ html[data-site-theme='material-you'] button.site-search kbd > kbd {
   }
 
   /* Retain "Search" placeholder label next to magnifying glass whenever space permits */
-  html[data-site-theme='material-you'] site-search button > span,
+  html[data-site-theme='material-you'] site-search > button > span,
   html[data-site-theme='material-you'] button.site-search > span,
-  site-search button > span {
+  site-search > button > span {
     display: inline-block !important;
     font-size: 0.8125rem !important;
     color: var(--md-sys-color-on-surface-variant) !important;

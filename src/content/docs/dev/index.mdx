@@ -10,19 +10,22 @@ description: 从本地部署到书籍、习题册与 AI 功能贡献的实践指
 1. [项目架构与能力](/dev/overview/)
 2. [部署、运行与环境变量](/dev/getting-started/setup/)
 3. [脚本索引与常用命令](/dev/getting-started/scripts/)
-4. 按需要阅读[添加一本新书](/dev/getting-started/add-book/)、[加入一本习题册](/dev/getting-started/add-exercises/)或[贡献新的书籍](/dev/contributing/book/)
+4. [双语对照与语义对齐](/dev/getting-started/bilingual-aligner/)
+5. 按需要阅读[添加一本新书](/dev/getting-started/add-book/)、[加入一本习题册](/dev/getting-started/add-exercises/)或[贡献新的书籍](/dev/contributing/book/)
 
 ## 先说明两件事
 
-- `src/config/collections.config.mjs` 是书籍目录的来源；不要另建一个平行的书籍配置。
-- `public/` 只放浏览器直接访问的静态资源。构建产物、临时日志和导出中间文件请放在 `.tmp/` 或脚本约定的输出目录。
+- `src/config/collections.config.ts` 是书籍目录与多语言版本的唯一来源；`src/config/features.config.ts` 是全站功能开关的唯一注册表；严禁另建平行的配置。
+- `public/` 只放浏览器直接访问的静态资源（严格遵守公共目录卫生规范）。构建产物、临时日志、测试文件与导出中间产物请放在系统临时目录或脚本约定目录，严禁写入 `public/`。
 
 ## 贡献前的最低检查
 
 ```powershell
 npm install
+npm run check:types
+npm test
 npm run build
 node scripts/scan-mdx.mjs src/content/docs/collections/<collection>/<book>
 ```
 
-如果只修改文档页面，至少运行 `npm run build`，确认 Starlight 侧栏和 MDX 均可编译。
+代码提交前必须执行全站质量门禁 `npm run check:all`，确保 TypeScript 严格类型 0 错误且 Vitest 自动化测试套件全量通过。如果只修改文档页面，至少运行 `npm run build`，确认 Starlight 侧栏和 MDX 均可编译。

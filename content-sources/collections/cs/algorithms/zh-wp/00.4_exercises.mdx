@@ -1,0 +1,166 @@
+---
+title: '第0章 习题'
+---
+
+import Guide from '@/components/Guide.astro';
+import Knowledge from '@/components/Knowledge.astro';
+import Example from '@/components/Example.astro';
+import Analysis from '@/components/Analysis.astro';
+import Solution from '@/components/Solution.astro';
+import Variant from '@/components/Variant.astro';
+import Note from '@/components/Note.astro';
+import Block from '@/components/Block.astro';
+import Method from '@/components/Method.astro';
+import Exercise from '@/components/Exercise.astro';
+import Algorithm from '@/components/Algorithm.astro';
+
+## 第0章 习题
+
+<Exercise title="习题 0.1">
+
+考虑下面的问题，指出 $f = O(g)$ 成立、还是 $f = \Omega(g)$ 成立、或者两者同时成立(这时 $f = \Theta(g)$ )。
+
+(a) $n - 100$ $n - 200$
+
+(b) $n^{1 / 2}$ $n^{2 / 3}$
+
+(c) $100n + \log n \quad n + (\log n)^{2}$
+
+(d) $n\log n$ $10n\log 10n$
+
+(e) $\log 2n$ $\log 3n$
+
+(f) $10\log n$ $\log (n^2)$
+
+(g) $n^{1.01}$ $n\log^2 n$
+
+(h) $n^2 /\log n$ $n(\log n)^{2}$
+
+(i) $n^{0.1}(\log n)^{10}$
+
+(j) $(\log n)^{\log n}$ $n / \log n$
+
+(k) $\sqrt{n} (\log n)^3$
+
+(1) $n^{1 / 2}$ $5^{\log_2n}$
+
+(m) $n2^{n}$ $3^{n}$
+
+(n) $2^{n}$ $2^{n+1}$
+
+(o) n! $2^{n}$
+
+(p) $(\log n)^{\log n}$ $2^{(\log_{2}n)^{2}}$
+
+(q) $\sum_{i = 1}^{n}i^{k}$ $n^{k + 1}$
+
+</Exercise>
+
+<Exercise title="习题 0.2">
+
+当 $c$ 是一个正实数时，证明 $g(n) = 1 + c + c^2 + \ldots + c^n$ 是
+
+(a) $\Theta(1)$ , 当 $c < 1$ 。
+
+(b) $\Theta(n)$ , 当 $c = 1$ 。
+
+(c) $\Theta (c^n)$ ，当 $c > 1$ 。
+
+一个事实：在大⑧符号意义下，当几何级数严格递减时，几何级数的和可以简化为首项；当级数严格递增时，几何级数的和可以简化为末项；当级数保持不变时，几何级数的和可以简化为项数。
+
+</Exercise>
+
+<Exercise title="习题 0.3">
+
+Fibonacci 数 $F_{0}, F_{1}, F_{2}, \ldots$ , 按照如下的规则定义
+
+$$
+F _ {0} = 0, F _ {1} = 1, F _ {n} = F _ {n - 1} + F _ {n - 2}
+$$
+
+在本题中,我们将证明该序列的增长速度是指数级的,并将求出该序列增长的界。
+
+(a) 通过归纳法证明，当 $n \geqslant 6$ 时， $F_n \geqslant 2^{0.5n}$ 。
+
+(b) 求出一个常数 $c < 1$ ，使得当 $n \geqslant 0$ 时有 $F_{n} \leqslant 2^{cn}$ 成立。并简要说明理由。
+
+(c) 求出 $c$ 的最大值，使得 $F_{n} = \Omega (2^{cn})$ 成立。
+
+</Exercise>
+
+<Exercise title="习题 0.4">
+
+是否存在一种比本章 0.2 节中提供的 fib2 算法更快的算法，以求出第 n 个 Fibonacci 数？以下算法思想包含矩阵知识。
+
+我们先给出矩阵运算中的若干符号，如等式 $F_{1} = F_{1}$ 和 $F_{2} = F_{0} + F_{1}$ 对应于以下矩阵运算：
+
+$$
+\binom {F _ {1}} {F _ {2}} = \left( \begin{array}{c c} 0 & 1 \\ 1 & 1 \end{array} \right) \cdot \binom {F _ {0}} {F _ {1}}
+$$
+
+同样地，有
+
+$$
+\binom {F _ {2}} {F _ {3}} = \left( \begin{array}{c c} 0 & 1 \\ 1 & 1 \end{array} \right) \cdot \binom {F _ {1}} {F _ {2}} = \left( \begin{array}{c c} 0 & 1 \\ 1 & 1 \end{array} \right) ^ {2} \cdot \binom {F _ {0}} {F _ {1}}
+$$
+
+以及一般式
+
+$$
+\binom{F _ {n}}{F _ {n + 1}} = \left( \begin{array}{c c} 0 & 1 \\ 1 & 1 \end{array} \right) ^ {n} \cdot \binom{F _ {0}}{F _ {1}}
+$$
+
+因此，如果要计算 $F_{n}$ ，需要将此 $2 \times 2$ 矩阵称为 $\mathbf{X}$ ，自乘，得到它的 $n$ 次幂。
+
+(a) 证明 2 个 $2 \times 2$ 矩阵的乘法需要 4 次加法和 8 次乘法。
+
+但是为了计算 $X^n$ ，需要多少次矩阵乘法？
+
+(b) 证明 $O(\log n)$ 次矩阵乘法足以计算出 $X^n$ 。(提示：考虑计算 $X^8$ )。
+
+综上，我们基于矩阵的算法 fib3 所需的算术操作的次数只是 $O(\log n)$ ，而 fib2 则需要 $O(n)$ 次。那我们岂不是打破了另一个指数级时间的障碍？
+
+这一算法性能提升的原因在于新算法中包含了乘法，并不仅仅包含加法；同时，大数的乘法操作要慢于大数的加法操作。我们发现，当考虑了算术操作的复杂性后，fib2 的运行时间将变为 $O(n^{2})$ 。
+
+(c) 证明 fib3 算法的所有中间结果的二进制长度都是 $O(n)$ 位。
+
+(d) 令 $M(n)$ 表示对两个 $n$ 位二进制数相乘的某一算法的运行时间，并假定 $M(n) = O(n^2)$ (小学教过的乘法保证了这一点，本书第一章内容也将对此进行回顾)。证明 fib3 算法的运行时间为 $O(M(n)\log n)$ 。
+
+(e) 您能证明 fib3 算法的运行时间是 $O(M(n))$ 吗？假定当 $1 \leqslant a \leqslant 2$ 时，有 $M(n) = \Theta(n^a)$ 成立。(提示：经过每次平方操作，相乘的数字长度加倍)。
+
+我们给出结论：fib3 能否比 fib2 更快，取决于我们能否以少于 $O(n^{2})$ 次操作来对两个 n 位二进制数相乘。您认为这可能吗？(答案将在第 2 章中给出)。
+
+最后，我们给出一个计算 Fibonacci 数的公式：
+
+$$
+F _ {n} = \frac {1}{\sqrt {5}} \left(\frac {1 + \sqrt {5}}{2}\right) ^ {n} - \frac {1}{\sqrt {5}} \left(\frac {1 - \sqrt {5}}{2}\right) ^ {n}
+$$
+
+从该式可以看出，要想计算 $F_{n}$ ，我们只需对一对数分别进行自乘操作，以得到它们的 $n$ 次幂。问题在于这些数是无理数，想要以足够的精度计算它们可不是件容易的事。实际上，基于矩阵的算法 fib3 可以视为是计算无理数 $n$ 次幂的一种间接方法。如果您掌握了一定的线性代数知识，您就能明白其中的原因(提示：请回顾矩阵 $X$ 的特征值的定义)。
+
+Edi 面，(n 10!)O 是只邀入的非剩朱翼的需和 Edi 去翼的刺或于基Ⅱ拜，土袋
+① 部朝的同相题意个一尺丁频作量不与Ⅱ拜服，又(n)O 是需顾
+
+相同，去取舍已对不，在乘工舍中去算除于亦因圆的代数指计求一反。司封荣支的补剩失衰丁象表言，服受同律。补剩去取的增大千则使补剩去乘的增大。(5)O 改委称回加许至的 Sdn
+
+外(a)O 星略更匀陆数二如果返回中音讯图志翼 Edn 则玉 (o)
+
+(b)M 定则长，同切详式的运算一某的乘除运算小个两极示表(n)M 令 (b) 地面。(则回详式由依次内容第一章计本，点一交丁酉别乘除运算学小)( $^{2}$ n)O = (n gol(n)M)O 代回切详式的运算 Edt
+
+$= (\kappa)M$ 有，即 $S \geqslant \rho \geqslant 1$ 正实则 $S^{2} \text{即} ((\kappa)M)O$ 是回切分式的若翼 $\epsilon d\eta$ 即画雅瑟 (3)
+
+(哥时要分字囊的乘除，补票之平次性数：示题)。立如 $(^{n}\pi)\Theta$
+
+来非射灭( $^{1}$ )() 只处以否指[非无关系]，对更 Sdn 出否指 Edn：余数出合[非]
+（出除中章 S 禁主例案答）：即指同次式入源。乘因类辅按二分 n 个两权
+
+大公团梦 ioosnodi 算书个一出卷[例]，词量
+
+$$
+\left(\frac {\overline {{e}} _ {v} - 1}{s}\right) \frac {1}{\overline {{e}} _ {v}} = \left(\frac {\overline {{e}} _ {v} + 1}{s}\right) \frac {1}{\overline {{e}} _ {v}} = \mu^ {2}
+$$
+
+隆桥则，若剩乘自译数使仓邀设一区需只计进，又算与慰要，出香则下无断从容书虽不问价守置书罗静的邀虽几要感，对望天虽这些及于奇题同。算术n的排空式邀回林一阶幂次，或望天置书显成群则同Edn去置的判取于基，土洞实。算的悬判联题回新：示员)因则由中其白即
+
+</Exercise>
+

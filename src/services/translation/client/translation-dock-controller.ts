@@ -612,7 +612,7 @@ export class TranslationDockController {
         badgeEl.className = 'trans-key-status-badge';
       }
       if (tipEl) {
-        tipEl.textContent = '💡 Google 翻译为公共免费接口，无需任何配置，即开即用。';
+        tipEl.textContent = 'Google 翻译为公共免费接口，无需任何配置，即开即用。';
       }
       if (saveBtn) saveBtn.disabled = true;
       if (clearBtn) clearBtn.disabled = true;
@@ -636,7 +636,7 @@ export class TranslationDockController {
         badgeEl.className = `trans-key-status-badge ${hasKey ? 'is-configured' : ''}`;
       }
       if (tipEl) {
-        tipEl.textContent = '💡 北京邮电大学「人人有算力」校内模型服务网关。若留空，将自动使用服务端默认配置 (.env)。';
+        tipEl.textContent = '北京邮电大学「人人有算力」校内模型服务网关。若留空，将自动使用服务端默认配置 (.env)。';
       }
       if (keyInput) {
         this.handleKeyInput(keyInput.value);
@@ -654,7 +654,7 @@ export class TranslationDockController {
         badgeEl.className = `trans-key-status-badge ${hasKey ? 'is-configured' : ''}`;
       }
       if (tipEl) {
-        tipEl.textContent = '💡 Google Gemini 官方学术与理科推理模型。若留空，将自动使用服务端默认配置 (.env)。';
+        tipEl.textContent = 'Google Gemini 官方学术与理科推理模型。若留空，将自动使用服务端默认配置 (.env)。';
       }
       if (keyInput) {
         this.handleKeyInput(keyInput.value);
@@ -672,7 +672,7 @@ export class TranslationDockController {
         badgeEl.className = `trans-key-status-badge ${hasKey ? 'is-configured' : ''}`;
       }
       if (tipEl) {
-        tipEl.textContent = '💡 智谱开放平台 GLM-4-Flash 为永久免费模型，请前往 open.bigmodel.cn 复制 API Key。若配置在服务端的 .env (ZHIPU_API_KEY)，此处可留空。';
+        tipEl.textContent = '智谱开放平台 GLM-4-Flash 为永久免费模型，请前往 open.bigmodel.cn 复制 API Key。若配置在服务端的 .env (ZHIPU_API_KEY)，此处可留空。';
       }
       if (keyInput) {
         this.handleKeyInput(keyInput.value);

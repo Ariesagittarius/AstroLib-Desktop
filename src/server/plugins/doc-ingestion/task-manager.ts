@@ -15,7 +15,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { MineruApiClient } from './mineru-api-client.ts';
 import { LocalPipelineRunner } from './local-runner.ts';
-import { compileIngestAST } from './ast-compiler.ts';
+import { compileIngestAST, synthesizeStructuredMarkdown } from './ast-compiler.ts';
 import type {
   IngestEngineType,
   IngestTaskMeta,
@@ -141,7 +141,7 @@ export class TaskManager {
   /**
    * 2. 启动异步解析工作流
    */
-  public startParse(taskId: string, engine?: IngestEngineType): IngestTaskMeta {
+  public startParse(taskId: string, engine?: IngestEngineType, options?: { token?: string }): IngestTaskMeta {
     const meta = this.getTask(taskId);
     if (!meta) {
       throw new Error(`找不到任务 ${taskId}`);
@@ -149,6 +149,10 @@ export class TaskManager {
 
     if (engine) {
       meta.engine = engine;
+    }
+
+    if (options?.token) {
+      this.mineruClient.setToken(options.token);
     }
 
     if (this.activeJobs.has(taskId)) {
@@ -373,6 +377,26 @@ export class TaskManager {
   }
 
   /**
+   * 3.1 获取所有历史摄取任务列表 (按创建时间降序)
+   */
+  public listTasks(): IngestTaskMeta[] {
+    if (!fs.existsSync(this.baseDir)) return [];
+    try {
+      const entries = fs.readdirSync(this.baseDir, { withFileTypes: true });
+      const tasks: IngestTaskMeta[] = [];
+      for (const ent of entries) {
+        if (ent.isDirectory() && ent.name.startsWith('task_')) {
+          const meta = this.getTask(ent.name);
+          if (meta) tasks.push(meta);
+        }
+      }
+      return tasks.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+    } catch {
+      return [];
+    }
+  }
+
+  /**
    * 4. 读取解析成果（供双栏对照渲染与坐标映射）
    */
   public getResult(taskId: string): ParseResultResponse | null {
@@ -385,6 +409,7 @@ export class TaskManager {
     // 搜索 Markdown 文件
     let markdown = '';
     let targetDir = unpackedDir;
+    let rawJson = '';
 
     const findArtifacts = (dir: string) => {
       if (!fs.existsSync(dir)) return;
@@ -394,6 +419,11 @@ export class TaskManager {
         if (ent.isFile() && ent.name.toLowerCase() === 'full.md' && !markdown) {
           markdown = fs.readFileSync(p, 'utf-8');
           targetDir = dir;
+        }
+        if (ent.isFile() && ent.name.includes('content_list') && ent.name.endsWith('.json') && !rawJson) {
+          try {
+            rawJson = fs.readFileSync(p, 'utf-8');
+          } catch {}
         }
       }
       if (!markdown) {
@@ -426,16 +456,22 @@ export class TaskManager {
     // 解析版面坐标 Blocks (高保真 AST 编译，含 KaTeX HTML、图片路径与 1000 归一化坐标)
     const layoutBlocks = this.extractLayoutBlocks(targetDir, meta.taskId);
 
+    // 优先采用结构化 AST 合成的高纯度 Markdown（去除突兀孤立页码，生成标准脚注与分页锚点）
+    const cleanMarkdown = layoutBlocks.length > 0
+      ? synthesizeStructuredMarkdown(layoutBlocks, markdown)
+      : markdown;
+
     return {
       taskId: meta.taskId,
       fileName: meta.fileName,
       pageCount: meta.pageCount,
-      markdown,
+      markdown: cleanMarkdown,
       layoutBlocks,
       images,
       status: meta.status,
       engine: meta.engine,
       durationMs: meta.completedAt && meta.createdAt ? meta.completedAt - meta.createdAt : undefined,
+      rawJson: rawJson || undefined,
     };
   }
 

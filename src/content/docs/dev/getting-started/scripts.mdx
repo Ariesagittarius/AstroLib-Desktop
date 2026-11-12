@@ -1,6 +1,6 @@
 ---
 title: 脚本索引与常用命令
-description: 项目 package scripts、构建脚本、导入脚本和检查脚本的用途。
+description: 项目 package scripts、构建脚本、导入脚本、双语对齐评测和自动化测试的用途。
 ---
 
 ## package.json 命令
@@ -15,8 +15,19 @@ description: 项目 package scripts、构建脚本、导入脚本和检查脚本
 | `npm run epub` | 生成全部书籍 EPUB |
 | `npm run check:katex` / `npm run fix:katex` | 检查或修复公式度量 |
 | `npm run check:commit` | 检查提交信息格式 |
-| `npm run test:stripper` | 测试公共推送前的注释剥离器 |
+| `npm test` | 运行核心自动化测试套件（Unit + Contract + Acceptance，约 1.5s） |
+| `npm run test:unit` | 运行 Tier 1 纯逻辑单元测试（算法、状态机、错误封装） |
+| `npm run test:contract` | 运行 Tier 2 架构契约测试（public 卫生、层级令牌、Schema 守卫） |
+| `npm run test:acceptance` | 运行 Tier 3 业务验收测试（导出联动、LaTeX 闭合、Typst 转换） |
+| `npm run test:system` | 运行 Tier 4 系统集成测试（Typst 内存渲染、XeLaTeX 自适应） |
+| `npm run test:all` | 全量运行所有 4 个层级的自动化测试 |
+| `npm run test:watch` | 启动 Vitest 交互式热重载测试监听模式 |
+| `npm run check:types` | 执行 TypeScript 严格模式全量类型检查（`tsc --noEmit`，0 错误门禁） |
+| `npm run check:all` | **全站质量门禁**：提交代码前必跑（`check:types` + `npm test`） |
 | `npm run push` / `npm run update` | 执行项目约定的一键提交和分发流程 |
+| `npm run push:clean` | 自动剥离开发注释后推送到公开仓库 `origin` |
+| `npm run push:private` | 保留完整开发注释备份推送到私有仓库 |
+| `npm run push:all` | 双轨同步：同时推送到公开端与私有端 |
 
 ## 构建与内容检查
 
@@ -25,8 +36,10 @@ description: 项目 package scripts、构建脚本、导入脚本和检查脚本
 - `build-cross-ref-data.mjs`：生成跨章节引用数据。
 - `build-relation-graphs.mjs`：生成章节关系图数据。
 - `build-inspector-data.mjs`：生成模块索引数据。
-- `scan-mdx.mjs <dir>`：检查 MDX 结构和常见转换问题。
-- `check-all-datasets.mjs`：检查题库源数据。
+- `scan-mdx.mjs <dir>`：检查 MDX 结构、公式平衡与常见转换问题。
+- `check-all-datasets.mjs`：检查题库源数据完备性。
+- `run_evaluate_bilingual_benchmark.mjs`：评估教材多语言段落语义对齐相似度矩阵与匹配准确率（支持 DPV 等教材双语验证）。
+- `run-alignment-diagnostics.mjs`：双语段落结构、公式块与断句诊断工具。
 
 ## 导入、导出与维护
 
@@ -38,14 +51,22 @@ description: 项目 package scripts、构建脚本、导入脚本和检查脚本
 - `ai_fix_card_boundaries.mjs`、`ai_fix_figures.mjs`：调用 Gemini 辅助修正 OCR 后的卡片边界和图注。
 - `format_all_figures.mjs`、`screen_figures.mjs`、`process-qrcodes.mjs`：图像与二维码处理。
 
-## 测试脚本
+## 自动化测试金字塔 (Vitest)
 
-`test-*.mjs` 覆盖 LaTeX、Typst、EPUB、跨引用、题库、AI 工具、字体和 UI 等场景。它们不是全部挂在 npm scripts 中；需要专项验证时直接运行：
+本项目已全面引入由 **Vitest** 驱动的四层测试金字塔，彻底取代了历史遗留的散落测试脚本。所有测试用例统一存放于 `tests/` 目录：
 
 ```powershell
-node scripts/test-crossref.mjs
-node scripts/test-typst-export.mjs
-node scripts/test-export-acceptance.mjs
+# 1. 运行核心自动化测试（提交前必跑）
+npm test
+
+# 2. 严格模式类型检查
+npm run check:types
+
+# 3. 全站质量门禁（合并检查）
+npm run check:all
 ```
 
-脚本可能依赖本地字体、Python 包、XeLaTeX 或已安装的 Node 依赖。缺少依赖时先执行 `npm install`，不要把生成物提交进源目录。
+- **Tier 1 (Unit)**：`tests/unit/` 毫秒级纯函数与状态机逻辑（Slug 处理、注释剥离器、通知引擎、双语对齐算法、AI 工具解析）。
+- **Tier 2 (Contract)**：`tests/contract/` 架构红线守卫（`public/` 目录零编译残留、Window Layers 视窗层级令牌、KaTeX 度量、Schema 契约）。
+- **Tier 3 (Acceptance)**：`tests/acceptance/` 业务端到端验收（章节导出联动、LaTeX 语法闭合、Typst 转换无残留、题库完备性）。
+- **Tier 4 (System)**：`tests/system/` 物理引擎与多端渲染（Typst 内存多页 PDF 生成、本地 XeLaTeX 双通编译探测跳过）。

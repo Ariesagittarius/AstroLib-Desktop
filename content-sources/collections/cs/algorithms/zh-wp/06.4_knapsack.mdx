@@ -1,0 +1,96 @@
+---
+title: '6.4 背包问题'
+---
+
+import Guide from '@/components/Guide.astro';
+import Knowledge from '@/components/Knowledge.astro';
+import Example from '@/components/Example.astro';
+import Analysis from '@/components/Analysis.astro';
+import Solution from '@/components/Solution.astro';
+import Variant from '@/components/Variant.astro';
+import Note from '@/components/Note.astro';
+import Block from '@/components/Block.astro';
+import Method from '@/components/Method.astro';
+import Exercise from '@/components/Exercise.astro';
+import Algorithm from '@/components/Algorithm.astro';
+
+## 6.4 背包问题
+
+在一次打劫中，盗贼发现他的战利品太多，以至于无法全部带走，于是他必须决定究竟要把哪些装入自己的背包(或者说，把哪些丢弃掉)。这里，假设他的背包最多能装 $W$ 磅。一共有 $n$ 件物品，分别重 $w_{1}, \ldots, w_{n}$ ，价值 $v_{1}, \ldots, v_{n}$ 。怎样的组合才
+
+能使他带走的价值最高呢 $^{1}$ ?
+
+例如， $W = 10$ ，且
+
+<table><tr><td>物品</td><td>重量</td><td>价值</td></tr><tr><td>1</td><td>6</td><td>$30</td></tr><tr><td>2</td><td>3</td><td>$14</td></tr><tr><td>3</td><td>4</td><td>$16</td></tr><tr><td>4</td><td>2</td><td>$9</td></tr></table>
+
+该问题存在两个版本。如果每种物品的数量都是无限的，则最优的选择是拿1件物品1和2件物品4(总价值：\$48)。另一种情况，如果每种物品都只有一件(比方说盗贼正在打劫的是一个博物馆)，则最优的背包选择是物品1和物品3(总价值：\$46)。
+
+在第8章中我们将看到，以上这两个版本的问题可能都没有多项式时间的算法。不过利用动态规划，它们都可以在 $O(nW)$ 的时间内求解。当 $W$ 较小时，这一结果是完全可以接受的。只是由于输入规模是和 $\log W$ 而不是和 $W$ 成正比，因此还达不到多项式时间。
+
+## 多副本的背包问题
+
+让我们从多副本(多件同种物品)的背包问题开始。和往常一样，动态规划的首要问题是，如何定义子问题？在此我们有两种途径缩小原来的问题：考虑容量较小的背包(新的容量 $w < W$ )，或者，考虑较少的物品种类(例如，考虑物品1,2,...,j，其中 $j < n$ )。为了确定究竟哪个方式比较有效，通常需要一些小小的实验。
+
+第一种途径是较小的容量。对应地，定义
+
+$K(w)=$ 容量 w 可以容纳的最高价值。
+
+我们能否用更小的子问题来表示它呢？是这样的，如果 $K(w)$ 的最优解包含了物品 $i$ ，将其从背包中移走，则会留下 $K(w - w_i)$ 的最优解。换句话说，对于某些 $i$ ， $K(w)$ 就等于 $K(w - w_i) + v_i$ 。我们不知道究竟是哪些 $i$ ，因此需要尝试所有的可能。
+
+$$
+K (w) = \max _ {i: w _ {i} \leq w} \left\{K (w - w _ {i}) + v _ {i} \right\},
+$$
+
+其中按照惯例对空集取值为 0。这样就可以了！具体的算法如下，它显得非常简洁和优雅：
+
+$$
+\begin{array}{l} K (0) = 0 \\ \text { for } w = 1 \text { to } W: \\ K (w) = \max \{K (w - w _ {i}) + v _ {i}: w _ {i} \leq w \} \\ \text { return } K (W) \end{array}
+$$
+
+以上这个算法将从左至右地填写一个长度 $W + 1$ 的一维表格。每个单元格所需的计算时间是 $O(n)$ ，于是总的计算时间为 $O(nW)$ 。
+
+和之前一样，这里隐含着一个dag。请试着构造它，您将会获得一个惊奇的发现：求背包所能容纳的最高价值最终归结成了寻找dag的最长路径！
+
+## 单副本的背包问题
+
+考虑第二种情形，如果不存在同种物品的多个副本又会如何呢？以上定义的子问题此时变得完全没有了用处。事实上，即使我们知道了 $K(w - w_{n})$ 的数值很大也不可能带来什么帮助，因为我们不知道物品 $\pmb{n}$ 是否已经在这个部分解中使用过了。为此，我们需要改进子问题的定义，使其包含关于哪件物品已经被使用过了的信息。我们引入第二个参数， $0 \leqslant j \leqslant n$ ：
+
+$K(w,j)=$ 基于背包容量 w 和物品 1, ..., j 所能得到的最高价值。
+
+现在的目标是求 $K(W, n)$ 。
+
+如何将 $K(w, j)$ 用更小的子问题来表示呢？很简单：要么需要选择物品 $j$ 以获得最高价值，要么不需要：
+
+$$
+K (w, j) = \max \left\{K (w - w _ {j}, j - 1) + v _ {j}, K (w, j - 1) \right\} 。
+$$
+
+(第一种情况仅当 $w_{j} \leqslant w$ 时才会出现)。换句话说， $K(w, j)$ 是可以用子问题 $K(\cdot, j-1)$ 来表示的。
+
+于是，算法需要填写一个二维的表格，其中共有 $W + 1$ 行和 $n + 1$ 列。由于填写每个单元格仅需常数时间，所以即使这个表格比之前的表格大了许多倍，其计算时间仍然是一样的，即 $O(nW)$ 。以下是算法的描述：
+<div class="mineru-algorithm">
+Initialize all $K(0, j) = 0$ and all $K(w, 0) = 0$ for $j = 1$ to $n$: for $w = 1$ to $W$: if $w_j > w$: $K(w, j) = K(w, j - 1)$ else: $K(w, j) = \max\{K(w, j - 1), K(w - w_j, j - 1) + v_j\}$ return $K(W, n)$
+</div>
+
+<Knowledge title="专栏: 记忆">
+
+在动态规划中，我们给出一个用较小问题表示较大问题的递归公式，然后基于这一公式，由最小的问题到最大的问题，自底向上地逐个填写结果的表格。
+
+该公式暗示了一种递归算法。然而，我们之前已看到，由于总是要一遍遍地求解相同的子问题，一般的递归总是比较低效。那么，如果某个智能的递归算法能够记住此前的调用结果，是不是就可以做得更好呢？
+
+对于(多副本)背包问题，该算法使用一个散列表(hash table，参见1.5节)记录事先计算过的 $K(\cdot)$ 值。当某个递归调用需要用到 $K(w)$ 时，算法首先检查散列表中是否已经存储了该值，如果没有再进行相应的计算。这种方法称为记忆：
+
+```txt
+function knapsack(w)
+if w is in hash table: return K(w)
+K(w) = max{knapsack(w - w_i) + v_i : w_i ≤ w}
+insert K(w) into hash table, with key w
+return K(w)
+```
+
+由于该算法不会重复计算任何一个子问题，其运行时间和动态规划相同，都是 $O(nW)$ 。然而，由于递归所具有的间接开销通常较高，其大O符号所包含的常数因子相对而言总是较大的。
+
+不过，有些情况下记忆也能给我们带来回报。原因如下：动态规划自发地求解了所有的子问题，而记忆方式只会求解那些实际被用到的子问题。例如，在背包问题中，假设 $W$ 和所有的 $w_{i}$ 都是100的倍数。则对于所有不是100倍数的 $w$ ，求解子问题 $K(w)$ 将是毫无意义的。显然记忆递归算法根本不会去考虑这些毫不相干的单元格。
+
+</Knowledge>

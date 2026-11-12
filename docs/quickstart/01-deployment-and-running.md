@@ -96,7 +96,38 @@ npm run preview
 
 ---
 
-## 5. 环境变量说明（可选）
+## 5. 桌面端运行与编译（Electron 模式）
+
+AstroLib 支持作为独立跨平台桌面应用程序运行，内置 LocalServer 提供完全离线的流畅阅读与持久化设置存储体验。
+
+### 5.1 启动桌面端调试环境
+```bash
+npm run electron:dev
+```
+该命令会自动编译 Electron 主进程与预加载脚本（`dist-electron/`），启动桌面窗口，并加载内置离线书库与 Reader 引擎。
+
+### 5.2 编译免安装桌面可执行程序（绿色版）
+```bash
+# 依次执行静态构建、Electron 脚本编译并产出 win-unpacked 目录
+npm run electron:pack
+```
+构建完成后，产物位于：
+```text
+release/win-unpacked/AstroLib.exe
+```
+无需安装，双击即可直接在本地运行。
+
+### 5.3 打包生产级安装程序（NSIS 安装包与便携版单文件）
+```bash
+npm run electron:build
+```
+产物将输出至：
+- `release/AstroLib Setup 0.0.1.exe`（支持自定义安装路径与桌面快捷方式）
+- `release/AstroLib 0.0.1.exe`（单文件便携免安装版）
+
+---
+
+## 6. 环境变量说明（可选）
 
 本项目绝大部分功能（全书阅读、公式渲染、习题自测、LaTeX 导出、EPUB 打包）均为纯端侧与静态运行，**默认无需配置任何环境变量即可完整使用**。
 

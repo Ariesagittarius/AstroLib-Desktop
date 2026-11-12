@@ -45,7 +45,11 @@ const KATEX_OPTIONS: any = {
 
 export function renderTitleHtml(title?: string): string {
   const text = sanitizeMathLatex(String(title ?? ''));
-  if (!text.includes('$')) return escapeHtml(text);
+  const hasHtml = /<[a-z][\s\S]*>/i.test(text);
+
+  if (!text.includes('$')) {
+    return hasHtml ? text : escapeHtml(text);
+  }
 
   return text
     .split(MATH_SPLIT_RE)
@@ -55,17 +59,17 @@ export function renderTitleHtml(title?: string): string {
         try {
           return katex.renderToString(part.slice(2, -2), { ...KATEX_OPTIONS, displayMode: true });
         } catch {
-          return escapeHtml(part);
+          return hasHtml && /<[a-z][\s\S]*>/i.test(part) ? part : escapeHtml(part);
         }
       }
       if (part.startsWith('$') && part.endsWith('$') && part.length > 2) {
         try {
           return katex.renderToString(part.slice(1, -1), KATEX_OPTIONS);
         } catch {
-          return escapeHtml(part);
+          return hasHtml && /<[a-z][\s\S]*>/i.test(part) ? part : escapeHtml(part);
         }
       }
-      return escapeHtml(part);
+      return hasHtml && /<[a-z][\s\S]*>/i.test(part) ? part : escapeHtml(part);
     })
     .join('');
 }

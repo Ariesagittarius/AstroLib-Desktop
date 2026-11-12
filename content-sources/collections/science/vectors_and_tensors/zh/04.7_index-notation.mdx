@@ -1,0 +1,62 @@
+---
+title: '4.7 指标表示法'
+---
+
+import Guide from '@/components/Guide.astro';
+import Knowledge from '@/components/Knowledge.astro';
+import Example from '@/components/Example.astro';
+import Analysis from '@/components/Analysis.astro';
+import Solution from '@/components/Solution.astro';
+import Variant from '@/components/Variant.astro';
+import Note from '@/components/Note.astro';
+import Block from '@/components/Block.astro';
+import Method from '@/components/Method.astro';
+import Exercise from '@/components/Exercise.astro';
+
+## 4.7 指标表示法
+
+我们在本章坐标变换这一节已经初步接触到了指标表示法。已经定义了二维坐标系中变换（旋转）坐标轴和原（未旋转）坐标轴之间的夹角分别为 $\alpha_{11}$ ， $\alpha_{12}$ ， $\alpha_{21}$ ， $\alpha_{22}$ 。这些角也可以用 $\alpha_{x'x}$ ， $\alpha_{x'y}$ ， $\alpha_{y'x}$ ， $\alpha_{yy'}$ 等符号表示，那么为什么要使用指标数字 1，2，3 表示坐标轴和坐标分量，而不是字母 $x$ ， $y$ ， $z$ 呢？其中一个原因是物理学和工程领域中涉及很多超过 3 维的问题，每个人都知道数字"3"后是"4"，但是" $z$ "后面用什么字母表示却没有共识。另一个原因是指标表示法为本节后面要讲的爱因斯坦求和约定带来极大便利。
+
+根据指标表示法，将三维空间中点的坐标表示为 $(x_{1}, x_{2}, x_{3})$ 或者 $(x<sup>1</sup>, x<sup>2</sup>, x<sup>3</sup>)$ ，而不是 $(x, y, z)$ ；将矢量分量记为 $(A_{1}, A_{2}, A_{3})$ 或者 $(A<sup>1</sup>, A<sup>2</sup>, A<sup>3</sup>)$ ，而不是 $(A_{x}, A_{y}, A_{z})$ ，也不是 $(A^{x}, A^{y}, A^{z})$ 。这种表示方法可以直接推广到N维空间，其中点的坐标记为$(x_{1}, x_{2}, \cdots, x_{N})$ 或者 $(x<sup>1</sup>, x<sup>2</sup>, \cdots, x^{N})$ ，矢量分量记为 $(A_{1}, A_{2}, \cdots, A_{N})$ 或者 $(A<sup>1</sup>, A<sup>2</sup>, \cdots, A^{N})$ .
+
+由二维坐标轴旋转得到的矢量逆变分量变换方程中应用指标表示法，则式（4.6）变成
+
+$$
+\binom {A ^ {\prime 1}} {A ^ {\prime 2}} = \left( \begin{array}{c c} \cos (\alpha_ {1 1}) & \cos (\alpha_ {1 2}) \\ \cos (\alpha_ {2 1}) & \cos (\alpha_ {2 2}) \end{array} \right) \binom {A ^ {1}} {A ^ {2}},\tag{4.43}
+$$
+
+三维空间中，该变换方程为：
+
+$$
+\left( \begin{array}{l} A ^ {\prime 1} \\ A ^ {\prime 2} \\ A ^ {\prime 3} \end{array} \right) = \left( \begin{array}{l l l} \cos (\alpha_ {1 1}) & \cos (\alpha_ {1 2}) & \cos (\alpha_ {1 3}) \\ \cos (\alpha_ {2 1}) & \cos (\alpha_ {2 2}) & \cos (\alpha_ {2 3}) \\ \cos (\alpha_ {3 1}) & \cos (\alpha_ {3 2}) & \cos (\alpha_ {3 3}) \end{array} \right) \left( \begin{array}{l} A ^ {1} \\ A ^ {2} \\ A ^ {3} \end{array} \right),\tag{4.44}
+$$
+
+不妨把变换矩阵中的元素记为 $a_{11}$ ， $a_{12}$ ， $a_{13}$ 等，则方程（4.44）可以写成：
+
+$$
+\begin{array}{l} A ^ {\prime 1} = a _ {1 1} A ^ {1} + a _ {1 2} A ^ {2} + a _ {1 3} A ^ {3}, \\ A ^ {\prime 2} = a _ {2 1} A ^ {1} + a _ {2 2} A ^ {2} + a _ {2 3} A ^ {3}, \\ A ^ {\prime 3} = a _ {3 1} A ^ {1} + a _ {3 2} A ^ {2} + a _ {3 3} A ^ {3}, \end{array}\tag{4.45}
+$$
+
+或者
+
+$$
+\begin{array}{l} A ^ {\prime 1} = \sum_ {j = 1} ^ {3} a _ {1 j} A ^ {j}, \\ A ^ {\prime 2} = \sum_ {j = 1} ^ {3} a _ {2 j} A ^ {j}, \\ A ^ {\prime 3} = \sum_ {j = 1} ^ {3} a _ {3 j} A ^ {j}, \end{array}\tag{4.46}
+$$
+
+用 $i$ 表示指标1，2，3，有
+
+$$
+A ^ {\prime i} = \sum_ {j = 1} ^ {3} a _ {i j} A ^ {j}. \quad i = 1, 2, 3\tag{4.47}
+$$
+
+如果指标在一项中出现了两次，一次作为上标，一次作为下标（如式（4.47）中的"j"），则可以省略求和符号，最终简写为
+
+$$
+A ^ {\prime i} = a _ {i j} A ^ {j}.\tag{4.48}
+$$
+
+式中重复的指标（本例中为 $j$ ）表示关于该指标求和。通常称式中重复的指标为"哑"指标，这是因为该指标可以用任何字母表示。阿尔伯特爱因斯坦在1961年首次提出了这个求和约定，他开玩笑地称这是"伟大的数学发现"。无论怎么说，这个约定都必定节省大量的笔墨和时间。
+
+再次强调，式（4.48）中的简写表达式与式（4.45）中含有多个项的三个独立方程含义是完全相同的。它们都表示变换坐标系中的每个分量是原（未变换）坐标系中各分量的加权线性组合，变换矩阵的元素 $(a_{ij})$ 为每一项的加权因子。
+
+下面就来介绍矢量的协变和矢量的逆变分量变换矩阵中每个因子的确切含义.

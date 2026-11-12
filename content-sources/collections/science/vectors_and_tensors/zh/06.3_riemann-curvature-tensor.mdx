@@ -1,0 +1,362 @@
+---
+title: '6.3 黎曼曲率张量'
+---
+
+import Guide from '@/components/Guide.astro';
+import Knowledge from '@/components/Knowledge.astro';
+import Example from '@/components/Example.astro';
+import Analysis from '@/components/Analysis.astro';
+import Solution from '@/components/Solution.astro';
+import Variant from '@/components/Variant.astro';
+import Note from '@/components/Note.astro';
+import Block from '@/components/Block.astro';
+import Method from '@/components/Method.astro';
+import Exercise from '@/components/Exercise.astro';
+
+## 6.3 黎曼曲率张量
+
+自1905年发表狭义相对论后的十年里，爱因斯坦一直致力于经典力学"缺陷"的研究：对惯性质量和引力质量精确相等缺乏理论解释。物体的惯性质量决定了它对加速度的抵抗力，而引力质量决定了它对引力场的响应。经典力学解释不了这两种不同定义的质量相等，爱因斯坦科学的直觉告诉他，解决这种缺陷的办法就是将他的相对性原理拓展到非惯性参考系。他将"广义"这个概念应用于拓展了的相对论，因为这个新理论不会局限于狭义相对论的惯性参考系。
+
+爱因斯坦在研究广义相对论的早期，构建了一个思维实验（也就是一种精神思考）。在实验中，他设想有一组质量不同的物体，它们远离地球和其他所有物体——你可以认为它们是一堆遥远的宇宙岩石。现在从两个参考系中观察这些物体的行为，其中一个是 $K$ 系，即相对于宇宙岩石是惯性系或非加速系，另一个是 $K'$ 系，相对于第一个参考系做匀加速运动。对于 $K'$ 系的观察者来说，所有这些物体的加速度方向（与 $K'$ 系加速度的方向相反）和大小（等于 $K'$ 系加速度的大小）都相同。看到所有物体的加速度都具有相同的方向和大小，观察者完全有理由得出这样的结论：物体的加速度是由外部引力场产生的，而 $K'$ 系是静止的。爱因斯坦认识到 $K$ 系和 $K'$ 系都是有效的参考系，他称这种系统的完全等价为"等效原理"。
+
+爱因斯坦的下一步工作是将 $K^{\prime}$ 系的 $z^{\prime}$ 轴和 $K$ 系的 $z$ 轴重合，然后使 $K'$ 系绕 $z'$ 轴匀角速转动（回想一下，旋转的物体具有向心加速度，因此旋转的 $K'$ 系为加速系）。如果 $K'$ 系没有转动，则在 $K$ 系和 $K'$ 系测量的物体的尺寸和时间流逝的速率是相同的。但是当 $K'$ 系转动时，静止于 $K'$ 系的物体在 $K$ 系中测量时是运动的，因此将会出现长度收缩和时间膨胀，收缩和膨胀量取决于物体的位置（因为物体离转轴越远速率越大）。因为等效原理要求一个加速参考系和一个静止于引力场中的参考系是等效的，爱因斯坦被迫得出这样的结论：长度收缩和时间膨胀同样可以由引力产生，或者如他所说"引力场影响甚至决定了时空连续性的度量规律"。
+
+这些度量规律用张量来表示，因此广义相对论的描述依赖于物理定律的张量公式和前面章节中描述的概念，例如度规张量、克里斯托费尔符号和协变导数。广义相对论中最重要的张量是黎曼曲率张量，19世纪德国数学家波恩哈德·黎曼和埃尔温·布鲁诺·克里斯托费尔之后，有时候也被称为黎曼-克里斯托费尔张量。这个张量的重要性源自于非零分量是曲率的标志，黎曼张量为零是欧几里得（平直）空间的充分必要条件。
+
+大多数文献中用两种方法之一来导出黎曼张量：平移或求协变导数对易子．为了理解平移方法，首先应该理解"平移"是指在矢量保持大小和方向不变的情况下，在空间内移动矢量的方法．在笛卡儿平直空间中，保持矢量的大小和方向不变非常简单——只要使矢量在移动过程中保持 $x, y, z$ 分量不变即可．如果分量不变，矢量的大小和方向就不会发生变化，就会满足平移的要求．
+
+在弯曲的空间中，情况会变得比较复杂。首先，指向同一个方向很难定义，考虑地球表面的二维空间（暂且假设它是完全平滑的）。假设一个矢量最初位于赤道（如厄瓜多尔的基多靠北一点），它指向正北，直接沿着子午线。现在想象一下，把这个矢量移到北极，同时确保它精确地指向子午线。记住，这个空间是地球表面，所以矢量移动时必须保持与地面相切（也就是说，局部水平）。如果矢量继续沿着子午线移动，穿过北极，然后向下移到地球的另一侧，最终在靠近印度尼西亚中部的某个地方再次到达赤道。矢量仍将沿着子午线指向，但是现在它将指向南方．因此，尽管在整个旅程中矢量指向"同一个方向"（即沿着子午线的方向），但是它却从指向北方变成指向南方．
+
+现在想象矢量移动的另外一种情况，也是指向北方的矢量从赤道基多附近开始移动，但是这次是沿着赤道而不是北极移动。仍然确保矢量移动时方向始终指向北方（沿着当地子午线），当到达印度尼西亚中部时，我们会发现矢量仍然指向北方。因此，即使在两种情况下都是平移，但矢量的最终方向却取决于所走过的路径。无论何时，只要矢量平移导致其方向发生了改变，就可以确定我们正处在一个弯曲的空间中。
+
+这引发了一个更大的问题：不可能对不同位置的矢量进行加、减、乘或者任何其他方式的比较——在进行此类操作之前必须将一个矢量移到另一个矢量的位置。这在平直空间没有问题，因为可以把矢量从一个地方平移到任何其他位置，只要保持其系数不变即可（确保矢量的大小是常量，方向始终指向同一个方向）。虽然"始终指向同一个方向"在平直空间中的不同位置很好定义，但是在弯曲空间这个说法是有问题的，因此平移需要一个更一般的定义。
+
+在这个定义中，"平移"被定义为协变导数为零的移动。记住，协变导数包括两部分，一部分是通常的偏导数，另一部分中包含克里斯托费尔符号。如第5章第5.7节所述，第二项的目的是解释基矢量的变化。保持协变导数等于零，同时沿着一个小环路移动矢量是导出黎曼张量的另一种方法 <sup>①</sup> 。
+
+黎曼曲率张量完全可以由矢量协变导数的对易子推导出来。这里"对易子"是指两个算符交换作用顺序的差。按照定义，如果有两个算符A和B，则这两个算符的对易子为 $[AB] = AB - BA$ 。因此，如果两个算子交换作用顺序对作用结果没有影响，则对易子的值等于零。
+
+为了得到黎曼张量，我们选择的算子是矢量的协变微分．这是因为在平直空间中，协变求导的顺序对结果没有影响，所以其对易子为零．协变导数对易子的任何非零结果都是由空间弯曲产生的．
+
+下面开始推导过程，首先将矢量 $V_{\alpha}$ 对坐标 $x^{\beta}$ 求协变导数：
+
+$$
+V _ {\alpha ; \beta} = \frac {\partial V _ {\alpha}}{\partial x ^ {\beta}} - \Gamma_ {\alpha \beta} ^ {\sigma} V _ {\sigma}.\tag{6.21}
+$$
+
+结果用 $V_{\alpha\beta}$ 表示，将其对坐标 $x^{\gamma}$ 再求一次协变导数：
+
+$$
+V _ {\alpha \beta ; \gamma} = \frac {\partial V _ {\alpha \beta}}{\partial x ^ {\gamma}} - \Gamma_ {\alpha \gamma} ^ {\tau} V _ {\tau \beta} - \Gamma_ {\beta \gamma} ^ {\eta} V _ {\alpha \eta}.\tag{6.22}
+$$
+
+把方程（6.21）中 $V_{\alpha\beta}$ 的表达式代入上面方程，则
+
+$$
+\begin{array}{r l} V _ {\alpha \beta ; \gamma} & = \frac {\partial^ {2} V _ {\alpha}}{\partial x ^ {\gamma} \partial x ^ {\beta}} - \frac {\partial \Gamma_ {\alpha \beta} ^ {\sigma}}{\partial x ^ {\gamma}} V _ {\sigma} - \Gamma_ {\alpha \beta} ^ {\sigma} \frac {\partial V _ {\sigma}}{\partial x ^ {\gamma}} \\ & - \Gamma_ {\alpha \gamma} ^ {\tau} \left(\frac {\partial V _ {\tau}}{\partial x ^ {\beta}} - \Gamma_ {\tau \beta} ^ {\sigma} V _ {\sigma}\right) \\ & - \Gamma_ {\beta \gamma} ^ {\eta} \left(\frac {\partial V _ {\alpha}}{\partial x ^ {\eta}} - \Gamma_ {\alpha \eta} ^ {\sigma} V _ {\sigma}\right). \end{array}\tag{6.23}
+$$
+
+这个表达式物理意义不明确，但是请记住是怎么推导到这一步的：首先求出当沿着 $x^{\beta}$ 方向迈出一小步时引起的 $V_{\alpha}$ 增量的变化 $V_{\alpha \beta}$ ，然后再求出当沿着 $x^{\gamma}$ 方向迈出一小步时， $V_{\alpha \beta}$ 增量的变化。现在，将两步求导顺序反过来并与之前的结果进行对比（假设起点相同），你首先会求出当沿着 $x^{\gamma}$ 方向迈出一小步时引起的 $V_{\alpha}$ 增量的变化 $V_{\alpha \gamma}$ ，然后再求出当沿着 $x^{\beta}$ 方向迈出一小步时， $V_{\alpha \gamma}$ 增量的变化。
+
+反序求协变导数，首先对 $x^{\gamma}$ 进行求导：
+
+$$
+V _ {\alpha ; \gamma} = \frac {\partial V _ {\alpha}}{\partial x ^ {\gamma}} - \Gamma_ {\alpha \gamma} ^ {\sigma} V _ {\sigma}.\tag{6.24}
+$$
+
+结果用 $V_{\alpha\gamma}$ 表示，将其对坐标 $x^{\beta}$ 再求一次协变导数：
+
+$$
+V _ {\alpha \gamma ; \beta} = \frac {\partial V _ {\alpha \gamma}}{\partial x ^ {\beta}} - \Gamma_ {\alpha \beta} ^ {\tau} V _ {\tau \gamma} - \Gamma_ {\gamma \beta} ^ {\eta} V _ {\alpha \eta}.\tag{6.25}
+$$
+
+跟之前一样，将方程（6.24）中 $V_{\alpha \gamma}$ 的表达式代入上面方程得到
+
+$$
+V _ {\alpha \gamma ; \beta} = \frac {\partial^ {2} V _ {\alpha}}{\partial x ^ {\beta} \partial x ^ {\gamma}} - \frac {\partial \Gamma_ {\alpha \gamma} ^ {\sigma}}{\partial x ^ {\beta}} V _ {\sigma} - \Gamma_ {\alpha \gamma} ^ {\alpha} \frac {\partial V _ {\sigma}}{\partial x ^ {\beta}}
+$$
+
+$$
+\begin{array}{l} - \Gamma_ {\alpha \beta} ^ {\tau} \left(\frac {\partial V _ {\tau}}{\partial x ^ {\gamma}} - \Gamma_ {\tau \gamma} ^ {\sigma} V _ {\sigma}\right) \\ - \Gamma_ {\gamma \beta} ^ {\eta} \left(\frac {\partial V _ {\alpha}}{\partial x ^ {\eta}} - \Gamma_ {\alpha \eta} ^ {\sigma} V _ {\sigma}\right). \end{array}\tag{6.26}
+$$
+
+在平直空间中，协变求导的顺序对结果没有影响，所以方程（6.26）应该等于方程（6.23）。这两个方程之间的任何差异都可以归咎于空间的弯曲。逐项对比这两个方程，第一项相等：
+
+$$
+\frac {\partial^ {2} V _ {\alpha}}{\partial x ^ {\gamma} \partial x ^ {\beta}} = \frac {\partial^ {2} V _ {\alpha}}{\partial x ^ {\beta} \partial x ^ {\gamma}},
+$$
+
+这些项相等是因为正常的偏导数与次序无关，因此对易子中这些项相互抵消．现在对比第二项
+
+$$
+- \frac {\partial \Gamma_ {\alpha \beta} ^ {\sigma}}{\partial x ^ {\gamma}} V _ {\sigma} \neq - \frac {\partial \Gamma_ {\alpha \gamma} ^ {\sigma}}{\partial x ^ {\beta}} V _ {\sigma},
+$$
+
+因此这些项不能相互抵消．对比方程（6.23）的第三项和方程（6.26）的第四项，它们是相等的：
+
+$$
+- \Gamma_ {\alpha \beta} ^ {\sigma} \frac {\partial V _ {\sigma}}{\partial x ^ {\gamma}} = - \Gamma_ {\alpha \beta} ^ {\tau} \frac {\partial V _ {\tau}}{\partial x ^ {\gamma}}.
+$$
+
+因为哑指标（ $\sigma$ 和 $\tau$ ）与所用符号无关．方程（6.23）的第四项和方程（6.26）的第三项也相等：
+
+$$
+- \Gamma_ {\alpha \gamma} ^ {\tau} \frac {\partial V _ {\tau}}{\partial x ^ {\beta}} = - \Gamma_ {\alpha \gamma} ^ {\sigma} \frac {\partial V _ {\sigma}}{\partial x ^ {\beta}}.
+$$
+
+原因同上面一样．第五项不相等：
+
+$$
+\Gamma_ {\alpha \gamma} ^ {\tau} \Gamma_ {\tau \beta} ^ {\sigma} V _ {\sigma} \neq \Gamma_ {\alpha \beta} ^ {\tau} \Gamma_ {\tau \gamma} ^ {\sigma} V _ {\sigma}.
+$$
+
+但是第六项相等：
+
+$$
+- \Gamma_ {\beta \gamma} ^ {\eta} \frac {\partial V _ {\alpha}}{\partial x ^ {\eta}} = - \Gamma_ {\gamma \beta} ^ {\eta} \frac {\partial V _ {\alpha}}{\partial x ^ {\eta}}.
+$$
+
+因为克里斯托费尔符号的下指标具有对称性．同理第七项也相等：
+
+$$
+\Gamma_ {\beta \gamma} ^ {\eta} \Gamma_ {\alpha \eta} ^ {\sigma} V _ {\sigma} = \Gamma_ {\gamma \beta} ^ {\eta} \Gamma_ {\alpha \eta} ^ {\sigma} V _ {\sigma}.
+$$
+
+因此，在生成的对易子 AB-BA 中，大多数项相互抵消为零，只有第二项和第五项相减后不为零．这些项是
+
+$$
+\begin{array}{r l} V _ {\alpha \beta ; \gamma} - V _ {\alpha \gamma ; \beta} & = - \frac {\partial \Gamma_ {\alpha \beta} ^ {\sigma}}{\partial x ^ {\gamma}} V _ {\sigma} + \frac {\partial \Gamma_ {\alpha \gamma} ^ {\sigma}}{\partial x ^ {\beta}} V _ {\sigma} + \Gamma_ {\alpha \gamma} ^ {\tau} \Gamma_ {\tau \beta} ^ {\sigma} V _ {\sigma} - \Gamma_ {\alpha \beta} ^ {\tau} \Gamma_ {\tau \gamma} ^ {\sigma} V _ {\sigma} \\ & = \left(\frac {\partial \Gamma_ {\alpha \gamma} ^ {\sigma}}{\partial x ^ {\beta}} - \frac {\partial \Gamma_ {\alpha \beta} ^ {\sigma}}{\partial x ^ {\gamma}} + \Gamma_ {\alpha \gamma} ^ {\tau} \Gamma_ {\tau \beta} ^ {\sigma} - \Gamma_ {\alpha \beta} ^ {\tau} \Gamma_ {\tau \gamma} ^ {\sigma}\right) V _ {\sigma}. \end{array}         \tag{6.27}
+$$
+
+括号里面的项定义了黎曼曲率张量：
+
+$$
+R _ {\alpha \beta \gamma} ^ {\sigma} \equiv \frac {\partial \Gamma_ {\alpha \gamma} ^ {\sigma}}{\partial x ^ {\beta}} - \frac {\partial \Gamma_ {\alpha \beta} ^ {\sigma}}{\partial x ^ {\gamma}} + \Gamma_ {\alpha \gamma} ^ {\tau} \Gamma_ {\tau \beta} ^ {\sigma} - \Gamma_ {\alpha \beta} ^ {\tau} \Gamma_ {\tau \gamma} ^ {\sigma}.\tag{6.28}
+$$
+
+如果你想知道为什么曲率张量中包括克里斯托费尔符号的导数，不妨这样考虑：在任何空间中，你总可以定义一个坐标系，该坐标系中总有一些点的克里斯托费尔符号全部为零．但是只要空间不是平直空间，克里斯托费尔符号就不可能在所有地方都等于零，也就是说克里斯托费尔符号的偏导数必不为零．因此平直空间的充分必要条件是
+
+$$
+R _ {\alpha \beta \gamma} ^ {\sigma} = 0.\tag{6.29}
+$$
+
+另外一个和黎曼曲率张量相关的张量是里奇张量，它可以通过对指标 $\sigma$ 和指标 $\beta$ 进行缩并获得．对于四维情况，就是
+
+$$
+R _ {\alpha \gamma} \equiv R _ {\alpha \sigma \gamma} ^ {\sigma} = R _ {\alpha 1 \gamma} ^ {1} + R _ {\alpha 2 \gamma} ^ {2} + R _ {\alpha 3 \gamma} ^ {3} + R _ {\alpha 4 \gamma} ^ {4}.\tag{6.30}
+$$
+
+如果上升里奇张量一个指标并使其和另一个指标相等，缩并结果就是里奇标量．对于四维情况，就是
+
+$$
+R \equiv g ^ {\alpha \gamma} R _ {\alpha \gamma} = R _ {\gamma} ^ {\gamma} = R _ {1} ^ {1} + R _ {2} ^ {2} + R _ {3} ^ {3} + R _ {4} ^ {4}.\tag{6.31}
+$$
+
+最后，被称为"爱因斯坦张量"的张量可以表示为里奇张量、里奇标量和度规张量的组合：
+
+$$
+G _ {\alpha \gamma} \equiv R _ {\alpha \gamma} - \frac {1}{2} R g _ {\alpha \gamma}.\tag{6.32}
+$$
+
+这就是广义相对论里爱因斯坦场方程中出现的张量，经常被写成
+
+$$
+G _ {\mu v} + \Gamma g _ {\mu v} = \frac {8 \pi G}{c ^ {4}} T _ {\mu v}.\tag{6.33}
+$$
+
+其中， $T_{\mu\nu}$ 是能量－动量张量； $\Gamma$ 是爱因斯坦为了维持静止宇宙而引入的"宇宙常数"。正是这个方程产生了广义相对论简明表述的前半部分："物质告诉时空怎么弯曲，时空告诉物质怎么运动。"
+
+为了理解黎曼张量的全部内容，考虑一个二维空间，即二维球面.该空间的度规标准是
+
+$$
+\mathrm{d} s ^ {2} = a ^ {2} \mathrm{d} \theta^ {2} + a ^ {2} \sin^ {2} (\theta) \mathrm{d} \phi^ {2}.
+$$
+
+从这个表达式可以看出度规张量的分量为
+
+$$
+\begin{array}{l} {g _ {\theta \theta} = a ^ {2}  ,} \\ {g _ {\theta \phi} = g _ {\phi \theta} = 0  ,} \\ {g _ {\phi \phi} = a ^ {2} \sin^ {2} (\theta) .} \end{array}\tag{6.34}
+$$
+
+把这些值插入克里斯托费尔符号方程中，得到
+
+$$
+\Gamma_ {i j} ^ {l} = \frac {1}{2} g ^ {k l} \left[ \frac {\partial g _ {i k}}{\partial x ^ {j}} + \frac {\partial g _ {j k}}{\partial x ^ {i}} - \frac {\partial g _ {i j}}{\partial x ^ {k}} \right].
+$$
+
+即使在二维空间中，写出克里斯托费尔符号的全部分量也不是那么容易：
+
+$$
+\Gamma_ {\theta \theta} ^ {\theta} = \frac {1}{2} \left[ g ^ {\theta \theta} \frac {\partial g _ {\theta \theta}}{\partial \theta} + g ^ {\phi \theta} \frac {\partial g _ {\theta \phi}}{\partial \theta} + g ^ {\theta \theta} \frac {\partial g _ {\theta \theta}}{\partial \theta} + g ^ {\phi \theta} \frac {\partial g _ {\theta \phi}}{\partial \theta} - g ^ {\theta \theta} \frac {\partial g _ {\theta \theta}}{\partial \theta} - g ^ {\phi \theta} \frac {\partial g _ {\theta \theta}}{\partial \phi} \right],
+$$
+
+$$
+\Gamma_ {\theta \phi} ^ {\theta} = \frac {1}{2} \left[ g ^ {\theta \theta} \frac {\partial g _ {\theta \theta}}{\partial \phi} + g ^ {\phi \theta} \frac {\partial g _ {\theta \phi}}{\partial \phi} + g ^ {\theta \theta} \frac {\partial g _ {\phi \theta}}{\partial \theta} + g ^ {\phi \theta} \frac {\partial g _ {\phi \phi}}{\partial \theta} - g ^ {\theta \theta} \frac {\partial g _ {\theta \phi}}{\partial \theta} - g ^ {\phi \theta} \frac {\partial g _ {\theta \phi}}{\partial \phi} \right],
+$$
+
+$$
+\Gamma_ {\phi \theta} ^ {\theta} = \frac {1}{2} \left[ g ^ {\theta \theta} \frac {\partial g _ {\phi \theta}}{\partial \theta} + g ^ {\phi \theta} \frac {\partial g _ {\phi \phi}}{\partial \theta} + g ^ {\theta \theta} \frac {\partial g _ {\theta \theta}}{\partial \phi} + g ^ {\phi \theta} \frac {\partial g _ {\theta \phi}}{\partial \phi} - g ^ {\theta \theta} \frac {\partial g _ {\phi \theta}}{\partial \theta} - g ^ {\phi \theta} \frac {\partial g _ {\phi \theta}}{\partial \phi} \right],
+$$
+
+$$
+\Gamma_ {\theta \theta} ^ {\phi} = \frac {1}{2} \left[ g ^ {\theta \phi} \frac {\partial g _ {\theta \theta}}{\partial \theta} + g ^ {\phi \phi} \frac {\partial g _ {\theta \phi}}{\partial \theta} + g ^ {\theta \phi} \frac {\partial g _ {\theta \theta}}{\partial \theta} + g ^ {\phi \phi} \frac {\partial g _ {\theta \phi}}{\partial \theta} - g ^ {\theta \phi} \frac {\partial g _ {\theta \theta}}{\partial \theta} - g ^ {\phi \phi} \frac {\partial g _ {\theta \theta}}{\partial \phi} \right],
+$$
+
+$$
+\Gamma_ {\theta \phi} ^ {\phi} = \frac {1}{2} \left[ g ^ {\theta \phi} \frac {\partial g _ {\theta \theta}}{\partial \phi} + g ^ {\phi \phi} \frac {\partial g _ {\theta \phi}}{\partial \phi} + g ^ {\theta \phi} \frac {\partial g _ {\phi \theta}}{\partial \theta} + g ^ {\phi \phi} \frac {\partial g _ {\phi \phi}}{\partial \theta} - g ^ {\theta \phi} \frac {\partial g _ {\theta \phi}}{\partial \theta} - g ^ {\phi \phi} \frac {\partial g _ {\theta \phi}}{\partial \phi} \right],
+$$
+
+$$
+\Gamma_ {\phi \theta} ^ {\phi} = \frac {1}{2} \left[ g ^ {\theta \phi} \frac {\partial g _ {\phi \theta}}{\partial \theta} + g ^ {\phi \phi} \frac {\partial g _ {\phi \phi}}{\partial \theta} + g ^ {\theta \phi} \frac {\partial g _ {\theta \theta}}{\partial \phi} + g ^ {\phi \phi} \frac {\partial g _ {\theta \phi}}{\partial \phi} - g ^ {\theta \phi} \frac {\partial g _ {\phi \theta}}{\partial \theta} - g ^ {\phi \phi} \frac {\partial g _ {\phi \theta}}{\partial \phi} \right],
+$$
+
+$$
+\Gamma_ {\phi \phi} ^ {\theta} = \frac {1}{2} \left[ g ^ {\theta \theta} \frac {\partial g _ {\phi \theta}}{\partial \phi} + g ^ {\phi \theta} \frac {\partial g _ {\phi \phi}}{\partial \phi} + g ^ {\theta \theta} \frac {\partial g _ {\phi \theta}}{\partial \phi} + g ^ {\phi \theta} \frac {\partial g _ {\phi \phi}}{\partial \phi} - g ^ {\theta \theta} \frac {\partial g _ {\phi \phi}}{\partial \theta} - g ^ {\phi \theta} \frac {\partial g _ {\phi \phi}}{\partial \phi} \right],
+$$
+
+$$
+\Gamma_ {\phi \phi} ^ {\phi} = \frac {1}{2} \left[ g ^ {\theta \phi} \frac {\partial g _ {\phi \theta}}{\partial \phi} + g ^ {\phi \phi} \frac {\partial g _ {\phi \phi}}{\partial \phi} + g ^ {\theta \phi} \frac {\partial g _ {\phi \theta}}{\partial \phi} + g ^ {\phi \phi} \frac {\partial g _ {\phi \phi}}{\partial \phi} - g ^ {\theta \phi} \frac {\partial g _ {\phi \phi}}{\partial \theta} - g ^ {\phi \phi} \frac {\partial g _ {\phi \phi}}{\partial \phi} \right].
+$$
+
+但是考虑到方程（6.34）中所示的度规张量，除了包含 $\frac{\partial g_{\phi\phi}}{\partial\theta}$ 的项外其他项都为零，任何包含 $g_{\theta\phi}$ 和 $g_{\phi\theta}$ 的项也为零。这样只剩下三项非零的克里斯托费尔符号，即
+
+$$
+\begin{array}{r l} \Gamma_ {\theta \phi} ^ {\phi} & = \left(\frac {1}{2}\right) g ^ {\phi \phi} \frac {\partial g _ {\phi \phi}}{\partial \theta} \\ & = \left(\frac {1}{2}\right) \frac {1}{a ^ {2} \sin^ {2} (\theta)} [ 2 a ^ {2} \sin (\theta) \cos (\theta) ] = \frac {\cos (\theta)}{\sin (\theta)} = \cot (\theta), \\ & \quad \Gamma_ {\phi \theta} ^ {\phi} = \left(\frac {1}{2}\right) g ^ {\phi \phi} \frac {\partial g _ {\phi \phi}}{\partial \theta} \\ & = \cot (\theta) \\ \Gamma_ {\phi \phi} ^ {\theta} & = \left(\frac {1}{2}\right) - g ^ {\theta \theta} \frac {\partial g _ {\phi \phi}}{\partial \theta} \\ & = - \left(\frac {1}{2}\right) \frac {1}{a ^ {2}} [ 2 a ^ {2} \sin (\theta) \cos (\theta) ] = - \sin (\theta) \cot (\theta), \end{array}
+$$
+
+根据球面的克里斯托费尔符号，黎曼曲率张量的分量可以表示为
+
+$$
+R _ {\alpha \beta \gamma} ^ {\sigma} \equiv \frac {\partial \Gamma_ {\alpha \gamma} ^ {\sigma}}{\partial x ^ {\beta}} - \frac {\partial \Gamma_ {\alpha \beta} ^ {\sigma}}{\partial x ^ {\gamma}} + \Gamma_ {\alpha \gamma} ^ {\tau} \Gamma_ {\tau \beta} ^ {\sigma} - \Gamma_ {\alpha \beta} ^ {\tau} \Gamma_ {\tau \gamma} ^ {\sigma}.
+$$
+
+跟大多数张量一样，只有写出张量的分量才能理解该张量的全部内容。现在不仅每一个指标 $\sigma$ 、 $\alpha$ 、 $\beta$ 和 $\gamma$ 都必须表示 $\theta$ 和 $\phi$ ，哑指标 $\tau$ 也必须表示 $\theta$ 和 $\phi$ ，然后求和。因此在二维空间中，黎曼张量方程中最后两项（包含克里斯托费尔符号乘积的项）变为四项，因此，每一个分量包括六项。黎曼张量的前八个分量可以通过设 $\sigma$ 等于 $\theta$ ，其他指标表示 $\theta$ 和 $\phi$ 来求得：
+
+$$
+\begin{array}{r} R _ {\theta \theta \theta} ^ {\theta} = \frac {\partial \Gamma_ {\theta \theta} ^ {\theta}}{\partial \theta} - \frac {\partial \Gamma_ {\theta \theta} ^ {\theta}}{\partial \theta} + \Gamma_ {\theta \theta} ^ {\theta} \Gamma_ {\theta \theta} ^ {\theta} + \Gamma_ {\theta \theta} ^ {\phi} \Gamma_ {\phi \theta} ^ {\theta} - \Gamma_ {\theta \theta} ^ {\theta} \Gamma_ {\theta \theta} ^ {\theta} - \Gamma_ {\theta \theta} ^ {\phi} \Gamma_ {\phi \theta} ^ {\theta}, \\ R _ {\theta \theta \phi} ^ {\theta} = \frac {\partial \Gamma_ {\theta \phi} ^ {\theta}}{\partial \theta} - \frac {\partial \Gamma_ {\theta \theta} ^ {\theta}}{\partial \phi} + \Gamma_ {\theta \phi} ^ {\theta} \Gamma_ {\theta \theta} ^ {\theta} + \Gamma_ {\theta \phi} ^ {\phi} \Gamma_ {\phi \theta} ^ {\theta} - \Gamma_ {\theta \theta} ^ {\theta} \Gamma_ {\theta \phi} ^ {\theta} - \Gamma_ {\theta \theta} ^ {\phi} \Gamma_ {\phi \phi} ^ {\theta}, \end{array}
+$$
+
+$$
+R _ {\theta \phi \theta} ^ {\theta} = \frac {\partial \Gamma_ {\theta \theta} ^ {\theta}}{\partial \phi} - \frac {\partial \Gamma_ {\theta \phi} ^ {\theta}}{\partial \theta} + \Gamma_ {\theta \theta} ^ {\theta} \Gamma_ {\theta \phi} ^ {\theta} + \Gamma_ {\theta \theta} ^ {\phi} \Gamma_ {\phi \phi} ^ {\theta} - \Gamma_ {\theta \phi} ^ {\theta} \Gamma_ {\theta \theta} ^ {\theta} - \Gamma_ {\theta \phi} ^ {\phi} \Gamma_ {\phi \theta} ^ {\theta},
+$$
+
+$$
+R _ {\phi \theta \theta} ^ {\theta} = \frac {\partial \Gamma_ {\phi \theta} ^ {\theta}}{\partial \theta} - \frac {\partial \Gamma_ {\phi \theta} ^ {\theta}}{\partial \phi} + \Gamma_ {\phi \theta} ^ {\theta} \Gamma_ {\theta \theta} ^ {\theta} + \Gamma_ {\phi \theta} ^ {\phi} \Gamma_ {\phi \theta} ^ {\theta} - \Gamma_ {\phi \theta} ^ {\theta} \Gamma_ {\theta \theta} ^ {\theta} - \Gamma_ {\phi \theta} ^ {\phi} \Gamma_ {\phi \theta} ^ {\theta},
+$$
+
+$$
+R _ {\theta \phi \phi} ^ {\theta} = \frac {\partial \Gamma_ {\theta \phi} ^ {\theta}}{\partial \phi} - \frac {\partial \Gamma_ {\theta \phi} ^ {\theta}}{\partial \phi} + \Gamma_ {\theta \phi} ^ {\theta} \Gamma_ {\theta \phi} ^ {\theta} + \Gamma_ {\theta \phi} ^ {\phi} \Gamma_ {\phi \phi} ^ {\theta} - \Gamma_ {\theta \phi} ^ {\theta} \Gamma_ {\theta \phi} ^ {\theta} - \Gamma_ {\theta \phi} ^ {\phi} \Gamma_ {\phi \phi} ^ {\theta},
+$$
+
+$$
+R _ {\phi \theta \phi} ^ {\theta} = \frac {\partial \Gamma_ {\phi \phi} ^ {\theta}}{\partial \theta} - \frac {\partial \Gamma_ {\phi \theta} ^ {\theta}}{\partial \phi} + \Gamma_ {\phi \phi} ^ {\theta} \Gamma_ {\theta \theta} ^ {\theta} + \Gamma_ {\phi \phi} ^ {\phi} \Gamma_ {\phi \theta} ^ {\theta} - \Gamma_ {\phi \theta} ^ {\theta} \Gamma_ {\theta \phi} ^ {\theta} - \Gamma_ {\phi \theta} ^ {\phi} \Gamma_ {\phi \phi} ^ {\theta}
+$$
+
+$$
+R _ {\phi \phi \theta} ^ {\theta} = \frac {\partial \Gamma_ {\phi \theta} ^ {\theta}}{\partial \phi} - \frac {\partial \Gamma_ {\phi \phi} ^ {\theta}}{\partial \theta} + \Gamma_ {\phi \theta} ^ {\theta} \Gamma_ {\theta \phi} ^ {\theta} + \Gamma_ {\phi \theta} ^ {\phi} \Gamma_ {\phi \phi} ^ {\theta} - \Gamma_ {\phi \phi} ^ {\theta} \Gamma_ {\theta \theta} ^ {\theta} - \Gamma_ {\phi \phi} ^ {\phi} \Gamma_ {\phi \theta} ^ {\theta},
+$$
+
+$$
+R _ {\phi \phi \phi} ^ {\theta} = \frac {\partial \Gamma_ {\phi \phi} ^ {\theta}}{\partial \phi} - \frac {\partial \Gamma_ {\phi \phi} ^ {\theta}}{\partial \phi} + \Gamma_ {\phi \phi} ^ {\theta} \Gamma_ {\theta \phi} ^ {\theta} + \Gamma_ {\phi \phi} ^ {\phi} \Gamma_ {\phi \phi} ^ {\theta} - \Gamma_ {\phi \phi} ^ {\theta} \Gamma_ {\theta \phi} ^ {\theta} - \Gamma_ {\phi \phi} ^ {\phi} \Gamma_ {\phi \phi} ^ {\theta}.
+$$
+
+把克里斯托费尔符号代入上面方程中，可以得到非零分量为
+
+$$
+R _ {\phi \theta \phi} ^ {\theta} = \frac {\partial \Gamma_ {\phi \phi} ^ {\theta}}{\partial \theta} - \Gamma_ {\phi \theta} ^ {\phi} \Gamma_ {\phi \phi} ^ {\theta},
+$$
+
+$$
+R _ {\phi \phi \theta} ^ {\theta} = - \frac {\partial \Gamma_ {\phi \phi} ^ {\theta}}{\partial \theta} + \Gamma_ {\phi \theta} ^ {\phi} \Gamma_ {\phi \phi} ^ {\theta}.
+$$
+
+因此
+
+$$
+\frac {\partial \Gamma_ {\phi \phi} ^ {\theta}}{\partial \theta} = \sin^ {2} (\theta) - \cos^ {2} (\theta),
+$$
+
+且
+
+$$
+\Gamma_ {\phi \theta} ^ {\phi} \Gamma_ {\phi \phi} ^ {\theta} = - \cos^ {2} (\theta),
+$$
+
+这意味着在 $\sigma = \theta$ 条件下保留下来的项是
+
+$$
+R _ {\phi \theta \phi} ^ {\theta} = [ \sin^ {2} (\theta) - \cos^ {2} (\theta) ] - [ - \cos^ {2} (\theta) ] = \sin^ {2} (\theta),
+$$
+
+$$
+R _ {\phi \phi \theta} ^ {\theta} = - [ \sin^ {2} (\theta) - \cos^ {2} (\theta) ] + [ - \cos^ {2} (\theta) ] = - \sin^ {2} (\theta).
+$$
+
+现在设 $\sigma = \phi$ ，另外八项是
+
+$$
+R _ {\theta \theta \theta} ^ {\phi} = \frac {\partial \Gamma_ {\theta \theta} ^ {\phi}}{\partial \theta} - \frac {\partial \Gamma_ {\theta \theta} ^ {\phi}}{\partial \theta} + \Gamma_ {\theta \theta} ^ {\theta} \Gamma_ {\theta \theta} ^ {\phi} + \Gamma_ {\theta \theta} ^ {\phi} \Gamma_ {\phi \theta} ^ {\phi} - \Gamma_ {\theta \theta} ^ {\theta} \Gamma_ {\theta \theta} ^ {\phi} - \Gamma_ {\theta \theta} ^ {\phi} \Gamma_ {\phi \theta} ^ {\phi},
+$$
+
+$$
+R _ {\theta \theta \phi} ^ {\phi} = \frac {\partial \Gamma_ {\theta \phi} ^ {\phi}}{\partial \theta} - \frac {\partial \Gamma_ {\theta \theta} ^ {\phi}}{\partial \phi} + \Gamma_ {\theta \phi} ^ {\theta} \Gamma_ {\theta \theta} ^ {\phi} + \Gamma_ {\theta \phi} ^ {\phi} \Gamma_ {\phi \theta} ^ {\phi} - \Gamma_ {\theta \theta} ^ {\theta} \Gamma_ {\theta \phi} ^ {\phi} - \Gamma_ {\theta \theta} ^ {\phi} \Gamma_ {\phi \phi} ^ {\phi},
+$$
+
+$$
+R _ {\theta \phi \theta} ^ {\phi} = \frac {\partial \Gamma_ {\theta \theta} ^ {\phi}}{\partial \phi} - \frac {\partial \Gamma_ {\theta \phi} ^ {\phi}}{\partial \theta} + \Gamma_ {\theta \theta} ^ {\theta} \Gamma_ {\theta \phi} ^ {\phi} + \Gamma_ {\theta \theta} ^ {\phi} \Gamma_ {\phi \phi} ^ {\phi} - \Gamma_ {\theta \phi} ^ {\theta} \Gamma_ {\theta \theta} ^ {\phi} - \Gamma_ {\theta \phi} ^ {\phi} \Gamma_ {\phi \theta} ^ {\phi},
+$$
+
+$$
+R _ {\phi \theta \theta} ^ {\phi} = \frac {\partial \Gamma_ {\phi \theta} ^ {\phi}}{\partial \theta} - \frac {\partial \Gamma_ {\phi \theta} ^ {\phi}}{\partial \theta} + \Gamma_ {\phi \theta} ^ {\theta} \Gamma_ {\theta \theta} ^ {\phi} + \Gamma_ {\phi \theta} ^ {\phi} \Gamma_ {\phi \theta} ^ {\phi} - \Gamma_ {\phi \theta} ^ {\theta} \Gamma_ {\theta \theta} ^ {\phi} - \Gamma_ {\phi \theta} ^ {\phi} \Gamma_ {\phi \theta} ^ {\phi},
+$$
+
+$$
+R _ {\theta \phi \phi} ^ {\phi} = \frac {\partial \Gamma_ {\theta \phi} ^ {\phi}}{\partial \phi} - \frac {\partial \Gamma_ {\theta \phi} ^ {\phi}}{\partial \phi} + \Gamma_ {\theta \phi} ^ {\theta} \Gamma_ {\theta \phi} ^ {\phi} + \Gamma_ {\theta \phi} ^ {\phi} \Gamma_ {\phi \phi} ^ {\phi} - \Gamma_ {\phi \theta} ^ {\theta} \Gamma_ {\theta \phi} ^ {\phi} - \Gamma_ {\theta \phi} ^ {\phi} \Gamma_ {\phi \phi} ^ {\phi},
+$$
+
+$$
+R _ {\phi \theta \phi} ^ {\phi} = \frac {\partial \Gamma_ {\phi \phi} ^ {\phi}}{\partial \theta} - \frac {\partial \Gamma_ {\phi \theta} ^ {\phi}}{\partial \phi} + \Gamma_ {\phi \phi} ^ {\theta} \Gamma_ {\theta \theta} ^ {\phi} + \Gamma_ {\phi \phi} ^ {\phi} \Gamma_ {\phi \theta} ^ {\phi} - \Gamma_ {\phi \theta} ^ {\theta} \Gamma_ {\theta \phi} ^ {\phi} - \Gamma_ {\phi \theta} ^ {\phi} \Gamma_ {\phi \phi} ^ {\phi},
+$$
+
+$$
+R _ {\phi \phi \theta} ^ {\phi} = \frac {\partial \Gamma_ {\phi \theta} ^ {\phi}}{\partial \phi} - \frac {\partial \Gamma_ {\phi \phi} ^ {\phi}}{\partial \theta} + \Gamma_ {\phi \theta} ^ {\theta} \Gamma_ {\theta \phi} ^ {\phi} + \Gamma_ {\phi \theta} ^ {\phi} \Gamma_ {\phi \phi} ^ {\phi} - \Gamma_ {\phi \phi} ^ {\theta} \Gamma_ {\theta \theta} ^ {\phi} - \Gamma_ {\phi \phi} ^ {\phi} \Gamma_ {\phi \theta} ^ {\phi},
+$$
+
+$$
+R _ {\phi \phi \phi} ^ {\phi} = \frac {\partial \Gamma_ {\phi \phi} ^ {\phi}}{\partial \phi} - \frac {\partial \Gamma_ {\phi \phi} ^ {\phi}}{\partial \phi} + \Gamma_ {\phi \phi} ^ {\theta} \Gamma_ {\theta \phi} ^ {\phi} + \Gamma_ {\phi \phi} ^ {\phi} \Gamma_ {\phi \phi} ^ {\phi} - \Gamma_ {\phi \phi} ^ {\theta} \Gamma_ {\theta \phi} ^ {\phi} - \Gamma_ {\phi \phi} ^ {\phi} \Gamma_ {\phi \phi} ^ {\phi}.
+$$
+
+还是把克里斯托费尔符号代入上面方程中，可以得到非零分量为
+
+$$
+R _ {\theta \theta \phi} ^ {\phi} = \frac {\partial \Gamma_ {\theta \phi} ^ {\phi}}{\partial \theta} + \Gamma_ {\theta \phi} ^ {\phi} \Gamma_ {\phi \theta} ^ {\phi},
+$$
+
+$$
+R _ {\theta \phi \theta} ^ {\phi} = - \frac {\partial \Gamma_ {\theta \phi} ^ {\phi}}{\partial \theta} - \Gamma_ {\theta \phi} ^ {\phi} \Gamma_ {\phi \theta} ^ {\phi}.
+$$
+
+因此
+
+$$
+\frac {\partial \Gamma_ {\theta \phi} ^ {\phi}}{\partial \theta} = - \frac {\sin (\theta)}{\sin (\theta)} - \frac {\cos^ {2} (\theta)}{\sin^ {2} (\theta)} = - [ 1 + \cot^ {2} (\theta) ],
+$$
+
+且
+
+$$
+\Gamma_ {\theta \phi} ^ {\phi} \Gamma_ {\phi \theta} ^ {\phi} = \cot^ {2} (\theta),
+$$
+
+保留下来的项为
+
+$$
+R _ {\theta \theta \phi} ^ {\phi} = - [ 1 + \cot^ {2} (\theta) ] + \cot^ {2} (\theta) = - 1,
+$$
+
+$$
+R _ {\theta \phi \theta} ^ {\phi} = [ 1 + \cot^ {2} (\theta) ] - \cot^ {2} (\theta) = 1.
+$$
+
+不出所料，具有球面度规标准（ $\mathrm{ds}^2 = a^2\mathrm{d}\theta^2 +a^2\sin \theta^2\mathrm{d}\phi^2$ ）的二维空间具有黎曼曲率张量的非零分量，证实了该空间不是欧几里得空间.
+
+您可以通过本章课后习题的在线解答来了解如何利用这些结果来获得里奇张量和里奇标量.

@@ -46,13 +46,13 @@ const {
 
   <!-- 核心双栏阅读区 -->
   <div class="bilingual-split-container">
+    <svg class="bilingual-svg-canvas"></svg>
+
     <div class="bilingual-col-source bilingual-column-pane" data-col="source">
       <slot name="source" />
     </div>
 
-    <div class="bilingual-gutter">
-      <svg class="bilingual-svg-canvas"></svg>
-    </div>
+    <div class="bilingual-gutter"></div>
 
     <div class="bilingual-col-target bilingual-column-pane" data-col="target">
       <slot name="target" />

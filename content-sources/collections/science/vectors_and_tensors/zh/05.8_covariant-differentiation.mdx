@@ -1,0 +1,80 @@
+---
+title: '5.8 协变导数'
+---
+
+import Guide from '@/components/Guide.astro';
+import Knowledge from '@/components/Knowledge.astro';
+import Example from '@/components/Example.astro';
+import Analysis from '@/components/Analysis.astro';
+import Solution from '@/components/Solution.astro';
+import Variant from '@/components/Variant.astro';
+import Note from '@/components/Note.astro';
+import Block from '@/components/Block.astro';
+import Method from '@/components/Method.astro';
+import Exercise from '@/components/Exercise.astro';
+
+## 5.8 协变导数
+
+克里斯托费尔符号给我们提供了一种计算矢量和高阶张量导数的方法，包括展开矢量和张量的基矢量的大小和方向发生变化（如果有的话）对导数的贡献。这种类型的导数称为"协变"导数，它不仅可以用于许多研究工程和物理问题的欧几里得空间，也可以用于广义相对论的弯曲黎曼空间。
+
+在欧几里得空间中，可以通过将一个矢量移动到另一个矢量的位置来比较和合成两个不同位置的矢量，移动过程中保持矢量的大小和方向不变．如果在笛卡儿坐标系中，矢量的平移可以简单地通过保持每个分量不变即可（因为笛卡儿坐标系中，基矢量在任何地方都具有相同的大小和方向），但是如果在非笛卡儿坐标系中，基矢量的大小和方向在两个位置有可能不同．这种情况下，协变导数提供了一种将一个矢量平移到另一个矢量位置的方法．
+
+弯曲空间的情况比较复杂，可以在第6章中了解弯曲空间中协变导数的更多细节，但是现在可以通过研究三维欧几里得空间中的二维球面来理解协变导数的作用。想像一下，有一系列切平面刚好与球面的每一个位置接触，在其中的一个切平面上画一个矢量，如果保持该矢量方向不变地移到球面上不同的位置（如在较高的三维空间中所见），它将不会位于新的切平面上（你可以认为矢量从二维球面上突了出来）。在这种情况下，协变导数用于将矢量的导数投影到球面的切平面上。
+
+还应该注意，协变求导的结果保持张量属性，这意味着结果按照张量变换规则在不同的坐标系之间进行变换.
+
+为了理解协变求导过程，以矢量 $\vec{A} = A^1\vec{e}_1 + A^2\vec{e}_2 + A^3\vec{e}_3$ 为例，其导数
+
+$$
+\begin{array}{r l} \frac {\partial \vec {A}}{\partial x ^ {j}} & = \frac {\partial (A ^ {1} \vec {e} _ {1} + A ^ {2} \vec {e} _ {2} + A ^ {3} \vec {e} _ {3})}{\partial x ^ {j}} \\ & = \frac {\partial (A ^ {i} \vec {e} _ {i})}{\partial x ^ {j}} \\ & = \frac {\partial A ^ {i} \vec {e} _ {i}}{\partial x ^ {j}} + A ^ {i} \frac {\partial \vec {e} _ {i}}{\partial x ^ {j}}. \end{array}
+$$
+
+现在用方程 5.22 中定义的克里斯托费尔符号代替右边第二项中的偏导数：
+
+$$
+\frac {\partial \vec {A}}{\partial x ^ {j}} = \frac {\partial A ^ {i}}{\partial x ^ {j}} \vec {e} _ {i} + A ^ {i} (\Gamma_ {i j} ^ {k} \vec {e} _ {k}).
+$$
+
+因为第二项中的指标 i 和 k 都是求和约定中的哑指标，所以可以互换其位置并提出公因子，即基矢量 $\vec{e}_{i}$ ：
+
+$$
+\begin{array}{r l} \frac {\partial \vec {A}}{\partial x ^ {j}} & = \frac {\partial A ^ {i} \vec {e} _ {i}}{\partial x ^ {j}} + A ^ {k} (\Gamma_ {k j} ^ {i} \vec {e} _ {i}) \\ & = \left(\frac {\partial A ^ {i}}{\partial x ^ {j}} + A ^ {k} \Gamma_ {k j} ^ {i}\right) \vec {e} _ {i}. \end{array}
+$$
+
+括号里的两项之和就是协变导数的定义，协变导数的通用符号是在需要求协变导数的坐标指标（此处就是指标 $j$ ）前加分号（；）表示．因此，你可能会看见协变导数分量被定义为：
+
+$$
+A _ {; j} ^ {i} \equiv \frac {\partial A ^ {i}}{\partial x ^ {j}} + A ^ {k} \Gamma_ {k j} ^ {i}.\tag{5.24}
+$$
+
+同理可得矢量协变分量的协变导数：
+
+$$
+A _ {i; j} \equiv \frac {\partial A _ {i}}{\partial x ^ {j}} - A _ {k} \Gamma_ {i j} ^ {k}.\tag{5.25}
+$$
+
+注意这种情况下包含克里斯托费尔符号的那一项前面是负号.
+
+为了更清楚地理解方程（5.24）和方程（5.25）的含义，以圆柱坐标系（因此 $x<sup>1</sup> = r$ 、 $x<sup>2</sup> = \phi$ 、 $x<sup>3</sup> = z$ ）中矢量 $\vec{A}$ 对 $\phi$ 求协变导数为例进行说明．设方程（5.24）中 $j = 2$ （因为我们只考虑对 $\phi$ 的协变导数）
+
+$$
+\begin{array}{r l} A _ {; \phi} ^ {r} & = \frac {\partial A ^ {r}}{\partial \phi} + A ^ {r} \Gamma_ {r \phi} ^ {r} + A ^ {\phi} \Gamma_ {\phi \phi} ^ {r} + A ^ {z} \Gamma_ {z \phi} ^ {r} \\ & = \frac {\partial A ^ {r}}{\partial \phi} + 0 + A ^ {\phi} (- r) + 0. \end{array}
+$$
+
+这说明由 $\phi$ 变化引起矢量 $\vec{A}$ 的 $r$ 分量的变化与 $A^r$ 关于 $\phi$ 的变化和基矢量的变化都有关，且基矢量的变化使矢量 $\vec{A}$ 的一部分原本指向 $\phi$ 方向的分量现在指向 $-r$ 方向．同样，当 $\phi$ 变化时， $A^\phi$ 的变化
+
+$$
+\begin{array}{r l} A _ {; \phi} ^ {\phi} & = \frac {\partial A ^ {\phi}}{\partial \phi} + A ^ {\phi} \Gamma_ {r \phi} ^ {\phi} + A ^ {r} \Gamma_ {\phi \phi} ^ {\phi} + A ^ {z} \Gamma_ {z \phi} ^ {\phi} \\ & = \frac {\partial A ^ {\phi}}{\partial \phi} + A ^ {r} \left(\frac {1}{r}\right) + 0 + 0. \end{array}
+$$
+
+因此
+
+$$
+\frac {\partial \vec {A}}{\partial \phi} = \left(\frac {\partial A ^ {r}}{\partial \phi} - r A ^ {\phi}\right) \vec {e _ {r}} + \left(\frac {\partial A ^ {\phi}}{\partial \phi} + \frac {1}{r} A ^ {r}\right) \vec {e _ {\phi}}.
+$$
+
+协变导数的求导过程也适用于高阶张量．不出所料，只需要为每一个逆变指标加上克里斯托费尔符号项，为每一个协变指标减去克里斯托费尔符号项，因此
+
+$$
+\begin{array}{l} A _ {; k} ^ {i j} = \frac {\partial A ^ {i j}}{\partial x ^ {k}} + A ^ {l j} \Gamma_ {l k} ^ {i} + A ^ {i l} \Gamma_ {l k} ^ {j}, \\ B _ {i j; k} = \frac {\partial B _ {i j}}{\partial x ^ {k}} - B _ {l j} \Gamma_ {i k} ^ {l} - B _ {i l} \Gamma_ {j k} ^ {l}, \\ C _ {j; k} ^ {i} = \frac {\partial C _ {j} ^ {i}}{\partial x ^ {k}} + C _ {j} ^ {l} \Gamma_ {l k} ^ {i} - C _ {l} ^ {i} \Gamma_ {j k} ^ {l}. \end{array}
+$$

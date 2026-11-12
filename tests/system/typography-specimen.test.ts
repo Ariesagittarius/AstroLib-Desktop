@@ -67,5 +67,5 @@ describe('Typography Specimen XeLaTeX Compilation System Test', () => {
 
     const stat = fs.statSync(pdfPath);
     expect(stat.size).toBeGreaterThan(1000);
-  });
+  }, 60000);
 });

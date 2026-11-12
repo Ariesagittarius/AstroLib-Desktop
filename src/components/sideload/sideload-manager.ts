@@ -39,6 +39,7 @@ const WIDTH_MAP: Record<SideloadWidthTier, string> = {
 };
 
 export const SIDEBAR_RIGHT_STORAGE_KEY = 'astrolib_sidebar_right_collapsed';
+export const SIDELOAD_ACTIVE_PANEL_KEY = 'astrolib_sideload_active_panel';
 
 class SideloadManager {
   private activePanelId = 'toc';
@@ -73,6 +74,18 @@ class SideloadManager {
       widthTier: 'wide',
       allowDrawer: true,
     });
+    this.register({
+      id: 'focus',
+      title: '关注点透镜',
+      widthTier: 'wide',
+      allowDrawer: true,
+    });
+    this.register({
+      id: 'focus',
+      title: '关注点透镜',
+      widthTier: 'medium',
+      allowDrawer: true,
+    });
   }
 
   /**
@@ -82,12 +95,17 @@ class SideloadManager {
     if (this.isInitialized || typeof window === 'undefined') return;
     this.isInitialized = true;
 
-    // 0. 读取右侧栏折叠持久化偏好（桌面端 >= 72rem 生效）
+    // 0. 读取右侧栏折叠持久化偏好与活动面板记忆（桌面端 >= 72rem 生效）
     try {
       const stored = localStorage.getItem(SIDEBAR_RIGHT_STORAGE_KEY);
       const isDesktop = window.matchMedia('(min-width: 72rem)').matches;
       if (stored === 'true' && isDesktop) {
         this.activePanelId = 'none';
+      } else {
+        const savedPanel = localStorage.getItem(SIDELOAD_ACTIVE_PANEL_KEY);
+        if (savedPanel && this.panels.has(savedPanel)) {
+          this.activePanelId = savedPanel;
+        }
       }
     } catch {}
 
@@ -166,10 +184,18 @@ class SideloadManager {
       } catch {}
     }
 
-    if (this.activePanelId === panelId) return;
+    if (this.activePanelId === panelId) {
+      this.syncDom(payload);
+      return;
+    }
 
     this.previousPanelId = this.activePanelId;
     this.activePanelId = panelId;
+    try {
+      if (typeof localStorage !== 'undefined' && panelId !== 'none') {
+        localStorage.setItem(SIDELOAD_ACTIVE_PANEL_KEY, panelId);
+      }
+    } catch {}
     this.syncDom(payload);
   }
 
@@ -177,6 +203,11 @@ class SideloadManager {
    * 关闭当前面板并恢复默认面板（通常为本节大纲 'toc'）
    */
   public switchToDefault(): void {
+    try {
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem(SIDELOAD_ACTIVE_PANEL_KEY, 'toc');
+      }
+    } catch {}
     this.open('toc');
   }
 
@@ -325,6 +356,14 @@ class SideloadManager {
       document.querySelector('.custom-page-sidebar')?.classList.remove('has-translate-active');
     }
 
+    if (state.activePanelId === 'focus') {
+      body.classList.add('focus-sidebar-active');
+      document.querySelector('.custom-page-sidebar')?.classList.add('has-focus-active');
+    } else {
+      body.classList.remove('focus-sidebar-active');
+      document.querySelector('.custom-page-sidebar')?.classList.remove('has-focus-active');
+    }
+
     // 2. 注入核心 CSS 变量（驱动宽度平滑过渡）
     root.style.setProperty('--sl-sideload-width', state.widthValue);
 
@@ -369,4 +408,5 @@ export const sideloadManager = new SideloadManager();
 
 if (typeof window !== 'undefined') {
   (window as any).__sideloadManager = sideloadManager;
+  (window as any).sideloadManager = sideloadManager;
 }

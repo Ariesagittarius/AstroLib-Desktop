@@ -80,8 +80,10 @@ export function exportChapterToLatex(options: ExportChapterOptions): ChapterExpo
   });
 
   // 2. Resource Resolver：使用 Chapter-scoped 依赖图解析器收集插图
+  const legacyDir = path.join(ROOT, 'src', 'content', 'docs', 'collections', colSlug, bookSlug);
+  const sourceDir = path.join(ROOT, 'content-sources', 'collections', colSlug, bookSlug);
   const chapterDir = colSlug && bookSlug
-    ? path.join(ROOT, 'src', 'content', 'docs', 'collections', colSlug, bookSlug)
+    ? (fs.existsSync(legacyDir) ? legacyDir : sourceDir)
     : ROOT;
   const resolvedAssets = resolveChapterAssets(doc.images, chapterDir);
   const assets: ChapterExportAsset[] = resolvedAssets.map((a) => ({

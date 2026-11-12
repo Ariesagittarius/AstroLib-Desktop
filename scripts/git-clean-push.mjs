@@ -162,7 +162,7 @@ async function pushClean(options, repoInfo) {
       .filter(Boolean);
 
     // 净化沙箱：移除任何 Agent/Skill 目录、本地 Windows 脚本、构建衍生数据与孤儿文件
-    const bannedPrefixes = ['.agents', '.dsh', '.codex', '.gemini', '.antigravity', '.backups'];
+    const bannedPrefixes = ['.agents', '.dsh', '.codex', '.gemini', '.antigravity', '.backups', 'dist-electron', 'release'];
     const bannedExact = new Set([
       'CLAUDE.md',
       'academic-semantic-hierarchy-audit.md',

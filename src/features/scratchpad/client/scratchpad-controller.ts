@@ -686,28 +686,84 @@ export class ScratchpadController {
       executeCompare();
     });
 
-    demoBtn.addEventListener('click', () => {
-      textA.value = `# 02.1 Multiplication
+    const loadAlgorithmDemo = () => {
+      textA.value = `# 2.1 Multiplication (DPV Algorithms)
 
-How do we multiply two numbers?
-The algorithm we all learned in school takes $O(n^2)$ time to multiply two $n$-bit integers.
-Can we do better?
+The divide-and-conquer strategy solves a problem by:
+1. Breaking it into subproblems that are smaller instances of the same type;
+2. Recursively solving these subproblems;
+3. Appropriately combining their answers.
 
-In 1960, Anatoly Karatsuba discovered a revolutionary divide-and-conquer algorithm.
-By cleverly splitting each number into two halves of $n/2$ bits, Karatsuba realized we only need three multiplications instead of four.
-This yields the recurrence relation $T(n) = 3T(n/2) + O(n)$, achieving an astonishing $O(n^{\\log_2 3}) \\approx O(n^{1.585})$ time complexity!`;
+The mathematician Carl Friedrich Gauss (1777–1855) once noticed that although the product of two complex numbers $(a + bi)(c + di) = ac - bd + (bc + ad)i$ seems to involve four real-number multiplications, it can in fact be done with just three: $ac$, $bd$, and $(a+b)(c+d)$, since $bc + ad = (a + b)(c + d) - ac - bd$.
 
-      textB.value = `# 02.1 整数乘法算法与分治策略
+Let us move away from complex numbers and see how this helps with regular multiplication. Suppose $x$ and $y$ are two $n$-bit integers. As a first step toward multiplying $x$ and $y$, split each of them into their left and right halves, which are $n/2$ bits long:
+$$
+x = 2^{n/2} x_L + x_R, \\quad y = 2^{n/2} y_L + y_R.
+$$
 
-我们自幼在小学便熟习的竖式乘法，计算两个 $n$ 位整数需要做 $n^2$ 次乘法，时间复杂度为 $O(n^2)$。
-计算机算法能否打破这一看似坚固的二次方壁垒？
+The product of $x$ and $y$ can then be rewritten as:
+$$
+xy = 2^n x_L y_L + 2^{n/2}(x_L y_R + x_R y_L) + x_R y_R.
+$$
 
-1960 年，苏联数学家卡拉楚巴（Anatoly Karatsuba）提出了一种极具启发性的分治策略。
-他将 $n$ 位大整数均分为高位与低位两部分，巧妙地将原本朴素展开所必需的 4 次半长整数乘法精简为 3 次乘法。
-由此导出的递归关系为 $T(n) = 3T(n/2) + O(n)$，其渐进时间复杂度降至 $O(n^{\\log_2 3}) \\approx O(n^{1.585})$！`;
+Writing $T(n)$ for the overall running time on $n$-bit inputs, the naive divide-and-conquer approach yields the recurrence relation:
+$$
+T(n) = 4T(n/2) + O(n).
+$$
+This works out to $O(n^2)$, the same running time as traditional grade-school multiplication.
+
+This is where Gauss's trick comes to mind! Although the expression for $xy$ seems to demand four multiplications, as before just three will do: $x_L y_L$, $x_R y_R$, and $(x_L + x_R)(y_L + y_R)$.
+The resulting Karatsuba algorithm has an improved running time recurrence:
+$$
+T(n) = 3T(n/2) + O(n).
+$$
+
+The point is that now the constant factor improvement occurs at every level of the recursion, and this compounding effect leads to a dramatically lower time bound of $O(n^{\\log_2 3}) \\approx O(n^{1.585})$!`;
+
+      textB.value = `# 2.1 整数乘法算法与分治策略
+
+分治策略通过以下三个步骤解决问题：
+1. 将原问题分解为规模较小且相互独立的同类型子问题；
+2. 递归地求解这些子问题；
+3. 将各子问题的解进行合并，得到原问题的完整解。
+
+数学家高斯（Carl Friedrich Gauss，1777–1855）曾注意到，虽然计算两个复数的乘积 $(a + bi)(c + di) = ac - bd + (bc + ad)i$ 表面上需要 4 次实数乘法，但实际上只需 3 次即可完成：计算 $ac$、$bd$ 以及 $(a+b)(c+d)$，因为 $bc + ad = (a + b)(c + d) - ac - bd$。
+
+我们来看看这一思路如何助力常规的大整数乘法。假设 $x$ 与 $y$ 是两个 $n$ 位大整数。作为相乘的第一步，将它们各自均分为长度为 $n/2$ 位的左右高低两部分：
+$$
+x = 2^{n/2} x_L + x_R, \\quad y = 2^{n/2} y_L + y_R。
+$$
+
+两数乘积 $xy$ 便可以重新展开为：
+$$
+xy = 2^n x_L y_L + 2^{n/2}(x_L y_R + x_R y_L) + x_R y_R。
+$$
+
+设 $T(n)$ 为处理 $n$ 位输入所需的总运行时间，朴素的分治递归关系式为：
+$$
+T(n) = 4T(n/2) + O(n)。
+$$
+计算结果为 $O(n^2)$，与小学传统竖式乘法的时间复杂度完全相同。这尚未取得渐近效率上的突破，我们该如何加速？
+
+此时高斯的乘法技巧派上了用场！虽然交叉项看起来需要 4 次半长乘法，但正如前述，仅需 3 次即可：$x_L y_L$、$x_R y_R$ 以及 $(x_L + x_R)(y_L + y_R)$。
+由此构建的卡拉楚巴（Karatsuba）乘法算法具备更优的递推关系：
+$$
+T(n) = 3T(n/2) + O(n)。
+$$
+
+关键在于常数因子的减少（从 4 降至 3）在每一层递归中都发挥作用，这种复利效应带来了更低的渐近复杂度上界：$O(n^{\\log_2 3}) \\approx O(n^{1.585})$！`;
 
       executeCompare();
-    });
+    };
+
+    demoBtn.addEventListener('click', loadAlgorithmDemo);
+
+    // 检查 URL 是否带 ?demo=algorithms 或初次进入对比视口模式
+    const urlParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+    const isDemo = urlParams?.get('demo') === 'algorithms';
+    if (this.currentViewMode === 'compare' && (isDemo || !textA.value.trim())) {
+      loadAlgorithmDemo();
+    }
   }
 
   /**

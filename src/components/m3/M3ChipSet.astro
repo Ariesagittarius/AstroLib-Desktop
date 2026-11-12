@@ -1,0 +1,36 @@
+---
+/**
+ * src/components/m3/M3ChipSet.astro
+ * ============================================================================
+ * Official Material Design 3 Chip Set Container (@material/web)
+ * ============================================================================
+ */
+interface Props {
+  class?: string;
+  id?: string;
+  ariaLabel?: string;
+}
+
+const {
+  class: className = '',
+  id,
+  ariaLabel,
+} = Astro.props;
+---
+
+<md-chip-set class:list={['m3-declarative-chip-set', className]} id={id} aria-label={ariaLabel}>
+  <slot />
+</md-chip-set>
+
+<script>
+  import '@material/web/chips/chip-set.js';
+</script>
+
+<style>
+  .m3-declarative-chip-set {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
+  }
+</style>

@@ -1,0 +1,79 @@
+---
+title: '10.4 周期性'
+---
+
+import Guide from '@/components/Guide.astro';
+import Knowledge from '@/components/Knowledge.astro';
+import Example from '@/components/Example.astro';
+import Analysis from '@/components/Analysis.astro';
+import Solution from '@/components/Solution.astro';
+import Variant from '@/components/Variant.astro';
+import Note from '@/components/Note.astro';
+import Block from '@/components/Block.astro';
+import Method from '@/components/Method.astro';
+import Exercise from '@/components/Exercise.astro';
+import Algorithm from '@/components/Algorithm.astro';
+
+## 10.4 周期性
+
+假设 QFT 的输入 $\left|\alpha\right\rangle=\left(\alpha_{0},\alpha_{1},\ldots,\alpha_{M-1}\right)$ 满足下面的关系：只要 $i\equiv j\bmod k$ (其中 k 为能整除 M 的整数)，则有 $\alpha_{i}=\alpha_{j}$ 。也就是说，数组 $\alpha$ 由 M/k 个长度为 k 的序列 $(\alpha_{0},\alpha_{1},\ldots,\alpha_{k-1})$ 的重复构成的。此外，假设 k 个数 $\alpha_{0},\alpha_{1},\ldots,\alpha_{k-1}$ 中恰好只有一个不为 0，不妨记为 $\alpha_{j}$ 。因此，我们可以说 $\left|\alpha\right\rangle$ 具有周期性，且周期为 k，偏移量为 j (参见图 10-5)。
+
+由此可知，如果输入向量是周期性的，我们可以使用量子傅立叶采样计算其周期。该计算过程基于如下事实(证明过程将在后面的灰色方框中给出):
+
+假设量子傅立叶采样的输入具有周期性，周期为 $k$ ( $k$ 能整除 $\mathbf{M}$ )，则输出为长度为 $M / k$ 的多个重复中的一个，并且它等于 $\mathbf{k}$ 个长度为 $M / k$ 的重复中任意一个的几率相同。
+
+<Knowledge title="专栏: 周期向量的傅立叶变换">
+
+假设向量 $|\alpha\rangle = (\alpha_0, \alpha_1, \ldots, \alpha_{M-1})$ 具有周期性，周期为 $k$ ，并且该向量没有偏移（也就是说非零项为 $\alpha_0, \alpha_k, \alpha_{2k}, \ldots$ ）。则有，
+
+$$
+\left| \alpha \right\rangle = \sum_ {j = 0} ^ {M / k - 1} \sqrt {\frac {k}{M}} | j k \rangle 。
+$$
+
+下面我们可以证明傅立叶变换 $|\beta \rangle = (\beta_0, \beta_1, \ldots, \beta_{M-1})$ 也是周期变换，周期为 $M / k$ 而且也没有偏移。
+
+命题： $\left|\beta\right\rangle=\frac{1}{\sqrt{k}}\sum_{j=0}^{k-1}\left|\frac{jM}{k}\right\rangle$ 。
+
+证明：在输入向量中，如果 $k$ 整除 $\ell$ ，则系数 $\alpha_{\ell}$ 为 $\sqrt{k / M}$ ，否则为0。我们将此公式代入 $|\beta \rangle$ 的第 $j$ 个系数中：
+
+$$
+\beta_ {j} = \frac {1}{\sqrt {M}} \sum_ {\ell = 0} ^ {M - 1} \omega^ {j \ell} \alpha_ {\ell} = \frac {\sqrt {k}}{M} \sum_ {i = 0} ^ {M / k - 1} \omega^ {j i k} 。
+$$
+
+该和式 $1+\omega^{jk}+\omega^{2jk}+\omega^{3jk}+\cdots$ 中的各项构成一个几何级数，该级数共有M/k项，公比为 $\omega^{jk}$ （回顾第2章的内容可知， $\omega$ 是单位元的一个M次复根）。此时存在两种情况：如果公比为1，也就是当 $jk\equiv0\bmod M$ 时，级数的和退化为项的个数。如果公比不为1，我们可以使用几何级数求和的常用公式求得该级数的和为 $\frac{1-\omega^{jk(M/k)}}{1-\omega^{jk}}=\frac{1-\omega^{Mj}}{1-\omega^{jk}}=0$ 。
+
+因此，如果 M 整除 jk，则 $\beta_{i}$ 为 $1/\sqrt{k}$ ，否则为 0。
+
+更一般的情况，我们考虑如下具有周期性的原始叠加状态，其周期为 $k$ ，并且存在一定的偏移 $l < k$ ：
+
+$$
+\left| \alpha \right\rangle = \sum_ {j = 0} ^ {M / k - 1} \sqrt {\frac {k}{M}} \left| j k + l \right\rangle 。
+$$
+
+然后，与上面类似，我们也可以证明傅立叶变换 $|\beta\rangle$ 正好在M/k处振幅值不为0。
+
+命题： $\left|\beta\right\rangle=\frac{1}{\sqrt{k}}\sum_{j=0}^{k-1}\omega^{ljM/k}\left|\frac{jM}{k}\right\rangle$ 。
+
+该命题的证明与上面的命题证明非常相似(请参见习题10.5)。
+
+从上面的分析，我们可以得出结论：任何周期为 $k$ 的周期性叠加状态经过QFT后，结果为一个数组，该数组中的元素只在 $M / k$ 的整数倍位置上不为0，其他元素均为 0，而且这些非零系数的绝对值都相等。因此，如果我们需要对这些输出进行采样，我们得到的序数都是 M/k 的倍数，一共有 k 个这样的序数，每个被采样的概率都是 1/k。
+
+此时，我们不禁会有这样一个想法：通过重复采样多次(重复地以周期性叠加状态为输入，并对其进行傅立叶采样)，并计算所有输出序数的最大公因数，我们将会以很高的概率得到数字 $M / k$ ，然后我们就可以从中得到输入周期 $\pmb{k}$ 。
+
+对上述分析，下面我们给出更精确的描述。
+
+引理：假设 $s$ 个相互独立的样本服从均匀分布：
+
+$$
+0, \frac {M}{k}, \frac {2 M}{k}, \dots , \frac {(k - 1) M}{k}
+$$
+
+则这些样本的最大公因数是 M/k 的概率至少为 $1-k/2^{s}$ 。
+
+证明：本结论不成立的唯一条件是：所有的样本都是 $j \cdot M / k$ 的倍数，其中 $j$ 是某个大于1的整数。从而，当 $j \geqslant 2$ 时，某个特定样本是 $j \cdot M / k$ 的倍数的概率最多为 $1 / j \leqslant 1 / 2$ ，因此所有样本都是 $j \cdot M / k$ 的倍数的概率最多为 $1 / 2^s$ 。
+
+上面我们只是考虑了特定数字 $j$ 的情况，在某个 $j \leqslant k$ 的条件下，这种最坏情况发生的概率最多等于对 $j$ 取不同值的概率求和，即最坏情况的概率一定不超过 $k / 2^s$ 。
+
+由上述证明过程可知，我们可以通过将 $s$ 设为 $\log M$ 的某一适当的倍数，而将引理不成立的概率减小到我们期望的水平。
+
+</Knowledge>

@@ -1,0 +1,28 @@
+---
+title: '2.7 矢量微分算子'
+---
+
+import Guide from '@/components/Guide.astro';
+import Knowledge from '@/components/Knowledge.astro';
+import Example from '@/components/Example.astro';
+import Analysis from '@/components/Analysis.astro';
+import Solution from '@/components/Solution.astro';
+import Variant from '@/components/Variant.astro';
+import Note from '@/components/Note.astro';
+import Block from '@/components/Block.astro';
+import Method from '@/components/Method.astro';
+import Exercise from '@/components/Exercise.astro';
+
+## 2.7 矢量微分算子
+
+上一节所讲的偏微分具有广泛的应用。我们在很多相关问题中都会发现其方程常常涉及上方有矢量标识的倒大写 delta（ $\vec{\nabla}$ ）。这个符号表示矢量微分算子，被称为"nabla"或者"del"，当该算子作用在某个量上时，也就是对该量求导。导数的具体形式取决于 del 算子后面的符号， $\vec{\nabla}$ （）表示梯度，" $\vec{\nabla} \cdot$ "表示散度，" $\vec{\nabla} \times$ "表示旋度， $\vec{\nabla}^2$ （）表示拉普拉斯算子。后面几节会分别讨论这些运算，现在要考虑的是什么是 del 算子及其在笛卡儿坐标系下的表示。
+
+同所有数学算子一样，del 是一个即将发生的运算。就像 $\sqrt{}$ 是要对根号下的量取平方根， $\vec{\nabla}$ 表示要在三个方向求导。特别地，在笛卡儿坐标系下
+
+$$
+\vec {\nabla} \equiv \hat {i} \frac {\partial}{\partial x} + \hat {j} \frac {\partial}{\partial y} + \hat {k} \frac {\partial}{\partial z}.\tag{2.29}
+$$
+
+其中， $\hat{i},\hat{j},\hat{k}$ 表示笛卡儿坐标 x, y, z 方向的单位矢量.
+
+这个表达式中没有运算对象，所以可能看起来很奇怪。但是如果在 del 后跟一个标量场或者矢量场，就能知道场在空间上如何变化。本文中，"场"是指定义在各点处值的数组或者集合。标量场完全由其在这些点处的大小确定：比如房间中的空气温度和海平面以上地形的海拔高度都是标量场．矢量场则是由其在这些点处的大小和方向确定：比如电场、磁场、重力场．我们将在下面几节内容中用具体的例子说明 del 算子如何作用于标量场和矢量场.

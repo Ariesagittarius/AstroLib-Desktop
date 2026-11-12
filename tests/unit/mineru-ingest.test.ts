@@ -131,4 +131,33 @@ $$
     const count = taskManager.countPdfPages(complexPdf);
     expect(count).toBe(34);
   });
+
+  it('8. should compile page_divider, footnotes, and synthesize clean structured markdown', () => {
+    const testTaskId = 'task_1793693023165_noxat8';
+    const testTaskDir = path.join(process.cwd(), 'task/ingest', testTaskId, 'unpacked');
+    if (!fs.existsSync(testTaskDir)) return;
+
+    const result = taskManager.getResult(testTaskId);
+    expect(result).toBeDefined();
+
+    // 1. 验证物理分页标尺 (Page Divider) 存在且无孤立页码段落
+    const dividers = result!.layoutBlocks.filter((b) => b.type === 'page_divider');
+    expect(dividers.length).toBeGreaterThan(0);
+    expect(dividers[0].pageNumber).toBe('2');
+
+    // 2. 验证学术级独立脚注 (Footnotes) 存在
+    const footnotes = result!.layoutBlocks.filter((b) => b.type === 'footnote');
+    expect(footnotes.length).toBeGreaterThanOrEqual(4);
+    const fn2 = footnotes.find((f) => f.fnIndex === '2');
+    expect(fn2).toBeDefined();
+    expect(fn2!.text).toContain('In this paper, we use agentic MLLMs');
+
+    // 3. 验证纯净合成 Markdown 中不存在突兀的裸孤立数字段落
+    expect(result!.markdown).not.toMatch(/\n\n2\n\n/);
+    expect(result!.markdown).not.toMatch(/\n\n5\n\n/);
+
+    // 4. 验证标准 Markdown 脚注语法
+    expect(result!.markdown).toContain('[^2]');
+    expect(result!.markdown).toContain('[^2]:');
+  });
 });

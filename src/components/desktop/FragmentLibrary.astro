@@ -1,0 +1,633 @@
+---
+/**
+ * src/components/desktop/FragmentLibrary.astro
+ * ============================================================================
+ * Fragment 2: 学术研读书库 (严格对齐 Google Play 图书 Web 版范式)
+ * ============================================================================
+ * 规范：
+ * 1. 严格实现书籍 (ABP) 与文献 (MinerU) 同级化一等公民呈现；
+ * 2. 预留幻灯片 (Slides) 与研讨视频 (Videos) 架构体系；
+ * 3. 左侧二级书架抽屉 + 顶栏 Chip 过滤 + 3:4 实体书封卡片网格 + 统一上传管线。
+ * ============================================================================
+ */
+
+import M3Icon from '../m3/M3Icon.astro';
+import '../../styles/desktop/library.css';
+---
+
+<div class="fragment-library-container" id="fragment-library">
+  <!-- 1. 左侧书架与分类二级导航栏 (Sub-shelf Navigation - 对齐 Google Play 图书) -->
+  <aside class="library-subnav" id="library-subnav">
+    <div class="subnav-section">
+      <div class="subnav-title">资源大类</div>
+      <button type="button" class="subnav-item active" data-kind="all" id="shelf-btn-all">
+        <M3Icon name="library_books" size={20} />
+        <span class="subnav-label">全部资源</span>
+        <span class="subnav-count" id="count-all">0</span>
+      </button>
+
+      <button type="button" class="subnav-item" data-kind="book" id="shelf-btn-books">
+        <M3Icon name="menu_book" size={20} />
+        <span class="subnav-label">教材著作</span>
+        <span class="subnav-count" id="count-books">0</span>
+      </button>
+
+      <button type="button" class="subnav-item" data-kind="paper" id="shelf-btn-papers">
+        <M3Icon name="description" size={20} />
+        <span class="subnav-label">文献论文</span>
+        <span class="subnav-count" id="count-papers">0</span>
+      </button>
+
+      <button type="button" class="subnav-item subnav-item--disabled" data-kind="slide" title="幻灯片系统正在开发中">
+        <M3Icon name="slideshow" size={20} />
+        <span class="subnav-label">幻灯片课件</span>
+        <span class="subnav-badge">即将推出</span>
+      </button>
+
+      <button type="button" class="subnav-item subnav-item--disabled" data-kind="video" title="研讨视频系统正在开发中">
+        <M3Icon name="smart_display" size={20} />
+        <span class="subnav-label">研讨视频</span>
+        <span class="subnav-badge">即将推出</span>
+      </button>
+    </div>
+
+    <div class="subnav-divider"></div>
+
+    <!-- 用户自建书架列表 -->
+    <div class="subnav-section">
+      <div class="subnav-header-row">
+        <span class="subnav-title">我的书架</span>
+        <button type="button" class="subnav-add-btn" id="btn-create-shelf" title="创建新书架">
+          <M3Icon name="add" size={18} />
+        </button>
+      </div>
+
+      <button type="button" class="subnav-item" data-shelf="unshelved" id="shelf-btn-unshelved">
+        <M3Icon name="folder_open" size={20} />
+        <span class="subnav-label">未分类</span>
+      </button>
+
+      <div class="subnav-custom-list" id="subnav-custom-list">
+        <!-- 动态注入用户书架 -->
+      </div>
+    </div>
+  </aside>
+
+  <!-- 2. 主书架浏览区 (Main Library Surface) -->
+  <main class="library-main">
+    <!-- 顶栏：搜索、学科 Chips、排序与上传 -->
+    <header class="library-toolbar">
+      <!-- 搜索框 -->
+      <div class="library-search-box">
+        <M3Icon name="search" size={20} class="search-icon" />
+        <input
+          type="text"
+          class="library-search-input"
+          id="library-search-input"
+          placeholder="搜索教材、专著、论文文献或著者..."
+        />
+      </div>
+
+      <!-- 右侧动作区：上传与排序 -->
+      <div class="library-toolbar__actions">
+        <!-- 排序选择 -->
+        <select class="library-sort-select" id="library-sort-select" title="排列方式">
+          <option value="recent">最近研读</option>
+          <option value="created">最新入库</option>
+          <option value="progress">研读进度</option>
+          <option value="title">名称排序</option>
+        </select>
+
+        <!-- MinerU 凭据管理 -->
+        <button type="button" class="library-token-btn" id="btn-manage-mineru-token" title="配置 MinerU API Token">
+          <M3Icon name="vpn_key" size={16} />
+          <span>MinerU 凭证</span>
+        </button>
+
+        <!-- 上传文件按钮 (接受 .abp 或 .pdf) -->
+        <button type="button" class="library-upload-btn" id="btn-library-upload">
+          <M3Icon name="upload" size={19} />
+          <span>上传文件</span>
+        </button>
+        <input type="file" id="library-file-input" accept=".abp,.pdf" style="display: none;" />
+
+        <!-- 视图切换 (网格 vs 列表) -->
+        <div class="library-view-toggle">
+          <button type="button" class="view-btn active" id="btn-view-grid" title="网格视图">
+            <M3Icon name="grid_view" size={18} />
+          </button>
+          <button type="button" class="view-btn" id="btn-view-list" title="列表视图">
+            <M3Icon name="view_list" size={18} />
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- 学科分类 Chip 筛选条 (Material 3 md-chip-set & md-filter-chip 规范 · 与研读视窗绝对对齐) -->
+    <div class="library-chips-row">
+      <md-chip-set class="library-chip-set" id="library-chip-set">
+        <md-filter-chip class="lib-filter-chip" label="全部领域" data-subject="all" selected></md-filter-chip>
+        <md-filter-chip class="lib-filter-chip" label="数学" data-subject="math"></md-filter-chip>
+        <md-filter-chip class="lib-filter-chip" label="物理" data-subject="physics"></md-filter-chip>
+        <md-filter-chip class="lib-filter-chip" label="计算机科学" data-subject="cs"></md-filter-chip>
+        <md-filter-chip class="lib-filter-chip" label="通信工程" data-subject="telecom"></md-filter-chip>
+        <md-filter-chip class="lib-filter-chip" label="学术论文" data-subject="paper"></md-filter-chip>
+      </md-chip-set>
+    </div>
+
+    <!-- 上传/解析实时通知横幅 -->
+    <div class="library-status-banner" id="library-status-banner" style="display: none;">
+      <div class="banner-content">
+        <M3Icon name="sync" size={18} class="banner-spinner" id="banner-status-icon" />
+        <span class="banner-text" id="library-banner-text">正在上传文件...</span>
+      </div>
+      <button type="button" class="banner-close-btn" id="btn-close-banner" title="关闭通知">
+        <M3Icon name="close" size={16} />
+      </button>
+    </div>
+
+    <!-- 图书与文献实体网格展示区 (Book & Paper Card Grid) -->
+    <div class="library-content-scroll" id="library-content-scroll">
+      <div class="library-entities-grid" id="library-entities-grid">
+        <!-- 动态卡片注入 -->
+        <div class="library-loading-placeholder">
+          <div class="lib-spinner"></div>
+          <p>正在读取书目与学术文献库...</p>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- 客户端书库控制器 -->
+<script>
+  import type { UnifiedReadingEntity, LibraryShelf } from '../../types/library-entity';
+
+  class DesktopLibraryController {
+    private entities: UnifiedReadingEntity[] = [];
+    private shelves: LibraryShelf[] = [];
+    private activeKind: string = 'all';
+    private activeSubject: string = 'all';
+    private activeShelf: string | null = null;
+    private searchQuery: string = '';
+    private sortKey: string = 'recent';
+    private isListView: boolean = false;
+
+    private gridEl: HTMLElement | null = null;
+    private searchInput: HTMLInputElement | null = null;
+    private fileInput: HTMLInputElement | null = null;
+    private bannerEl: HTMLElement | null = null;
+    private bannerText: HTMLElement | null = null;
+    private bannerIcon: HTMLElement | null = null;
+
+    constructor() {
+      this.gridEl = document.getElementById('library-entities-grid');
+      this.searchInput = document.getElementById('library-search-input') as HTMLInputElement;
+      this.fileInput = document.getElementById('library-file-input') as HTMLInputElement;
+      this.bannerEl = document.getElementById('library-status-banner');
+      this.bannerText = document.getElementById('library-banner-text');
+      this.bannerIcon = document.getElementById('banner-status-icon');
+
+      this.initEventListeners();
+      this.fetchData();
+    }
+
+    private initEventListeners() {
+      // 1. 分类与书架点击
+      document.querySelectorAll('.subnav-item[data-kind]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.subnav-item').forEach((b) => b.classList.remove('active'));
+          btn.classList.add('active');
+          this.activeKind = btn.getAttribute('data-kind') || 'all';
+          this.activeShelf = null;
+          this.render();
+        });
+      });
+
+      // 2. 学科 M3 Filter Chip 筛选 (与研读视窗规范一致)
+      const filterChips = document.querySelectorAll('.lib-filter-chip');
+      filterChips.forEach((chip: any) => {
+        chip.addEventListener('click', () => {
+          filterChips.forEach((c: any) => {
+            if (c !== chip) c.selected = false;
+          });
+          chip.selected = true;
+          this.activeSubject = chip.getAttribute('data-subject') || 'all';
+          this.render();
+        });
+      });
+
+      // 3. 搜索过滤
+      this.searchInput?.addEventListener('input', () => {
+        this.searchQuery = (this.searchInput?.value || '').trim().toLowerCase();
+        this.render();
+      });
+
+      // 4. 排序切换
+      document.getElementById('library-sort-select')?.addEventListener('change', (e: any) => {
+        this.sortKey = e.target.value;
+        this.render();
+      });
+
+      // 5. 视图切换
+      document.getElementById('btn-view-grid')?.addEventListener('click', () => {
+        document.getElementById('btn-view-grid')?.classList.add('active');
+        document.getElementById('btn-view-list')?.classList.remove('active');
+        this.isListView = false;
+        this.render();
+      });
+      document.getElementById('btn-view-list')?.addEventListener('click', () => {
+        document.getElementById('btn-view-list')?.classList.add('active');
+        document.getElementById('btn-view-grid')?.classList.remove('active');
+        this.isListView = true;
+        this.render();
+      });
+
+      // 6. 上传触发
+      document.getElementById('btn-library-upload')?.addEventListener('click', () => {
+        this.fileInput?.click();
+      });
+      this.fileInput?.addEventListener('change', (e: any) => {
+        const file = e.target.files?.[0];
+        if (file) {
+          this.handleFileUpload(file);
+        }
+        this.fileInput!.value = '';
+      });
+
+      // 7. 关闭横幅
+      document.getElementById('btn-close-banner')?.addEventListener('click', () => {
+        this.hideBanner();
+      });
+
+      // 8. 创建书架
+      document.getElementById('btn-create-shelf')?.addEventListener('click', async () => {
+        const name = prompt('请输入新书架名称：');
+        if (name && name.trim()) {
+          await this.createShelf(name.trim());
+        }
+      });
+
+      // 9. MinerU Token 管理
+      document.getElementById('btn-manage-mineru-token')?.addEventListener('click', async () => {
+        try {
+          const res = await fetch('/api/ingest/token');
+          const data = await res.json();
+          const currToken = data.token || '';
+          const input = prompt('请输入 MinerU 官方 API Token (从 mineru.net 获取)：', currToken);
+          if (input !== null) {
+            await fetch('/api/ingest/token', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ token: input.trim() }),
+            });
+            alert('MinerU API Token 已成功更新！');
+          }
+        } catch (e: any) {
+          alert('获取 Token 状态失败: ' + e.message);
+        }
+      });
+
+      window.addEventListener('astrolib:library-updated', () => {
+        this.fetchData();
+      });
+      window.addEventListener('message', (e) => {
+        if (e.data?.type === 'ASTROLIB_LIBRARY_UPDATED') {
+          this.fetchData();
+        }
+      });
+    }
+
+    private async fetchData() {
+      try {
+        let entitiesRes: any[] = [];
+        let shelvesRes: any[] = [];
+
+        const bridge = (window as any).astrolib;
+        if (bridge && typeof bridge.getLibraryEntities === 'function') {
+          entitiesRes = await bridge.getLibraryEntities();
+          shelvesRes = await bridge.getLibraryShelves();
+        } else {
+          const res1 = await fetch('/api/library/entities');
+          const data1 = await res1.json();
+          entitiesRes = data1.entities || [];
+
+          const res2 = await fetch('/api/library/shelves');
+          const data2 = await res2.json();
+          shelvesRes = data2.shelves || [];
+        }
+
+        this.entities = entitiesRes;
+        this.shelves = shelvesRes;
+        this.updateCounts();
+        this.renderShelves();
+        this.render();
+      } catch (err) {
+        console.error('[FragmentLibrary] 获取书库失败:', err);
+        if (this.gridEl) {
+          this.gridEl.innerHTML = `<div class="library-empty">加载书库数据失败: ${err}</div>`;
+        }
+      }
+    }
+
+    private updateCounts() {
+      const elAll = document.getElementById('count-all');
+      const elBooks = document.getElementById('count-books');
+      const elPapers = document.getElementById('count-papers');
+
+      if (elAll) elAll.textContent = String(this.entities.length);
+      if (elBooks) elBooks.textContent = String(this.entities.filter((e) => e.kind === 'book').length);
+      if (elPapers) elPapers.textContent = String(this.entities.filter((e) => e.kind === 'paper').length);
+    }
+
+    private renderShelves() {
+      const container = document.getElementById('subnav-custom-list');
+      if (!container) return;
+      container.innerHTML = '';
+
+      this.shelves.forEach((s) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = `subnav-item ${this.activeShelf === s.id ? 'active' : ''}`;
+        btn.innerHTML = `
+          <span class="material-symbols-outlined" style="font-size: 20px;">folder</span>
+          <span class="subnav-label">${s.name}</span>
+        `;
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.subnav-item').forEach((b) => b.classList.remove('active'));
+          btn.classList.add('active');
+          this.activeShelf = s.id;
+          this.activeKind = 'all';
+          this.render();
+        });
+        container.appendChild(btn);
+      });
+    }
+
+    private async createShelf(name: string) {
+      const bridge = (window as any).astrolib;
+      if (bridge && typeof bridge.createLibraryShelf === 'function') {
+        const shelf = await bridge.createLibraryShelf(name);
+        this.shelves.push(shelf);
+      } else {
+        const res = await fetch('/api/library/shelves', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name }),
+        });
+        const data = await res.json();
+        if (data.shelf) this.shelves.push(data.shelf);
+      }
+      this.renderShelves();
+    }
+
+    private async handleFileUpload(file: File) {
+      const fileName = file.name;
+      this.showBanner(`正在上传: ${fileName}...`);
+
+      try {
+        if (fileName.endsWith('.abp')) {
+          const bridge = (window as any).astrolib;
+          const arrayBuffer = await file.arrayBuffer();
+          if (bridge && typeof bridge.installBookFromAbp === 'function') {
+            await bridge.installBookFromAbp(arrayBuffer);
+          } else {
+            const res = await fetch('/api/library/upload-abp', {
+              method: 'POST',
+              body: arrayBuffer,
+            });
+            const d = await res.json();
+            if (!d.success) throw new Error(d.error || '安装失败');
+          }
+          this.showBanner(`《${fileName}》安装成功！`, 3000);
+          await this.fetchData();
+        } else if (fileName.toLowerCase().endsWith('.pdf')) {
+          // 上传 PDF 学术文献
+          const arrayBuffer = await file.arrayBuffer();
+          const uploadRes = await fetch('/api/ingest/upload', {
+            method: 'POST',
+            headers: {
+              'x-file-name': encodeURIComponent(fileName),
+              'x-engine': 'api',
+            },
+            body: arrayBuffer,
+          });
+          const uploadData = await uploadRes.json();
+          if (!uploadData.success || !uploadData.task) {
+            throw new Error(uploadData.error || '上传失败');
+          }
+
+          // 核心修复：兼顾 taskId 与 id
+          const taskId = uploadData.task.taskId || uploadData.task.id;
+          if (!taskId) {
+            throw new Error('服务返回任务 ID 异常');
+          }
+
+          this.showBanner(`PDF 上传成功，正在请求 MinerU 结构化解析...`);
+
+          // 检查是否有 MinerU Token
+          const tokenRes = await fetch('/api/ingest/token');
+          const tokenData = await tokenRes.json();
+          let userToken = tokenData.token || '';
+
+          if (!userToken) {
+            const promptToken = prompt('未检测到 MinerU API Token。请输入 Token 以启动解析（或留空使用本地 Agent 解析）：');
+            if (promptToken && promptToken.trim()) {
+              userToken = promptToken.trim();
+              await fetch('/api/ingest/token', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ token: userToken }),
+              });
+            }
+          }
+
+          // 触发解析，若无 token 则自动降级至 agent 免密模式
+          const chosenEngine = userToken ? 'api' : 'agent';
+          const parseRes = await fetch('/api/ingest/parse', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ taskId, engine: chosenEngine, token: userToken }),
+          });
+
+          const parseData = await parseRes.json();
+          if (!parseData.success) {
+            throw new Error(parseData.error || '触发解析接口失败');
+          }
+
+          await this.fetchData();
+          this.pollTaskProgress(taskId, fileName);
+        } else {
+          alert('暂不支持该文件格式，仅支持 .abp (教材包) 与 .pdf (文献)');
+          this.hideBanner();
+        }
+      } catch (err: any) {
+        this.showBanner(`处理失败: ${err.message}`, 6000, true);
+      }
+    }
+
+    private pollTaskProgress(taskId: string, fileName: string) {
+      let pollCount = 0;
+      const maxPolls = 100; // 100 * 3s = 5 分钟超时保护
+      const timer = setInterval(async () => {
+        pollCount++;
+        if (pollCount > maxPolls) {
+          clearInterval(timer);
+          this.showBanner(`文献《${fileName}》解析超时 (已超过 5 分钟)，请检查网络或配置 Token`, 8000, true);
+          this.fetchData();
+          return;
+        }
+        try {
+          const res = await fetch(`/api/ingest/status?taskId=${encodeURIComponent(taskId)}`);
+          if (!res.ok) {
+            const errData = await res.json().catch(() => ({}));
+            clearInterval(timer);
+            this.showBanner(`文献《${fileName}》查询出错: ${errData.error || res.statusText}`, 6000, true);
+            this.fetchData();
+            return;
+          }
+
+          const data = await res.json();
+          if (data && data.task) {
+            const t = data.task;
+            if (t.status === 'completed') {
+              clearInterval(timer);
+              this.showBanner(`文献《${fileName}》解析完成，已加入研读书库！`, 4000);
+              this.fetchData();
+            } else if (t.status === 'failed') {
+              clearInterval(timer);
+              this.showBanner(`文献《${fileName}》解析失败: ${t.error || '未知错误'}`, 8000, true);
+              this.fetchData();
+            } else {
+              this.showBanner(`文献《${fileName}》MinerU 正在识别排版与公式... (${t.progress || 0}%)`);
+            }
+          }
+        } catch (err: any) {
+          clearInterval(timer);
+          this.showBanner(`轮询异常: ${err.message}`, 5000, true);
+        }
+      }, 3000);
+    }
+
+    private showBanner(text: string, autoHideMs: number = 0, isError: boolean = false) {
+      if (this.bannerEl && this.bannerText) {
+        this.bannerText.textContent = text;
+        this.bannerEl.style.display = 'flex';
+        if (isError) {
+          this.bannerEl.classList.add('is-error');
+        } else {
+          this.bannerEl.classList.remove('is-error');
+        }
+        if (autoHideMs > 0) {
+          setTimeout(() => this.hideBanner(), autoHideMs);
+        }
+      }
+    }
+
+    private hideBanner() {
+      if (this.bannerEl) this.bannerEl.style.display = 'none';
+    }
+
+    private render() {
+      if (!this.gridEl) return;
+
+      let filtered = this.entities.filter((item) => {
+        if (this.activeKind !== 'all' && item.kind !== this.activeKind) {
+          return false;
+        }
+        if (this.activeShelf === 'unshelved' && item.shelfId) return false;
+        if (this.activeShelf && this.activeShelf !== 'unshelved' && item.shelfId !== this.activeShelf) {
+          return false;
+        }
+        if (this.activeSubject !== 'all') {
+          if (this.activeSubject === 'paper' && item.kind !== 'paper') return false;
+          if (this.activeSubject !== 'paper' && item.category !== this.activeSubject) return false;
+        }
+        if (this.searchQuery) {
+          const matchTitle = item.title.toLowerCase().includes(this.searchQuery);
+          const matchAuthor = (item.author || '').toLowerCase().includes(this.searchQuery);
+          const matchSub = (item.subtitle || '').toLowerCase().includes(this.searchQuery);
+          if (!matchTitle && !matchAuthor && !matchSub) return false;
+        }
+        return true;
+      });
+
+      filtered.sort((a, b) => {
+        if (this.sortKey === 'recent') {
+          const aT = a.lastReadAt || a.createdAt;
+          const bT = b.lastReadAt || b.createdAt;
+          return bT - aT;
+        }
+        if (this.sortKey === 'created') return b.createdAt - a.createdAt;
+        if (this.sortKey === 'progress') return (b.readProgress || 0) - (a.readProgress || 0);
+        if (this.sortKey === 'title') return a.title.localeCompare(b.title, 'zh-CN');
+        return 0;
+      });
+
+      if (filtered.length === 0) {
+        this.gridEl.innerHTML = `
+          <div class="library-empty">
+            <span class="material-symbols-outlined" style="font-size: 48px; color: var(--md-sys-color-outline);">auto_stories</span>
+            <p>暂无符合条件的研读资源</p>
+            <span class="empty-sub">点击右上角“+ 上传文件”导入 .abp 教材包或 .pdf 学术文献</span>
+          </div>
+        `;
+        return;
+      }
+
+      this.gridEl.className = this.isListView ? 'library-entities-list' : 'library-entities-grid';
+      this.gridEl.innerHTML = '';
+
+      filtered.forEach((item) => {
+        const card = document.createElement('div');
+        card.className = `library-card ${item.kind === 'paper' ? 'library-card--paper' : ''} ${item.status === 'processing' ? 'is-processing' : ''}`;
+        card.setAttribute('data-id', item.id);
+
+        const isPaper = item.kind === 'paper';
+        const kindBadge = isPaper ? '文献论文' : '大学教材';
+
+        card.innerHTML = `
+          <div class="card-cover-box">
+            ${
+              isPaper
+                ? `<div class="paper-cover-fallback">
+                     <span class="material-symbols-outlined paper-icon">article</span>
+                     <span class="paper-cover-tag">PDF 论文</span>
+                   </div>`
+                : `<img src="${item.cover || '/favicon.png'}" class="card-cover-img" alt="${item.title}" loading="lazy" />`
+            }
+            <span class="card-kind-pill">${kindBadge}</span>
+            ${
+              item.status === 'processing'
+                ? `<div class="processing-overlay">
+                     <div class="lib-spinner"></div>
+                     <span>${item.statusMessage || '解析中...'}</span>
+                   </div>`
+                : ''
+            }
+          </div>
+          <div class="card-meta">
+            <h3 class="card-title" title="${item.title}">${item.title}</h3>
+            <p class="card-author" title="${item.author || ''}">${item.author || item.publisher || 'AstroLib'}</p>
+          </div>
+        `;
+
+        card.addEventListener('click', () => {
+          window.dispatchEvent(
+            new CustomEvent('astrolib:open-reading-entity', {
+              detail: item,
+            })
+          );
+        });
+
+        this.gridEl!.appendChild(card);
+      });
+    }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => new DesktopLibraryController());
+  } else {
+    new DesktopLibraryController();
+  }
+</script>

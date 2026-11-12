@@ -1,0 +1,40 @@
+---
+title: '4.3 Basis-vector vs. component transformations'
+---
+
+import Guide from '@/components/Guide.astro';
+import Knowledge from '@/components/Knowledge.astro';
+import Example from '@/components/Example.astro';
+import Analysis from '@/components/Analysis.astro';
+import Solution from '@/components/Solution.astro';
+import Variant from '@/components/Variant.astro';
+import Note from '@/components/Note.astro';
+import Block from '@/components/Block.astro';
+import Method from '@/components/Method.astro';
+import Exercise from '@/components/Exercise.astro';
+
+## 4.3 Basis-vector vs. component transformations
+
+Since Eq. 4.14 and Eq. 4.19 both involve transformation matrices, it's natural to wonder how those transformation matrices might be related. You can find a clue to that relationship by comparing the transformation matrix in Eq. 4.7 (pertaining to component change due to a coordinate-axis rotation through angle θ) with that of Eq. 4.15 (pertaining to basis-vector rotation through angle θ). Extracting the transformation matrix from each of those equations gives:
+
+From Eq. 4.7:
+
+From Eq. 4.15:
+
+$$
+\begin{array}{r l} & \left( \begin{array}{c c} \cos (\theta) & \sin (\theta) \\ - \sin (\theta) & \cos (\theta) \end{array} \right) \\ & \text { Transformation   matrix   for   finding   components   of   same   vector   as   coordinate   system   is   rotated   through   angle } \theta \\ & \left( \begin{array}{c c} \cos (\theta) & - \sin (\theta) \\ \sin (\theta) & \cos (\theta) \end{array} \right) \\ & \text { Transformation   matrix   for   finding   new   basis   vectors   by   rotating   original   basis   vectors   through   angle } \theta \end{array}
+$$
+
+Multiplying these two matrices reveals the nature of the relationship between them:
+
+$$
+\left( \begin{array}{c c} \cos (\theta) & \sin (\theta) \\ - \sin (\theta) & \cos (\theta) \end{array} \right) \left( \begin{array}{c c} \cos (\theta) & - \sin (\theta) \\ \sin (\theta) & \cos (\theta) \end{array} \right) = \left( \begin{array}{c c} 1 & 0 \\ 0 & 1 \end{array} \right).
+$$
+
+This means that in this case the component-transformation matrix is the inverse of the basis-vector transformation matrix (since multiplying a matrix by its inverse produces the identity matrix). The fact that in this case the transpose of the transformation matrix is equal to its inverse means that this transformation matrix is "orthogonal" (converting from one Cartesian coordinate system into a different one).
+
+In light of the inverse relationship between the basis-vector transformation matrix and the vector-component transformation matrix, you might say that in this case the vector components transform inversely to or "against" the manner in which the basis vectors transform (provided that you remember that by "components transform" you mean finding the components of the same vector in the new coordinate system, and by "basis vectors transform" you mean rotating the basis vectors to point along different coordinate axes).
+
+You should also remember that rotation of Cartesian coordinate axes is only one among many possible forms of transformation. In general, any time you choose to switch from one set of basis vectors to another, you must conside the effect of your choice of new basis vectors on the components of the vectors in your system. How the matrix that transforms the original basis vectors into the new ones relates to the matrix that converts the vector components depends on the type of component you're using to represent the vector.
+
+If you're surprised to learn that there can be more than one type of compo nent for a given vector, you should consider a coordinate system in which the axes are not perpendicular to one another. You can learn about such "non-orthogonal" coordinate systems in the next section.

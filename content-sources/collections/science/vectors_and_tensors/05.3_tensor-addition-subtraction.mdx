@@ -1,0 +1,64 @@
+---
+title: '5.3 Tensor addition and subtraction'
+---
+
+import Guide from '@/components/Guide.astro';
+import Knowledge from '@/components/Knowledge.astro';
+import Example from '@/components/Example.astro';
+import Analysis from '@/components/Analysis.astro';
+import Solution from '@/components/Solution.astro';
+import Variant from '@/components/Variant.astro';
+import Note from '@/components/Note.astro';
+import Block from '@/components/Block.astro';
+import Method from '@/components/Method.astro';
+import Exercise from '@/components/Exercise.astro';
+
+## 5.3 Tensor addition and subtraction
+
+As you may recall from Section 1.4, two or more vectors can be added simply by adding their corresponding components. Hence a single vector equation such as
+
+$$
+\vec {C} = \vec {A} + \vec {B},\tag{5.6}
+$$
+
+actually consists of three equations (in three-dimensional space), since each component of the resultant vector $\vec { C }$ must be the sum of the corresponding components of vectors $\vec { A }$ and $\vec { B }$ :
+
+$$
+\begin{array}{l} C _ {x} = A _ {x} + B _ {x}, \\ C _ {y} = A _ {y} + B _ {y}, \\ C _ {z} = A _ {z} + B _ {z}. \end{array}\tag{5.7}
+$$
+
+Higher-order tensors can be added using the same process, provided that the tensors to be added have the same structure (that is, they are the same order and have the same number of covariant indices and the same number of contravariant indices). The result of tensor addition is also a tensor, and the resultant tensor has the same structure as each of the tensors that are added:
+
+$$
+\begin{array}{c} C _ {i j} = A _ {i j} + B _ {i j}, \\ C ^ {i j} = A ^ {i j} + B ^ {i j}, \\ C _ {j} ^ {i} = A _ {j} ^ {i} + B _ {j} ^ {i}. \end{array}\tag{5.8}
+$$
+
+Note that each of these expressions represents more than one equation; the exact number depends on the number of values that each index may take on. Note also that you can add tensors with any number of covariant and con travariant indices, as long as the tensors being added have the same number of each type of index.
+
+To see that the result of adding two tensors fits the definition of a tensor, con sider how the tensor components $A _ { j } ^ { i }$ and $B _ { j } ^ { i }$ transform to another coordinate system:
+
+$$
+\begin{array}{l} A _ {l} ^ {' k} = \frac {\partial x ^ {' k}}{\partial x ^ {i}} \frac {\partial x ^ {j}}{\partial x ^ {l ^ {\prime}}} A _ {j} ^ {i}, \\ B _ {l} ^ {' k} = \frac {\partial x ^ {' k}}{\partial x ^ {i}} \frac {\partial x ^ {j}}{\partial x ^ {l ^ {\prime}}} B _ {j} ^ {i}. \end{array}\tag{5.9}
+$$
+
+Hence
+
+$$
+\begin{array}{r} A _ {l} ^ {' k} + B _ {l} ^ {' k} = \frac {\partial x ^ {' k}}{\partial x ^ {i}} \frac {\partial x ^ {j}}{\partial x ^ {' l}} A _ {j} ^ {i} + \frac {\partial x ^ {' k}}{\partial x ^ {i}} \frac {\partial x ^ {j}}{\partial x ^ {' l}} B _ {j} ^ {i} \\ = \frac {\partial x ^ {' k}}{\partial x ^ {i}} \frac {\partial x ^ {j}}{\partial x ^ {' l}} (A _ {j} ^ {i} + B _ {j} ^ {i}). \end{array}
+$$
+
+If you compare this last expression to the expression for the transformation of the tensor components $C _ { j } ^ { i }$ to the primed coordinate system
+
+$$
+C _ {l} ^ {' k} = \frac {\partial x ^ {' k}}{\partial x ^ {i}} \frac {\partial x ^ {j}}{\partial x ^ {' l}} C _ {j} ^ {i},
+$$
+
+you'll see that the addition of $A _ { j } ^ { i }$ and $B _ { j } ^ { i }$ does produce an object $C _ { j } ^ { i }$ that meets the transformation requirements for a tensor.
+
+Subtraction of tensors is equally straightforward; you simply subtract the corresponding components rather than adding them:
+
+$$
+\begin{array}{c} C _ {i j} = A _ {i j} - B _ {i j}, \\ C ^ {i j} = A ^ {i j} - B ^ {i j}, \\ C _ {j} ^ {i} = A _ {j} ^ {i} - B _ {j} ^ {i}, \end{array}\tag{5.10}
+$$
+
+and the result of tensor subtraction is also a tensor, as you can see in the problems at the end of this chapter.

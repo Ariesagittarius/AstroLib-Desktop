@@ -1,2302 +1,2466 @@
-@import './tokens/layers.css';
-@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap');
-@import './components/mermaid.css';
-
-/* ==========================================================================
-   UI 样式表
-   ========================================================================== */
-
-/* --------------------------------------------------------------------------
-   1. 数学公式排版优化：让行间公式在超出边界时支持横向滚动，防止溢出或截断
-   -------------------------------------------------------------------------- */
-
-.katex-display {
-  width: 100%;
-  max-width: 100%;
-  overflow-x: auto !important;
-  overflow-y: hidden !important;
-  padding: 0.45rem 0;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: thin;
-  scrollbar-color: var(--sl-color-gray-5, #cbd5e1) transparent;
-}
-.katex-display::-webkit-scrollbar {
-  height: 4px;
-}
-.katex-display::-webkit-scrollbar-thumb {
-  background-color: var(--sl-color-gray-5, #cbd5e1);
-  border-radius: 4px;
-}
-.katex-display::-webkit-scrollbar-track {
-  background-color: transparent;
-}
-
-/* 关键重构：KaTeX 块级公式居中与学术编号（\tag）标准右对齐治理
-   1. 外层 .katex-display 作为滚动容器，支持横向滚动与留白；
-   2. .katex 采用 min-width: 100%，确保公式主体在版心严格居中；
-   3. .tag 绝对定位靠右 (right: 0.25rem)，采用衬线数字与克制弱化色，
-      达到大学教材/学术出版级别的公式排版质感；
-   4. 当公式超宽触发滚动时，min-width: 100% 保证公式横向滚动且编号始终处于
-      最右侧，绝不与公式内容重叠。 */
-.katex-display > .katex {
-  display: block;
-  min-width: 100%;
-  width: max-content;
-  position: relative;
-  text-align: center;
-}
-
-.katex-display > .katex > .katex-html {
-  display: block;
-  position: relative;
-  width: 100%;
-  text-align: center;
-}
-
-/* 供 Chrome 侧边栏阅读模式与屏幕阅读器提取的纯文本自愈节点（视觉严格隐藏，零占据尺寸） */
-.katex-reader-text {
-  position: absolute !important;
-  width: 1px !important;
-  height: 1px !important;
-  padding: 0 !important;
-  margin: -1px !important;
-  overflow: hidden !important;
-  clip: rect(0, 0, 0, 0) !important;
-  white-space: nowrap !important;
-  border-width: 0 !important;
-  user-select: none !important;
-}
-
-/* 公式末尾编号（\tag）：标准学术版心右对齐与正统教材墨黑 */
-.katex-display > .katex > .katex-html > .tag {
-  position: absolute;
-  right: 0.25rem;
-  top: 50%;
-  transform: translateY(-50%);
-  white-space: nowrap;
-  font-family: var(--academic-font-latin, 'Times New Roman', serif);
-  font-size: 0.95em;
-  color: var(--academic-color-tag, var(--sl-color-white));
-  user-select: none;
-  padding-left: 1.5rem;
-}
-
-@media (max-width: 640px) {
-  .katex-display > .katex > .katex-html > .tag {
-    position: static;
-    float: right;
-    margin-left: 1rem;
-    transform: none;
-  }
-}
-
-/* 行内公式视觉校准：与中文 1rem 字面高度自然融合，基线严格平稳，字阶克制 */
-.sl-markdown-content .katex:not(.katex-display .katex) {
-  font-size: 1.06em;
-  line-height: normal;
-  /* 恢复标准 TeX 行内流排版，彻底拔除滚动条与底边缘判定 */
-  display: inline;
-  overflow: visible !important;
-  vertical-align: baseline !important;
-  white-space: normal;
-}
-
-.sl-markdown-content .katex:not(.katex-display .katex) .katex-html {
-  display: inline-block;
-  vertical-align: 0;
-}
-
-/* KaTeX 经典框式公式排版 (\boxed) 纯正学术线框 (0.8px 发丝线与舒适内衬) */
-.katex .fbox {
-  border: 0.8px solid currentColor !important;
-  padding: 0.35em 0.65em !important;
-  border-radius: 1px !important;
-}
-
-/* 行内公式：仅限制最大宽度，内部严禁继承段落首行缩进 */
-.katex {
-  max-width: 100%;
-  text-indent: 0 !important;
-}
-
-/* 仅针对显式标记为横向滚动的极端长行内公式容器启用滚动胶囊 */
-.katex-scroll-capsule {
-  display: inline-block;
-  max-width: 100%;
-  overflow-x: auto;
-  overflow-y: hidden;
-  vertical-align: middle;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: thin;
-  scrollbar-color: var(--sl-color-gray-5, #cbd5e1) transparent;
-}
-.katex-scroll-capsule::-webkit-scrollbar {
-  height: 3px;
-}
-.katex-scroll-capsule::-webkit-scrollbar-thumb {
-  background-color: var(--sl-color-gray-5, #cbd5e1);
-  border-radius: 3px;
-}
-.katex-scroll-capsule::-webkit-scrollbar-track {
-  background-color: transparent;
-}
-
-/* --------------------------------------------------------------------------
-   正文数学密集卡片与插图视口外延迟渲染 (CSS Content Visibility Containment)
-   跳过视口外深层 KaTeX DOM 树的初次样式计算与排版绘制，大幅降低首屏长任务与内存
-   注意：严格排除标题（h1~h6），确保右侧大纲 TOC 与 scroll-spy 锚点定位平稳无抖动
-   -------------------------------------------------------------------------- */
-.sl-markdown-content > .example-card,
-.sl-markdown-content > .solution-details,
-.sl-markdown-content > .vp-figure,
-.sl-markdown-content > .knowledge-card,
-.sl-markdown-content > .method-card,
-.sl-markdown-content > .guide-block,
-.sl-markdown-content > .variant-card,
-.sl-markdown-content > .exercise-card,
-.sl-markdown-content > .astrolib-sidenote.sidenote-inline,
-.sl-markdown-content > .katex-display {
-  content-visibility: auto;
-  contain-intrinsic-size: auto 200px;
-}
-
-/* ==========================================================================
-
-   学术出版段落排版规范 (Academic Paragraph Typesetting & Indentation)
-   --------------------------------------------------------------------------
-   遵循中国高校数理专著、国家标准与 LaTeX ctex 宏包排版规范：
-   1. 正文自然段首行缩进 2 个中文字符宽 (2em，可由用户设置动态开关)；
-   2. 段落垂直节奏紧凑致密 (margin-block: 0.65rem)，呈现纸质学术书卷韵律；
-   3. 严格防御白名单，绝不误伤居中大公式、标题、表格、代码块、列表、定理标签。
-   ========================================================================== */
-
-:root {
-  --academic-paragraph-indent: 2em;
-}
-
-html[data-paragraph-indent="false"] {
-  --academic-paragraph-indent: 0 !important;
-}
-
-/* 正文与卡片正文说明段落：首行缩进（受快速设置中的【段前空两格】动态调控） */
-.sl-markdown-content > p:not(.noindent),
-.card-body > p:not(.noindent),
-.solution-content > p:not(.noindent),
-.analysis-content > p:not(.noindent),
-.knowledge-content > p:not(.noindent),
-.note-content > p:not(.noindent),
-.guide-content > p:not(.noindent),
-.method-content > p:not(.noindent),
-.fallback-content > p:not(.noindent) {
-  text-indent: var(--academic-paragraph-indent, 2em);
-  margin-top: 0.45rem;
-  margin-bottom: 0.65rem;
-}
-
-/* 用户关闭【段前空两格】时强制全量顶格 */
-html[data-paragraph-indent="false"] .sl-markdown-content > p,
-html[data-paragraph-indent="false"] .card-body > p,
-html[data-paragraph-indent="false"] .solution-content > p,
-html[data-paragraph-indent="false"] .analysis-content > p,
-html[data-paragraph-indent="false"] .knowledge-content > p,
-html[data-paragraph-indent="false"] .note-content > p,
-html[data-paragraph-indent="false"] .guide-content > p,
-html[data-paragraph-indent="false"] .method-content > p,
-html[data-paragraph-indent="false"] .fallback-content > p {
-  text-indent: 0 !important;
-}
-
-/* 核心防御 1: 块级独立公式绝对禁止首行缩进（否则公式偏右无法居中） */
-.katex-display,
-.sl-markdown-content p:has(> .katex-display),
-.sl-markdown-content p > .katex-display {
-  text-indent: 0 !important;
-}
-
-/* 核心防御 2: 仅包含图片或主要为插图的段落禁止缩进 */
-.sl-markdown-content p:has(> img:only-child),
-.sl-markdown-content p:has(> .astro-blur-image-wrapper:only-child),
-.sl-markdown-content p:has(> .astro-blur-image:only-child) {
-  text-indent: 0 !important;
-}
-
-/* 核心防御 3: 标题、列表、代码块、表格、引言、算法块、卡片头部、交叉引用徽章等结构元素绝对禁止缩进 */
-.sl-markdown-content :is(h1, h2, h3, h4, h5, h6, ul, ol, li, pre, code, table, th, td, blockquote, figure, figcaption, .academic-algorithm, .mineru-algorithm, .algorithm-body, .algorithm-caption),
-.academic-algorithm,
-.mineru-algorithm,
-.algorithm-body,
-.algorithm-caption,
-.card-header,
-.card-title,
-.option-chip-wrapper,
-.question-stem,
-.fig-ref-badge,
-.block-ref-badge,
-.fig-ref-badge *,
-.block-ref-badge * {
-  text-indent: 0 !important;
-}
-
-/* 核心防御 4: 首个直接子元素为代码或代码标识的段落绝对禁止首行缩进 */
-.sl-markdown-content p:has(> code:first-child),
-.sl-markdown-content p:has(> :first-child:is(code, kbd, samp)) {
-  text-indent: 0 !important;
-}
-
-/* 核心防御 5: 项目开发与架构技术文档（/dev/*）全面顶格排版，采用标准技术文档的垂直段距流 */
-.main-pane.is-dev-doc .sl-markdown-content p,
-html[data-page-type='dev'] .sl-markdown-content p {
-  text-indent: 0 !important;
-  margin-top: 0.75rem !important;
-  margin-bottom: 0.85rem !important;
-}
-
-/* 显式顶格排版类（支持 LaTeX \noindent 语义，如紧随公式后的“式中：/其中：”） */
-.noindent,
-.sl-markdown-content p.noindent {
-  text-indent: 0 !important;
-}
-
-
-/* --------------------------------------------------------------------------
-   2. 选择题排版优化：等宽响应式网格与自适应单列折行
-   -------------------------------------------------------------------------- */
-.question-stem {
-  margin-bottom: 1.25rem !important;
-  line-height: 1.6;
-}
-
-.options-container {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr); /* 大屏严格等宽 4 列，防止大小不一 */
-  gap: 0.75rem 1.5rem;
-  margin-top: 1rem;
-  margin-bottom: 0.5rem;
-  min-width: 0; /* 允许网格整体收缩，避免被长公式撑破卡片 */
-}
-
-.options-container.options-vertical {
-  grid-template-columns: 1fr !important; /* 长文本自动转为单列 */
-}
-
-.option-chip-wrapper {
-  display: flex;
-  align-items: center;
-  background-color: transparent;
-  border: 1px solid transparent;
-  border-radius: 6px;
-  padding: 0.35rem 0.6rem;
-  transition: all 0.15s ease;
-  cursor: pointer;
-  user-select: none;
-  margin-top: 0 !important;
-  min-width: 0; /* 网格子项默认 min-width:auto，会被 nowrap 公式撑破，必须归零 */
-}
-
-.option-chip-wrapper:hover {
-  background-color: var(--sl-color-gray-6, #f1f5f9);
-}
-
-.option-chip-label {
-  font-size: 0.75rem;
-  font-weight: 700;
-  color: var(--sl-color-gray-3, #475569);
-  background-color: var(--sl-color-gray-6, #f1f5f9);
-  width: 1.35rem;
-  height: 1.35rem;
-  border-radius: 50%;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  line-height: 1;
-  flex-shrink: 0;
-  margin-right: 0.6rem;
-  transition: all 0.15s ease;
-}
-
-.option-chip-wrapper:hover .option-chip-label {
-  background-color: var(--sl-color-text-accent, #3b82f6);
-  color: #ffffff !important;
-}
-
-.option-chip-content {
-  font-size: 0.88rem;
-  color: var(--sl-color-text, #1e293b);
-  font-weight: 400;
-  line-height: 1.4;
-  min-width: 0; /* flex 子项允许收缩，长公式交由内部滚动接管 */
-}
-
-@media (max-width: 48rem) {
-  .options-container:not(.options-vertical) {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-@media (max-width: 30rem) {
-  .options-container:not(.options-vertical) {
-    grid-template-columns: 1fr;
-  }
-}
-
-
-/* ==========================================================================
-   图文与块级组件深度联动组件 (学术出版级内联交叉引用超链接)
-   ========================================================================== */
-
-/* 1. 正文与题干中的交叉引用超链接基础样式 */
-.fig-ref-badge, .block-ref-badge {
-  display: inline-flex;
-  align-items: baseline;
-  text-indent: 0 !important;
-  text-decoration: underline !important;
-  text-decoration-color: var(--sl-color-hairline) !important;
-  text-underline-offset: 3px;
-  font-size: 0.9em;
-  font-weight: 500;
-  padding: 0 0.2rem;
-  border-radius: 3px;
-  border: none !important;
-  background-color: transparent !important;
-  box-shadow: none !important;
-  line-height: inherit;
-  transition: all 0.15s ease;
-  vertical-align: baseline;
-  margin: 0 0.15rem;
-  gap: 0.2rem;
-  box-sizing: border-box;
-  color: var(--sl-color-text-accent);
-}
-
-/* 可交互交叉引用：悬浮呈现轻柔浅染色与完整下划线 */
-.fig-ref-badge.interactive-badge, .block-ref-badge.interactive-badge {
-  cursor: pointer;
-  user-select: none;
-}
-
-.fig-ref-badge.interactive-badge:hover, .block-ref-badge.interactive-badge:hover {
-  background-color: var(--sl-color-accent-low) !important;
-  text-decoration-color: currentColor !important;
-}
-
-/* 静态徽章（未匹配到或纯声明）保持朴素 */
-.fig-ref-badge.static-badge, .block-ref-badge.static-badge {
-  cursor: default;
-  text-decoration: none !important;
-  color: var(--sl-color-gray-2);
-}
-
-/* 微型矢量 SVG 图标 */
-.badge-svg {
-  width: 11px;
-  height: 11px;
-  display: inline-block;
-  flex-shrink: 0;
-  vertical-align: -1px;
-  opacity: 0.75;
-}
-
-.badge-arrow-svg {
-  width: 9px;
-  height: 9px;
-}
-
-/* 徽章内部结构 */
-.fig-icon, .block-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  line-height: 1;
-  flex-shrink: 0;
-  color: inherit;
-}
-
-.fig-text, .block-text {
-  font-size: inherit;
-  font-weight: 500;
-  line-height: inherit;
-  color: inherit;
-}
-
-.fig-arrow, .block-arrow {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  min-width: 9px;
-  width: 9px;
-  height: 9px;
-  opacity: 0.55;
-  transition: transform 0.15s ease, opacity 0.15s ease;
-  color: inherit;
-}
-
-.interactive-badge:hover .fig-arrow,
-.interactive-badge:hover .block-arrow {
-  opacity: 1;
-  transform: translate(1px, -1px);
-}
-
-/* --- 3. 目标插图与卡片的高亮与闪烁 (Glow & Flash Transition) --- */
-
-/* --------------------------------------------------------------------------
-   3. 引用联动与跳转高亮（克制学术风：无波纹、无形变、流畅轻盈）
-   -------------------------------------------------------------------------- */
-
-.fig-target-image, .fig-target-caption {
-  transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
-}
-
-/* 插图悬停高亮：纯边框与字色，无形变位移 */
-.fig-target-image.fig-highlight {
-  border-color: var(--sl-color-text-accent, #3b82f6) !important;
-  box-shadow: var(--sl-shadow-sm) !important;
-}
-.fig-target-caption.fig-highlight {
-  color: var(--sl-color-text-accent, #3b82f6) !important;
-  font-weight: 600;
-}
-
-/* 组件卡片悬停高亮：克制轻微阴影与高亮边框，杜绝 translateY 跳动 */
-.card-ref-highlight {
-  border-color: var(--sl-color-text-accent, #3b82f6) !important;
-  box-shadow: var(--sl-shadow-sm) !important;
-}
-
-/* 大卡片跳转就位动效：克制学术风强调边框与浅染色渐隐（0.65s 瞬时响应，零波纹扩散） */
-@keyframes card-flash-restrained {
-  0% {
-    background-color: var(--sl-color-accent-low, rgba(59, 130, 246, 0.12));
-    outline: 2px solid var(--sl-color-text-accent, #3b82f6);
-    outline-offset: -1px;
-  }
-  40% {
-    background-color: var(--sl-color-accent-low, rgba(59, 130, 246, 0.12));
-    outline: 2px solid var(--sl-color-text-accent, #3b82f6);
-    outline-offset: -1px;
-  }
-  100% {
-    background-color: transparent;
-    outline: 2px solid transparent;
-    outline-offset: -1px;
-  }
-}
-.card-ref-flash {
-  animation: card-flash-restrained 0.65s ease-out;
-}
-
-/* 图片与图题跳转就位动效：轻微边框与字色淡出（零波纹） */
-@keyframes fig-flash-restrained {
-  0% {
-    border-color: var(--sl-color-text-accent, #3b82f6) !important;
-  }
-  100% {
-    border-color: transparent !important;
-  }
-}
-.fig-target-image {
-  transition: border-color 0.2s ease;
-  border: 2px solid transparent;
-  border-radius: 6px;
-}
-.fig-target-caption {
-  transition: color 0.2s ease;
-}
-.fig-target-image.fig-flash {
-  animation: fig-flash-restrained 0.65s ease-out;
-  border-color: var(--sl-color-text-accent, #3b82f6) !important;
-}
-.fig-target-caption.fig-flash {
-  color: var(--sl-color-text-accent, #3b82f6) !important;
-  transition: color 0.65s ease-out;
-}
-
-/* ==========================================================================
-   正文图像基础排版与平滑过渡
-   ========================================================================== */
-.sl-markdown-content img {
-  display: block;
-  max-width: 100%;
-  height: auto;
-  margin-inline: auto;
-  border-radius: 6px;
-  transition: 
-    filter 0.35s cubic-bezier(0.2, 0, 0.2, 1),
-    box-shadow 0.25s ease,
-    opacity 0.4s ease,
-    transform 0.35s cubic-bezier(0.2, 0, 0.2, 1);
-}
-
-/* ==========================================================================
-   正文图像高斯模糊占位 (LQIP) 与平滑渐变加载系统
-   ========================================================================== */
-.astro-blur-image {
-  /* 占位图背景层 */
-  background-image: var(--blur-placeholder);
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-  
-  /* 初始未完成加载时的磨砂高斯模糊态 */
-  filter: blur(14px);
-  transform: scale(0.995);
-  opacity: 0.88;
-  clip-path: inset(0 round 6px);
-  will-change: filter, opacity, transform;
-}
-
-/* 图像加载就绪状态：高斯模糊消退，清晰呈现原图 */
-.astro-blur-image.is-loaded {
-  filter: blur(0);
-  opacity: 1;
-  transform: scale(1);
-  background-image: none;
-}
-
-/* ==========================================================================
-   夜间模式白底教辅图像智能反相与色彩保真系统 (Dark Theme Precise Calibration)
-   ========================================================================== */
-:root[data-theme='dark'] .sl-markdown-content img:not(.no-dark-invert) {
-  /* 
-   * 精确色彩学校准：
-   * 1. invert(0.894)：将白底 (255) 数学映射至 RGB(27, 27, 27)，与全站背景色 #1b1b1f (RGB 27, 27, 31) 精准贴合、无缝消除方框；
-   *    同时将黑色文字/线条 (0) 映射至 RGB(228, 228, 228)，与正文字色 #dfdfd6 完美匹配；
-   * 2. hue-rotate(180deg)：色相回正，保留红色、蓝色等彩色标记与曲线的原生色彩；
-   */
-  filter: invert(0.894) hue-rotate(180deg);
-}
-
-/* 配合 LQIP 模糊占位未完成态 */
-:root[data-theme='dark'] .sl-markdown-content img.astro-blur-image:not(.is-loaded):not(.no-dark-invert) {
-  filter: blur(14px) invert(0.894) hue-rotate(180deg);
-}
-
-/* 配合 LQIP 模糊占位就绪态 */
-:root[data-theme='dark'] .sl-markdown-content img.astro-blur-image.is-loaded:not(.no-dark-invert) {
-  filter: blur(0) invert(0.894) hue-rotate(180deg);
-}
-
-/* 夜间模式悬停交互：鼠标悬停或轻触时平滑恢复原图原色，并呈现立体浮层阴影 */
-:root[data-theme='dark'] .sl-markdown-content img:not(.no-dark-invert):hover {
-  filter: invert(0) hue-rotate(0deg);
-  background-color: #ffffff;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
-}
-
-/* 打印模式禁用模糊与反相 */
-@media print {
-  .astro-blur-image {
-    filter: none !important;
-    opacity: 1 !important;
-    transform: none !important;
-    background-image: none !important;
-  }
-  :root[data-theme='dark'] .sl-markdown-content img {
-    filter: none !important;
-    background-color: transparent !important;
-  }
-}
-
-/* ==========================================================================
-   正文插图与图注专有排版系统 (VitePress-Styled Figure & Caption)
-   ========================================================================== */
-.sl-markdown-content figure:not(.frame),
-.sl-markdown-content .vp-figure {
-  margin: 1.5rem auto;
-  text-align: center;
-  max-width: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-}
-
-.sl-markdown-content figure:not(.frame) img,
-.sl-markdown-content .vp-figure img {
-  display: block;
-  margin: 0 auto;
-  max-width: 100%;
-  height: auto;
-  border-radius: 6px;
-}
-
-.sl-markdown-content figcaption:not(.header),
-.sl-markdown-content .vp-figure figcaption {
-  margin-top: 0.625rem;
-  font-size: 0.875rem;
-  line-height: 1.5;
-  font-weight: 500;
-  color: var(--sl-color-gray-2);
-  text-align: center;
-  letter-spacing: 0.02em;
-  transition: color 0.2s ease;
-}
-
-/* --------------------------------------------------------------------------
-   代码块防污染与布局基准 (Expressive Code Code Block Isolation)
-   彻底杜绝正文图表排版规则（figure/figcaption 弹性居中）对代码块的意外入侵，保证满宽与左对齐
-   -------------------------------------------------------------------------- */
-.sl-markdown-content .expressive-code,
-.expressive-code {
-  width: 100% !important;
-  max-width: 100% !important;
-  margin: 1.25rem 0 !important;
-  text-align: left !important;
-}
-
-.sl-markdown-content .expressive-code figure.frame,
-.expressive-code figure.frame {
-  all: unset !important;
-  display: block !important;
-  position: relative !important;
-  width: 100% !important;
-  max-width: 100% !important;
-  margin: 0 !important;
-  text-align: left !important;
-  box-sizing: border-box !important;
-}
-
-.sl-markdown-content .expressive-code figcaption.header,
-.expressive-code figcaption.header {
-  margin-top: 0 !important;
-  letter-spacing: 0.025ch !important;
-}
-
-.sl-markdown-content .expressive-code pre,
-.expressive-code pre {
-  text-align: left !important;
-  width: 100% !important;
-  box-sizing: border-box !important;
-}
-
-.sl-markdown-content .expressive-code code,
-.expressive-code code,
-.sl-markdown-content .expressive-code .ec-line,
-.expressive-code .ec-line,
-.sl-markdown-content .expressive-code .ec-line .code,
-.expressive-code .ec-line .code {
-  text-align: left !important;
-}
-
-/* 多子图混排网格 (Subfigure Grid) */
-.sl-markdown-content .vp-figure-grid {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  align-items: flex-end;
-  gap: 1.25rem;
-  width: 100%;
-  margin-bottom: 0.35rem;
-}
-
-.sl-markdown-content .vp-sub-figure {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  flex: 1 1 180px;
-  max-width: 100%;
-}
-
-.sl-markdown-content .vp-sub-figure img {
-  max-width: 100%;
-  height: auto;
-}
-
-.sl-markdown-content .vp-sub-caption {
-  margin-top: 0.35rem;
-  font-size: 0.8125rem;
-  color: var(--sl-color-gray-3);
-  font-weight: 500;
-  text-align: center;
-}
-
-/* 交叉引用定位高亮 */
-.sl-markdown-content figcaption.fig-target-caption:target,
-.sl-markdown-content .fig-target-caption.is-highlighted {
-  color: var(--sl-color-text-accent);
-  font-weight: 600;
-}
-
-/* ==========================================================================
-   正文区域学术教材版心规范 (Radical Subtraction & LaTeX Measure)
-   ========================================================================== */
-
-/* 全局正文版心：严格控制在 48rem (768px，740–800px 黄金阅读宽度)，确保学术书页质感 */
-.sl-container {
-  max-width: var(--sl-content-width, 48rem) !important;
-  width: 100% !important;
-  margin-inline: auto !important;
-}
-
-/* 主版心框架：在桌面与超宽屏下控制总宽度，保持三栏比例和谐，杜绝右侧巨大虚空与外溢 */
-.main-frame {
-  width: 100%;
-  max-width: 88rem !important; /* 约 1408px：容纳正文 768px + 右大纲 264px + 呼吸留白 */
-  min-width: 0 !important;
-  box-sizing: border-box !important;
-}
-
-@media (min-width: 72rem) {
-  .main-frame {
-    width: auto !important;
-    max-width: min(88rem, calc(100% - var(--sl-sidebar-width, 16rem))) !important;
-    margin-left: var(--sl-sidebar-width, 16rem) !important;
-    margin-right: auto !important;
-    padding-inline-start: 0 !important;
-  }
-}
-
-@media (min-width: 110rem) {
-  /* 超宽屏（1760px–2048px+）：整体对称居中，两侧优雅留白，正文与右侧大纲依然紧凑依附 */
-  .main-frame {
-    margin-left: auto !important;
-    margin-right: auto !important;
-    max-width: 88rem !important;
-  }
-}
-
-/* 联动容器同步允许收缩，保证收缩链路畅通 */
-.main-pane,
-.sl-container,
-.sl-markdown-content {
-  min-width: 0;
-}
-
-/* ==========================================================================
-   移动端防横向溢出：宽表格改为容器内横向滚动
-   ========================================================================== */
-table:not(.ask-table) {
-  display: block;
-  width: max-content;
-  max-width: 100%;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: thin;
-  scrollbar-color: var(--sl-color-gray-5, #cbd5e1) transparent;
-}
-
-/* ==========================================================================
-   移动端容器收缩链路：让每一个可能被撑破的盒都能缩回视口内
-   ========================================================================== */
-
-/* 卡片正文/标题、解析、思路分析等组件内容盒统一允许收缩，
-   内部的公式与表格各自横向滚动，不再把卡片撑破后又被 overflow:hidden 裁掉 */
-.card-body,
-.card-header,
-.solution-content,
-.analysis-content,
-.note-content,
-.fallback-content,
-.guide-content,
-.question-stem {
-  min-width: 0;
-}
-
-/* 移动端不展示自定义右侧大纲：该大纲仅保留给桌面端右侧栏使用。
-   移动端由 Starlight 自带的“本页目录”下拉条接管导航，
-   避免 272px 宽的大纲块挤在正文上方造成观感割裂 */
-@media (max-width: 71.999rem) {
-  .right-sidebar-container {
-    display: none !important;
-  }
-}
-
-/* ==========================================================================
-   移动端精致化：紧凑呼吸感 + 自适应字号
-   ========================================================================== */
-@media (max-width: 48rem) {
-  /* 正文左右留白略微加宽，贴合手机阅读手感 */
-  :root {
-    --sl-content-pad-x: 1.125rem;
-  }
-
-  /* 学术语义块：移动端轻量排版与紧凑垂直律动（纯文本流，杜绝多余卡片内边距） */
-  .example-card,
-  .variant-card,
-  .method-card,
-  .exercise-card,
-  .fallback-block,
-  .knowledge-card {
-    margin: 1.75rem 0 1.25rem;
-  }
-  .card-body,
-  .fallback-content {
-    padding: 0;
-  }
-  .note-block,
-  .guide-block,
-  .analysis-block {
-    margin: 1.25rem 0;
-    padding: 0 0 0 0.75rem;
-  }
-  .solution-content {
-    padding: 0.15rem 0 0.5rem 0;
-  }
-
-  /* 选择题：更紧凑的间距，双列/单列折行更自然 */
-  .question-stem {
-    margin-bottom: 0.875rem !important;
-  }
-  .options-container {
-    gap: 0.5rem 0.75rem;
-    margin-top: 0.75rem;
-  }
-  .option-chip-wrapper {
-    padding: 0.3rem 0.5rem;
-  }
-  .option-chip-content {
-    font-size: 0.85rem;
-  }
-
-  /* 行间公式：移动端略微缩小字号，让更多公式免于滚动，滚动时也更从容 */
-  .katex-display {
-    padding: 0.35rem 0;
-  }
-  .katex-display > .katex {
-    font-size: 1.05em;
-  }
-}
-
-/* 兜底：任何残留超宽元素不再撑大布局视口（配合上面的容器收缩，保证不裁内容） */
-html, body {
-  overflow-x: clip;
-  scrollbar-gutter: stable;
-}
-
-/* 长不可断内容（URL/英文/公式串）允许换行 */
-.sl-markdown-content {
-  overflow-wrap: anywhere;
-}
-
-/* ==========================================================================
-   文章正文公式操作：一键复制 LaTeX / 导出图片（SVG / PNG 二级菜单）
-   （仅作用于带 data-latex 的公式，见 src/scripts/formula-actions.ts）
-   设计原则：默认完全隐藏，悬停/聚焦/触屏点按才浮现，不打扰正常阅读排版
-   ========================================================================== */
-
-/* 行间公式块作为操作钮的定位上下文（本身不改变任何渲染） */
-.katex-display[data-latex] {
-  position: relative;
-}
-
-/* 操作钮容器（复制 + 下载 SVG 两个小按钮）
-   注意：本容器任何状态下都不得有 transform —— 脚本会把二级菜单提升为
-   position:fixed 以逃逸公式块/卡片的 overflow 裁剪，而祖先上的任何
-   transform 都会让 fixed 退化为相对它定位，菜单会脱离按钮、渲染到错位处。
-   （悬停态选择器 .katex-display:hover .katex-actions 特异性 (0,3,0) 高于
-   .katex-actions.is-open，若悬停态带 transform 则 is-open 压不住，
-   因此所有状态统一只做透明度过渡，不做位移动画。） */
-.katex-actions {
-  position: absolute;
-  top: 0.3rem;
-  right: 0.6rem;
-  z-index: 5;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.2rem;
-  opacity: 0;
-  pointer-events: none; /* 隐藏时绝不拦截公式区域的鼠标事件 */
-  transition: opacity 0.16s ease;
-}
-
-/* 行间公式：悬停公式块即浮现 */
-.katex-display:hover .katex-actions,
-.katex-display:focus-within .katex-actions {
-  opacity: 1;
-  pointer-events: auto;
-}
-
-/* 行内公式：透明宿主包裹，操作钮悬浮于公式上方 */
-.katex-copy-host {
-  position: relative;
-  display: inline;
-}
-
-.katex-copy-host .katex-actions {
-  top: -1.9em;
-  right: -0.45em;
-  /* 命中桥：按钮悬浮在公式行上方，鼠标从公式移向按钮会先短暂离开宿主
-     （宿主 :hover 立即失效、pointer-events 变 none，按钮在半路“消失”）。
-     下方留出一段透明 padding，把按钮容器自身的可命中区延伸到宿主内，
-     鼠标在这段间隙里仍算悬停在容器（宿主的后代）上，hover 不中断。 */
-  padding-bottom: 0.75em;
-}
-
-.katex-copy-host:hover .katex-actions,
-.katex-copy-host:focus-within .katex-actions {
-  opacity: 1;
-  pointer-events: auto;
-}
-
-/* 触屏点按浮现态（由脚本临时添加） */
-.katex-actions.is-visible {
-  opacity: 1;
-  pointer-events: auto;
-}
-
-/* 导出菜单展开态：即使鼠标离开/触屏无悬停，也保持操作钮与菜单可见可点 */
-.katex-actions.is-open {
-  opacity: 1;
-  pointer-events: auto;
-}
-
-/* 复制钮与导出钮本体：极小幽灵按钮 */
-.katex-copy-btn,
-.katex-download-btn {
-  position: relative; /* 作为反馈气泡的定位上下文 */
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex: 0 0 auto; /* 禁止伸缩，保证两个按钮尺寸严格一致 */
-  width: 1.55rem;
-  height: 1.55rem;
-  padding: 0;
-  margin: 0;
-  border: 1px solid var(--sl-color-hairline, #d0d7de);
-  border-radius: 0.4rem;
-  background-color: var(--sl-color-bg, #ffffff);
-  color: var(--sl-color-gray-3, #475569);
-  cursor: pointer;
-  user-select: none;
-  /* 消除浏览器按钮 UA 默认样式（appearance/行高/字号）对内容居中的干扰 */
-  appearance: none;
-  -webkit-appearance: none;
-  line-height: 1;
-  font-size: 0;
-  box-sizing: border-box;
-  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.1);
-  transition: color 0.16s ease, border-color 0.16s ease, background-color 0.16s ease;
-}
-
-.katex-copy-btn:hover,
-.katex-download-btn:hover,
-.katex-copy-btn:focus-visible,
-.katex-download-btn:focus-visible {
-  color: var(--sl-color-text-accent, #2563eb);
-  border-color: var(--sl-color-text-accent, #2563eb);
-}
-
-.katex-copy-btn:focus-visible,
-.katex-download-btn:focus-visible {
-  outline: 2px solid var(--sl-color-text-accent, #2563eb);
-  outline-offset: 1px;
-}
-
-.katex-copy-btn-icon,
-.katex-download-btn-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  line-height: 0;
-  width: 0.95rem;
-  height: 0.95rem;
-}
-
-.katex-copy-btn-icon svg,
-.katex-download-btn-icon svg {
-  width: 100%;
-  height: 100%;
-  display: block;
-}
-
-/* 导出二级菜单（SVG / PNG）：下拉小卡片，默认隐藏 */
-.katex-download-menu {
-  position: absolute;
-  top: calc(100% + 4px);
-  right: 0;
-  z-index: 6;
-  display: flex;
-  flex-direction: column;
-  gap: 0.15rem;
-  min-width: 4.75rem;
-  padding: 0.25rem;
-  border: 1px solid var(--sl-color-hairline, #d0d7de);
-  border-radius: 0.45rem;
-  background-color: var(--sl-color-bg, #ffffff);
-  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12);
-  font-size: 0.72rem;
-  opacity: 0;
-  visibility: hidden;
-  transform: translateY(-3px);
-  transition: opacity 0.14s ease, transform 0.14s ease, visibility 0.14s;
-}
-
-.katex-actions.is-open .katex-download-menu {
-  opacity: 1;
-  visibility: visible;
-  transform: translateY(0);
-}
-
-/* 菜单项 */
-.katex-menu-item {
-  appearance: none;
-  -webkit-appearance: none;
-  border: 0;
-  border-radius: 0.3rem;
-  padding: 0.3rem 0.6rem;
-  width: 100%;
-  text-align: left;
-  background-color: transparent;
-  color: var(--sl-color-gray-3, #475569);
-  font-size: 0.72rem;
-  line-height: 1.4;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: background-color 0.14s ease, color 0.14s ease;
-}
-
-.katex-menu-item:hover,
-.katex-menu-item:focus-visible {
-  background-color: var(--sl-color-gray-6, #f1f5f9);
-  color: var(--sl-color-text-accent, #2563eb);
-}
-
-.katex-menu-item:focus-visible {
-  outline: 2px solid var(--sl-color-text-accent, #2563eb);
-  outline-offset: -1px;
-}
-
-/* 操作成功/失败的反馈气泡 */
-.katex-copy-btn-tip,
-.katex-download-btn-tip {
-  position: absolute;
-  bottom: calc(100% + 5px);
-  right: 0;
-  padding: 0.2rem 0.5rem;
-  border-radius: 0.35rem;
-  font-size: 0.7rem;
-  font-weight: 600;
-  line-height: 1.4;
-  white-space: nowrap;
-  color: #ffffff;
-  background-color: var(--sl-color-text-accent, #2563eb);
-  opacity: 0;
-  transform: translateY(3px);
-  transition: opacity 0.15s ease, transform 0.15s ease;
-  pointer-events: none;
-}
-
-.katex-copy-btn.is-done .katex-copy-btn-tip,
-.katex-download-btn.is-done .katex-download-btn-tip {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-/* 触屏设备上按钮更克制：避免常驻视觉噪音，仅悬停/点按逻辑由脚本接管 */
-@media (hover: none) {
-  .katex-copy-btn,
-  .katex-download-btn {
-    box-shadow: none;
-  }
-}
-
-/* 打印 / PDF 导出时不渲染操作钮 */
-@media print {
-  .katex-actions {
-    display: none !important;
-  }
-}
-
-/* ==========================================================================
-   黑夜主题适配 (Dark Theme)
-   卡片组件的深色配色在各组件自身的 scoped <style> 中处理，
-   此处统一处理全局的“引用微章”与“侧栏大纲胶囊”等动态生成元素。
-   Starlight 通过 <html data-theme="dark"> 开启暗色（默认即暗色）。
-   ========================================================================== */
-
-/* --- 1. 引用微章：深色文本(600级) → 亮色文本(300级)，底色微加强 --- */
-
-/* A. 例题 (绿系) */
-:root[data-theme='dark'] .block-ref-badge[data-type="例题"],
-:root[data-theme='dark'] .block-ref-badge[data-type="例"] {
-  background-color: rgba(16, 185, 129, 0.14);
-  border-color: rgba(16, 185, 129, 0.38);
-}
-:root[data-theme='dark'] .block-ref-badge[data-type="例题"] .block-text,
-:root[data-theme='dark'] .block-ref-badge[data-type="例"] .block-text {
-  color: #34d399;
-}
-:root[data-theme='dark'] .block-ref-badge[data-type="例题"].interactive-badge:hover,
-:root[data-theme='dark'] .block-ref-badge[data-type="例"].interactive-badge:hover {
-  background-color: rgba(16, 185, 129, 0.22);
-  border-color: #34d399;
-}
-
-/* B. 变式 (橙系) */
-:root[data-theme='dark'] .block-ref-badge[data-type="变式"] {
-  background-color: rgba(249, 115, 22, 0.14);
-  border-color: rgba(249, 115, 22, 0.38);
-}
-:root[data-theme='dark'] .block-ref-badge[data-type="变式"] .block-text {
-  color: #fb923c;
-}
-:root[data-theme='dark'] .block-ref-badge[data-type="变式"].interactive-badge:hover {
-  background-color: rgba(249, 115, 22, 0.22);
-  border-color: #fb923c;
-}
-
-/* C. 结论与经验总结 (红系) */
-:root[data-theme='dark'] .block-ref-badge[data-type="结论总结"],
-:root[data-theme='dark'] .block-ref-badge[data-type="结论"],
-:root[data-theme='dark'] .block-ref-badge[data-type="经验总结"] {
-  background-color: rgba(239, 68, 68, 0.14);
-  border-color: rgba(239, 68, 68, 0.38);
-}
-:root[data-theme='dark'] .block-ref-badge[data-type="结论总结"] .block-text,
-:root[data-theme='dark'] .block-ref-badge[data-type="结论"] .block-text,
-:root[data-theme='dark'] .block-ref-badge[data-type="经验总结"] .block-text {
-  color: #f87171;
-}
-:root[data-theme='dark'] .block-ref-badge[data-type="结论总结"].interactive-badge:hover,
-:root[data-theme='dark'] .block-ref-badge[data-type="结论"].interactive-badge:hover,
-:root[data-theme='dark'] .block-ref-badge[data-type="经验总结"].interactive-badge:hover {
-  background-color: rgba(239, 68, 68, 0.22);
-  border-color: #f87171;
-}
-
-/* D. 方法总结 (蓝绿系) */
-:root[data-theme='dark'] .block-ref-badge[data-type="方法总结"],
-:root[data-theme='dark'] .block-ref-badge[data-type="方法"] {
-  background-color: rgba(13, 148, 136, 0.14);
-  border-color: rgba(13, 148, 136, 0.38);
-}
-:root[data-theme='dark'] .block-ref-badge[data-type="方法总结"] .block-text,
-:root[data-theme='dark'] .block-ref-badge[data-type="方法"] .block-text {
-  color: #2dd4bf;
-}
-:root[data-theme='dark'] .block-ref-badge[data-type="方法总结"].interactive-badge:hover,
-:root[data-theme='dark'] .block-ref-badge[data-type="方法"].interactive-badge:hover {
-  background-color: rgba(13, 148, 136, 0.22);
-  border-color: #2dd4bf;
-}
-
-/* E. 知识点 (蓝系) */
-:root[data-theme='dark'] .block-ref-badge[data-type="知识点"],
-:root[data-theme='dark'] .block-ref-badge[data-type="考点"] {
-  background-color: rgba(59, 130, 246, 0.14);
-  border-color: rgba(59, 130, 246, 0.38);
-}
-:root[data-theme='dark'] .block-ref-badge[data-type="知识点"] .block-text,
-:root[data-theme='dark'] .block-ref-badge[data-type="考点"] .block-text {
-  color: #93c5fd;
-}
-:root[data-theme='dark'] .block-ref-badge[data-type="知识点"].interactive-badge:hover,
-:root[data-theme='dark'] .block-ref-badge[data-type="考点"].interactive-badge:hover {
-  background-color: rgba(59, 130, 246, 0.22);
-  border-color: #93c5fd;
-}
-
-/* F. 问题与解析步骤 (紫系) */
-:root[data-theme='dark'] .block-ref-badge[data-type="问题"],
-:root[data-theme='dark'] .block-ref-badge[data-type="解析"] {
-  background-color: rgba(139, 92, 246, 0.14);
-  border-color: rgba(139, 92, 246, 0.38);
-}
-:root[data-theme='dark'] .block-ref-badge[data-type="问题"] .block-text,
-:root[data-theme='dark'] .block-ref-badge[data-type="解析"] .block-text {
-  color: #a78bfa;
-}
-:root[data-theme='dark'] .block-ref-badge[data-type="问题"].interactive-badge:hover,
-:root[data-theme='dark'] .block-ref-badge[data-type="解析"].interactive-badge:hover {
-  background-color: rgba(139, 92, 246, 0.22);
-  border-color: #a78bfa;
-}
-
-/* G. 图片参考 (灰系)：本就基于 sl 变量，自动适配，无需覆盖 */
-
-/* --- 2. 侧栏大纲胶囊 (TOC chips)：深色文本 → 亮色文本 --- */
-:root[data-theme='dark'] .chip-example { color: #34d399; }
-:root[data-theme='dark'] .chip-variant { color: #fb923c; }
-:root[data-theme='dark'] .chip-conclusion { color: #f87171; }
-:root[data-theme='dark'] .chip-method { color: #2dd4bf; }
-:root[data-theme='dark'] .chip-knowledge { color: #93c5fd; }
-:root[data-theme='dark'] .chip-guide { color: #cbd5e1; }
-:root[data-theme='dark'] .chip-problem { color: #a78bfa; }
-:root[data-theme='dark'] .chip-default { color: #cbd5e1; }
-
-/* ==========================================================================
-   移动端：顶栏大纲入口 + 左侧栏 VitePress 侧滑抽屉（改造）
-   结构：左侧栏菜单按钮与右侧大纲按钮都并入固定顶栏（header）——
-   顶栏左侧 = 菜单（hamburger），顶栏右侧 = 「本页大纲」按钮 + popup 面板。
-   本段只放“功能样式”（断点/滚动锁/显示切换/打印隐藏）；
-   VitePress 视觉细节见 vitepress-theme.css 区块 11（大纲按钮/面板）与
-   区块 12（左侧抽屉/菜单按钮）。
-   ========================================================================== */
-
-/* 大纲入口并入顶栏后不再单独占一行：锚点滚动补偿归零（值被 Page.astro 的
-   scroll-padding-top 与 makeTocEntry 点击滚动补偿读取），正文顶部恢复
-   Starlight 默认 calc(nav + toc) padding（= 4rem）。 */
-body.vp-local-nav-active {
-  --sl-mobile-toc-height: 0rem;
-}
-
-/* 面板展开时锁定背景滚动（popup 打开时防止滚动穿透） */
-body.mobile-toc-open {
-  overflow: hidden;
-}
-
-/* 隐藏 Starlight 默认脱离文档流的右侧浮动按钮，改用 HeaderOverride 内部原生汉堡按钮 */
-starlight-menu-button {
-  display: none !important;
-}
-
-/* 移动端/平板端大纲下拉栏（优雅吸附于顶栏右侧大纲按钮下方） */
-@media (max-width: 71.999rem) {
-  body.mobile-toc-open::after {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.35);
-    backdrop-filter: blur(2px);
-    -webkit-backdrop-filter: blur(2px);
-    z-index: 8;
-    pointer-events: auto;
-    cursor: pointer;
-    animation: fadeInTocBackdrop 0.15s ease forwards;
-  }
-
-  @keyframes fadeInTocBackdrop {
-    from { opacity: 0; }
-    to { opacity: 1; }
-  }
-
-  html:not([data-site-theme='starlight']) .vp-local-nav-items,
-  .vp-local-nav-items {
-    position: fixed !important;
-    top: calc(var(--sl-nav-height, 3.5rem) + 0.5rem) !important;
-    left: 0.75rem !important;
-    right: 0.75rem !important;
-    bottom: auto !important;
-    width: auto !important;
-    max-width: 24rem !important;
-    margin-inline: auto !important;
-    max-height: calc(100dvh - var(--sl-nav-height, 3.5rem) - 1.5rem) !important;
-    border-radius: 1rem !important;
-    border: 1px solid var(--sl-color-hairline) !important;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25) !important;
-    z-index: var(--layer-popover, 300) !important;
-    background-color: var(--sl-color-bg-sidebar, #161618) !important;
-    transform: translateY(-0.5rem) scale(0.98) !important;
-    opacity: 0 !important;
-    visibility: hidden !important;
-    transition: opacity 0.18s ease-out, transform 0.18s ease-out, visibility 0.18s !important;
-    pointer-events: none !important;
-    overflow: hidden auto !important;
-    overscroll-behavior: contain !important;
-  }
-
-  html:not([data-site-theme='starlight']) body.mobile-toc-open .vp-local-nav-items,
-  body.mobile-toc-open .vp-local-nav-items {
-    transform: translateY(0) scale(1) !important;
-    opacity: 1 !important;
-    visibility: visible !important;
-    pointer-events: auto !important;
-  }
-
-  .vp-local-nav-header {
-    position: sticky;
-    top: 0;
-    z-index: 2;
-    background-color: var(--sl-color-bg-sidebar, #161618) !important;
-  }
-
-  .vp-local-nav-outline {
-    background-color: transparent !important;
-    padding-bottom: 1.5rem !important;
-  }
-}
-
-/* 默认全部隐藏：桌面端右侧栏可见，大纲按钮永不出现，也防止任何布局残留 */
-.vp-local-nav {
-  display: none;
-}
-
-/* —— 移动端 / 平板段（右侧栏隐藏，大纲入口进顶栏） —— */
-@media (max-width: 71.999rem) {
-  /* 大纲按钮并入顶栏右侧（JS 搬运进 .right-group，作为 flex 项；
-     position: relative 作 popup 面板的定位锚点） */
-  .vp-local-nav {
-    display: flex;
-    align-items: center;
-    position: relative;
-    z-index: 9;
-  }
-}
-
-/* 纯移动端（<50rem）：
-   顶栏右侧动作区展示工具/主题/设置/大纲，隐藏社交链接（GitHub） */
-@media (max-width: 49.999rem) {
-  .right-group {
-    display: flex !important;
-    align-items: center;
-  }
-  .vp-tools-wrapper,
-  .vp-social-group,
-  .right-group .social-icons,
-  .right-group .vp-social-group {
-    display: none !important;
-  }
-}
-
-@media (min-width: 72rem) {
-  .vp-local-nav {
-    display: none !important;
-    align-items: center;
-    position: relative;
-    z-index: 9;
-    width: 36px;
-    height: 36px;
-    margin: 0;
-    opacity: 0;
-    pointer-events: none;
-  }
-
-  html[data-sideload-active]:not([data-sideload-active='toc']):not([data-sideload-active='none']) .vp-local-nav,
-  body.exercise-sidebar-active .vp-local-nav {
-    display: flex !important;
-    margin-right: 4px;
-    opacity: 1;
-    pointer-events: auto;
-    animation: vpLocalNavFadeIn 0.2s cubic-bezier(0.2, 0, 0, 1) forwards;
-  }
-}
-
-@keyframes vpLocalNavFadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-/* 左侧移动菜单展开时，顶栏大纲按钮让位（避免与抽屉遮罩/布局冲突）。
-   注意：data-mobile-menu-expanded 由 Starlight 加在 <body> 上（此前写成
-   html[...] 是永不匹配的坏规则，此处一并修正）。 */
-body[data-mobile-menu-expanded] .vp-local-nav {
-  visibility: hidden;
-}
-
-/* 打印 / PDF 导出时不渲染本地导航条 */
-@media print {
-  .vp-local-nav {
-    display: none !important;
-  }
-}
-
-/* --------------------------------------------------------------------------
-   移动端左侧栏：VitePress 侧滑抽屉（替换 Starlight 默认的全屏“上下抽屉”）
-   对照 VPSidebar.vue：position fixed 左侧、宽 calc(100vw - 4rem)、
-   max-width 20rem、translateX(-100%) → 0 滑入，配合遮罩（VPBackdrop 语义）。
-   关闭方式：顶栏菜单按钮（变 X）或点击遮罩（JS 绑定，见 SidebarOverride）。
-   -------------------------------------------------------------------------- */
-@media (max-width: 49.999rem) {
-  /* 抽屉：左侧滑入窄面板（对照 VPSidebar；顶部从 header 下缘开始，
-     顶栏与菜单按钮保持可见，随时可关） */
-  .sidebar-pane {
-    inset-block: var(--sl-nav-height) 0;
-    inset-inline-start: 0;
-    width: calc(100vw - 4rem);
-    max-width: 20rem;
-    background-color: var(--sl-color-bg-sidebar) !important;
-    box-shadow: var(--sl-shadow-lg);
-    visibility: hidden;
-    transform: translateX(-100%);
-    transition: transform 0.35s cubic-bezier(0.19, 1, 0.22, 1), visibility 0s 0.35s;
-    overscroll-behavior: contain;
-    z-index: var(--layer-drawer) !important;
-  }
-
-  body[data-mobile-menu-expanded] .sidebar-pane,
-  starlight-menu-button[aria-expanded='true'] ~ .sidebar-pane {
-    visibility: visible !important;
-    transform: translateX(0) !important;
-    transition: transform 0.35s cubic-bezier(0.19, 1, 0.22, 1) !important;
-  }
-
-  /* 遮罩（VPBackdrop 语义）：抽屉打开时覆盖其余屏幕；z-index 低于抽屉、
-     低于顶栏(100)，保证菜单按钮始终可点；点击关闭由 SidebarOverride 的 JS 绑定 */
-  body[data-mobile-menu-expanded] .page::before {
-    content: '';
-    position: fixed;
-    inset: var(--sl-nav-height) 0 0 0;
-    z-index: calc(var(--layer-drawer) - 1);
-    background: rgba(0, 0, 0, 0.4);
-    opacity: 1;
-    transition: opacity 0.25s;
-  }
-  body:not([data-mobile-menu-expanded]) .page::before {
-    content: '';
-    position: fixed;
-    inset: var(--sl-nav-height) 0 0 0;
-    z-index: calc(var(--layer-drawer) - 1);
-    background: rgba(0, 0, 0, 0.4);
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.25s;
-  }
-}
-
-/* --- 脚注（本书首次支持：MinerU 上标标记 + 页内脚注块） --- */
-
-/* 正文脚注上标：原书用圆圈数字（①②③…）标注页脚注释 */
-.prose sup, .content sup, .sl-markdown-content sup,
-main sup, article sup {
-  font-size: 0.72em;
-  line-height: 0;
-  vertical-align: super;
-  color: var(--sl-color-text-accent, #3b82f6);
-  font-weight: 600;
-  padding: 0 0.1em;
-  user-select: text;
-}
-
-/* 页内脚注块（节末 <Block title="脚注">）：缩小字号、与正文区分 */
-.fallback-block .footnote-text,
-.block-title-footnote {
-  font-size: 0.9em;
-  color: var(--sl-color-gray-5, #666);
-}
-
-/* ==========================================================================
-   底栏翻页（Pager / Pagination）基准样式
-   --------------------------------------------------------------------------
-   供 Starlight 经典模式（或默认基础）使用：
-   为 PaginationOverride.astro 的 nav.prev-next 结构提供标准卡片翻页样式。
-   在 VitePress 模式下被 vitepress-theme.css 区块 10 覆盖。
-   ========================================================================== */
-.prev-next {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 1rem;
-  margin-top: 2rem;
-  padding-top: 1.5rem;
-  border-top: 1px solid var(--sl-color-hairline);
-}
-
-@media (min-width: 40rem) {
-  .prev-next {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-.prev-next .pager-link {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  padding: 0.875rem 1rem;
-  border: 1px solid var(--sl-color-hairline);
-  border-radius: 0.5rem;
-  background-color: var(--sl-color-bg);
-  box-shadow: var(--sl-shadow-sm);
-  text-decoration: none;
-  transition: border-color 0.2s, background-color 0.2s;
-}
-
-.prev-next .pager-link:hover {
-  border-color: var(--sl-color-gray-3);
-  background-color: var(--sl-color-gray-6);
-}
-
-.prev-next .pager-link.next {
-  margin-left: auto;
-  text-align: right;
-}
-
-.prev-next .desc {
-  font-size: 0.75rem;
-  font-weight: 500;
-  color: var(--sl-color-gray-2);
-}
-
-.prev-next .title {
-  font-size: 0.9375rem;
-  font-weight: 600;
-  color: var(--sl-color-white);
-}
-
-/* ==========================================================================
-   跨页/页内跳转“返回原阅读位置”浮动返回胶囊与视线接引高亮
-   ========================================================================== */
-
-.vp-jump-back-widget {
-  position: fixed;
-  bottom: 2rem;
-  left: 2rem;
-  z-index: var(--layer-floating);
-  display: inline-flex;
-  align-items: center;
-  background: color-mix(in srgb, var(--sl-color-bg, #ffffff) 88%, transparent);
-  -webkit-backdrop-filter: saturate(180%) blur(16px);
-  backdrop-filter: saturate(180%) blur(16px);
-  border: 1px solid var(--sl-color-hairline, #e2e8f0);
-  border-radius: 9999px;
-  box-shadow: var(--sl-shadow-lg, 0 10px 25px rgba(0, 0, 0, 0.15)), 0 6px 24px rgba(0, 0, 0, 0.12);
-  padding: 0.25rem 0.4rem 0.25rem 0.75rem;
-  font-family: var(--vp-font-family-base, var(--sl-font), system-ui, -apple-system, sans-serif);
-  opacity: 0;
-  transform: translateY(12px) scale(0.96);
-  pointer-events: none;
-  transition: opacity 0.22s cubic-bezier(0.16, 1, 0.3, 1), transform 0.22s cubic-bezier(0.16, 1, 0.3, 1);
-  box-sizing: border-box;
-  user-select: none;
-}
-
-.vp-jump-back-widget.is-active {
-  opacity: 1;
-  transform: translateY(0) scale(1);
-  pointer-events: auto;
-}
-
-.vp-jump-action-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.45rem;
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: var(--sl-color-gray-1, #1e293b);
-  font-size: 0.8125rem;
-  font-weight: 500;
-  padding: 0.25rem 0.35rem;
-  border-radius: 999px;
-  transition: color 0.15s ease;
-  min-width: 0;
-}
-
-.vp-jump-action-btn:hover {
-  color: var(--sl-color-text-accent, #3b82f6);
-}
-
-.vp-jump-svg {
-  width: 14px;
-  height: 14px;
-  color: var(--sl-color-text-accent, #3b82f6);
-  flex-shrink: 0;
-  transition: transform 0.18s ease;
-}
-
-.vp-jump-action-btn:hover .vp-jump-svg {
-  transform: translateX(-2px);
-}
-
-.vp-jump-label {
-  font-weight: 600;
-  color: var(--sl-color-text-accent, #3b82f6);
-  font-size: 0.75rem;
-  flex-shrink: 0;
-}
-
-.vp-jump-target {
-  color: var(--sl-color-white, #0f172a);
-  font-weight: 500;
-  font-size: 0.8125rem;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 180px;
-}
-
-.vp-jump-count {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.65rem;
-  font-weight: 700;
-  background: var(--sl-color-accent-low, rgba(59, 130, 246, 0.12));
-  color: var(--sl-color-text-accent, #3b82f6);
-  border-radius: 999px;
-  padding: 0 0.35rem;
-  height: 1.1rem;
-  min-width: 1.1rem;
-  line-height: 1;
-  flex-shrink: 0;
-}
-
-.vp-jump-divider {
-  width: 1px;
-  height: 0.95rem;
-  background: var(--sl-color-hairline, #e2e8f0);
-  margin: 0 0.3rem;
-  flex-shrink: 0;
-}
-
-.vp-jump-close-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 1.45rem;
-  height: 1.45rem;
-  border: none;
-  background: transparent;
-  color: var(--sl-color-gray-3, #94a3b8);
-  border-radius: 50%;
-  cursor: pointer;
-  padding: 0;
-  flex-shrink: 0;
-  transition: background-color 0.15s ease, color 0.15s ease;
-}
-
-.vp-jump-close-btn:hover {
-  background: var(--sl-color-gray-6, #f1f5f9);
-  color: var(--sl-color-white, #0f172a);
-}
-
-.vp-jump-close-svg {
-  width: 12px;
-  height: 12px;
-}
-
-@media (max-width: 71.999rem) {
-  .vp-jump-back-widget {
-    left: 50%;
-    bottom: 1.5rem;
-    transform: translateX(-50%) translateY(12px) scale(0.96);
-    max-width: calc(100vw - 2rem);
-  }
-  .vp-jump-back-widget.is-active {
-    transform: translateX(-50%) translateY(0) scale(1);
-  }
-  .vp-jump-target {
-    max-width: 140px;
-  }
-}
-
-@keyframes source-badge-restrained {
-  0% {
-    background-color: var(--sl-color-text-accent, #3b82f6) !important;
-    color: var(--sl-color-text-invert, #ffffff) !important;
-    outline-color: var(--sl-color-text-accent, #3b82f6);
-  }
-  50% {
-    background-color: var(--sl-color-text-accent, #3b82f6) !important;
-    color: var(--sl-color-text-invert, #ffffff) !important;
-    outline-color: var(--sl-color-text-accent, #3b82f6);
-  }
-  100% {
-    background-color: var(--sl-color-accent-low, rgba(59, 130, 246, 0.12));
-    color: var(--sl-color-text-accent, #3b82f6);
-    outline-color: transparent;
-  }
-}
-
-.source-jump-pulse {
-  animation: source-badge-restrained 0.65s ease-out;
-  outline: 1.5px solid var(--sl-color-text-accent, #3b82f6) !important;
-  outline-offset: 1.5px !important;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .vp-jump-back-widget {
-    transition: none !important;
-  }
-  .source-jump-pulse {
-    animation: none !important;
-  }
-}
-
-/* ==========================================================================
-   学术出版物数字化配套资源组件 (Academic Digital Resource Annotation)
-   North Star: Academic Restraint, Typography > Borders, No SaaS Card
-   ========================================================================== */
-
-/* 既有卡片模式向后兼容回退 */
-.academic-resource-card:not(.academic-digital-resource) {
-  position: relative;
-  margin: 1.15rem 0;
-  padding: 0.45rem 0.85rem;
-  background-color: var(--sl-color-gray-6, #f8f9fa);
-  border: 1px solid var(--sl-color-hairline, #e2e8f0);
-  border-left: 2.5px solid var(--sl-color-gray-4, #94a3b8);
-  border-radius: 4px;
-  font-family: var(--sl-font, inherit);
-  transition: border-color 0.15s ease, background-color 0.15s ease;
-}
-
-/* 学术数字资源流式排版 (Academic Text Annotation Stream) */
-.academic-digital-resource {
-  clear: both;
-  display: flow-root;
-  box-sizing: border-box;
-  margin: 0.65rem 0 0.85rem 0;
-  padding: 0;
-  background: transparent !important;
-  border: none !important;
-  box-shadow: none !important;
-  font-family: var(--sl-font, inherit);
-  line-height: 1.6;
-}
-
-.academic-resource-stream {
-  display: inline-flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 0.35rem 0.5rem;
-  font-size: 0.86rem;
-}
-
-.academic-resource-prefix {
-  font-family: var(--sl-font-serif, "Kaiti SC", "STKaiti", "KaiTi", serif);
-  font-size: 0.83rem;
-  color: var(--sl-color-gray-3, #64748b);
-  letter-spacing: 0.02em;
-  user-select: none;
-}
-
-.academic-resource-title-link {
-  color: var(--sl-color-text-accent, #1d4ed8);
-  text-decoration: none;
-  font-weight: 500;
-  transition: color 0.15s ease, text-decoration 0.15s ease;
-  word-break: break-word;
-}
-
-.academic-resource-title-link:hover {
-  text-decoration: underline;
-  text-underline-offset: 3px;
-  color: var(--sl-color-accent-high, #1e40af);
-}
-
-.academic-resource-title-plain {
-  color: var(--sl-color-gray-2, #334155);
-  font-weight: 500;
-}
-
-.academic-resource-link-arrow {
-  display: inline-block;
-  font-family: inherit;
-  font-size: 0.85em;
-  opacity: 0.75;
-  transition: transform 0.15s ease, opacity 0.15s ease;
-}
-
-.academic-resource-title-link:hover .academic-resource-link-arrow {
-  opacity: 1;
-  transform: translate(1px, -1px);
-}
-
-.academic-resource-actions {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
-  margin-left: 0.25rem;
-  vertical-align: middle;
-  position: relative;
-  flex-shrink: 0;
-}
-
-.academic-resource-action-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 20px;
-  height: 20px;
-  padding: 0;
-  margin: 0 !important;
-  line-height: 1;
-  flex-shrink: 0;
-  background: transparent;
-  border: 1px solid var(--sl-color-hairline, #e2e8f0);
-  border-radius: 3px;
-  color: var(--sl-color-gray-4, #94a3b8);
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.academic-resource-action-btn:hover,
-.academic-resource-action-btn.is-active {
-  color: var(--sl-color-gray-1, #1e293b);
-  border-color: var(--sl-color-gray-3, #64748b);
-  background: var(--sl-color-gray-6, #f8f9fa);
-}
-
-.academic-resource-action-btn.is-copied {
-  color: #10b981 !important;
-  border-color: #10b981 !important;
-}
-
-/* --------------------------------------------------------------------------
-   学术数字资源扫码弹层面板 (Discreet Popover)
-   -------------------------------------------------------------------------- */
-.academic-resource-popover {
-  position: absolute;
-  top: calc(100% + 6px);
-  right: 0;
-  margin: 0 !important;
-  z-index: var(--layer-popover);
-  width: 200px;
-  max-width: calc(100vw - 2rem);
-  background: var(--sl-color-bg, #ffffff);
-  border: 1px solid var(--sl-color-hairline, #e2e8f0);
-  border-radius: 6px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08), 0 2px 6px rgba(0, 0, 0, 0.04);
-  display: flex;
-  flex-direction: column;
-  overflow: visible;
-  opacity: 0;
-  transform: translateY(-4px);
-  pointer-events: none;
-  transition: opacity 0.15s ease, transform 0.15s ease;
-}
-
-.academic-resource-popover.is-open {
-  opacity: 1;
-  transform: translateY(0);
-  pointer-events: auto;
-}
-
-.academic-resource-popover[hidden] {
-  display: none !important;
-}
-
-.academic-resource-pop-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0.4rem 0.65rem;
-  border-bottom: 1px solid var(--sl-color-hairline, #e2e8f0);
-  background: var(--sl-color-gray-6, #f8f9fa);
-  border-top-left-radius: 5px;
-  border-top-right-radius: 5px;
-}
-
-.academic-resource-pop-title {
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: var(--sl-color-white, #1e293b);
-  letter-spacing: 0.01em;
-}
-
-.academic-resource-pop-close {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 18px;
-  height: 18px;
-  padding: 0;
-  background: transparent;
-  border: none;
-  color: var(--sl-color-gray-3, #94a3b8);
-  border-radius: 3px;
-  cursor: pointer;
-  transition: color 0.15s ease, background 0.15s ease;
-}
-
-.academic-resource-pop-close:hover {
-  color: var(--sl-color-white, #0f172a);
-  background: var(--sl-color-gray-5, #e2e8f0);
-}
-
-.academic-resource-pop-body {
-  padding: 0.65rem 0.65rem 0.5rem 0.65rem;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-}
-
-.academic-resource-qr-svg {
-  width: 140px;
-  height: 140px;
-}
-
-.academic-resource-qr-svg svg {
-  width: 100%;
-  height: 100%;
-  display: block;
-}
-
-.academic-resource-tip {
-  font-size: 0.72rem;
-  color: var(--sl-color-gray-3, #94a3b8);
-  margin-top: 0.4rem;
-  margin-bottom: 0;
-}
-
-/* --------------------------------------------------------------------------
-   暗色模式适配 (Dark Mode)
-   -------------------------------------------------------------------------- */
-:root:not([data-site-theme='starlight'])[data-theme='dark'] .academic-resource-prefix,
-html[data-theme='dark'] .academic-resource-prefix {
-  color: var(--sl-color-gray-4, #94a3b8);
-}
-
-:root:not([data-site-theme='starlight'])[data-theme='dark'] .academic-resource-title-link,
-html[data-theme='dark'] .academic-resource-title-link {
-  color: var(--sl-color-accent, #93b4ff);
-}
-
-:root:not([data-site-theme='starlight'])[data-theme='dark'] .academic-resource-action-btn,
-html[data-theme='dark'] .academic-resource-action-btn {
-  border-color: var(--sl-color-hairline, #28282c);
-  color: var(--sl-color-gray-4, #71717a);
-}
-
-:root:not([data-site-theme='starlight'])[data-theme='dark'] .academic-resource-action-btn:hover,
-:root:not([data-site-theme='starlight'])[data-theme='dark'] .academic-resource-action-btn.is-active,
-html[data-theme='dark'] .academic-resource-action-btn:hover,
-html[data-theme='dark'] .academic-resource-action-btn.is-active {
-  color: var(--sl-color-gray-1, #e4e4e7);
-  border-color: var(--sl-color-gray-4, #52525b);
-  background-color: var(--sl-color-gray-6, #27272a);
-}
-
-:root:not([data-site-theme='starlight'])[data-theme='dark'] .academic-resource-popover,
-html[data-theme='dark'] .academic-resource-popover {
-  background: var(--sl-color-bg, #17171a);
-  border-color: var(--sl-color-hairline, #28282c);
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
-}
-
-:root:not([data-site-theme='starlight'])[data-theme='dark'] .academic-resource-pop-header,
-html[data-theme='dark'] .academic-resource-pop-header {
-  background: var(--sl-color-gray-7, #161618);
-  border-bottom-color: var(--sl-color-hairline, #28282c);
-}
-
-@media (max-width: 640px) {
-  .academic-resource-popover {
-    right: auto;
-    left: 0;
-    width: min(200px, calc(100vw - 2.5rem));
-  }
-}
-
-/* ==========================================================================
-   学术出版物旁注与侧注组件 (Academic SideNote / MarginNote)
-   ========================================================================== */
-.astrolib-sidenote {
-  box-sizing: border-box;
-  padding: 0.65rem 0.85rem;
-  font-size: 0.86rem;
-  line-height: 1.65;
-  background-color: var(--sl-color-gray-6, rgba(255, 255, 255, 0.03));
-  border-radius: 6px;
-  border-left: 2.5px solid var(--sl-color-gray-4, #94a3b8);
-  color: var(--sl-color-gray-2, #cbd5e1);
-  user-select: text;
-  transition: border-color 0.2s ease, background-color 0.2s ease;
-}
-
-/* 桌面端浮动模式：依附于正文右侧，高度随上下文并列排版 */
-@media (min-width: 50rem) {
-  .astrolib-sidenote.sidenote-float.sidenote-right {
-    float: right;
-    clear: right;
-    width: min(18rem, 36%);
-    margin: 0.25rem 0 1.15rem 1.35rem;
-  }
-  .astrolib-sidenote.sidenote-float.sidenote-left {
-    float: left;
-    clear: left;
-    width: min(18rem, 36%);
-    margin: 0.25rem 1.35rem 1.15rem 0;
-  }
-}
-
-/* 移动端与内联模式：撑满宽度，自然降级为紧凑说明块 */
-@media (max-width: 49.99rem) {
-  .astrolib-sidenote.sidenote-float {
-    float: none !important;
-    width: 100% !important;
-    margin: 1rem 0 !important;
-  }
-}
-
-.astrolib-sidenote.sidenote-inline {
-  float: none !important;
-  width: 100% !important;
-  margin: 1.15rem 0 !important;
-}
-
-/* 头部标题区 */
-.astrolib-sidenote .sidenote-header {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  font-size: 0.82rem;
-  font-weight: 650;
-  font-family: var(--font-heading, var(--academic-font-heading, sans-serif));
-  letter-spacing: 0.02em;
-  margin-bottom: 0.35rem;
-}
-
-.astrolib-sidenote .sidenote-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.astrolib-sidenote .sidenote-title {
-  color: var(--sl-color-white, #f8fafc);
-}
-
-/* 正文区 */
-.astrolib-sidenote .sidenote-content {
-  color: var(--sl-color-gray-2, #cbd5e1);
-}
-
-.astrolib-sidenote .sidenote-content p {
-  margin: 0.35rem 0;
-}
-.astrolib-sidenote .sidenote-content p:first-child {
-  margin-top: 0;
-}
-.astrolib-sidenote .sidenote-content p:last-child {
-  margin-bottom: 0;
-}
-
-.astrolib-sidenote .sidenote-content .katex {
-  font-size: 0.95em;
-}
-
-/* 学术语义类型色阶：克制衬托，无刺眼高饱和度 */
-.astrolib-sidenote.sidenote-think {
-  border-left-color: var(--sl-color-accent, #38bdf8);
-  background-color: var(--sl-color-accent-low, rgba(56, 189, 248, 0.05));
-}
-.astrolib-sidenote.sidenote-think .sidenote-icon {
-  color: var(--sl-color-accent, #38bdf8);
-}
-
-.astrolib-sidenote.sidenote-caution {
-  border-left-color: #f59e0b;
-  background-color: rgba(245, 158, 11, 0.05);
-}
-.astrolib-sidenote.sidenote-caution .sidenote-icon {
-  color: #f59e0b;
-}
-
-.astrolib-sidenote.sidenote-analysis {
-  border-left-color: #10b981;
-  background-color: rgba(16, 185, 129, 0.05);
-}
-.astrolib-sidenote.sidenote-analysis .sidenote-icon {
-  color: #10b981;
-}
-
-.astrolib-sidenote.sidenote-geom {
-  border-left-color: #a855f7;
-  background-color: rgba(168, 85, 247, 0.05);
-}
-.astrolib-sidenote.sidenote-geom .sidenote-icon {
-  color: #a855f7;
-}
-
-.astrolib-sidenote.sidenote-note {
-  border-left-color: var(--sl-color-gray-4, #94a3b8);
-}
-.astrolib-sidenote.sidenote-note .sidenote-icon {
-  color: var(--sl-color-gray-3, #94a3b8);
-}
-
-/* Academic Algorithm Block (LaTeX ruled style, aligned with academic print textbooks) */
-.academic-algorithm,
-.mineru-algorithm {
-  position: relative;
-  margin: 1.75rem 0 1.5rem;
-  border-top: 2px solid var(--sl-color-gray-1, #1e293b);
-  border-bottom: 2px solid var(--sl-color-gray-1, #1e293b);
-  border-left: none !important;
-  border-right: none !important;
-  border-radius: 0 !important;
-  background-color: transparent !important;
-  box-shadow: none !important;
-  white-space: pre-wrap;
-  font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace);
-  line-height: 1.65;
-  font-size: 0.925rem;
-  padding: 0.75rem 0.25rem 0.65rem;
-  text-indent: 0 !important;
-  overflow-x: auto;
-  tab-size: 4;
-}
-
-:root[data-theme='dark'] .academic-algorithm,
-:root[data-theme='dark'] .mineru-algorithm {
-  border-top-color: var(--sl-color-gray-2, #cbd5e1);
-  border-bottom-color: var(--sl-color-gray-2, #cbd5e1);
-  background-color: transparent !important;
-}
-
-.academic-algorithm :is(p, div, span, pre, code),
-.mineru-algorithm :is(p, div, span, pre, code),
-.academic-algorithm p,
-.mineru-algorithm p {
-  text-indent: 0 !important;
-  font-family: inherit;
-}
-
-.academic-algorithm p,
-.mineru-algorithm p {
-  margin: 0 !important;
-  line-height: inherit;
-}
-
-.academic-algorithm p + p,
-.mineru-algorithm p + p {
-  margin-top: 0.75rem !important;
-}
-
-/* ==========================================================================
-   全站学术纯净网页打印排版规范 (@media print)
-   保证在浏览器直接打印或导出 PDF 时：
-   1. 仅渲染主讲义/教材正文（.main-pane / main / .sl-markdown-content），宽度自适应 100%；
-   2. 彻底隐藏所有非正文元素：顶栏 (header)、左侧栏 (sidebar)、右侧侧载栏与大纲 (right-sidebar / dock)、
-      底部导航与版权 (footer / pager)、全站浮层对话框 (#astro-overlay-root / md-dialog / dialog)、
-      以及所有操作按钮、悬浮窗、AI 气泡、复制图标与徽章动作等；
-   3. 避免正文内卡片、定理、例题、公式与表格跨页截断。
-   ========================================================================== */
-@media print {
-  @page {
-    margin: 1.5cm;
-    size: auto;
-  }
-
-  html,
-  body {
-    background: #ffffff !important;
-    color: #000000 !important;
-    font-size: 11pt !important;
-    overflow: visible !important;
-    height: auto !important;
-    min-height: auto !important;
-  }
-
-  /* 强制浅色打印调色板，防止黑夜模式下产生大黑块或反色遮罩 */
-  :root,
-  :root[data-theme='dark'],
-  html[data-site-theme='material-you'][data-theme='dark'] {
-    --sl-color-bg: #ffffff !important;
-    --sl-color-bg-nav: #ffffff !important;
-    --sl-color-text: #000000 !important;
-    --sl-color-white: #000000 !important;
-    --sl-color-black: #ffffff !important;
-    --sl-color-gray-1: #1a1a1a !important;
-    --sl-color-gray-2: #333333 !important;
-    --sl-color-gray-3: #555555 !important;
-    --sl-color-gray-4: #777777 !important;
-    --sl-color-gray-5: #999999 !important;
-    --sl-color-gray-6: #e5e5e5 !important;
-    --sl-color-hairline: #e0e0e0 !important;
-    --sl-color-hairline-shade: #e0e0e0 !important;
-    --md-sys-color-background: #ffffff !important;
-    --md-sys-color-surface: #ffffff !important;
-    --md-sys-color-on-surface: #000000 !important;
-    --md-sys-color-on-background: #000000 !important;
-  }
-
-  /* 页面布局容器铺满与外边距重置：打破两栏/桌面多栏对正文宽度的挤压与偏移 */
-  .page {
-    display: block !important;
-    min-height: auto !important;
-    height: auto !important;
-    padding: 0 !important;
-    margin: 0 !important;
-    overflow: visible !important;
-  }
-
-  .main-frame {
-    display: block !important;
-    padding: 0 !important;
-    margin: 0 !important;
-    width: 100% !important;
-    max-width: 100% !important;
-    overflow: visible !important;
-  }
-
-  .lg\:sl-flex {
-    display: block !important;
-    width: 100% !important;
-  }
-
-  .main-pane,
-  [data-has-sidebar] .main-pane,
-  [data-has-sidebar][data-has-toc] .main-pane {
-    display: block !important;
-    width: 100% !important;
-    max-width: 100% !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    position: static !important;
-    isolation: auto !important;
-    transform: none !important;
-  }
-
-  main {
-    display: block !important;
-    width: 100% !important;
-    max-width: 100% !important;
-    margin: 0 !important;
-    padding: 0 !important;
-  }
-
-  .content-panel {
-    display: block !important;
-    width: 100% !important;
-    max-width: 100% !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    border: none !important;
-    box-shadow: none !important;
-    background: transparent !important;
-  }
-
-  .sl-markdown-content {
-    max-width: 100% !important;
-    width: 100% !important;
-  }
-
-  /* 彻底屏蔽所有非正文元素、顶栏、侧边栏、大纲栏、底栏、操作弹窗与遮罩 */
-  header,
-  .header,
-  .page > header,
-  nav.sidebar,
-  .sidebar-pane,
-  .right-sidebar-container,
-  .right-sidebar,
-  .astrolib-sideload-dock,
-  .custom-page-sidebar,
-  footer,
-  .sl-footer,
-  .prev-next,
-  .pagination-links,
-  .vp-local-nav,
-  #astro-overlay-root,
-  #chapter-export-modal,
-  md-dialog,
-  dialog,
-  [role="dialog"],
-  .astrolib-dialog,
-  .astrolib-sideload-scrim,
-  .scrim,
-  .vp-sidebar-toggle-btn,
-  .vp-right-sidebar-toggle-btn,
-  .mobile-menu-toggle,
-  .toc-mobile-toggle,
-  .katex-actions,
-  .copy-formula-tooltip,
-  .sideload-dock-fab,
-  #quick-settings-panel,
-  #quick-settings-btn,
-  #sidenote-ai-btn,
-  #editor-floating-tools,
-  .vp-search-wrapper,
-  .outline-marker {
-    display: none !important;
-    visibility: hidden !important;
-    opacity: 0 !important;
-  }
-
-  /* 保证卡片、代码块、表格、公式环境页面自适应与防截断 */
-  .sl-markdown-content .card,
-  .sl-markdown-content .starlight-aside,
-  .sl-markdown-content blockquote,
-  .sl-markdown-content table {
-    break-inside: avoid;
-  }
-}
-
-
+@import './tokens/layers.css';
+@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap');
+@import './components/mermaid.css';
+@import './components/bilingual-reader.css';
+@import './components/notice-framework.css';
+
+/* ==========================================================================
+   UI 样式表
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. 数学公式排版优化：让行间公式在超出边界时支持横向滚动，防止溢出或截断
+   -------------------------------------------------------------------------- */
+
+.katex-display {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  padding: 0.45rem 0;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: var(--sl-color-gray-5, #cbd5e1) transparent;
+}
+.katex-display::-webkit-scrollbar {
+  height: 4px;
+}
+.katex-display::-webkit-scrollbar-thumb {
+  background-color: var(--sl-color-gray-5, #cbd5e1);
+  border-radius: 4px;
+}
+.katex-display::-webkit-scrollbar-track {
+  background-color: transparent;
+}
+
+/* 关键重构：KaTeX 块级公式居中与学术编号（\tag）标准右对齐治理
+   1. 外层 .katex-display 作为滚动容器，支持横向滚动与留白；
+   2. .katex 采用 min-width: 100%，确保公式主体在版心严格居中；
+   3. .tag 绝对定位靠右 (right: 0.25rem)，采用衬线数字与克制弱化色，
+      达到大学教材/学术出版级别的公式排版质感；
+   4. 当公式超宽触发滚动时，min-width: 100% 保证公式横向滚动且编号始终处于
+      最右侧，绝不与公式内容重叠。 */
+.katex-display > .katex {
+  display: block;
+  min-width: 100%;
+  width: max-content;
+  position: relative;
+  text-align: center;
+}
+
+.katex-display > .katex > .katex-html {
+  display: block;
+  position: relative;
+  width: 100%;
+  text-align: center;
+}
+
+/* 供 Chrome 侧边栏阅读模式与屏幕阅读器提取的纯文本自愈节点（视觉严格隐藏，零占据尺寸） */
+.katex-reader-text {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border-width: 0 !important;
+  user-select: none !important;
+}
+
+/* 公式末尾编号（\tag）：标准学术版心右对齐与正统教材墨黑 */
+.katex-display > .katex > .katex-html > .tag {
+  position: absolute;
+  right: 0.25rem;
+  top: 50%;
+  transform: translateY(-50%);
+  white-space: nowrap;
+  font-family: var(--academic-font-latin, 'Times New Roman', serif);
+  font-size: 0.95em;
+  color: var(--academic-color-tag, var(--sl-color-white));
+  user-select: none;
+  padding-left: 1.5rem;
+}
+
+@media (max-width: 640px) {
+  .katex-display > .katex > .katex-html > .tag {
+    position: static;
+    float: right;
+    margin-left: 1rem;
+    transform: none;
+  }
+}
+
+/* 行内公式视觉校准：与中文 1rem 字面高度自然融合，基线严格平稳，字阶克制 */
+.sl-markdown-content .katex:not(.katex-display .katex) {
+  font-size: 1.06em;
+  line-height: normal;
+  /* 恢复标准 TeX 行内流排版，彻底拔除滚动条与底边缘判定 */
+  display: inline;
+  overflow: visible !important;
+  vertical-align: baseline !important;
+  white-space: normal;
+}
+
+.sl-markdown-content .katex:not(.katex-display .katex) .katex-html {
+  display: inline-block;
+  vertical-align: 0;
+}
+
+/* KaTeX 经典框式公式排版 (\boxed) 纯正学术线框 (0.8px 发丝线与舒适内衬) */
+.katex .fbox {
+  border: 0.8px solid currentColor !important;
+  padding: 0.35em 0.65em !important;
+  border-radius: 1px !important;
+}
+
+/* 行内公式：仅限制最大宽度，内部严禁继承段落首行缩进 */
+.katex {
+  max-width: 100%;
+  text-indent: 0 !important;
+}
+
+/* 仅针对显式标记为横向滚动的极端长行内公式容器启用滚动胶囊 */
+.katex-scroll-capsule {
+  display: inline-block;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  vertical-align: middle;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: var(--sl-color-gray-5, #cbd5e1) transparent;
+}
+.katex-scroll-capsule::-webkit-scrollbar {
+  height: 3px;
+}
+.katex-scroll-capsule::-webkit-scrollbar-thumb {
+  background-color: var(--sl-color-gray-5, #cbd5e1);
+  border-radius: 3px;
+}
+.katex-scroll-capsule::-webkit-scrollbar-track {
+  background-color: transparent;
+}
+
+/* --------------------------------------------------------------------------
+   正文数学密集卡片与插图视口外延迟渲染 (CSS Content Visibility Containment)
+   跳过视口外深层 KaTeX DOM 树的初次样式计算与排版绘制，大幅降低首屏长任务与内存
+   注意：严格排除标题（h1~h6），确保右侧大纲 TOC 与 scroll-spy 锚点定位平稳无抖动
+   -------------------------------------------------------------------------- */
+.sl-markdown-content > .example-card,
+.sl-markdown-content > .solution-details,
+.sl-markdown-content > .vp-figure,
+.sl-markdown-content > .knowledge-card,
+.sl-markdown-content > .method-card,
+.sl-markdown-content > .guide-block,
+.sl-markdown-content > .variant-card,
+.sl-markdown-content > .exercise-card,
+.sl-markdown-content > .astrolib-sidenote.sidenote-inline,
+.sl-markdown-content > .katex-display {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 200px;
+}
+
+/* ==========================================================================
+
+   学术出版段落排版规范 (Academic Paragraph Typesetting & Indentation)
+   --------------------------------------------------------------------------
+   遵循中国高校数理专著、国家标准与 LaTeX ctex 宏包排版规范：
+   1. 正文自然段首行缩进 2 个中文字符宽 (2em，可由用户设置动态开关)；
+   2. 段落垂直节奏紧凑致密 (margin-block: 0.65rem)，呈现纸质学术书卷韵律；
+   3. 严格防御白名单，绝不误伤居中大公式、标题、表格、代码块、列表、定理标签。
+   ========================================================================== */
+
+:root {
+  --academic-paragraph-indent: 2em;
+}
+
+html[data-paragraph-indent="false"] {
+  --academic-paragraph-indent: 0 !important;
+}
+
+/* 正文与卡片正文说明段落：首行缩进（受快速设置中的【段前空两格】动态调控） */
+.sl-markdown-content > p:not(.noindent),
+.sl-markdown-content p:not(.noindent),
+.astrolib-chapter-content > p:not(.noindent),
+.astrolib-chapter-content p:not(.noindent),
+.card-body > p:not(.noindent),
+.solution-content > p:not(.noindent),
+.analysis-content > p:not(.noindent),
+.knowledge-content > p:not(.noindent),
+.note-content > p:not(.noindent),
+.guide-content > p:not(.noindent),
+.method-content > p:not(.noindent),
+.fallback-content > p:not(.noindent) {
+  text-indent: var(--academic-paragraph-indent, 2em);
+  margin-top: 0.45rem;
+  margin-bottom: 0.65rem;
+}
+
+/* 用户关闭【段前空两格】时强制全量顶格 */
+html[data-paragraph-indent="false"] .sl-markdown-content p,
+html[data-paragraph-indent="false"] .astrolib-chapter-content p,
+html[data-paragraph-indent="false"] .sl-markdown-content > p,
+html[data-paragraph-indent="false"] .card-body > p,
+html[data-paragraph-indent="false"] .solution-content > p,
+html[data-paragraph-indent="false"] .analysis-content > p,
+html[data-paragraph-indent="false"] .knowledge-content > p,
+html[data-paragraph-indent="false"] .note-content > p,
+html[data-paragraph-indent="false"] .guide-content > p,
+html[data-paragraph-indent="false"] .method-content > p,
+html[data-paragraph-indent="false"] .fallback-content > p {
+  text-indent: 0 !important;
+}
+
+/* 核心防御 1: 块级独立公式绝对禁止首行缩进（否则公式偏右无法居中） */
+.katex-display,
+.sl-markdown-content p:has(> .katex-display),
+.sl-markdown-content p > .katex-display {
+  text-indent: 0 !important;
+}
+
+/* 核心防御 2: 仅包含图片或主要为插图的段落禁止缩进 */
+.sl-markdown-content p:has(> img:only-child),
+.sl-markdown-content p:has(> .astro-blur-image-wrapper:only-child),
+.sl-markdown-content p:has(> .astro-blur-image:only-child) {
+  text-indent: 0 !important;
+}
+
+/* 核心防御 3: 标题、列表、代码块、表格、引言、算法块、卡片头部、交叉引用徽章等结构元素绝对禁止缩进 */
+.sl-markdown-content :is(h1, h2, h3, h4, h5, h6, ul, ol, li, pre, code, table, th, td, blockquote, figure, figcaption, .academic-algorithm, .mineru-algorithm, .algorithm-body, .algorithm-caption),
+.academic-algorithm,
+.mineru-algorithm,
+.algorithm-body,
+.algorithm-caption,
+.card-header,
+.card-title,
+.option-chip-wrapper,
+.question-stem,
+.fig-ref-badge,
+.block-ref-badge,
+.fig-ref-badge *,
+.block-ref-badge * {
+  text-indent: 0 !important;
+}
+
+/* 核心防御 4: 首个直接子元素为代码或代码标识的段落绝对禁止首行缩进 */
+.sl-markdown-content p:has(> code:first-child),
+.sl-markdown-content p:has(> :first-child:is(code, kbd, samp)) {
+  text-indent: 0 !important;
+}
+
+/* 核心防御 5: 项目开发与架构技术文档（/dev/*）全面顶格排版，采用标准技术文档的垂直段距流 */
+.main-pane.is-dev-doc .sl-markdown-content p,
+html[data-page-type='dev'] .sl-markdown-content p {
+  text-indent: 0 !important;
+  margin-top: 0.75rem !important;
+  margin-bottom: 0.85rem !important;
+}
+
+/* 显式顶格排版类（支持 LaTeX \noindent 语义，如紧随公式后的“式中：/其中：”） */
+.noindent,
+.sl-markdown-content p.noindent {
+  text-indent: 0 !important;
+}
+
+
+/* --------------------------------------------------------------------------
+   2. 选择题排版优化：等宽响应式网格与自适应单列折行
+   -------------------------------------------------------------------------- */
+.question-stem {
+  margin-bottom: 1.25rem !important;
+  line-height: 1.6;
+}
+
+.options-container {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr); /* 大屏严格等宽 4 列，防止大小不一 */
+  gap: 0.75rem 1.5rem;
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+  min-width: 0; /* 允许网格整体收缩，避免被长公式撑破卡片 */
+}
+
+.options-container.options-vertical {
+  grid-template-columns: 1fr !important; /* 长文本自动转为单列 */
+}
+
+.option-chip-wrapper {
+  display: flex;
+  align-items: center;
+  background-color: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  padding: 0.35rem 0.6rem;
+  transition: all 0.15s ease;
+  cursor: pointer;
+  user-select: none;
+  margin-top: 0 !important;
+  min-width: 0; /* 网格子项默认 min-width:auto，会被 nowrap 公式撑破，必须归零 */
+}
+
+.option-chip-wrapper:hover {
+  background-color: var(--sl-color-gray-6, #f1f5f9);
+}
+
+.option-chip-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--sl-color-gray-3, #475569);
+  background-color: var(--sl-color-gray-6, #f1f5f9);
+  width: 1.35rem;
+  height: 1.35rem;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  flex-shrink: 0;
+  margin-right: 0.6rem;
+  transition: all 0.15s ease;
+}
+
+.option-chip-wrapper:hover .option-chip-label {
+  background-color: var(--sl-color-text-accent, #3b82f6);
+  color: #ffffff !important;
+}
+
+.option-chip-content {
+  font-size: 0.88rem;
+  color: var(--sl-color-text, #1e293b);
+  font-weight: 400;
+  line-height: 1.4;
+  min-width: 0; /* flex 子项允许收缩，长公式交由内部滚动接管 */
+}
+
+@media (max-width: 48rem) {
+  .options-container:not(.options-vertical) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 30rem) {
+  .options-container:not(.options-vertical) {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+/* ==========================================================================
+   图文与块级组件深度联动组件 (学术出版级内联交叉引用超链接)
+   ========================================================================== */
+
+/* 1. 正文与题干中的交叉引用超链接基础样式 */
+.fig-ref-badge, .block-ref-badge {
+  display: inline-flex;
+  align-items: baseline;
+  text-indent: 0 !important;
+  text-decoration: underline !important;
+  text-decoration-color: var(--sl-color-hairline) !important;
+  text-underline-offset: 3px;
+  font-size: 0.9em;
+  font-weight: 500;
+  padding: 0 0.2rem;
+  border-radius: 3px;
+  border: none !important;
+  background-color: transparent !important;
+  box-shadow: none !important;
+  line-height: inherit;
+  transition: all 0.15s ease;
+  vertical-align: baseline;
+  margin: 0 0.15rem;
+  gap: 0.2rem;
+  box-sizing: border-box;
+  color: var(--sl-color-text-accent);
+}
+
+/* 可交互交叉引用：悬浮呈现轻柔浅染色与完整下划线 */
+.fig-ref-badge.interactive-badge, .block-ref-badge.interactive-badge {
+  cursor: pointer;
+  user-select: none;
+}
+
+.fig-ref-badge.interactive-badge:hover, .block-ref-badge.interactive-badge:hover {
+  background-color: var(--sl-color-accent-low) !important;
+  text-decoration-color: currentColor !important;
+}
+
+/* 静态徽章（未匹配到或纯声明）保持朴素 */
+.fig-ref-badge.static-badge, .block-ref-badge.static-badge {
+  cursor: default;
+  text-decoration: none !important;
+  color: var(--sl-color-gray-2);
+}
+
+/* 微型矢量 SVG 图标 */
+.badge-svg {
+  width: 11px;
+  height: 11px;
+  display: inline-block;
+  flex-shrink: 0;
+  vertical-align: -1px;
+  opacity: 0.75;
+}
+
+.badge-arrow-svg {
+  width: 9px;
+  height: 9px;
+}
+
+/* 徽章内部结构 */
+.fig-icon, .block-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  flex-shrink: 0;
+  color: inherit;
+}
+
+.fig-text, .block-text {
+  font-size: inherit;
+  font-weight: 500;
+  line-height: inherit;
+  color: inherit;
+}
+
+.fig-arrow, .block-arrow {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  min-width: 9px;
+  width: 9px;
+  height: 9px;
+  opacity: 0.55;
+  transition: transform 0.15s ease, opacity 0.15s ease;
+  color: inherit;
+}
+
+.interactive-badge:hover .fig-arrow,
+.interactive-badge:hover .block-arrow {
+  opacity: 1;
+  transform: translate(1px, -1px);
+}
+
+/* --- 3. 目标插图与卡片的高亮与闪烁 (Glow & Flash Transition) --- */
+
+/* --------------------------------------------------------------------------
+   3. 引用联动与跳转高亮（克制学术风：无波纹、无形变、流畅轻盈）
+   -------------------------------------------------------------------------- */
+
+.fig-target-image, .fig-target-caption {
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+}
+
+/* 插图悬停高亮：纯边框与字色，无形变位移 */
+.fig-target-image.fig-highlight {
+  border-color: var(--sl-color-text-accent, #3b82f6) !important;
+  box-shadow: var(--sl-shadow-sm) !important;
+}
+.fig-target-caption.fig-highlight {
+  color: var(--sl-color-text-accent, #3b82f6) !important;
+  font-weight: 600;
+}
+
+/* 组件卡片悬停高亮：克制轻微阴影与高亮边框，杜绝 translateY 跳动 */
+.card-ref-highlight {
+  border-color: var(--sl-color-text-accent, #3b82f6) !important;
+  box-shadow: var(--sl-shadow-sm) !important;
+}
+
+/* 大卡片跳转就位动效：克制学术风强调边框与浅染色渐隐（0.65s 瞬时响应，零波纹扩散） */
+@keyframes card-flash-restrained {
+  0% {
+    background-color: var(--sl-color-accent-low, rgba(59, 130, 246, 0.12));
+    outline: 2px solid var(--sl-color-text-accent, #3b82f6);
+    outline-offset: -1px;
+  }
+  40% {
+    background-color: var(--sl-color-accent-low, rgba(59, 130, 246, 0.12));
+    outline: 2px solid var(--sl-color-text-accent, #3b82f6);
+    outline-offset: -1px;
+  }
+  100% {
+    background-color: transparent;
+    outline: 2px solid transparent;
+    outline-offset: -1px;
+  }
+}
+.card-ref-flash {
+  animation: card-flash-restrained 0.65s ease-out;
+}
+
+/* 图片与图题跳转就位动效：轻微边框与字色淡出（零波纹） */
+@keyframes fig-flash-restrained {
+  0% {
+    border-color: var(--sl-color-text-accent, #3b82f6) !important;
+  }
+  100% {
+    border-color: transparent !important;
+  }
+}
+.fig-target-image {
+  transition: border-color 0.2s ease;
+  border: 2px solid transparent;
+  border-radius: 6px;
+}
+.fig-target-caption {
+  transition: color 0.2s ease;
+}
+.fig-target-image.fig-flash {
+  animation: fig-flash-restrained 0.65s ease-out;
+  border-color: var(--sl-color-text-accent, #3b82f6) !important;
+}
+.fig-target-caption.fig-flash {
+  color: var(--sl-color-text-accent, #3b82f6) !important;
+  transition: color 0.65s ease-out;
+}
+
+/* ==========================================================================
+   正文图像基础排版与平滑过渡
+   ========================================================================== */
+.sl-markdown-content img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin-inline: auto;
+  border-radius: 6px;
+  transition: 
+    filter 0.35s cubic-bezier(0.2, 0, 0.2, 1),
+    box-shadow 0.25s ease,
+    opacity 0.4s ease,
+    transform 0.35s cubic-bezier(0.2, 0, 0.2, 1);
+}
+
+/* ==========================================================================
+   正文图像高斯模糊占位 (LQIP) 与平滑渐变加载系统
+   ========================================================================== */
+.astro-blur-image {
+  /* 占位图背景层 */
+  background-image: var(--blur-placeholder);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  
+  /* 初始未完成加载时的磨砂高斯模糊态 */
+  filter: blur(14px);
+  transform: scale(0.995);
+  opacity: 0.88;
+  clip-path: inset(0 round 6px);
+  will-change: filter, opacity, transform;
+}
+
+/* 图像加载就绪状态：高斯模糊消退，清晰呈现原图 */
+.astro-blur-image.is-loaded {
+  filter: blur(0);
+  opacity: 1;
+  transform: scale(1);
+  background-image: none;
+}
+
+/* ==========================================================================
+   夜间模式白底教辅图像智能反相与色彩保真系统 (Dark Theme Precise Calibration)
+   ========================================================================== */
+:root[data-theme='dark'] .sl-markdown-content img:not(.no-dark-invert) {
+  /* 
+   * 精确色彩学校准：
+   * 1. invert(0.894)：将白底 (255) 数学映射至 RGB(27, 27, 27)，与全站背景色 #1b1b1f (RGB 27, 27, 31) 精准贴合、无缝消除方框；
+   *    同时将黑色文字/线条 (0) 映射至 RGB(228, 228, 228)，与正文字色 #dfdfd6 完美匹配；
+   * 2. hue-rotate(180deg)：色相回正，保留红色、蓝色等彩色标记与曲线的原生色彩；
+   */
+  filter: invert(0.894) hue-rotate(180deg);
+}
+
+/* 配合 LQIP 模糊占位未完成态 */
+:root[data-theme='dark'] .sl-markdown-content img.astro-blur-image:not(.is-loaded):not(.no-dark-invert) {
+  filter: blur(14px) invert(0.894) hue-rotate(180deg);
+}
+
+/* 配合 LQIP 模糊占位就绪态 */
+:root[data-theme='dark'] .sl-markdown-content img.astro-blur-image.is-loaded:not(.no-dark-invert) {
+  filter: blur(0) invert(0.894) hue-rotate(180deg);
+}
+
+/* 夜间模式悬停交互：鼠标悬停或轻触时平滑恢复原图原色，并呈现立体浮层阴影 */
+:root[data-theme='dark'] .sl-markdown-content img:not(.no-dark-invert):hover {
+  filter: invert(0) hue-rotate(0deg);
+  background-color: #ffffff;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+}
+
+/* 打印模式禁用模糊与反相 */
+@media print {
+  .astro-blur-image {
+    filter: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+    background-image: none !important;
+  }
+  :root[data-theme='dark'] .sl-markdown-content img {
+    filter: none !important;
+    background-color: transparent !important;
+  }
+}
+
+/* ==========================================================================
+   正文插图与图注专有排版系统 (VitePress-Styled Figure & Caption)
+   ========================================================================== */
+.sl-markdown-content figure:not(.frame),
+.sl-markdown-content .vp-figure,
+.sl-markdown-content .content-figure,
+.astrolib-chapter-content figure:not(.frame),
+.astrolib-chapter-content .vp-figure,
+.astrolib-chapter-content .content-figure {
+  margin: 1.5rem auto;
+  text-align: center;
+  max-width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.sl-markdown-content figure:not(.frame) img,
+.sl-markdown-content .vp-figure img,
+.sl-markdown-content .content-figure img,
+.astrolib-chapter-content figure:not(.frame) img,
+.astrolib-chapter-content .vp-figure img,
+.astrolib-chapter-content .content-figure img {
+  display: block;
+  margin: 0 auto;
+  max-width: 100%;
+  height: auto;
+  border-radius: 6px;
+}
+
+.sl-markdown-content figcaption:not(.header),
+.sl-markdown-content .vp-figure figcaption,
+.sl-markdown-content .content-figure figcaption,
+.astrolib-chapter-content figcaption:not(.header),
+.astrolib-chapter-content .vp-figure figcaption,
+.astrolib-chapter-content .content-figure figcaption {
+  margin-top: 0.625rem;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  font-weight: 500;
+  color: var(--sl-color-gray-2);
+  text-align: center;
+  letter-spacing: 0.02em;
+  transition: color 0.2s ease;
+}
+
+/* --------------------------------------------------------------------------
+   代码块防污染与布局基准 (Expressive Code Code Block Isolation)
+   彻底杜绝正文图表排版规则（figure/figcaption 弹性居中）对代码块的意外入侵，保证满宽与左对齐
+   -------------------------------------------------------------------------- */
+.sl-markdown-content .expressive-code,
+.expressive-code {
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 1.25rem 0 !important;
+  text-align: left !important;
+}
+
+.sl-markdown-content .expressive-code figure.frame,
+.expressive-code figure.frame {
+  all: unset !important;
+  display: block !important;
+  position: relative !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0 !important;
+  text-align: left !important;
+  box-sizing: border-box !important;
+}
+
+.sl-markdown-content .expressive-code figcaption.header,
+.expressive-code figcaption.header {
+  margin-top: 0 !important;
+  letter-spacing: 0.025ch !important;
+}
+
+.sl-markdown-content .expressive-code pre,
+.expressive-code pre {
+  text-align: left !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+.sl-markdown-content .expressive-code code,
+.expressive-code code,
+.sl-markdown-content .expressive-code .ec-line,
+.expressive-code .ec-line,
+.sl-markdown-content .expressive-code .ec-line .code,
+.expressive-code .ec-line .code {
+  text-align: left !important;
+}
+
+/* 多子图混排网格 (Subfigure Grid) */
+.sl-markdown-content .vp-figure-grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: flex-end;
+  gap: 1.25rem;
+  width: 100%;
+  margin-bottom: 0.35rem;
+}
+
+.sl-markdown-content .vp-sub-figure {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1 1 180px;
+  max-width: 100%;
+}
+
+.sl-markdown-content .vp-sub-figure img {
+  max-width: 100%;
+  height: auto;
+}
+
+.sl-markdown-content .vp-sub-caption {
+  margin-top: 0.35rem;
+  font-size: 0.8125rem;
+  color: var(--sl-color-gray-3);
+  font-weight: 500;
+  text-align: center;
+}
+
+/* 交叉引用定位高亮 */
+.sl-markdown-content figcaption.fig-target-caption:target,
+.sl-markdown-content .fig-target-caption.is-highlighted {
+  color: var(--sl-color-text-accent);
+  font-weight: 600;
+}
+
+/* ==========================================================================
+   正文区域学术教材版心规范 (Radical Subtraction & LaTeX Measure)
+   ========================================================================== */
+
+/* 全局正文版心：严格控制在 48rem (768px，740–800px 黄金阅读宽度)，确保学术书页质感 */
+.sl-container {
+  max-width: var(--sl-content-width, 48rem) !important;
+  width: 100% !important;
+  margin-inline: auto !important;
+}
+
+/* 主版心框架：在桌面与超宽屏下控制总宽度，保持三栏比例和谐，杜绝右侧巨大虚空与外溢 */
+.main-frame {
+  width: 100%;
+  max-width: 88rem !important; /* 约 1408px：容纳正文 768px + 右大纲 264px + 呼吸留白 */
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+}
+
+@media (min-width: 72rem) {
+  .main-frame {
+    width: auto !important;
+    max-width: min(88rem, calc(100% - var(--sl-sidebar-width, 16rem))) !important;
+    margin-left: var(--sl-sidebar-width, 16rem) !important;
+    margin-right: auto !important;
+    padding-inline-start: 0 !important;
+  }
+}
+
+@media (min-width: 110rem) {
+  /* 超宽屏（1760px–2048px+）：整体对称居中，两侧优雅留白，正文与右侧大纲依然紧凑依附 */
+  .main-frame {
+    margin-left: auto !important;
+    margin-right: auto !important;
+    max-width: 88rem !important;
+  }
+}
+
+/* 联动容器同步允许收缩，保证收缩链路畅通 */
+.main-pane,
+.sl-container,
+.sl-markdown-content {
+  min-width: 0;
+}
+
+/* ==========================================================================
+   移动端防横向溢出：宽表格改为容器内横向滚动
+   ========================================================================== */
+table:not(.ask-table) {
+  display: block;
+  width: max-content;
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: var(--sl-color-gray-5, #cbd5e1) transparent;
+}
+
+/* ==========================================================================
+   移动端容器收缩链路：让每一个可能被撑破的盒都能缩回视口内
+   ========================================================================== */
+
+/* 卡片正文/标题、解析、思路分析等组件内容盒统一允许收缩，
+   内部的公式与表格各自横向滚动，不再把卡片撑破后又被 overflow:hidden 裁掉 */
+.card-body,
+.card-header,
+.solution-content,
+.analysis-content,
+.note-content,
+.fallback-content,
+.guide-content,
+.question-stem {
+  min-width: 0;
+}
+
+/* 移动端不展示自定义右侧大纲：该大纲仅保留给桌面端右侧栏使用。
+   移动端由 Starlight 自带的“本页目录”下拉条接管导航，
+   避免 272px 宽的大纲块挤在正文上方造成观感割裂 */
+@media (max-width: 71.999rem) {
+  .right-sidebar-container {
+    display: none !important;
+  }
+}
+
+/* ==========================================================================
+   移动端精致化：紧凑呼吸感 + 自适应字号
+   ========================================================================== */
+@media (max-width: 48rem) {
+  /* 正文左右留白略微加宽，贴合手机阅读手感 */
+  :root {
+    --sl-content-pad-x: 1.125rem;
+  }
+
+  /* 学术语义块：移动端轻量排版与紧凑垂直律动（纯文本流，杜绝多余卡片内边距） */
+  .example-card,
+  .variant-card,
+  .method-card,
+  .exercise-card,
+  .fallback-block,
+  .knowledge-card {
+    margin: 1.75rem 0 1.25rem;
+  }
+  .card-body,
+  .fallback-content {
+    padding: 0;
+  }
+  .note-block,
+  .guide-block,
+  .analysis-block {
+    margin: 1.25rem 0;
+    padding: 0 0 0 0.75rem;
+  }
+  .solution-content {
+    padding: 0.15rem 0 0.5rem 0;
+  }
+
+  /* 选择题：更紧凑的间距，双列/单列折行更自然 */
+  .question-stem {
+    margin-bottom: 0.875rem !important;
+  }
+  .options-container {
+    gap: 0.5rem 0.75rem;
+    margin-top: 0.75rem;
+  }
+  .option-chip-wrapper {
+    padding: 0.3rem 0.5rem;
+  }
+  .option-chip-content {
+    font-size: 0.85rem;
+  }
+
+  /* 行间公式：移动端略微缩小字号，让更多公式免于滚动，滚动时也更从容 */
+  .katex-display {
+    padding: 0.35rem 0;
+  }
+  .katex-display > .katex {
+    font-size: 1.05em;
+  }
+}
+
+/* 兜底：任何残留超宽元素不再撑大布局视口（配合上面的容器收缩，保证不裁内容） */
+html, body {
+  overflow-x: clip;
+  scrollbar-gutter: stable;
+}
+
+/* 长不可断内容（URL/英文/公式串）允许换行 */
+.sl-markdown-content {
+  overflow-wrap: anywhere;
+}
+
+/* ==========================================================================
+   文章正文公式操作：一键复制 LaTeX / 导出图片（SVG / PNG 二级菜单）
+   （仅作用于带 data-latex 的公式，见 src/scripts/formula-actions.ts）
+   设计原则：默认完全隐藏，悬停/聚焦/触屏点按才浮现，不打扰正常阅读排版
+   ========================================================================== */
+
+/* 行间公式块作为操作钮的定位上下文（本身不改变任何渲染） */
+.katex-display[data-latex] {
+  position: relative;
+}
+
+/* 操作钮容器（复制 + 下载 SVG 两个小按钮）
+   注意：本容器任何状态下都不得有 transform —— 脚本会把二级菜单提升为
+   position:fixed 以逃逸公式块/卡片的 overflow 裁剪，而祖先上的任何
+   transform 都会让 fixed 退化为相对它定位，菜单会脱离按钮、渲染到错位处。
+   （悬停态选择器 .katex-display:hover .katex-actions 特异性 (0,3,0) 高于
+   .katex-actions.is-open，若悬停态带 transform 则 is-open 压不住，
+   因此所有状态统一只做透明度过渡，不做位移动画。） */
+.katex-actions {
+  position: absolute;
+  top: 0.3rem;
+  right: 0.6rem;
+  z-index: 5;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  opacity: 0;
+  pointer-events: none; /* 隐藏时绝不拦截公式区域的鼠标事件 */
+  transition: opacity 0.16s ease;
+}
+
+/* 行间公式：悬停公式块即浮现 */
+.katex-display:hover .katex-actions,
+.katex-display:focus-within .katex-actions {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* 行内公式：透明宿主包裹，操作钮悬浮于公式上方 */
+.katex-copy-host {
+  position: relative;
+  display: inline;
+}
+
+.katex-copy-host .katex-actions {
+  top: -1.9em;
+  right: -0.45em;
+  /* 命中桥：按钮悬浮在公式行上方，鼠标从公式移向按钮会先短暂离开宿主
+     （宿主 :hover 立即失效、pointer-events 变 none，按钮在半路“消失”）。
+     下方留出一段透明 padding，把按钮容器自身的可命中区延伸到宿主内，
+     鼠标在这段间隙里仍算悬停在容器（宿主的后代）上，hover 不中断。 */
+  padding-bottom: 0.75em;
+}
+
+.katex-copy-host:hover .katex-actions,
+.katex-copy-host:focus-within .katex-actions {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* 触屏点按浮现态（由脚本临时添加） */
+.katex-actions.is-visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* 导出菜单展开态：即使鼠标离开/触屏无悬停，也保持操作钮与菜单可见可点 */
+.katex-actions.is-open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* 复制钮与导出钮本体：极小幽灵按钮 */
+.katex-copy-btn,
+.katex-download-btn {
+  position: relative; /* 作为反馈气泡的定位上下文 */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto; /* 禁止伸缩，保证两个按钮尺寸严格一致 */
+  width: 1.55rem;
+  height: 1.55rem;
+  padding: 0;
+  margin: 0;
+  border: 1px solid var(--sl-color-hairline, #d0d7de);
+  border-radius: 0.4rem;
+  background-color: var(--sl-color-bg, #ffffff);
+  color: var(--sl-color-gray-3, #475569);
+  cursor: pointer;
+  user-select: none;
+  /* 消除浏览器按钮 UA 默认样式（appearance/行高/字号）对内容居中的干扰 */
+  appearance: none;
+  -webkit-appearance: none;
+  line-height: 1;
+  font-size: 0;
+  box-sizing: border-box;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.1);
+  transition: color 0.16s ease, border-color 0.16s ease, background-color 0.16s ease;
+}
+
+.katex-copy-btn:hover,
+.katex-download-btn:hover,
+.katex-copy-btn:focus-visible,
+.katex-download-btn:focus-visible {
+  color: var(--sl-color-text-accent, #2563eb);
+  border-color: var(--sl-color-text-accent, #2563eb);
+}
+
+.katex-copy-btn:focus-visible,
+.katex-download-btn:focus-visible {
+  outline: 2px solid var(--sl-color-text-accent, #2563eb);
+  outline-offset: 1px;
+}
+
+.katex-copy-btn-icon,
+.katex-download-btn-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  line-height: 0;
+  width: 0.95rem;
+  height: 0.95rem;
+}
+
+.katex-copy-btn-icon svg,
+.katex-download-btn-icon svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* 导出二级菜单（SVG / PNG）：下拉小卡片，默认隐藏 */
+.katex-download-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  z-index: 6;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 4.75rem;
+  padding: 0.25rem;
+  border: 1px solid var(--sl-color-hairline, #d0d7de);
+  border-radius: 0.45rem;
+  background-color: var(--sl-color-bg, #ffffff);
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12);
+  font-size: 0.72rem;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-3px);
+  transition: opacity 0.14s ease, transform 0.14s ease, visibility 0.14s;
+}
+
+.katex-actions.is-open .katex-download-menu {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+/* 菜单项 */
+.katex-menu-item {
+  appearance: none;
+  -webkit-appearance: none;
+  border: 0;
+  border-radius: 0.3rem;
+  padding: 0.3rem 0.6rem;
+  width: 100%;
+  text-align: left;
+  background-color: transparent;
+  color: var(--sl-color-gray-3, #475569);
+  font-size: 0.72rem;
+  line-height: 1.4;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color 0.14s ease, color 0.14s ease;
+}
+
+.katex-menu-item:hover,
+.katex-menu-item:focus-visible {
+  background-color: var(--sl-color-gray-6, #f1f5f9);
+  color: var(--sl-color-text-accent, #2563eb);
+}
+
+.katex-menu-item:focus-visible {
+  outline: 2px solid var(--sl-color-text-accent, #2563eb);
+  outline-offset: -1px;
+}
+
+/* 操作成功/失败的反馈气泡 */
+.katex-copy-btn-tip,
+.katex-download-btn-tip {
+  position: absolute;
+  bottom: calc(100% + 5px);
+  right: 0;
+  padding: 0.2rem 0.5rem;
+  border-radius: 0.35rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  line-height: 1.4;
+  white-space: nowrap;
+  color: #ffffff;
+  background-color: var(--sl-color-text-accent, #2563eb);
+  opacity: 0;
+  transform: translateY(3px);
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  pointer-events: none;
+}
+
+.katex-copy-btn.is-done .katex-copy-btn-tip,
+.katex-download-btn.is-done .katex-download-btn-tip {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* 触屏设备上按钮更克制：避免常驻视觉噪音，仅悬停/点按逻辑由脚本接管 */
+@media (hover: none) {
+  .katex-copy-btn,
+  .katex-download-btn {
+    box-shadow: none;
+  }
+}
+
+/* 打印 / PDF 导出时不渲染操作钮 */
+@media print {
+  .katex-actions {
+    display: none !important;
+  }
+}
+
+/* ==========================================================================
+   黑夜主题适配 (Dark Theme)
+   卡片组件的深色配色在各组件自身的 scoped <style> 中处理，
+   此处统一处理全局的“引用微章”与“侧栏大纲胶囊”等动态生成元素。
+   Starlight 通过 <html data-theme="dark"> 开启暗色（默认即暗色）。
+   ========================================================================== */
+
+/* --- 1. 引用微章：深色文本(600级) → 亮色文本(300级)，底色微加强 --- */
+
+/* A. 例题 (绿系) */
+:root[data-theme='dark'] .block-ref-badge[data-type="例题"],
+:root[data-theme='dark'] .block-ref-badge[data-type="例"] {
+  background-color: rgba(16, 185, 129, 0.14);
+  border-color: rgba(16, 185, 129, 0.38);
+}
+:root[data-theme='dark'] .block-ref-badge[data-type="例题"] .block-text,
+:root[data-theme='dark'] .block-ref-badge[data-type="例"] .block-text {
+  color: #34d399;
+}
+:root[data-theme='dark'] .block-ref-badge[data-type="例题"].interactive-badge:hover,
+:root[data-theme='dark'] .block-ref-badge[data-type="例"].interactive-badge:hover {
+  background-color: rgba(16, 185, 129, 0.22);
+  border-color: #34d399;
+}
+
+/* B. 变式 (橙系) */
+:root[data-theme='dark'] .block-ref-badge[data-type="变式"] {
+  background-color: rgba(249, 115, 22, 0.14);
+  border-color: rgba(249, 115, 22, 0.38);
+}
+:root[data-theme='dark'] .block-ref-badge[data-type="变式"] .block-text {
+  color: #fb923c;
+}
+:root[data-theme='dark'] .block-ref-badge[data-type="变式"].interactive-badge:hover {
+  background-color: rgba(249, 115, 22, 0.22);
+  border-color: #fb923c;
+}
+
+/* C. 结论与经验总结 (红系) */
+:root[data-theme='dark'] .block-ref-badge[data-type="结论总结"],
+:root[data-theme='dark'] .block-ref-badge[data-type="结论"],
+:root[data-theme='dark'] .block-ref-badge[data-type="经验总结"] {
+  background-color: rgba(239, 68, 68, 0.14);
+  border-color: rgba(239, 68, 68, 0.38);
+}
+:root[data-theme='dark'] .block-ref-badge[data-type="结论总结"] .block-text,
+:root[data-theme='dark'] .block-ref-badge[data-type="结论"] .block-text,
+:root[data-theme='dark'] .block-ref-badge[data-type="经验总结"] .block-text {
+  color: #f87171;
+}
+:root[data-theme='dark'] .block-ref-badge[data-type="结论总结"].interactive-badge:hover,
+:root[data-theme='dark'] .block-ref-badge[data-type="结论"].interactive-badge:hover,
+:root[data-theme='dark'] .block-ref-badge[data-type="经验总结"].interactive-badge:hover {
+  background-color: rgba(239, 68, 68, 0.22);
+  border-color: #f87171;
+}
+
+/* D. 方法总结 (蓝绿系) */
+:root[data-theme='dark'] .block-ref-badge[data-type="方法总结"],
+:root[data-theme='dark'] .block-ref-badge[data-type="方法"] {
+  background-color: rgba(13, 148, 136, 0.14);
+  border-color: rgba(13, 148, 136, 0.38);
+}
+:root[data-theme='dark'] .block-ref-badge[data-type="方法总结"] .block-text,
+:root[data-theme='dark'] .block-ref-badge[data-type="方法"] .block-text {
+  color: #2dd4bf;
+}
+:root[data-theme='dark'] .block-ref-badge[data-type="方法总结"].interactive-badge:hover,
+:root[data-theme='dark'] .block-ref-badge[data-type="方法"].interactive-badge:hover {
+  background-color: rgba(13, 148, 136, 0.22);
+  border-color: #2dd4bf;
+}
+
+/* E. 知识点 (蓝系) */
+:root[data-theme='dark'] .block-ref-badge[data-type="知识点"],
+:root[data-theme='dark'] .block-ref-badge[data-type="考点"] {
+  background-color: rgba(59, 130, 246, 0.14);
+  border-color: rgba(59, 130, 246, 0.38);
+}
+:root[data-theme='dark'] .block-ref-badge[data-type="知识点"] .block-text,
+:root[data-theme='dark'] .block-ref-badge[data-type="考点"] .block-text {
+  color: #93c5fd;
+}
+:root[data-theme='dark'] .block-ref-badge[data-type="知识点"].interactive-badge:hover,
+:root[data-theme='dark'] .block-ref-badge[data-type="考点"].interactive-badge:hover {
+  background-color: rgba(59, 130, 246, 0.22);
+  border-color: #93c5fd;
+}
+
+/* F. 问题与解析步骤 (紫系) */
+:root[data-theme='dark'] .block-ref-badge[data-type="问题"],
+:root[data-theme='dark'] .block-ref-badge[data-type="解析"] {
+  background-color: rgba(139, 92, 246, 0.14);
+  border-color: rgba(139, 92, 246, 0.38);
+}
+:root[data-theme='dark'] .block-ref-badge[data-type="问题"] .block-text,
+:root[data-theme='dark'] .block-ref-badge[data-type="解析"] .block-text {
+  color: #a78bfa;
+}
+:root[data-theme='dark'] .block-ref-badge[data-type="问题"].interactive-badge:hover,
+:root[data-theme='dark'] .block-ref-badge[data-type="解析"].interactive-badge:hover {
+  background-color: rgba(139, 92, 246, 0.22);
+  border-color: #a78bfa;
+}
+
+/* G. 图片参考 (灰系)：本就基于 sl 变量，自动适配，无需覆盖 */
+
+/* --- 2. 侧栏大纲胶囊 (TOC chips)：深色文本 → 亮色文本 --- */
+:root[data-theme='dark'] .chip-example { color: #34d399; }
+:root[data-theme='dark'] .chip-variant { color: #fb923c; }
+:root[data-theme='dark'] .chip-conclusion { color: #f87171; }
+:root[data-theme='dark'] .chip-method { color: #2dd4bf; }
+:root[data-theme='dark'] .chip-knowledge { color: #93c5fd; }
+:root[data-theme='dark'] .chip-guide { color: #cbd5e1; }
+:root[data-theme='dark'] .chip-problem { color: #a78bfa; }
+:root[data-theme='dark'] .chip-default { color: #cbd5e1; }
+
+/* ==========================================================================
+   移动端：顶栏大纲入口 + 左侧栏 VitePress 侧滑抽屉（改造）
+   结构：左侧栏菜单按钮与右侧大纲按钮都并入固定顶栏（header）——
+   顶栏左侧 = 菜单（hamburger），顶栏右侧 = 「本页大纲」按钮 + popup 面板。
+   本段只放“功能样式”（断点/滚动锁/显示切换/打印隐藏）；
+   VitePress 视觉细节见 vitepress-theme.css 区块 11（大纲按钮/面板）与
+   区块 12（左侧抽屉/菜单按钮）。
+   ========================================================================== */
+
+/* 大纲入口并入顶栏后不再单独占一行：锚点滚动补偿归零（值被 Page.astro 的
+   scroll-padding-top 与 makeTocEntry 点击滚动补偿读取），正文顶部恢复
+   Starlight 默认 calc(nav + toc) padding（= 4rem）。 */
+body.vp-local-nav-active {
+  --sl-mobile-toc-height: 0rem;
+}
+
+/* 面板展开时锁定背景滚动（popup 打开时防止滚动穿透） */
+body.mobile-toc-open {
+  overflow: hidden;
+}
+
+/* 隐藏 Starlight 默认脱离文档流的右侧浮动按钮，改用 HeaderOverride 内部原生汉堡按钮 */
+starlight-menu-button {
+  display: none !important;
+}
+
+/* 移动端/平板端大纲下拉栏（优雅吸附于顶栏右侧大纲按钮下方） */
+@media (max-width: 71.999rem) {
+  body.mobile-toc-open::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.35);
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+    z-index: 8;
+    pointer-events: auto;
+    cursor: pointer;
+    animation: fadeInTocBackdrop 0.15s ease forwards;
+  }
+
+  @keyframes fadeInTocBackdrop {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  html:not([data-site-theme='starlight']) .vp-local-nav-items,
+  .vp-local-nav-items {
+    position: fixed !important;
+    top: calc(var(--sl-nav-height, 3.5rem) + 0.5rem) !important;
+    left: 0.75rem !important;
+    right: 0.75rem !important;
+    bottom: auto !important;
+    width: auto !important;
+    max-width: 24rem !important;
+    margin-inline: auto !important;
+    max-height: calc(100dvh - var(--sl-nav-height, 3.5rem) - 1.5rem) !important;
+    border-radius: 1rem !important;
+    border: 1px solid var(--sl-color-hairline) !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25) !important;
+    z-index: var(--layer-popover, 300) !important;
+    background-color: var(--sl-color-bg-sidebar, #161618) !important;
+    transform: translateY(-0.5rem) scale(0.98) !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    transition: opacity 0.18s ease-out, transform 0.18s ease-out, visibility 0.18s !important;
+    pointer-events: none !important;
+    overflow: hidden auto !important;
+    overscroll-behavior: contain !important;
+  }
+
+  html:not([data-site-theme='starlight']) body.mobile-toc-open .vp-local-nav-items,
+  body.mobile-toc-open .vp-local-nav-items {
+    transform: translateY(0) scale(1) !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
+  }
+
+  .vp-local-nav-header {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background-color: var(--sl-color-bg-sidebar, #161618) !important;
+  }
+
+  .vp-local-nav-outline {
+    background-color: transparent !important;
+    padding-bottom: 1.5rem !important;
+  }
+}
+
+/* 默认全部隐藏：桌面端右侧栏可见，大纲按钮永不出现，也防止任何布局残留 */
+.vp-local-nav {
+  display: none;
+}
+
+/* —— 移动端 / 平板段（右侧栏隐藏，大纲入口进顶栏） —— */
+@media (max-width: 71.999rem) {
+  /* 大纲按钮并入顶栏右侧（JS 搬运进 .right-group，作为 flex 项；
+     position: relative 作 popup 面板的定位锚点） */
+  .vp-local-nav {
+    display: flex;
+    align-items: center;
+    position: relative;
+    z-index: 9;
+  }
+}
+
+/* 纯移动端（<50rem）：
+   顶栏右侧动作区展示工具/主题/设置/大纲，隐藏社交链接（GitHub） */
+@media (max-width: 49.999rem) {
+  .right-group {
+    display: flex !important;
+    align-items: center;
+  }
+  .vp-tools-wrapper,
+  .vp-social-group,
+  .right-group .social-icons,
+  .right-group .vp-social-group {
+    display: none !important;
+  }
+}
+
+@media (min-width: 72rem) {
+  .vp-local-nav {
+    display: none !important;
+    align-items: center;
+    position: relative;
+    z-index: 9;
+    width: 36px;
+    height: 36px;
+    margin: 0;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  html[data-sideload-active]:not([data-sideload-active='toc']):not([data-sideload-active='none']) .vp-local-nav,
+  body.exercise-sidebar-active .vp-local-nav {
+    display: flex !important;
+    margin-right: 4px;
+    opacity: 1;
+    pointer-events: auto;
+    animation: vpLocalNavFadeIn 0.2s cubic-bezier(0.2, 0, 0, 1) forwards;
+  }
+}
+
+@keyframes vpLocalNavFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* 左侧移动菜单展开时，顶栏大纲按钮让位（避免与抽屉遮罩/布局冲突）。
+   注意：data-mobile-menu-expanded 由 Starlight 加在 <body> 上（此前写成
+   html[...] 是永不匹配的坏规则，此处一并修正）。 */
+body[data-mobile-menu-expanded] .vp-local-nav {
+  visibility: hidden;
+}
+
+/* 打印 / PDF 导出时不渲染本地导航条 */
+@media print {
+  .vp-local-nav {
+    display: none !important;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   移动端左侧栏：VitePress 侧滑抽屉（替换 Starlight 默认的全屏“上下抽屉”）
+   对照 VPSidebar.vue：position fixed 左侧、宽 calc(100vw - 4rem)、
+   max-width 20rem、translateX(-100%) → 0 滑入，配合遮罩（VPBackdrop 语义）。
+   关闭方式：顶栏菜单按钮（变 X）或点击遮罩（JS 绑定，见 SidebarOverride）。
+   -------------------------------------------------------------------------- */
+@media (max-width: 49.999rem) {
+  /* 抽屉：左侧滑入窄面板（对照 VPSidebar；顶部从 header 下缘开始，
+     顶栏与菜单按钮保持可见，随时可关） */
+  .sidebar-pane {
+    inset-block: var(--sl-nav-height) 0;
+    inset-inline-start: 0;
+    width: calc(100vw - 4rem);
+    max-width: 20rem;
+    background-color: var(--sl-color-bg-sidebar) !important;
+    box-shadow: var(--sl-shadow-lg);
+    visibility: hidden;
+    transform: translateX(-100%);
+    transition: transform 0.35s cubic-bezier(0.19, 1, 0.22, 1), visibility 0s 0.35s;
+    overscroll-behavior: contain;
+    z-index: var(--layer-drawer) !important;
+  }
+
+  body[data-mobile-menu-expanded] .sidebar-pane,
+  starlight-menu-button[aria-expanded='true'] ~ .sidebar-pane {
+    visibility: visible !important;
+    transform: translateX(0) !important;
+    transition: transform 0.35s cubic-bezier(0.19, 1, 0.22, 1) !important;
+  }
+
+  /* 遮罩（VPBackdrop 语义）：抽屉打开时覆盖其余屏幕；z-index 低于抽屉、
+     低于顶栏(100)，保证菜单按钮始终可点；点击关闭由 SidebarOverride 的 JS 绑定 */
+  body[data-mobile-menu-expanded] .page::before {
+    content: '';
+    position: fixed;
+    inset: var(--sl-nav-height) 0 0 0;
+    z-index: calc(var(--layer-drawer) - 1);
+    background: rgba(0, 0, 0, 0.4);
+    opacity: 1;
+    transition: opacity 0.25s;
+  }
+  body:not([data-mobile-menu-expanded]) .page::before {
+    content: '';
+    position: fixed;
+    inset: var(--sl-nav-height) 0 0 0;
+    z-index: calc(var(--layer-drawer) - 1);
+    background: rgba(0, 0, 0, 0.4);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s;
+  }
+}
+
+/* --- 脚注（本书首次支持：MinerU 上标标记 + 页内脚注块） --- */
+
+/* 正文脚注上标：原书用圆圈数字（①②③…）标注页脚注释 */
+.prose sup, .content sup, .sl-markdown-content sup,
+main sup, article sup {
+  font-size: 0.72em;
+  line-height: 0;
+  vertical-align: super;
+  color: var(--sl-color-text-accent, #3b82f6);
+  font-weight: 600;
+  padding: 0 0.1em;
+  user-select: text;
+}
+
+/* 页内脚注块（节末 <Block title="脚注">）：缩小字号、与正文区分 */
+.fallback-block .footnote-text,
+.block-title-footnote {
+  font-size: 0.9em;
+  color: var(--sl-color-gray-5, #666);
+}
+
+/* ==========================================================================
+   底栏翻页（Pager / Pagination）基准样式
+   --------------------------------------------------------------------------
+   供 Starlight 经典模式（或默认基础）使用：
+   为 PaginationOverride.astro 的 nav.prev-next 结构提供标准卡片翻页样式。
+   在 VitePress 模式下被 vitepress-theme.css 区块 10 覆盖。
+   ========================================================================== */
+.prev-next {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--sl-color-hairline);
+}
+
+@media (min-width: 40rem) {
+  .prev-next {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.prev-next .pager-link {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.875rem 1rem;
+  border: 1px solid var(--sl-color-hairline);
+  border-radius: 0.5rem;
+  background-color: var(--sl-color-bg);
+  box-shadow: var(--sl-shadow-sm);
+  text-decoration: none;
+  transition: border-color 0.2s, background-color 0.2s;
+}
+
+.prev-next .pager-link:hover {
+  border-color: var(--sl-color-gray-3);
+  background-color: var(--sl-color-gray-6);
+}
+
+.prev-next .pager-link.next {
+  margin-left: auto;
+  text-align: right;
+}
+
+.prev-next .desc {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--sl-color-gray-2);
+}
+
+.prev-next .title {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--sl-color-white);
+}
+
+/* ==========================================================================
+   跨页/页内跳转“返回原阅读位置”浮动返回胶囊与视线接引高亮
+   ========================================================================== */
+
+.vp-jump-back-widget {
+  position: fixed;
+  bottom: 2rem;
+  left: 2rem;
+  z-index: var(--layer-floating);
+  display: inline-flex;
+  align-items: center;
+  background: color-mix(in srgb, var(--sl-color-bg, #ffffff) 88%, transparent);
+  -webkit-backdrop-filter: saturate(180%) blur(16px);
+  backdrop-filter: saturate(180%) blur(16px);
+  border: 1px solid var(--sl-color-hairline, #e2e8f0);
+  border-radius: 9999px;
+  box-shadow: var(--sl-shadow-lg, 0 10px 25px rgba(0, 0, 0, 0.15)), 0 6px 24px rgba(0, 0, 0, 0.12);
+  padding: 0.25rem 0.4rem 0.25rem 0.75rem;
+  font-family: var(--vp-font-family-base, var(--sl-font), system-ui, -apple-system, sans-serif);
+  opacity: 0;
+  transform: translateY(12px) scale(0.96);
+  pointer-events: none;
+  transition: opacity 0.22s cubic-bezier(0.16, 1, 0.3, 1), transform 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  box-sizing: border-box;
+  user-select: none;
+}
+
+.vp-jump-back-widget.is-active {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+}
+
+.vp-jump-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--sl-color-gray-1, #1e293b);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  padding: 0.25rem 0.35rem;
+  border-radius: 999px;
+  transition: color 0.15s ease;
+  min-width: 0;
+}
+
+.vp-jump-action-btn:hover {
+  color: var(--sl-color-text-accent, #3b82f6);
+}
+
+.vp-jump-svg {
+  width: 14px;
+  height: 14px;
+  color: var(--sl-color-text-accent, #3b82f6);
+  flex-shrink: 0;
+  transition: transform 0.18s ease;
+}
+
+.vp-jump-action-btn:hover .vp-jump-svg {
+  transform: translateX(-2px);
+}
+
+.vp-jump-label {
+  font-weight: 600;
+  color: var(--sl-color-text-accent, #3b82f6);
+  font-size: 0.75rem;
+  flex-shrink: 0;
+}
+
+.vp-jump-target {
+  color: var(--sl-color-white, #0f172a);
+  font-weight: 500;
+  font-size: 0.8125rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 180px;
+}
+
+.vp-jump-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.65rem;
+  font-weight: 700;
+  background: var(--sl-color-accent-low, rgba(59, 130, 246, 0.12));
+  color: var(--sl-color-text-accent, #3b82f6);
+  border-radius: 999px;
+  padding: 0 0.35rem;
+  height: 1.1rem;
+  min-width: 1.1rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.vp-jump-divider {
+  width: 1px;
+  height: 0.95rem;
+  background: var(--sl-color-hairline, #e2e8f0);
+  margin: 0 0.3rem;
+  flex-shrink: 0;
+}
+
+.vp-jump-close-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.45rem;
+  height: 1.45rem;
+  border: none;
+  background: transparent;
+  color: var(--sl-color-gray-3, #94a3b8);
+  border-radius: 50%;
+  cursor: pointer;
+  padding: 0;
+  flex-shrink: 0;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.vp-jump-close-btn:hover {
+  background: var(--sl-color-gray-6, #f1f5f9);
+  color: var(--sl-color-white, #0f172a);
+}
+
+.vp-jump-close-svg {
+  width: 12px;
+  height: 12px;
+}
+
+@media (max-width: 71.999rem) {
+  .vp-jump-back-widget {
+    left: 50%;
+    bottom: 1.5rem;
+    transform: translateX(-50%) translateY(12px) scale(0.96);
+    max-width: calc(100vw - 2rem);
+  }
+  .vp-jump-back-widget.is-active {
+    transform: translateX(-50%) translateY(0) scale(1);
+  }
+  .vp-jump-target {
+    max-width: 140px;
+  }
+}
+
+@keyframes source-badge-restrained {
+  0% {
+    background-color: var(--sl-color-text-accent, #3b82f6) !important;
+    color: var(--sl-color-text-invert, #ffffff) !important;
+    outline-color: var(--sl-color-text-accent, #3b82f6);
+  }
+  50% {
+    background-color: var(--sl-color-text-accent, #3b82f6) !important;
+    color: var(--sl-color-text-invert, #ffffff) !important;
+    outline-color: var(--sl-color-text-accent, #3b82f6);
+  }
+  100% {
+    background-color: var(--sl-color-accent-low, rgba(59, 130, 246, 0.12));
+    color: var(--sl-color-text-accent, #3b82f6);
+    outline-color: transparent;
+  }
+}
+
+.source-jump-pulse {
+  animation: source-badge-restrained 0.65s ease-out;
+  outline: 1.5px solid var(--sl-color-text-accent, #3b82f6) !important;
+  outline-offset: 1.5px !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vp-jump-back-widget {
+    transition: none !important;
+  }
+  .source-jump-pulse {
+    animation: none !important;
+  }
+}
+
+/* ==========================================================================
+   学术出版物数字化配套资源组件 (Academic Digital Resource Annotation)
+   North Star: Academic Restraint, Typography > Borders, No SaaS Card
+   ========================================================================== */
+
+/* 既有卡片模式向后兼容回退 */
+.academic-resource-card:not(.academic-digital-resource) {
+  position: relative;
+  margin: 1.15rem 0;
+  padding: 0.45rem 0.85rem;
+  background-color: var(--sl-color-gray-6, #f8f9fa);
+  border: 1px solid var(--sl-color-hairline, #e2e8f0);
+  border-left: 2.5px solid var(--sl-color-gray-4, #94a3b8);
+  border-radius: 4px;
+  font-family: var(--sl-font, inherit);
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+/* 学术数字资源流式排版 (Academic Text Annotation Stream) */
+.academic-digital-resource {
+  clear: both;
+  display: flow-root;
+  box-sizing: border-box;
+  margin: 0.65rem 0 0.85rem 0;
+  padding: 0;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  font-family: var(--sl-font, inherit);
+  line-height: 1.6;
+}
+
+.academic-resource-stream {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.35rem 0.5rem;
+  font-size: 0.86rem;
+}
+
+.academic-resource-prefix {
+  font-family: var(--sl-font-serif, "Kaiti SC", "STKaiti", "KaiTi", serif);
+  font-size: 0.83rem;
+  color: var(--sl-color-gray-3, #64748b);
+  letter-spacing: 0.02em;
+  user-select: none;
+}
+
+.academic-resource-title-link {
+  color: var(--sl-color-text-accent, #1d4ed8);
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.15s ease, text-decoration 0.15s ease;
+  word-break: break-word;
+}
+
+.academic-resource-title-link:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  color: var(--sl-color-accent-high, #1e40af);
+}
+
+.academic-resource-title-plain {
+  color: var(--sl-color-gray-2, #334155);
+  font-weight: 500;
+}
+
+.academic-resource-link-arrow {
+  display: inline-block;
+  font-family: inherit;
+  font-size: 0.85em;
+  opacity: 0.75;
+  transition: transform 0.15s ease, opacity 0.15s ease;
+}
+
+.academic-resource-title-link:hover .academic-resource-link-arrow {
+  opacity: 1;
+  transform: translate(1px, -1px);
+}
+
+.academic-resource-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-left: 0.25rem;
+  vertical-align: middle;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.academic-resource-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  margin: 0 !important;
+  line-height: 1;
+  flex-shrink: 0;
+  background: transparent;
+  border: 1px solid var(--sl-color-hairline, #e2e8f0);
+  border-radius: 3px;
+  color: var(--sl-color-gray-4, #94a3b8);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.academic-resource-action-btn:hover,
+.academic-resource-action-btn.is-active {
+  color: var(--sl-color-gray-1, #1e293b);
+  border-color: var(--sl-color-gray-3, #64748b);
+  background: var(--sl-color-gray-6, #f8f9fa);
+}
+
+.academic-resource-action-btn.is-copied {
+  color: #10b981 !important;
+  border-color: #10b981 !important;
+}
+
+/* --------------------------------------------------------------------------
+   学术数字资源扫码弹层面板 (Discreet Popover)
+   -------------------------------------------------------------------------- */
+.academic-resource-popover {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  margin: 0 !important;
+  z-index: var(--layer-popover);
+  width: 200px;
+  max-width: calc(100vw - 2rem);
+  background: var(--sl-color-bg, #ffffff);
+  border: 1px solid var(--sl-color-hairline, #e2e8f0);
+  border-radius: 6px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08), 0 2px 6px rgba(0, 0, 0, 0.04);
+  display: flex;
+  flex-direction: column;
+  overflow: visible;
+  opacity: 0;
+  transform: translateY(-4px);
+  pointer-events: none;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.academic-resource-popover.is-open {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.academic-resource-popover[hidden] {
+  display: none !important;
+}
+
+.academic-resource-pop-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.4rem 0.65rem;
+  border-bottom: 1px solid var(--sl-color-hairline, #e2e8f0);
+  background: var(--sl-color-gray-6, #f8f9fa);
+  border-top-left-radius: 5px;
+  border-top-right-radius: 5px;
+}
+
+.academic-resource-pop-title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--sl-color-white, #1e293b);
+  letter-spacing: 0.01em;
+}
+
+.academic-resource-pop-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  color: var(--sl-color-gray-3, #94a3b8);
+  border-radius: 3px;
+  cursor: pointer;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+
+.academic-resource-pop-close:hover {
+  color: var(--sl-color-white, #0f172a);
+  background: var(--sl-color-gray-5, #e2e8f0);
+}
+
+.academic-resource-pop-body {
+  padding: 0.65rem 0.65rem 0.5rem 0.65rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.academic-resource-qr-svg {
+  width: 140px;
+  height: 140px;
+}
+
+.academic-resource-qr-svg svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.academic-resource-tip {
+  font-size: 0.72rem;
+  color: var(--sl-color-gray-3, #94a3b8);
+  margin-top: 0.4rem;
+  margin-bottom: 0;
+}
+
+/* --------------------------------------------------------------------------
+   暗色模式适配 (Dark Mode)
+   -------------------------------------------------------------------------- */
+:root:not([data-site-theme='starlight'])[data-theme='dark'] .academic-resource-prefix,
+html[data-theme='dark'] .academic-resource-prefix {
+  color: var(--sl-color-gray-4, #94a3b8);
+}
+
+:root:not([data-site-theme='starlight'])[data-theme='dark'] .academic-resource-title-link,
+html[data-theme='dark'] .academic-resource-title-link {
+  color: var(--sl-color-accent, #93b4ff);
+}
+
+:root:not([data-site-theme='starlight'])[data-theme='dark'] .academic-resource-action-btn,
+html[data-theme='dark'] .academic-resource-action-btn {
+  border-color: var(--sl-color-hairline, #28282c);
+  color: var(--sl-color-gray-4, #71717a);
+}
+
+:root:not([data-site-theme='starlight'])[data-theme='dark'] .academic-resource-action-btn:hover,
+:root:not([data-site-theme='starlight'])[data-theme='dark'] .academic-resource-action-btn.is-active,
+html[data-theme='dark'] .academic-resource-action-btn:hover,
+html[data-theme='dark'] .academic-resource-action-btn.is-active {
+  color: var(--sl-color-gray-1, #e4e4e7);
+  border-color: var(--sl-color-gray-4, #52525b);
+  background-color: var(--sl-color-gray-6, #27272a);
+}
+
+:root:not([data-site-theme='starlight'])[data-theme='dark'] .academic-resource-popover,
+html[data-theme='dark'] .academic-resource-popover {
+  background: var(--sl-color-bg, #17171a);
+  border-color: var(--sl-color-hairline, #28282c);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+}
+
+:root:not([data-site-theme='starlight'])[data-theme='dark'] .academic-resource-pop-header,
+html[data-theme='dark'] .academic-resource-pop-header {
+  background: var(--sl-color-gray-7, #161618);
+  border-bottom-color: var(--sl-color-hairline, #28282c);
+}
+
+@media (max-width: 640px) {
+  .academic-resource-popover {
+    right: auto;
+    left: 0;
+    width: min(200px, calc(100vw - 2.5rem));
+  }
+}
+
+/* ==========================================================================
+   学术出版物旁注与侧注组件 (Academic SideNote / MarginNote)
+   ========================================================================== */
+.astrolib-sidenote {
+  box-sizing: border-box;
+  padding: 0.65rem 0.85rem;
+  font-size: 0.86rem;
+  line-height: 1.65;
+  background-color: var(--sl-color-gray-6, rgba(255, 255, 255, 0.03));
+  border-radius: 6px;
+  border-left: 2.5px solid var(--sl-color-gray-4, #94a3b8);
+  color: var(--sl-color-gray-2, #cbd5e1);
+  user-select: text;
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+
+/* 桌面端浮动模式：依附于正文右侧，高度随上下文并列排版 */
+@media (min-width: 50rem) {
+  .astrolib-sidenote.sidenote-float.sidenote-right {
+    float: right;
+    clear: right;
+    width: min(18rem, 36%);
+    margin: 0.25rem 0 1.15rem 1.35rem;
+  }
+  .astrolib-sidenote.sidenote-float.sidenote-left {
+    float: left;
+    clear: left;
+    width: min(18rem, 36%);
+    margin: 0.25rem 1.35rem 1.15rem 0;
+  }
+}
+
+/* 移动端与内联模式：撑满宽度，自然降级为紧凑说明块 */
+@media (max-width: 49.99rem) {
+  .astrolib-sidenote.sidenote-float {
+    float: none !important;
+    width: 100% !important;
+    margin: 1rem 0 !important;
+  }
+}
+
+.astrolib-sidenote.sidenote-inline {
+  float: none !important;
+  width: 100% !important;
+  margin: 1.15rem 0 !important;
+}
+
+/* 头部标题区 */
+.astrolib-sidenote .sidenote-header {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.82rem;
+  font-weight: 650;
+  font-family: var(--font-heading, var(--academic-font-heading, sans-serif));
+  letter-spacing: 0.02em;
+  margin-bottom: 0.35rem;
+}
+
+.astrolib-sidenote .sidenote-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.astrolib-sidenote .sidenote-title {
+  color: var(--sl-color-white, #f8fafc);
+}
+
+/* 正文区 */
+.astrolib-sidenote .sidenote-content {
+  color: var(--sl-color-gray-2, #cbd5e1);
+}
+
+.astrolib-sidenote .sidenote-content p {
+  margin: 0.35rem 0;
+}
+.astrolib-sidenote .sidenote-content p:first-child {
+  margin-top: 0;
+}
+.astrolib-sidenote .sidenote-content p:last-child {
+  margin-bottom: 0;
+}
+
+.astrolib-sidenote .sidenote-content .katex {
+  font-size: 0.95em;
+}
+
+/* 学术语义类型色阶：克制衬托，无刺眼高饱和度 */
+.astrolib-sidenote.sidenote-think {
+  border-left-color: var(--sl-color-accent, #38bdf8);
+  background-color: var(--sl-color-accent-low, rgba(56, 189, 248, 0.05));
+}
+.astrolib-sidenote.sidenote-think .sidenote-icon {
+  color: var(--sl-color-accent, #38bdf8);
+}
+
+.astrolib-sidenote.sidenote-caution {
+  border-left-color: #f59e0b;
+  background-color: rgba(245, 158, 11, 0.05);
+}
+.astrolib-sidenote.sidenote-caution .sidenote-icon {
+  color: #f59e0b;
+}
+
+.astrolib-sidenote.sidenote-analysis {
+  border-left-color: #10b981;
+  background-color: rgba(16, 185, 129, 0.05);
+}
+.astrolib-sidenote.sidenote-analysis .sidenote-icon {
+  color: #10b981;
+}
+
+.astrolib-sidenote.sidenote-geom {
+  border-left-color: #a855f7;
+  background-color: rgba(168, 85, 247, 0.05);
+}
+.astrolib-sidenote.sidenote-geom .sidenote-icon {
+  color: #a855f7;
+}
+
+.astrolib-sidenote.sidenote-note {
+  border-left-color: var(--sl-color-gray-4, #94a3b8);
+}
+.astrolib-sidenote.sidenote-note .sidenote-icon {
+  color: var(--sl-color-gray-3, #94a3b8);
+}
+
+/* Academic Algorithm Block (LaTeX ruled style, aligned with academic print textbooks) */
+.academic-algorithm,
+.mineru-algorithm {
+  position: relative;
+  margin: 1.75rem 0 1.5rem;
+  border-top: 2px solid var(--sl-color-gray-1, #1e293b);
+  border-bottom: 2px solid var(--sl-color-gray-1, #1e293b);
+  border-left: none !important;
+  border-right: none !important;
+  border-radius: 0 !important;
+  background-color: transparent !important;
+  box-shadow: none !important;
+  white-space: pre-wrap;
+  font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace);
+  line-height: 1.65;
+  font-size: 0.925rem;
+  padding: 0.75rem 0.25rem 0.65rem;
+  text-indent: 0 !important;
+  overflow-x: auto;
+  tab-size: 4;
+}
+
+:root[data-theme='dark'] .academic-algorithm,
+:root[data-theme='dark'] .mineru-algorithm {
+  border-top-color: var(--sl-color-gray-2, #cbd5e1);
+  border-bottom-color: var(--sl-color-gray-2, #cbd5e1);
+  background-color: transparent !important;
+}
+
+.academic-algorithm :is(p, div, span, pre, code),
+.mineru-algorithm :is(p, div, span, pre, code),
+.academic-algorithm p,
+.mineru-algorithm p {
+  text-indent: 0 !important;
+  font-family: inherit;
+}
+
+.academic-algorithm p,
+.mineru-algorithm p {
+  margin: 0 !important;
+  line-height: inherit;
+}
+
+.academic-algorithm p + p,
+.mineru-algorithm p + p {
+  margin-top: 0.75rem !important;
+}
+
+/* ==========================================================================
+   全站学术纯净网页打印排版规范 (@media print)
+   保证在浏览器直接打印或导出 PDF 时：
+   1. 仅渲染主讲义/教材正文（.main-pane / main / .sl-markdown-content），宽度自适应 100%；
+   2. 彻底隐藏所有非正文元素：顶栏 (header)、左侧栏 (sidebar)、右侧侧载栏与大纲 (right-sidebar / dock)、
+      底部导航与版权 (footer / pager)、全站浮层对话框 (#astro-overlay-root / md-dialog / dialog)、
+      以及所有操作按钮、悬浮窗、AI 气泡、复制图标与徽章动作等；
+   3. 避免正文内卡片、定理、例题、公式与表格跨页截断。
+   ========================================================================== */
+@media print {
+  @page {
+    margin: 1.5cm;
+    size: auto;
+  }
+
+  html,
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    font-size: 11pt !important;
+    overflow: visible !important;
+    height: auto !important;
+    min-height: auto !important;
+  }
+
+  /* 强制浅色打印调色板，防止黑夜模式下产生大黑块或反色遮罩 */
+  :root,
+  :root[data-theme='dark'],
+  html[data-site-theme='material-you'][data-theme='dark'] {
+    --sl-color-bg: #ffffff !important;
+    --sl-color-bg-nav: #ffffff !important;
+    --sl-color-text: #000000 !important;
+    --sl-color-white: #000000 !important;
+    --sl-color-black: #ffffff !important;
+    --sl-color-gray-1: #1a1a1a !important;
+    --sl-color-gray-2: #333333 !important;
+    --sl-color-gray-3: #555555 !important;
+    --sl-color-gray-4: #777777 !important;
+    --sl-color-gray-5: #999999 !important;
+    --sl-color-gray-6: #e5e5e5 !important;
+    --sl-color-hairline: #e0e0e0 !important;
+    --sl-color-hairline-shade: #e0e0e0 !important;
+    --md-sys-color-background: #ffffff !important;
+    --md-sys-color-surface: #ffffff !important;
+    --md-sys-color-on-surface: #000000 !important;
+    --md-sys-color-on-background: #000000 !important;
+  }
+
+  /* 页面布局容器铺满与外边距重置：打破两栏/桌面多栏对正文宽度的挤压与偏移 */
+  .page {
+    display: block !important;
+    min-height: auto !important;
+    height: auto !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: visible !important;
+  }
+
+  .main-frame {
+    display: block !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow: visible !important;
+  }
+
+  .lg\:sl-flex {
+    display: block !important;
+    width: 100% !important;
+  }
+
+  .main-pane,
+  [data-has-sidebar] .main-pane,
+  [data-has-sidebar][data-has-toc] .main-pane {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    position: static !important;
+    isolation: auto !important;
+    transform: none !important;
+  }
+
+  main {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .content-panel {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+    background: transparent !important;
+  }
+
+  .sl-markdown-content {
+    max-width: 100% !important;
+    width: 100% !important;
+  }
+
+  /* 彻底屏蔽所有非正文元素、顶栏、侧边栏、大纲栏、底栏、操作弹窗与遮罩 */
+  header,
+  .header,
+  .page > header,
+  nav.sidebar,
+  .sidebar-pane,
+  .right-sidebar-container,
+  .right-sidebar,
+  .astrolib-sideload-dock,
+  .custom-page-sidebar,
+  footer,
+  .sl-footer,
+  .prev-next,
+  .pagination-links,
+  .vp-local-nav,
+  #astro-overlay-root,
+  #chapter-export-modal,
+  md-dialog,
+  dialog,
+  [role="dialog"],
+  .astrolib-dialog,
+  .astrolib-sideload-scrim,
+  .scrim,
+  .vp-sidebar-toggle-btn,
+  .vp-right-sidebar-toggle-btn,
+  .mobile-menu-toggle,
+  .toc-mobile-toggle,
+  .katex-actions,
+  .copy-formula-tooltip,
+  .sideload-dock-fab,
+  #quick-settings-panel,
+  #quick-settings-btn,
+  #sidenote-ai-btn,
+  #editor-floating-tools,
+  .vp-search-wrapper,
+  .outline-marker {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+  }
+
+  /* 保证卡片、代码块、表格、公式环境页面自适应与防截断 */
+  .sl-markdown-content .card,
+  .sl-markdown-content .starlight-aside,
+  .sl-markdown-content blockquote,
+  .sl-markdown-content table {
+    break-inside: avoid;
+  }
+}
+
+
+
+/* ==========================================================================
+   Electron 桌面端专属标题栏三键防遮挡与窗口拖拽区域规范 (Window Controls Inset)
+   ========================================================================== */
+html.is-electron-app .vp-nav,
+html.is-electron .vp-nav {
+  -webkit-app-region: drag;
+}
+
+html.is-electron-app .vp-nav-actions,
+html.is-electron .vp-nav-actions,
+html.is-electron-app .vp-right-group,
+html.is-electron .vp-right-group {
+  padding-right: 140px !important;
+}
+
+html.is-electron-app .vp-nav a,
+html.is-electron-app .vp-nav button,
+html.is-electron-app .vp-nav input,
+html.is-electron-app .vp-nav form,
+html.is-electron-app .vp-nav [role="switch"],
+html.is-electron .vp-nav a,
+html.is-electron .vp-nav button,
+html.is-electron .vp-nav input,
+html.is-electron .vp-nav form,
+html.is-electron .vp-nav [role="switch"] {
+  -webkit-app-region: no-drag;
+}
+
+/* Starlight 正文与阅读页面顶栏避让 */
+html.is-electron-app header.header,
+html.is-electron header.header {
+  -webkit-app-region: drag;
+}
+
+html.is-electron-app .vp-header-inner,
+html.is-electron .vp-header-inner {
+  -webkit-app-region: drag;
+}
+
+html.is-electron-app .vp-header-inner a,
+html.is-electron-app .vp-header-inner button,
+html.is-electron-app .vp-header-inner input,
+html.is-electron-app .vp-header-inner select,
+html.is-electron-app .vp-header-inner .vp-right-group,
+html.is-electron-app .vp-header-inner .vp-search-wrapper,
+html.is-electron-app .vp-header-inner starlight-theme-select,
+html.is-electron .vp-header-inner a,
+html.is-electron .vp-header-inner button,
+html.is-electron .vp-header-inner input,
+html.is-electron .vp-header-inner select,
+html.is-electron .vp-header-inner .vp-right-group,
+html.is-electron .vp-header-inner .vp-search-wrapper,
+html.is-electron .vp-header-inner starlight-theme-select {
+  -webkit-app-region: no-drag;
+}
+
+/* 填空题学术空缺横线规范 */
+.fill-in-blank {
+  display: inline-block;
+  min-width: 3.5em;
+  border-bottom: 1.5px solid currentColor;
+  margin: 0 0.25em;
+  text-align: center;
+  vertical-align: baseline;
+}
+
+/* 学术解题折叠卡片 (Collapsible Solution Details) */
+.solution-details {
+  margin: 1.15rem 0 1.25rem;
+  border: none;
+  background-color: transparent;
+  padding: 0;
+}
+.solution-details > summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.2rem 0.4rem 0.25rem 0;
+  margin: 0 0 0.75rem 0;
+  border-bottom: 1.5px solid var(--sl-color-hairline, rgba(125, 125, 125, 0.2));
+  font-size: 0.95rem;
+  font-weight: 650;
+  font-family: var(--font-heading, var(--academic-font-heading, sans-serif));
+  color: var(--academic-color-heading, var(--sl-color-white, #fff));
+  cursor: pointer;
+  user-select: none;
+  outline: none;
+  list-style: none;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+.solution-details > summary::-webkit-details-marker {
+  display: none;
+}
+.solution-details > summary:hover {
+  border-bottom-color: var(--sl-color-gray-3, #94a3b8);
+}
+.solution-details > summary::after {
+  content: none !important;
+  display: none !important;
+}
+.solution-content {
+  border: none;
+  padding: 0.15rem 0 0.5rem 0;
+  margin: 0;
+  background-color: transparent;
+  position: relative;
+  line-height: 1.82;
+}
+.solution-content::after {
+  content: '■';
+  display: block;
+  text-align: right;
+  font-family: var(--font-latin-katex, serif), 'STIX Two Math', 'Times New Roman', serif;
+  font-size: 1rem;
+  color: var(--sl-color-gray-3, #94a3b8);
+  margin-top: 0.5rem;
+  line-height: 1;
+}
+
+/* 学术正文段落首行缩进两字（中文排版规约） */
+.sl-markdown-content p:not(.noindent):not(.caption):not(.tagline):not(.author-bio),
+.astrolib-chapter-content p:not(.noindent):not(.caption):not(.tagline):not(.author-bio) {
+  text-indent: 2em;
+}
+html[data-paragraph-indent="false"] .sl-markdown-content p,
+html[data-paragraph-indent="false"] .astrolib-chapter-content p {
+  text-indent: 0 !important;
+}
+
+/* 核心防御：公式、单图段落、卡片标题与特殊部件禁止缩进 */
+.sl-markdown-content p:has(> .katex-display:only-child),
+.astrolib-chapter-content p:has(> .katex-display:only-child),
+.sl-markdown-content p:has(> figure:only-child),
+.astrolib-chapter-content p:has(> figure:only-child),
+.sl-markdown-content p:has(> img:only-child),
+.astrolib-chapter-content p:has(> img:only-child),
+.card-header,
+.card-header span,
+.solution-details summary,
+.academic-digital-resource,
+.academic-resource-stream,
+.exercise-trigger-card {
+  text-indent: 0 !important;
+}

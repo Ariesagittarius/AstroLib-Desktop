@@ -27,7 +27,7 @@ const requestedCol = Astro.url.searchParams.get('col');
 const requestedBook = Astro.url.searchParams.get('book');
 const requestedKey = Astro.url.searchParams.get('key');
 
-let currentBook = allBooks[0];
+let currentBook = allBooks[0] || null;
 if (requestedKey) {
   const found = allBooks.find((b) => b.key === requestedKey);
   if (found) currentBook = found;
@@ -37,7 +37,8 @@ if (requestedKey) {
 }
 
 // 目标路径前缀：collections/{colSlug}/{bookSlug}
-const prefix = `collections/${currentBook.colSlug}/${currentBook.bookSlug}`;
+const prefix = currentBook ? `collections/${currentBook.colSlug}/${currentBook.bookSlug}` : '__none__';
+const currentBookTitle = currentBook ? currentBook.bookTitle : '无选定图书';
 
 const docs = await getCollection('docs');
 
@@ -67,7 +68,7 @@ const renderedChapters = await Promise.all(
 <html lang="zh-CN">
   <head>
     <meta charset="utf-8" />
-    <title>导出《{currentBook.bookTitle}》为 PDF | 打印控制台</title>
+    <title>导出《{currentBookTitle}》为 PDF | 打印控制台</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <style>
       body {
@@ -208,14 +209,14 @@ const renderedChapters = await Promise.all(
     <!-- 打印引导面板 -->
     <header class="print-header">
       <h1 style="margin: 0 0 0.5rem 0; font-size: 1.6rem;">📖 全书 PDF 导出与打印控制台</h1>
-      <p style="margin: 0; color: #475569;">已成功加载 <b>《{currentBook.bookTitle}》</b> 共 {renderedChapters.length} 篇章节。</p>
+      <p style="margin: 0; color: #475569;">已成功加载 <b>《{currentBookTitle}》</b> 共 {renderedChapters.length} 篇章节。</p>
       
       <div class="book-selector">
         <label for="book-select" style="font-weight: 600; color: #334155;">切换图书：</label>
         <select id="book-select" class="book-select-dropdown" onchange="location.href = '?key=' + this.value">
           {
             allBooks.map((b) => (
-              <option value={b.key} selected={b.key === currentBook.key}>
+              <option value={b.key} selected={b.key === currentBook?.key}>
                 [{b.colTitle}] {b.bookTitle}
               </option>
             ))
@@ -235,11 +236,18 @@ const renderedChapters = await Promise.all(
 
     <!-- 全书内容汇总 -->
     <main class="book-container">
-      <div class="book-cover-page">
-        <h1 class="book-cover-title">{currentBook.bookTitle}</h1>
-        <p class="book-cover-meta">所属合集：{currentBook.colTitle} · 数字化出版</p>
-        <p class="book-cover-meta" style="font-size: 0.95rem; margin-top: 0.5rem;">包含全部 {renderedChapters.length} 章节 · 公式以 KaTeX 高精度排版</p>
-      </div>
+      {currentBook ? (
+        <div class="book-cover-page">
+          <h1 class="book-cover-title">{currentBook.bookTitle}</h1>
+          <p class="book-cover-meta">所属合集：{currentBook.colTitle} · 数字化出版</p>
+          <p class="book-cover-meta" style="font-size: 0.95rem; margin-top: 0.5rem;">包含全部 {renderedChapters.length} 章节 · 公式以 KaTeX 高精度排版</p>
+        </div>
+      ) : (
+        <div class="book-cover-page">
+          <h1 class="book-cover-title">暂无图书</h1>
+          <p class="book-cover-meta">请通过首页或本地内容包导入书籍后进行打印与导出。</p>
+        </div>
+      )}
 
       {
         renderedChapters.map(({ title, Content }) => (

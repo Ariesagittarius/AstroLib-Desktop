@@ -31,8 +31,6 @@ async function readJsonBody(req) {
 }
 
 export function bilingualDevServerPlugin() {
-  const engine = BilingualOnnxEngine.getInstance();
-
   return {
     name: 'astrolib-bilingual-aligner-dev-server',
     configureServer(server) {
@@ -58,24 +56,36 @@ export function bilingualDevServerPlugin() {
         try {
           // 2. 健康探活 /__bilingual__/health
           if (req.method === 'GET' && path === `${BILINGUAL_PATH_PREFIX}/health`) {
+            const engine = BilingualOnnxEngine.getInstance();
+            const models = await engine.getAvailableModels();
             return sendJson(res, 200, {
               status: 'ok',
               engine: 'onnxruntime-node',
+              models,
               timestamp: Date.now(),
             });
+          }
+
+          // 2.1 获取可选模型列表 /__bilingual__/models
+          if (req.method === 'GET' && path === `${BILINGUAL_PATH_PREFIX}/models`) {
+            const engine = BilingualOnnxEngine.getInstance();
+            const models = await engine.getAvailableModels();
+            return sendJson(res, 200, { models });
           }
 
           // 3. 段落向量对齐 /__bilingual__/align
           if (req.method === 'POST' && path === `${BILINGUAL_PATH_PREFIX}/align`) {
             const body = await readJsonBody(req);
-            const sourceTexts = body.sourceTexts || [];
-            const targetTexts = body.targetTexts || [];
+            const sourceTexts = body.sourceTexts || (Array.isArray(body.sourceParagraphs) ? body.sourceParagraphs.map(p => typeof p === 'string' ? p : p.text) : []);
+            const targetTexts = body.targetTexts || (Array.isArray(body.targetParagraphs) ? body.targetParagraphs.map(p => typeof p === 'string' ? p : p.text) : []);
+            const model = body.model || 'minilm-l12';
 
             if (!Array.isArray(sourceTexts) || !Array.isArray(targetTexts)) {
               return sendJson(res, 400, { error: 'sourceTexts and targetTexts must be arrays of strings' });
             }
 
-            const result = await engine.alignParagraphs(sourceTexts, targetTexts);
+            const engine = BilingualOnnxEngine.getInstance();
+            const result = await engine.alignParagraphs(sourceTexts, targetTexts, { model });
             return sendJson(res, 200, result);
           }
 
@@ -84,8 +94,10 @@ export function bilingualDevServerPlugin() {
             const body = await readJsonBody(req);
             const sourceChapters = body.sourceChapters || [];
             const targetChapters = body.targetChapters || [];
+            const model = body.model || 'minilm-l12';
 
-            const matches = await engine.matchToc(sourceChapters, targetChapters);
+            const engine = BilingualOnnxEngine.getInstance();
+            const matches = await engine.matchToc(sourceChapters, targetChapters, { model });
             return sendJson(res, 200, { matches });
           }
 

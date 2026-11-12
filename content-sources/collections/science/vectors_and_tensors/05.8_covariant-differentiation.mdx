@@ -1,0 +1,90 @@
+---
+title: '5.8 Covariant differentiation'
+---
+
+import Guide from '@/components/Guide.astro';
+import Knowledge from '@/components/Knowledge.astro';
+import Example from '@/components/Example.astro';
+import Analysis from '@/components/Analysis.astro';
+import Solution from '@/components/Solution.astro';
+import Variant from '@/components/Variant.astro';
+import Note from '@/components/Note.astro';
+import Block from '@/components/Block.astro';
+import Method from '@/components/Method.astro';
+import Exercise from '@/components/Exercise.astro';
+
+## 5.8 Covariant differentiation
+
+With Christoffel symbols in hand, you have a way of differentiating a vector or higher-order tensor that includes the effect of changes (if any) in the magnitude and direction of the basis vectors used to expand that vector or tensor. This type of derivative is called the "covariant" derivative, and it finds application not only in the Euclidean space in which many engineering and physics problems are worked, but also in the curved Riemanian space of General Relativity.
+
+In Euclidean space, two vectors at different locations may be compared and combined by dragging one of the vectors to the location of the other without changing its magnitude or its direction. If the vector is expanded using Carte sian coordinates, such "parallel transport" is accomplished simply by keeping each of its components the same (because the Cartesian basis vectors have the same magnitude and direction everywhere). But if the vector is expressed in non-Cartesian coordinates, the length and direction of the basis vectors may be different at the two locations. In such cases, the covariant derivative provides a means of parallel-transporting one of the vectors to the location of the other.
+
+The situation is more complicated for curved spaces. You can find the details of the use of the covariant derivative in curved spaces in Chapter 6, but for now you can understand the role of the covariant derivative by considering a two-dimensional spherical surface embedded in a three-dimensional Euclidean space. Imagine a series of tangent planes just touching the sphere at each loca tion, and picture a vector lying in one of those tangent planes. If that vector is moved to a different location on the sphere while holding its direction constant (as viewed in the larger three-dimensional space), it will not lie in the tangent plane at the new location (you can think of the vector as "sticking out" of the two-dimensional space of the sphere). In such cases, the covariant deriva tive serves to project the derivative of the vector into the tangent space of the sphere.
+
+You should also note that the covariant differentiation process produces a result that retains the properties of a tensor, which means that the result transforms between coordinate systems according to the rules of tensor transformation.
+
+To understand how the process of covariant differentiation works, conside the vector $\vec { A } = A ^ { 1 } \vec { e _ { 1 } } + A ^ { 2 } \vec { e _ { 2 } } + A ^ { 3 } \vec { e _ { 3 } }$ and its derivatives
+
+$$
+\begin{array}{c} \frac {\partial \vec {A}}{\partial x ^ {j}} = \frac {\partial (A ^ {1} \vec {e _ {1}} + A ^ {2} \vec {e _ {2}} + A ^ {3} \vec {e _ {3}})}{\partial x ^ {j}} \\ = \frac {\partial (A ^ {i} \vec {e _ {i}})}{\partial x ^ {j}} \\ = \frac {\partial A ^ {i}}{\partial x ^ {j}} \vec {e _ {i}} + A ^ {i} \frac {\partial \vec {e _ {i}}}{\partial x ^ {j}}. \end{array}
+$$
+
+Now replace the partial derivative in the second term with the Christoffel symbol definition (Eq. 5.22):
+
+$$
+\frac {\partial \vec {A}}{\partial x ^ {j}} = \frac {\partial A ^ {i}}{\partial x ^ {j}} \vec {e} _ {i} + A ^ {i} (\Gamma_ {i j} ^ {k} \vec {e} _ {k}).
+$$
+
+Since the indices i and k in the second term are both dummy indices by the summation rule, you can switch them and then extract the common factor that is now the basis vector $\vec { e } _ { i }$ :
+
+$$
+\begin{array}{r} \frac {\partial \vec {A}}{\partial x ^ {j}} = \frac {\partial A ^ {i}}{\partial x ^ {j}} \vec {e _ {i}} + A ^ {k} (\Gamma_ {k j} ^ {i} \vec {e _ {i}}) \\ = \left(\frac {\partial A ^ {i}}{\partial x ^ {j}} + A ^ {k} \Gamma_ {k j} ^ {i}\right) \vec {e _ {i}}. \end{array}
+$$
+
+The covariant derivative is defined as the combination of the two terms inside the parentheses. Common notation for the covariant derivative is to use a semicolon (;) in front of the index with respect to which the covariant derivative is being taken $( j$ in this case). Thus you're likely to see the components of the covariant derivative defined as
+
+$$
+A _ {; j} ^ {i} \equiv \frac {\partial A ^ {i}}{\partial x ^ {j}} + A ^ {k} \Gamma_ {k j} ^ {i}.\tag{5.24}
+$$
+
+A similar analysis leads to the covariant derivative of a vector expanded using covariant coefficients:
+
+$$
+A _ {i; j} \equiv \frac {\partial A _ {i}}{\partial x ^ {j}} - A _ {k} \Gamma_ {i j} ^ {k}.\tag{5.25}
+$$
+
+Note that the term involving Christoffel symbols is subtracted in this case.
+
+To make the meaning of Eqs. 5.24 and 5.25 more explicit, consider the covariant derivative of vector $\vec { A }$ with respect to $\phi$ in cylindrical coordinates (so $x ^ { 1 } = r , x ^ { 2 } = \phi$ , and $x ^ { 3 } = z )$ . Setting $j = 2$ in Eq. 5.24 (since we're interested in the covariant derivative with respect to $\phi )$ ,
+
+$$
+\begin{array}{c} A _ {; \phi} ^ {r} = \frac {\partial A ^ {r}}{\partial \phi} + A ^ {r} \Gamma_ {r \phi} ^ {r} + A ^ {\phi} \Gamma_ {\phi \phi} ^ {r} + A ^ {z} \Gamma_ {z \phi} ^ {r} \\ = \frac {\partial A ^ {r}}{\partial \phi} + 0 + A ^ {\phi} (- r) + 0, \end{array}
+$$
+
+which says that a change in the r-component of vector $\vec { A }$ caused by a change in $\phi$ is caused both by a change in $A ^ { r }$ with $\phi$ and by a change in the basis vectors which causes a portion of $\vec { A }$ that was originally in the φ-direction to now point in the r-direction. Likewise, for the change in $A ^ { \phi }$ as the value of $\phi$ is changed,
+
+$$
+\begin{array}{c} A _ {; \phi} ^ {\phi} = \frac {\partial A ^ {\phi}}{\partial \phi} + A ^ {\phi} \Gamma_ {r \phi} ^ {\phi} + A ^ {r} \Gamma_ {\phi \phi} ^ {\phi} + A ^ {z} \Gamma_ {z \phi} ^ {\phi} \\ = \frac {\partial A ^ {\phi}}{\partial \phi} + A ^ {r} \left(\frac {1}{r}\right) + 0 + 0. \end{array}
+$$
+
+Thus
+
+$$
+\frac {\partial \vec {A}}{\partial \phi} = \left(\frac {\partial A ^ {r}}{\partial \phi} - r A ^ {\phi}\right) \vec {e} _ {r} + \left(\frac {\partial A ^ {\phi}}{\partial \phi} + \frac {1}{r} A ^ {r}\right) \vec {e} _ {\phi}.
+$$
+
+The process of covariant differentiation can also be applied to higher order tensors. As you might expect, this simply requires the addition of a
+
+Christoffel-symbol term for each contravariant index, and the subtraction of a Christoffel-symbol term for each covariant index. Hence
+
+$$
+A _ {; k} ^ {i j} = \frac {\partial A ^ {i j}}{\partial x ^ {k}} + A ^ {l j} \Gamma_ {l k} ^ {i} + A ^ {i l} \Gamma_ {l k} ^ {j},
+$$
+
+$$
+B _ {i j; k} = \frac {\partial B _ {i j}}{\partial x ^ {k}} - B _ {l j} \Gamma_ {i k} ^ {l} - B _ {i l} \Gamma_ {j k} ^ {l},
+$$
+
+$$
+C _ {j; k} ^ {i} = \frac {\partial C _ {j} ^ {i}}{\partial x ^ {k}} + C _ {j} ^ {l} \Gamma_ {l k} ^ {i} - C _ {l} ^ {i} \Gamma_ {j k} ^ {l}.
+$$

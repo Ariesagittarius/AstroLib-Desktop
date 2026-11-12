@@ -1,0 +1,91 @@
+---
+/**
+ * src/pages/hub.astro
+ * ============================================================================
+ * AstroLib 控制中心与扩展仓库 (独立 /hub/ 路由降级壳层)
+ * ============================================================================
+ * 主窗体内复用 SettingsHubContent 作为窗口内覆盖层模态框展示；
+ * 本页面保留为直接访问 /hub/ 或外部跳转的完整页面壳层，共享同一套 UI 组件。
+ * ============================================================================
+ */
+import '@fontsource-variable/noto-sans-sc';
+import '@fontsource-variable/noto-serif-sc';
+import '@fontsource-variable/plus-jakarta-sans';
+import '../styles/tokens/layers.css';
+import '../themes/material-you/tokens.css';
+import '../themes/material-you/theme.css';
+import '../styles/fonts.css';
+import SettingsHubContent from '../components/desktop/SettingsHubContent.astro';
+---
+
+<!doctype html>
+<html lang="zh-CN" data-site-theme="material-you">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AstroLib 控制中心与扩展仓库</title>
+    <link rel="icon" type="image/png" href="/favicon.png" />
+
+    <!-- 首屏免闪烁恢复全局主题色与深浅模式 -->
+    <script is:inline>
+      (function () {
+        try {
+          var t = localStorage.getItem('starlight-theme');
+          var resolved =
+            t === 'dark' || t === 'light'
+              ? t
+              : window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+                ? 'dark'
+                : 'light';
+          document.documentElement.dataset.theme = resolved;
+          document.documentElement.style.colorScheme = resolved;
+          document.documentElement.dataset.siteTheme = 'material-you';
+
+          var m3Color = localStorage.getItem('starlight-m3-theme-color');
+          if (m3Color) document.documentElement.dataset.m3ThemeColor = m3Color;
+
+          var cachedCss = localStorage.getItem('astrolib_m3_cached_css');
+          if (cachedCss) {
+            var styleEl = document.createElement('style');
+            styleEl.id = 'm3-dynamic-color-theme';
+            styleEl.textContent = cachedCss;
+            document.head.appendChild(styleEl);
+            document.addEventListener('DOMContentLoaded', function () {
+              if (styleEl && document.head.lastElementChild !== styleEl) {
+                document.head.appendChild(styleEl);
+              }
+            });
+          }
+        } catch (e) {}
+      })();
+    </script>
+
+    <!-- Google 官方 Material Symbols Outlined 图标库 -->
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200"
+    />
+
+    <style>
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100vh;
+        overflow: hidden;
+        background-color: var(--md-sys-color-surface, #ffffff);
+        color: var(--md-sys-color-on-surface, #1a1b21);
+        font-family: var(--sl-font, system-ui, -apple-system, sans-serif);
+      }
+
+      body {
+        display: flex;
+        flex-direction: column;
+      }
+    </style>
+  </head>
+  <body>
+    <SettingsHubContent isOverlay={false} />
+  </body>
+</html>

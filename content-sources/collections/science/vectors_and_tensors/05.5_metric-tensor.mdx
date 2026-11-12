@@ -1,0 +1,258 @@
+---
+title: '5.5 Metric tensor'
+---
+
+import Guide from '@/components/Guide.astro';
+import Knowledge from '@/components/Knowledge.astro';
+import Example from '@/components/Example.astro';
+import Analysis from '@/components/Analysis.astro';
+import Solution from '@/components/Solution.astro';
+import Variant from '@/components/Variant.astro';
+import Note from '@/components/Note.astro';
+import Block from '@/components/Block.astro';
+import Method from '@/components/Method.astro';
+import Exercise from '@/components/Exercise.astro';
+
+## 5.5 Metric tensor
+
+As you think about contravariant and covariant components of vectors and tensors, you should not lose sight of the fact that these components exist only when you've selected a coordinate system. And why do you need a coordinate system? Because coordinate systems "arithmetize" space – that is, they give you a way of applying the rules of arithmetic to objects that exist in the space in which you're working. That space may be the three-dimension space of everyday experience, or the four-dimension spacetime of Einstein, or any other space you can imagine. The coordinate system you apply may have straight axes that intersect at right angles, or the axes may be curved and intersect at any angle of your choosing.
+
+However you choose to arithmetize a space, there is one tensor that allows you to define fundamental quantities such as lengths and angles in a consistent manner at different locations. That tensor, the one that "provides the metric" for a given coordinate system in the space of interest, is called the fundamental or metric tensor. The lower-case letter "g" has become the standard symbol fo the metric tensor, which you may see written as $\vec { \vec { g } }$ or g. The metric tensor has contravariant components $g ^ { i j }$ and covariant components $g _ { i j }$
+
+To understand the role of the metric tensor, consider two points separated by an infinitesimal distance ds. If the vector $d \vec { r }$ extends from one point to the other, then the square of the differential length element may be written as $d s ^ { 2 } = d \vec { r } \circ d \vec { r }$ . The vector $d \vec { r }$ may be written using contravariant components and coordinate basis vectors $( \vec { e } _ { i } )$ ) as
+
+$$
+d \vec {r} = \vec {e} _ {i} d x ^ {i},
+$$
+
+or using covariant components and dual basis vectors $( \vec { e } _ { i } )$ as
+
+$$
+d \vec {r} = \vec {e} ^ {i} d x _ {i}.
+$$
+
+Since $d s ^ { 2 }$ involves the dot product of $d \vec { r }$ with itself, you have the option of using the contravariant components $d x ^ { i }$ on both sides of the dot:
+
+$$
+\begin{array}{r} d s ^ {2} = d \vec {r} \circ d \vec {r} = \vec {e} _ {i} d x ^ {i} \circ \vec {e} _ {j} d x ^ {j} \\ = (\vec {e} _ {i} \circ \vec {e} _ {j}) d x ^ {i} d x ^ {j} \\ = g _ {i j} d x ^ {i} d x ^ {j}, \end{array}
+$$
+
+where $g _ { i j }$ represents the covariant components of the metric tensor. Alternatively, you may use the covariant components $d x _ { i }$ on both sides of the dot:
+
+$$
+\begin{array}{r} d s ^ {2} = d \vec {r} \circ d \vec {r} = \vec {e} ^ {i} d x _ {i} \circ \vec {e} ^ {j} d x _ {j} \\ = (\vec {e} ^ {i} \circ \vec {e} ^ {j}) d x _ {i} d x _ {j} \\ = g ^ {i j} d x _ {i} d x _ {j}, \end{array}
+$$
+
+where $g ^ { i j }$ represents contravariant components of the metric tensor. A third option is to use contravariant components on one side of the dot and covariant components on the other:
+
+$$
+\begin{array}{r l} d s ^ {2} & = \vec {e} _ {i} d x ^ {i} \circ \vec {e} ^ {j} d x _ {j} \\ & = (\vec {e} _ {i} \circ \vec {e} ^ {j}) d x ^ {i} d x _ {j} \\ & = d x ^ {i} d x _ {j}. \end{array}
+$$
+
+Note that in this case no metric tensor is needed, since the definition of dual basis vectors ensures that $\vec { e } _ { i } \circ \vec { e } ^ { j }$ equals one if $i = j$ and zero if $i \neq j$
+
+Whether $d s ^ { 2 }$ is written as $g _ { i j } d x ^ { i } d x ^ { j } , g ^ { i j } d x _ { i } d x _ { j }$ , or $d x ^ { i } d x _ { j }$ , you can be sure of one thing: the distance between two points must be the same no matter which coordinate system you employ, whether you use contravariant, covari ant, or mixed components. Hence it must be the job of the metric tensor $\vec { \vec { g } }$ and its components $g ^ { i j }$ and $g _ { i j }$ to turn the product of incremental coordinate changes expressed in either contravariant or covariant components into the invariant distance between points. This is the rationale behind the statement that the metric tensor "provides the geometry" of the space.
+
+The geometry of vectors entails use of lengths and angles, so it's useful to understand the role of the metric tensor in defining the length of a vecto such as $\vec { A }$ and the angle between two vectors $\vec { A }$ and $\vec { B }$ . Just as the incremental distance ds can be found by dotting the separation vector $d \vec { r }$ into itself, the length of vector $\vec { A }$ can be found from $\vec { A } \circ \vec { A }$ . And there's more than one way to do that.
+
+One option is to use only the contravariant components of $\vec { A }$ :
+
+$$
+\begin{array}{r} | \vec {A} | = \sqrt {\vec {A} \circ \vec {A}} = \sqrt {A ^ {i} \vec {e} _ {i} \circ A ^ {j} \vec {e} _ {j}} \\ = \sqrt {(\vec {e} _ {i} \circ \vec {e} _ {j}) A ^ {i} A ^ {j}} = \sqrt {g _ {i j} A ^ {i} A ^ {j}}. \end{array}
+$$
+
+Another option is to use only covariant components:
+
+$$
+\begin{array}{c} | \vec {A} | = \sqrt {\vec {A} \circ \vec {A}} = \sqrt {A _ {i} \vec {e} ^ {i} \circ A _ {j} \vec {e} ^ {j}} \\ = \sqrt {(\vec {e} ^ {i} \circ \vec {e} ^ {j}) A _ {i} A _ {j}} = \sqrt {g ^ {i j} A _ {i} A _ {j}}. \end{array}
+$$
+
+And the final option is to use mixed components:
+
+$$
+\begin{array}{r} | \vec {A} | = \sqrt {\vec {A} \circ \vec {A}} = \sqrt {A ^ {i} \vec {e} _ {i} \circ A _ {j} \vec {e} ^ {j}} \\ = \sqrt {(\vec {e} _ {i} \circ \vec {e} ^ {j}) A ^ {i} A _ {j}} = \sqrt {A ^ {i} A _ {j}}. \end{array}
+$$
+
+As in the case of $d \vec { r }$ , the metric tensor ensures that the length of vector $\vec { A }$ is invariant.
+
+To understand the role of the metric tensor in providing a consistent defini tion of angles, consider the dot product $\vec { A } \circ \vec { B }$ . Once again, there are alternative ways of writing this product, and this means that the angle between $\vec { A }$ and $\vec { B }$ can be written in the following equivalent ways:
+
+$$
+\begin{array}{l} \cos \theta = \frac {\vec {A} \circ \vec {B}}{| \vec {A} | | \vec {B} |} \\ \qquad = \frac {g _ {i j} A ^ {i} B ^ {j}}{\sqrt {g _ {i j} A ^ {i} A ^ {j}} \sqrt {g _ {i j} B ^ {i} B ^ {j}}} \\ \qquad = \frac {A _ {i} B ^ {j}}{\sqrt {A _ {i} A ^ {i}} \sqrt {B _ {i} B ^ {i}}} \\ \qquad = \frac {g ^ {i j} A _ {i} B _ {j}}{\sqrt {g ^ {i j} A _ {i} A _ {j}} \sqrt {g ^ {i j} B _ {i} B _ {j}}}. \end{array}
+$$
+
+This explains why you're likely to run into the statement that the metric tensor "provides a dot product" for a space – if you know how to find the dot product, you can define lengths and angles.
+
+To see the tensor nature of the metric tensor, consider the transformation of the contravariant components of the incremental separation vector $d \vec { r }$ :
+
+$$
+d x ^ {' i} = \frac {\partial x ^ {' i}}{\partial x ^ {j}} d x ^ {j}.
+$$
+
+This means that the square of the incremental length $( d s ^ { 2 } )$ becomes:
+
+$$
+\begin{array}{l} d s ^ {2} = \left[ \frac {\partial x ^ {' 1}}{\partial x ^ {1}} \frac {\partial x ^ {' 1}}{\partial x ^ {1}} + \frac {\partial x ^ {' 2}}{\partial x ^ {1}} \frac {\partial x ^ {' 2}}{\partial x ^ {1}} + \frac {\partial x ^ {' 3}}{\partial x ^ {1}} \frac {\partial x ^ {' 3}}{\partial x ^ {1}} \right] d x ^ {1} d x ^ {1} \\ \quad + \left[ \frac {\partial x ^ {' 1}}{\partial x ^ {2}} \frac {\partial x ^ {' 1}}{\partial x ^ {2}} + \frac {\partial x ^ {' 2}}{\partial x ^ {2}} \frac {\partial x ^ {' 2}}{\partial x ^ {2}} + \frac {\partial x ^ {' 3}}{\partial x ^ {2}} \frac {\partial x ^ {' 3}}{\partial x ^ {2}} \right] d x ^ {2} d x ^ {2} \\ \quad + \left[ \frac {\partial x ^ {' 1}}{\partial x ^ {3}} \frac {\partial x ^ {' 1}}{\partial x ^ {3}} + \frac {\partial x ^ {' 2}}{\partial x ^ {3}} \frac {\partial x ^ {' 2}}{\partial x ^ {3}} + \frac {\partial x ^ {' 3}}{\partial x ^ {3}} \frac {\partial x ^ {' 3}}{\partial x ^ {3}} \right] d x ^ {3} d x ^ {3} \\ \quad + \left[ \frac {\partial x ^ {' 1}}{\partial x ^ {1}} \frac {\partial x ^ {' 1}}{\partial x ^ {2}} + \frac {\partial x ^ {' 2}}{\partial x ^ {1}} \frac {\partial x ^ {' 2}}{\partial x ^ {2}} + \frac {\partial x ^ {' 3}}{\partial x ^ {1}} \frac {\partial x ^ {' 3}}{\partial x ^ {2}} \right] d x ^ {1} d x ^ {2} \end{array}
+$$
+
+$$
+\begin{array}{l} + \left[ \frac {\partial x ^ {' 1}}{\partial x ^ {2}} \frac {\partial x ^ {' 1}}{\partial x ^ {1}} + \frac {\partial x ^ {' 2}}{\partial x ^ {2}} \frac {\partial x ^ {' 2}}{\partial x ^ {1}} + \frac {\partial x ^ {' 3}}{\partial x ^ {2}} \frac {\partial x ^ {' 3}}{\partial x ^ {1}} \right] d x ^ {2} d x ^ {1} \\ + \left[ \frac {\partial x ^ {' 1}}{\partial x ^ {1}} \frac {\partial x ^ {' 1}}{\partial x ^ {3}} + \frac {\partial x ^ {' 2}}{\partial x ^ {1}} \frac {\partial x ^ {' 2}}{\partial x ^ {3}} + \frac {\partial x ^ {' 3}}{\partial x ^ {1}} \frac {\partial x ^ {' 3}}{\partial x ^ {3}} \right] d x ^ {1} d x ^ {3} \\ + \left[ \frac {\partial x ^ {' 1}}{\partial x ^ {3}} \frac {\partial x ^ {' 1}}{\partial x ^ {1}} + \frac {\partial x ^ {' 2}}{\partial x ^ {3}} \frac {\partial x ^ {' 2}}{\partial x ^ {1}} + \frac {\partial x ^ {' 3}}{\partial x ^ {3}} \frac {\partial x ^ {' 3}}{\partial x ^ {1}} \right] d x ^ {3} d x ^ {1} \\ + \left[ \frac {\partial x ^ {' 1}}{\partial x ^ {2}} \frac {\partial x ^ {' 1}}{\partial x ^ {3}} + \frac {\partial x ^ {' 2}}{\partial x ^ {2}} \frac {\partial x ^ {' 2}}{\partial x ^ {3}} + \frac {\partial x ^ {' 3}}{\partial x ^ {2}} \frac {\partial x ^ {' 3}}{\partial x ^ {3}} \right] d x ^ {2} d x ^ {3} \\ + \left[ \frac {\partial x ^ {' 1}}{\partial x ^ {3}} \frac {\partial x ^ {' 1}}{\partial x ^ {2}} + \frac {\partial x ^ {' 2}}{\partial x ^ {3}} \frac {\partial x ^ {' 2}}{\partial x ^ {2}} + \frac {\partial x ^ {' 3}}{\partial x ^ {3}} \frac {\partial x ^ {' 3}}{\partial x ^ {2}} \right] d x ^ {3} d x ^ {2}. \end{array}\tag{5.12}
+$$
+
+This daunting expression becomes far more tractable if you realize that each bracketed term involves the sum of the partial derivatives of each of the transformed coordinates $( x ^ { ' 1 } , x ^ { ' 2 }$ , and $x ^ { ' 3 } )$ taken with respect to two of the original coordinates $( x ^ { 1 } , x ^ { 2 }$ , and $x ^ { 3 } )$ . More specifically, each of the three terms within each bracket is a product of the components of the basis vectors tangent to the original axes (recall that $\textstyle { \frac { \partial x ^ { ' 1 } } { \partial x ^ { i } } } , { \frac { \partial x ^ { ' 2 } } { \partial x ^ { i } } }$ , and $\frac { { \partial } x ^ { ' 3 } } { \partial { x } ^ { i } }$ are the components in the transformed coordinate system of the basis vector tangent to the ith original axis).
+
+If you assign the bracketed terms to the variable $g$ with two subscripts denoting the axes with respect to which the derivatives are taken, you will have
+
+$$
+\begin{array}{l} g _ {1 1} = \left[ \frac {\partial x ^ {' 1}}{\partial x ^ {1}} \frac {\partial x ^ {' 1}}{\partial x ^ {1}} + \frac {\partial x ^ {' 2}}{\partial x ^ {1}} \frac {\partial x ^ {' 2}}{\partial x ^ {1}} + \frac {\partial x ^ {' 3}}{\partial x ^ {1}} \frac {\partial x ^ {' 3}}{\partial x ^ {1}} \right], \\ g _ {2 2} = \left[ \frac {\partial x ^ {' 1}}{\partial x ^ {2}} \frac {\partial x ^ {' 1}}{\partial x ^ {2}} + \frac {\partial x ^ {' 2}}{\partial x ^ {2}} \frac {\partial x ^ {' 2}}{\partial x ^ {2}} + \frac {\partial x ^ {' 3}}{\partial x ^ {2}} \frac {\partial x ^ {' 3}}{\partial x ^ {2}} \right], \\ g _ {3 3} = \left[ \frac {\partial x ^ {' 1}}{\partial x ^ {3}} \frac {\partial x ^ {' 1}}{\partial x ^ {3}} + \frac {\partial x ^ {' 2}}{\partial x ^ {3}} \frac {\partial x ^ {' 2}}{\partial x ^ {3}} + \frac {\partial x ^ {' 3}}{\partial x ^ {3}} \frac {\partial x ^ {' 3}}{\partial x ^ {3}} \right], \\ g _ {1 2} = \left[ \frac {\partial x ^ {' 1}}{\partial x ^ {1}} \frac {\partial x ^ {' 1}}{\partial x ^ {2}} + \frac {\partial x ^ {' 2}}{\partial x ^ {1}} \frac {\partial x ^ {' 2}}{\partial x ^ {2}} + \frac {\partial x ^ {' 3}}{\partial x ^ {1}} \frac {\partial x ^ {' 3}}{\partial x ^ {2}} \right], \\ g _ {1 3} = \left[ \frac {\partial x ^ {' 1}}{\partial x ^ {1}} \frac {\partial x ^ {' 1}}{\partial x ^ {3}} + \frac {\partial x ^ {' 2}}{\partial x ^ {1}} \frac {\partial x ^ {' 2}}{\partial x ^ {3}} + \frac {\partial x ^ {' 3}}{\partial x ^ {1}} \frac {\partial x ^ {' 3}}{\partial x ^ {3}} \right], \\ g _ {2 3} = \left[ \frac {\partial x ^ {' 1}}{\partial x ^ {2}} \frac {\partial x ^ {' 1}}{\partial x ^ {3}} + \frac {\partial x ^ {' 2}}{\partial x ^ {2}} \frac {\partial x ^ {' 2}}{\partial x ^ {3}} + \frac {\partial x ^ {' 3}}{\partial x ^ {2}} \frac {\partial x ^ {' 3}}{\partial x ^ {3}} \right], \end{array}
+$$
+
+and since the order of multiplication is irrelevant, $g _ { 2 1 } = g _ { 1 2 } , g _ { 3 1 } = g _ { 1 3 }$ , and $g _ { 3 2 } = g _ { 2 3 }$ . Substituting these into Eq. 5.12, the expression for $d s ^ { 2 }$ becomes
+
+$$
+\begin{array}{c} d s ^ {2} = g _ {1 1} d x ^ {1} d x ^ {1} + g _ {2 2} d x ^ {2} d x ^ {2} + g _ {3 3} d x ^ {3} d x ^ {3} + g _ {1 2} d x ^ {1} d x ^ {2} + g _ {2 1} d x ^ {2} d x ^ {1} \\ \qquad + g _ {1 3} d x ^ {1} d x ^ {3} + g _ {3 1} d x ^ {3} d x ^ {1} + g _ {2 3} d x ^ {2} d x ^ {3} + g _ {3 2} d x ^ {3} d x ^ {2}. \end{array}
+$$
+
+This can be further simplified using index notation and the summation convention:
+
+$$
+d s ^ {2} = g _ {i j} d x ^ {i} d x ^ {j}.\tag{5.13}
+$$
+
+The $g _ { i j }$ term in this equation meets all the requirements of a second-rank tensor, but it's not just any tensor. Because it relates the coordinate differentials in various directions to a quantity that is invariant across all coordinate transformations. it's no wonder that this tensor is called the metric or fundamenta tensor.
+
+To understand what's so fundamental about this tensor, recall that the partial derivatives that make up the elements of $g _ { i j }$ also represent the components of the basis vectors tangent to the original coordinate axes:
+
+$$
+\begin{array}{l} \vec {e} _ {1} = \left(\frac {\partial x ^ {' 1}}{\partial x ^ {1}}, \frac {\partial x ^ {' 2}}{\partial x ^ {1}}, \frac {\partial x ^ {' 3}}{\partial x ^ {1}}\right), \\ \vec {e} _ {2} = \left(\frac {\partial x ^ {' 1}}{\partial x ^ {2}}, \frac {\partial x ^ {' 2}}{\partial x ^ {2}}, \frac {\partial x ^ {' 3}}{\partial x ^ {2}}\right), \\ \vec {e} _ {3} = \left(\frac {\partial x ^ {' 1}}{\partial x ^ {3}}, \frac {\partial x ^ {' 2}}{\partial x ^ {3}}, \frac {\partial x ^ {' 3}}{\partial x ^ {3}}\right). \end{array}\tag{5.14}
+$$
+
+And since
+
+$$
+g _ {i j} = \left[ \frac {\partial x ^ {' 1}}{\partial x ^ {i}} \frac {\partial x ^ {' 1}}{\partial x ^ {j}} + \frac {\partial x ^ {' 2}}{\partial x ^ {i}} \frac {\partial x ^ {' 2}}{\partial x ^ {j}} + \frac {\partial x ^ {' 3}}{\partial x ^ {i}} \frac {\partial x ^ {' 3}}{\partial x ^ {j}} \right],\tag{5.15}
+$$
+
+another way to represent the metric tensor is $g _ { i j } = { \vec { e } } _ { i } \circ { \vec { e } } _ { j }$ (the inner product of the basis vectors tangent to the coordinate axes). Since the inner product involves the projection of one vector onto the direction of another and scales as the length of those two vectors, the elements of $g _ { i j }$ specify the relationships between the coordinate axes. Those relationships are determined by the shape of the coordinate space.
+
+The nature of the metric tensor can be readily understood by considering a transformation from spherical polar $( r , \theta , \phi )$ to Cartesian $( x , y , z )$ coordinates. In this case
+
+$$
+x ^ {' 1} = x = r \sin (\theta) \cos (\phi) = x ^ {1} \sin (x ^ {2}) \cos (x ^ {3}),
+$$
+
+$$
+x ^ {' 2} = y = r s i n (\theta) s i n (\phi) = x ^ {1} s i n (x ^ {2}) s i n (x ^ {3}),\tag{5.16}
+$$
+
+$$
+x ^ {' 3} = z = r c o s (\theta) = x ^ {1} c o s (x ^ {2}),
+$$
+
+and the partial derivatives appearing in the elements of the metric tensor are
+
+$$
+\frac {\partial x ^ {' 1}}{\partial x ^ {1}} = \sin (x ^ {2}) \cos (x ^ {3}) = \sin (\theta) \cos (\phi),
+$$
+
+$$
+\frac {\partial x ^ {' 1}}{\partial x ^ {2}} = x ^ {1} c o s (x ^ {2}) c o s (x ^ {3}) = r c o s (\theta) c o s (\phi),
+$$
+
+$$
+\frac {\partial x ^ {' 2}}{\partial x ^ {1}} = \sin (x ^ {2}) \sin (x ^ {3}) = \sin (\theta) \sin (\phi),
+$$
+
+$$
+\frac {\partial x ^ {' 2}}{\partial x ^ {2}} = x ^ {1} c o s (x ^ {2}) s i n (x ^ {3}) = r c o s (\theta) s i n (\phi),
+$$
+
+$$
+\frac {\partial x ^ {' 3}}{\partial x ^ {1}} = c o s (x ^ {2}) = c o s (\theta),
+$$
+
+$$
+\frac {\partial x ^ {' 3}}{\partial x ^ {2}} = - x ^ {1} \sin (x ^ {2}) = - r \sin (\theta),
+$$
+
+and
+
+$$
+\frac {\partial x ^ {' 1}}{\partial x ^ {3}} = - x ^ {1} \sin (x ^ {2}) \sin (x ^ {3}) = - r \sin (\theta) \sin (\phi),
+$$
+
+$$
+\frac {\partial x ^ {' 2}}{\partial x ^ {3}} = x ^ {1} \sin (x ^ {2}) \cos (x ^ {3}) = r \sin (\theta) \cos (\phi),
+$$
+
+$$
+\frac {\partial x ^ {' 3}}{\partial x ^ {3}} = 0.
+$$
+
+Inserting these values into the expression for $g _ { i j }$ (Eq. 5.15) gives the diagonal terms:<sup>3</sup>
+
+$$
+g _ {1 1} = \left[ \frac {\partial x ^ {' 1}}{\partial x ^ {1}} \frac {\partial x ^ {' 1}}{\partial x ^ {1}} + \frac {\partial x ^ {' 2}}{\partial x ^ {1}} \frac {\partial x ^ {' 2}}{\partial x ^ {1}} + \frac {\partial x ^ {' 3}}{\partial x ^ {1}} \frac {\partial x ^ {' 3}}{\partial x ^ {1}} \right] = 1,
+$$
+
+$$
+g _ {2 2} = \left[ \frac {\partial x ^ {' 1}}{\partial x ^ {2}} \frac {\partial x ^ {' 1}}{\partial x ^ {2}} + \frac {\partial x ^ {' 2}}{\partial x ^ {2}} \frac {\partial x ^ {' 2}}{\partial x ^ {2}} + \frac {\partial x ^ {' 3}}{\partial x ^ {2}} \frac {\partial x ^ {' 3}}{\partial x ^ {2}} \right] = r ^ {2},
+$$
+
+$$
+g _ {3 3} = \left[ \frac {\partial x ^ {' 1}}{\partial x ^ {3}} \frac {\partial x ^ {' 1}}{\partial x ^ {3}} + \frac {\partial x ^ {' 2}}{\partial x ^ {3}} \frac {\partial x ^ {' 2}}{\partial x ^ {3}} + \frac {\partial x ^ {' 3}}{\partial x ^ {3}} \frac {\partial x ^ {' 3}}{\partial x ^ {3}} \right] = r ^ {2} s i n ^ {2} (\theta).
+$$
+
+The off-diagonal terms are
+
+$$
+\begin{array}{l} g _ {1 2} = \left[ \frac {\partial x ^ {' 1}}{\partial x ^ {1}} \frac {\partial x ^ {' 1}}{\partial x ^ {2}} + \frac {\partial x ^ {' 2}}{\partial x ^ {1}} \frac {\partial x ^ {' 2}}{\partial x ^ {2}} + \frac {\partial x ^ {' 3}}{\partial x ^ {1}} \frac {\partial x ^ {' 3}}{\partial x ^ {2}} \right] = 0, \\ g _ {1 3} = \left[ \frac {\partial x ^ {' 1}}{\partial x ^ {1}} \frac {\partial x ^ {' 1}}{\partial x ^ {3}} + \frac {\partial x ^ {' 2}}{\partial x ^ {1}} \frac {\partial x ^ {' 2}}{\partial x ^ {3}} + \frac {\partial x ^ {' 3}}{\partial x ^ {1}} \frac {\partial x ^ {' 3}}{\partial x ^ {3}} \right] = 0, \\ g _ {2 3} = \left[ \frac {\partial x ^ {' 1}}{\partial x ^ {2}} \frac {\partial x ^ {' 1}}{\partial x ^ {3}} + \frac {\partial x ^ {' 2}}{\partial x ^ {2}} \frac {\partial x ^ {' 2}}{\partial x ^ {3}} + \frac {\partial x ^ {' 3}}{\partial x ^ {2}} \frac {\partial x ^ {' 3}}{\partial x ^ {3}} \right] = 0. \end{array}
+$$
+
+Thus the metric tensor for spherical polar coordinates is
+
+$$
+g _ {i j} = \left[ \begin{array}{c c c} g _ {1 1} & g _ {1 2} & g _ {1 3} \\ g _ {2 1} & g _ {2 2} & g _ {2 3} \\ g _ {3 1} & g _ {3 2} & g _ {3 3} \end{array} \right] = \left[ \begin{array}{c c c} 1 & 0 & 0 \\ 0 & r ^ {2} & 0 \\ 0 & 0 & r ^ {2} s i n ^ {2} (\theta) \end{array} \right].\tag{5.17}
+$$
+
+A careful look at the metric tensor can tell you something about the coordinate system you're dealing with. For example, the fact that all off-diagonal elements are zero in this case tells you that spherical polar coordinate axes, while curved, are orthogonal (that is, the lines of increasing r, θ, and $\phi$ intersect at right angles). Furthermore, by inserting these values into Eq. 5.13, you'll have
+
+$$
+d s ^ {2} = d r ^ {2} + r ^ {2} d \theta^ {2} + r ^ {2} \sin^ {2} \theta d \phi^ {2}.\tag{5.18}
+$$
+
+This expression makes it clear that the elements of the metric tensor tell you how to turn an incremental change in $r , \theta$ , or $\phi$ into a change in distance. For example, the factor of one in front of the $d r ^ { 2 }$ term means that a change in $r$ is already a distance. But a change in zenith angle (θ) must be multiplied by a factor of $r$ to turn it into a distance. And the distance corresponding to a change in the azimuthal angle $\phi$ depends on both the zenith angle (hence the sin(θ) term in $g _ { 3 3 } )$ as well as the distance from the origin (hence the r term in g ).
+
+Other coordinate systems require other factors to convert each change in a coordinate value to a distance, and those factors always appear in the metric tensor for that system. For orthogonal coordinate systems, the square roots of the diagonal elements of the metric tensor $( \sqrt { g _ { 1 1 } } , \sqrt { g _ { 2 2 } }$ , and $\sqrt { g _ { 3 3 } } )$ are called the "scale factors" $( h _ { 1 } , h _ { 2 }$ , and $h _ { 3 } )$ of the coordinate system. Thus the scale factors for spherical polar coordinates are $h _ { 1 } = \sqrt { g _ { 1 1 } } = 1 , h _ { 2 } = \sqrt { g _ { 2 2 } } = r$ and $h _ { 3 } = { \sqrt { g _ { 3 3 } } } = r$ sin $\theta$ .
+
+Once you're familiar with the metric tensor and scale factors, you can easily find the differential operators gradient, divergence, curl, and Laplacian in any orthogonal coordinate system (curvilinear or rectangular). For example, the gradient is given b
+
+$$
+\vec {\nabla} \phi = \frac {1}{h _ {1}} \frac {\partial \phi}{\partial x ^ {1}} \hat {e} _ {1} + \frac {1}{h _ {2}} \frac {\partial \phi}{\partial x ^ {2}} \hat {e} _ {2} + \frac {1}{h _ {3}} \frac {\partial \phi}{\partial x ^ {3}} \hat {e} _ {3},
+$$
+
+and the divergence may be written as
+
+$$
+\vec {\nabla} \circ \vec {A} = \frac {1}{h _ {1} h _ {2} h _ {3}} \left[ \frac {\partial}{\partial x ^ {1}} (h _ {2} h _ {3} A _ {1}) + \frac {\partial}{\partial x ^ {2}} (h _ {1} h _ {3} A _ {2}) + \frac {\partial}{\partial x ^ {3}} (h _ {1} h _ {2} A _ {3}) \right].
+$$
+
+The curl is given by
+
+$$
+\vec {\nabla} \times \vec {A} = \frac {1}{h _ {1} h _ {2} h _ {3}} \left| \begin{array}{c c c} h _ {1} \hat {e} _ {1} & h _ {2} \hat {e} _ {2} & h _ {3} \hat {e} _ {3} \\ \frac {\partial}{\partial x ^ {1}} & \frac {\partial}{\partial x ^ {2}} & \frac {\partial}{\partial x ^ {3}} \\ h _ {1} A _ {1} & h _ {2} A _ {2} & h _ {3} A _ {3} \end{array} \right|,
+$$
+
+which expands to
+
+$$
+\begin{array}{c} \vec {\nabla} \times \vec {A} = \frac {1}{h _ {1} h _ {2} h _ {3}} \left[ \left(\frac {\partial h _ {3} A _ {3}}{\partial x ^ {2}} - \frac {\partial h _ {2} A _ {2}}{\partial x ^ {3}}\right) h _ {1} \hat {e} _ {1} \right. \\ \qquad + \left(\frac {\partial h _ {1} A _ {1}}{\partial x ^ {3}} - \frac {\partial h _ {3} A _ {3}}{\partial x ^ {1}}\right) h _ {2} \hat {e} _ {2} + \left(\frac {\partial h _ {2} A _ {2}}{\partial x ^ {1}} - \frac {\partial h _ {1} A _ {1}}{\partial x ^ {2}}\right) h _ {3} \hat {e} _ {3} \Bigg ]. \end{array}
+$$
+
+The Laplacian can be found as
+
+$$
+\nabla^ {2} \phi = \frac {1}{h _ {1} h _ {2} h _ {3}} \left[ \frac {\partial}{\partial x ^ {1}} \left(\frac {h _ {2} h _ {3}}{h _ {1}} \frac {\partial \phi}{\partial x ^ {1}}\right) + \frac {\partial}{\partial x ^ {2}} \left(\frac {h _ {1} h _ {3}}{h _ {2}} \frac {\partial \phi}{\partial x ^ {2}}\right) + \frac {\partial}{\partial x ^ {3}} \left(\frac {h _ {1} h _ {2}}{h _ {3}} \frac {\partial \phi}{\partial x ^ {3}}\right) \right].
+$$
+
+If you'd like to see some examples of how these expressions can be used, check out the problems at the end of this chapter and the on-line solutions.<sup>4</sup>

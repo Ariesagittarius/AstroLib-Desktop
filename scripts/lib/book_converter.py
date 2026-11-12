@@ -56,7 +56,7 @@ class BookConverter:
             self.out_dir = out_dir
         else:
             self.out_dir = os.path.join(
-                self.project_root, 'src', 'content', 'docs', 'collections', collection, book_slug
+                self.project_root, 'content-sources', 'collections', collection, book_slug
             )
         self.images_out = os.path.join(self.out_dir, 'images')
 

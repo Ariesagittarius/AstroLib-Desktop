@@ -1,0 +1,74 @@
+---
+/**
+ * src/components/desktop/FragmentOverview.astro
+ * ============================================================================
+ * Fragment 1: Agent 赋能纵览大厅 (预留页 / Lottie 全幅实验展台)
+ * ============================================================================
+ * 规范：
+ * 1. 严格对齐用户指令：全幅纯净 Lottie 矢量动画实验模式；
+ * 2. 居中仅保留学术极简标语：“Under development.”；
+ * 3. 零多余视觉噪点与装饰性 App 元素，极端克制。
+ * ============================================================================
+ */
+
+import M3Lottie from '../m3/M3Lottie.astro';
+---
+
+<div class="fragment-overview-container" id="fragment-overview">
+  <div class="overview-lottie-stage">
+    <M3Lottie
+      src="/assets/lottie/webservice.json"
+      loop={true}
+      autoplay={true}
+      speed={1.0}
+      width="100%"
+      height="100%"
+      ariaLabel="Agent 赋能纵览构建中"
+    />
+  </div>
+  <div class="overview-footnote">
+    <span class="footnote-text">Under development.</span>
+  </div>
+</div>
+
+<style>
+  .fragment-overview-container {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--md-sys-color-surface, #ffffff);
+    overflow: hidden;
+    position: relative;
+    user-select: none;
+  }
+
+  .overview-lottie-stage {
+    width: min(85vw, 680px);
+    height: min(70vh, 520px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+  }
+
+  .overview-footnote {
+    position: absolute;
+    bottom: 2.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .footnote-text {
+    font-family: 'Google Sans', 'Google Sans Text', system-ui, sans-serif;
+    font-size: 0.85rem;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--md-sys-color-outline, #79747e);
+    opacity: 0.85;
+  }
+</style>

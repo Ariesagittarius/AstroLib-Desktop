@@ -59,10 +59,16 @@ CLAUDE.md
 .gemini/
 .antigravity/
 .backups/
+backup/
 *.bak
 /workspace/
 test/data/
 test/output/
+
+# Electron 桌面端构建产物与缓存
+dist-electron/
+release/
+.electron-cache/
 
 # 根目录阶段性审计与基准性能报告（不入库）
 /*-audit.md

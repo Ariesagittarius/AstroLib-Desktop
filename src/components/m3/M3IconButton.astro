@@ -1,0 +1,85 @@
+---
+/**
+ * src/components/m3/M3IconButton.astro
+ * ============================================================================
+ * Official Material Design 3 Web Component Icon Button (@material/web)
+ * ============================================================================
+ * 规范：
+ * - 默认 40px / 34px 标准圆形触摸区
+ * - 官方标准 Material Symbols 矢量图标
+ * - 支持 href 呈现链接或标准按钮
+ * ============================================================================
+ */
+import M3Icon from './M3Icon.astro';
+
+interface Props {
+  icon?: string;
+  variant?: 'standard' | 'outlined' | 'filled' | 'tonal';
+  href?: string;
+  disabled?: boolean;
+  type?: 'button' | 'submit' | 'reset';
+  class?: string;
+  id?: string;
+  title?: string;
+  ariaLabel?: string;
+  target?: string;
+  rel?: string;
+  iconSize?: number;
+}
+
+const {
+  icon,
+  variant = 'standard',
+  href,
+  disabled = false,
+  type = 'button',
+  class: className = '',
+  id,
+  title,
+  ariaLabel,
+  target,
+  rel,
+  iconSize = 20,
+} = Astro.props;
+
+const Tag = variant === 'outlined'
+  ? 'md-outlined-icon-button'
+  : variant === 'filled'
+  ? 'md-filled-icon-button'
+  : variant === 'tonal'
+  ? 'md-filled-tonal-icon-button'
+  : 'md-icon-button';
+---
+
+<Tag
+  class:list={['m3-declarative-icon-btn', className]}
+  id={id}
+  href={href}
+  disabled={disabled ? true : undefined}
+  type={href ? undefined : type}
+  title={title}
+  aria-label={ariaLabel || title}
+  target={target}
+  rel={rel}
+>
+  {icon && <M3Icon name={icon} size={iconSize} />}
+  <slot />
+</Tag>
+
+<script>
+  import '@material/web/iconbutton/icon-button.js';
+  import '@material/web/iconbutton/outlined-icon-button.js';
+  import '@material/web/iconbutton/filled-icon-button.js';
+  import '@material/web/iconbutton/filled-tonal-icon-button.js';
+</script>
+
+<style>
+  .m3-declarative-icon-btn {
+    --md-icon-button-icon-size: 20px;
+    --md-icon-button-state-layer-shape: var(--md-shape-corner-full, 9999px);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+</style>

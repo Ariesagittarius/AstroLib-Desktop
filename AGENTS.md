@@ -130,26 +130,30 @@ When undertaking content restructuring, worksheet generation, or publishing rede
 3. **Mandatory Minimalism Audit**: Include a dedicated subtractive review step to identify and eliminate superfluous visual weight.
 4. **Resolution Precedence**: `Academic Rigor > Minimalism > Readability > Decoration`.
 
-## 6. Material You (Material 3) UI Architecture & Component Standards (Mandatory)
+## 6. Material You (Material 3 & Expressive) UI Architecture & Component Standards (Mandatory)
 
-### 6.1 Theme Focus & Deprecation Freeze
-- **Sole Primary Focus**: All ongoing and future UI/UX development is strictly centered around **Material You (Material Design 3 / M3)**.
-- **Frozen Legacy Themes**: Development of `starlight` and `vitepress` themes is temporarily frozen. In user-facing settings, their selection options are marked as disabled (unavailable).
-- **Default Theme**: The system-wide default theme is `material-you`.
+### 6.1 Sole Unified Design System: Material Design 3 (M3 / M3E)
+- **Sole System-Wide Standard**: All UI/UX development across all pages and shells is strictly unified under **Material Design 3 (Material You / Expressive)**.
+- **Legacy Themes Completely Deleted**: Legacy `vitepress` and `starlight` themes and their respective stylesheets/configs have been permanently removed. All components have been renamed from legacy prefixes (`Vp*`) to declarative M3 components (`M3*`, e.g. `M3TopNavBar`).
+- **Default Theme**: The system-wide theme is `material-you`.
 
-### 6.2 Official Material 3 Component Priority & No Reinvented Wheels
-- **Prioritize Official Google M3 Web Components**:
-  - Always prefer official `@material/web` components:
-    - Switches: `<md-switch>`
-    - Chips & Segment Controls: `<md-chip-set>`, `<md-filter-chip>`, `<md-assist-chip>`, `<md-input-chip>`
-    - Text Inputs & Search: `<md-outlined-text-field>`
-    - Buttons & Action Triggers: `<md-filled-button>`, `<md-outlined-button>`, `<md-tonal-button>`, `<md-text-button>`, `<md-icon-button>`
-    - Modals & Sheets: `<md-dialog>`
-    - Sliders & Metrics: `<md-slider>`
-    - Checkboxes & Radios: `<md-checkbox>`, `<md-radio>`
-    - Dividers & Lists: `<md-divider>`, `<md-list>`, `<md-list-item>`
+### 6.2 Standardized Component Libraries & No Reinvented Wheels
+- **Dual Component Stack**:
+  1. **Primary (Official Google MD3)**: `@material/web` (`material-components/material-components-web`):
+     - Switches: `<md-switch>`
+     - Chips & Segment Controls: `<md-chip-set>`, `<md-filter-chip>`, `<md-assist-chip>`, `<md-input-chip>`
+     - Text Inputs & Search: `<md-outlined-text-field>`
+     - Buttons & Action Triggers: `<md-filled-button>`, `<md-outlined-button>`, `<md-tonal-button>`, `<md-text-button>`, `<md-icon-button>`
+     - Modals & Dialogs: `<md-dialog>`
+     - Sliders & Metrics: `<md-slider>`
+     - Checkboxes & Radios: `<md-checkbox>`, `<md-radio>`
+     - Dividers & Lists: `<md-divider>`, `<md-list>`, `<md-list-item>`
+     - Elevation & Progress: `<md-elevation>`, `<md-linear-progress>`, `<md-circular-progress>`, `<md-ripple>`
+  2. **Supplementary (Material 3 Expressive)**: `@m3e/web` (`matraic/m3e`) for Expressive components (App bars, bottom sheets, callouts, cards, badges, skeletons, and expressive motion).
+- **Declarative Layout Suite (`src/components/m3/`)**:
+  - Declarative layout primitives (`M3TopNavBar`, `M3Button`, `M3IconButton`, `M3Card`, `M3Dialog`, `M3Switch`, `M3Chip`, `M3ChipSet`, `M3Divider`, `M3TextField`, `M3Icon`) decouple visual layout and state controllers, providing single-point modification similar to Jetpack Compose.
 - **Strict Prohibition Against Bespoke Custom Components**:
-  - Do NOT invent ad-hoc, hand-crafted toggles, fake segmented tabs, or multi-nested container cards when standard `@material/web` components exist.
+  - Do NOT invent ad-hoc, hand-crafted toggles, fake segmented tabs, or multi-nested container cards when standard `@material/web` or `@m3e/web` components exist.
   - Discrete options MUST use M3 Filter Chip sets; textual/value inputs MUST use M3 Outlined Text Fields.
 
 ### 6.3 Design Archetypes & Learning Blueprints
@@ -194,6 +198,39 @@ When designing or refining UI layouts, flows, and interactive components, agents
 - **桌面端 (≥ 72rem)**：Docked 常驻分栏。正文 `.main-pane` 与右栏由 `--sl-sideload-width` 动态协调，禁止产生公式重排跳跃。
 - **平板端 (50rem - 72rem)**：激活非大纲面板时转为标准 M3 Side Sheet 浮层（`position: fixed; width: min(25rem, 85vw); z-index: 400;`），伴随半透明 Scrim 遮罩，正文不被挤压。
 - **移动端 (< 50rem)**：激活非大纲面板时转为标准 M3 Bottom Sheet 底部抽屉（`position: fixed; width: 100vw; max-height: 85vh; border-radius: 16px 16px 0 0;`），**严禁出现设置固定像素宽度（如 24rem / 384px）撑爆移动端视口**。
+
+## 8. Desktop Architecture & Electron Decoupling Standards (ABP + Reader Shell) (Mandatory)
+
+### 8.1 Zero-Builtin Books & Framework-Content Decoupling (框架与内容彻底解耦)
+- **绝对解耦原则**：底座工程与书籍数据彻底解耦。严禁将大批量教材 MDX 重新放入 `src/content/docs/collections/` 迫使 Astro 静态构建树膨胀。所有源书籍内容统一维护于 `content-sources/collections/`。
+- **ABP 标准契约**：书籍章节必须使用官方编译器打包为符合 ABP Schema 1.0.0 的标准内容包：
+  ```bash
+  node scripts/pack-book-abp.mjs --all
+  ```
+  产物自动生成至 `public/abp-packs/` 与 `dist/abp-packs/`。严禁修改或破坏 `src/types/content-package.ts` 中的主清单与章节有效负载核心契约。
+
+### 8.2 Universal Reader Shell Synthesis Invariant (Master Shell 页面合成铁律)
+- **无损合成原则**：桌面端章节阅读基于 `dist/reader-shell/index.html`（预编译 Starlight Master Shell），在 `src/services/content-provider/reader-shell-template.ts` 中动态装配 HTML。
+- **严禁 UI 降级**：
+  1. **左侧导航**：必须渲染支持全学科合集（`cs`, `math`, `science`, `telecom`）、全书目展开/折叠、章节精确高亮的树状目录，与 Web 版体验保持绝对一致；
+  2. **右侧大纲**：必须调用 `buildStructuredTocHtml()` 深度提取 `h2/h3` 标题与 `.toc-chunk` 学术卡片，带上模块 Chip（`[引]`, `[习]`, `[定]`, `[理]`, `[例]`）与 M3 折叠按钮（`.toc-collapse-btn`）；
+  3. **学术折叠与数字资源**：`<Solution>` 必须编译为标准 `<details class="solution-details">` 并保留学术墓碑符 `∎`；数字资源必须渲染为标准 `.academic-digital-resource` 流式卡片；
+  4. **标题 Slug 净化**：生成标题与锚点时必须剔除 TeX 占位符，严禁生成含引号转义错位的坏 ID。
+
+### 8.3 Desktop State Persistence & Window Safe Area (状态持久化与窗口安全区)
+- **同步防闪烁配置恢复**：桌面端在 Preload 首帧通过 `ipcRenderer.sendSync('astrolib:get-settings-sync')` 注入配置并代理 `localStorage`，所有偏好设置（字体、缩进、主题）通过 IPC 自动持久化写入用户目录下的 `settings.json`。
+- **默认排版基准**：默认中文字体设为思源黑体（`Source Han Sans`）；默认开启中文段落首行缩进两字（`text-indent: 2em`），并对卡片标题、折叠摘要、独立公式实施负空间保护。
+- **窗口三键避让安全间距**：无边框窗口右上角系统三键占用固定区域，顶栏右侧动作区（`.m3-app-bar__actions`, `.m3-right-group`, `.vp-nav-actions`, `.vp-right-group`）必须保持 `padding-right: 140px !important;`，严禁擅自压缩或删除该属性。
+- **透镜与侧载单例**：必须确保全局同时暴露 `window.__sideloadManager` 与 `window.sideloadManager`，确保顶栏关注点透镜（`Alt+I`）按钮即开即用。
+
+### 8.4 Desktop Verification & Release Pipeline (桌面端构建与验证流水线)
+任何修改桌面端或内容编译器逻辑后，必须依序执行以下验证与构建步骤：
+1. **类型守卫**：`npm run check:types`（必须保持 0 错误）；
+2. **自动化测试**：`npx vitest run tests/unit/content-provider.test.ts tests/acceptance/abp-dynamic-serving.test.ts`；
+3. **重新打包图书（如改动了编译器）**：`node scripts/pack-book-abp.mjs --all`；
+4. **编译桌面端绿色免安装版**：`npm run electron:pack`（直接产出 `release/win-unpacked/AstroLib.exe`）；
+5. **打包安装包与便携版**：`npm run electron:build`（产出 `release/*.exe`）。
+
 
 
 

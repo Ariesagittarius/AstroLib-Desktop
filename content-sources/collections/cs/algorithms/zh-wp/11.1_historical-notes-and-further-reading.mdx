@@ -1,0 +1,71 @@
+---
+title: '历史背景及深入阅读的资料'
+---
+
+import Guide from '@/components/Guide.astro';
+import Knowledge from '@/components/Knowledge.astro';
+import Example from '@/components/Example.astro';
+import Analysis from '@/components/Analysis.astro';
+import Solution from '@/components/Solution.astro';
+import Variant from '@/components/Variant.astro';
+import Note from '@/components/Note.astro';
+import Block from '@/components/Block.astro';
+import Method from '@/components/Method.astro';
+import Exercise from '@/components/Exercise.astro';
+import Algorithm from '@/components/Algorithm.astro';
+
+# 历史背景及深入阅读的资料
+
+## 第1章和第2章
+
+关于数论的一本经典书籍是
+
+G.H. Hardy and E.M. Wright, Introduction to the Theory of Numbers. Oxford University Press, 1980.
+
+素性测试算法由 Robert Solovay 和 Vblker Strassen 在 20 世纪 70 年代中叶提出，而 RSA 密码系统即出现于几年之后。对密码系统有兴趣的读者可以参见
+
+D.R. Stinson, Cryptography: Theory and Practice. Chapman and Hall, 2005.
+
+对随机算法有兴趣的读者可以参见
+
+R. Motwani and P. Raghavan, Randomized Algorithms. Cambridge University Press, 1995.
+
+通用散列函数由 Larry Carter 和 Mark Wegman 在 1979 年提出。矩阵相乘快速算法归功于 Volker Strassen(1969)。Strassen 还与 Arnold Schönhage 一起提出了迄今为止最快的整数乘法算法。它使用了 FFT 的一种变体，通过 $O(n \log n \log \log n)$ 次比特操作，来对两个 $n$ 位二进制整数相乘。
+
+## 第3章
+
+深度优先搜索以及它的许多应用都是由 John Hopcroft 和 Bob Tarjan 在 1973 年提出——他们因为这一贡献获得了图灵奖(Turing award)，计算机科学领域的最高奖赏。寻找强连通部件的两阶段算法由 Rao Kosaraju 提出。
+
+## 第4章和第5章
+
+Dijkstra 算法由 Edsger Dijkstra(1930-2002)在 1959 年提出，而计算最小生成树的第一个算法可以被追溯到捷克数学家 Otakar Boruvka 于 1926 年所作的一篇论文中。针对合并-查找(union-find)数据结构的分析(该分析得到的算法时间界限实际上要稍微紧于我们曾得到的 $\log^{*} n$ 的界限)归功于 Bob Tarjan。当时仅为一个研究生的 David Huffman 于 1952 年提出了以其名字命名的编码算法。
+
+## 第7章
+
+单纯形法由 George Danzig(1914-2005)于 1947 年提出，而零和博弈的最小最大定理则是由 John von Neumann(他也被认为是计算机之父)在 1928 年提出的。一本关于线性规划的很棒的书是
+
+V. Chvátal, Linear Programming. W.H. Freeman, 1983.
+
+对博弈论感兴趣的读者可以参见
+
+Martin J. Osborne and Ariel Rubinstrein, A course in game theory. M.I.T. Press, 1994.
+
+## 第9章
+
+NP-完全性的概念最初见于 Steve Cook 的论文中，他于 1971 年证明了 SAT 是 NP-完全的；一年之后，Dick Karp 列出了 23 个 NP-完全问题(包括本书第 8 章中所有 NP-完全性已得到证明的问题)，毫无疑义地揭示了 NP-完全性概念的应用意义(这两人都赢得了图灵奖)。当时在苏联工作的 Leonid Levin，曾独立地证明了一个类似的定理。
+
+下面这本书提供了 NP-完全性理论的精彩论述
+
+M.R. Garey and D.S. Johnson, Computers and Intractability: A Guide to the Theory of NP-completeness. W.H. Freeman, 1979.
+
+要想对复杂性学科有一个大略掌握，可以参见
+
+C.H. Papadimitriou, Computational Complexity. Addison-Wesley, Reading Massachusetts, 1995.
+
+## 第10章
+
+素性测试的量子算法由 Peter Shor 于 1994 年提出。要想领略针对计算机科学家的关于量子力学的一种比较新颖的介绍，可以参见http://www.cs.berkeley.edu/\～vazirani/quantumphysics.html
+
+如果想看看关于量子计算的介绍，可以参见“Qubits, Quantum Mechanics, and Computers”课程的讲义
+
+http://www.cs.berkeley.edu/\～vazirani/cs191.html

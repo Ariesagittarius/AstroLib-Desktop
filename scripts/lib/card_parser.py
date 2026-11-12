@@ -40,11 +40,26 @@ class CardParser:
     )
 
     REF_START = (
+        # 结构与修饰助词
         '的', '中', '和', '与', '及', '说', '是', '里', '后', '也', '都', '还', '则', '并', '但',
-        '所', '或', '且', '上述', '上面', '下面', '以下', '下述', '前面', '后面',
-        '结论', '公式', '意义', '应用', '重要', '思想', '过程', '表明', '说明了',
-        '随后', '来自', '第', '见', '知', '可得', '可知', '就属于',
-        '证明了', '证明并', '证明的', '证明过程', '证明方法',
+        '所', '或', '且', '它', '其', '这', '该', '此', '被', '由', '据', '基于', '沿用',
+        # 方位与指示代词
+        '上述', '上面', '下面', '以下', '下述', '前面', '后面', '第', '见', '参见', '参考',
+        # 述谓与能愿动词
+        '可以', '可', '能', '能够', '使得', '允许', '需要', '旨在', '试图',
+        '表明', '说明', '指出', '意味着', '显示', '告诉', '反映', '揭示', '表达', '断言',
+        '保证', '确保', '给出', '提供了', '提供', '描述', '刻画', '回答', '解决',
+        '有', '具有', '含有', '包含', '拥有', '也有',
+        # 来源与归属
+        '来自', '出自', '来源于', '源于', '取自', '归功于', '引自', '通常归功于',
+        # 频度与状态副词
+        '通常', '经常', '一般', '有时', '已经', '曾', '在此', '事实上', '实际上', '显然',
+        # 推理与派生
+        '结论', '公式', '意义', '应用', '重要', '思想', '过程', '随后', '知', '可得', '可知', '就属于',
+        '推广', '类似', '正如', '如同', '比如', '例如', '即', '不仅', '不仅是',
+        # 证明相关
+        '证明了', '证明并', '证明的', '证明过程', '证明方法', '证明思路', '证明从略', '证明要点',
+        '的证明', '之证明',
     )
 
     def __init__(self, sanitizer: MdxSanitizer | None = None):
@@ -56,7 +71,7 @@ class CardParser:
             return False
         return any(r.startswith(k) for k in self.REF_START)
 
-    def tokenize(self, lines: list[str], is_answer: bool = False) -> list[tuple]:
+    def tokenize(self, lines: list[str], is_answer: bool = False, is_notes: bool = False) -> list[tuple]:
         """将正文行解析为语义 Token 序列，精准拆分标题与正文首句，自适应包裹证明与过渡段落。"""
         tokens = []
         cur = None
@@ -64,6 +79,7 @@ class CardParser:
         in_display_math = False
         in_code_block = False
         prev_line_empty = False
+        seen_cards = set()
 
         def strip_trailing_empty(lines_list: list[str]):
             while lines_list and not lines_list[-1].strip():
@@ -201,24 +217,28 @@ class CardParser:
                 prev_line_empty = False
                 continue
 
-            # 定理 / 定义 / 性质 等知识点
-            m = self.KN_RE.match(s)
-            if m and not self.is_ref_quote(m.group(3)):
-                flush()
-                kind = m.group(1).strip()
-                num = (m.group(2) or '').strip()
-                rest = m.group(3).strip()
-                m_sub = self.SUBTITLE_RE.match(rest)
-                if m_sub:
-                    sub = m_sub.group(1).strip()
-                    first_line = m_sub.group(2).strip()
-                    card_title = f"{kind} {num} {sub}" if num else f"{kind} {sub}"
-                else:
-                    card_title = f"{kind} {num}" if num else kind
-                    first_line = rest
-                cur = ('card', 'knowledge', card_title, [first_line] if first_line else [], [])
-                prev_line_empty = False
-                continue
+            # 定理 / 定义 / 性质 等知识点 (若在注解页面 is_notes 则完全不生成卡片，避免将文献考证误解析为定理)
+            if not is_notes:
+                m = self.KN_RE.match(s)
+                if m:
+                    kind = m.group(1).strip()
+                    num = (m.group(2) or '').strip()
+                    rest = m.group(3).strip()
+                    card_key = f"{kind} {num}".strip() if num else kind
+                    if not self.is_ref_quote(rest) and (not num or card_key not in seen_cards):
+                        seen_cards.add(card_key)
+                        flush()
+                        m_sub = self.SUBTITLE_RE.match(rest)
+                        if m_sub:
+                            sub = m_sub.group(1).strip()
+                            first_line = m_sub.group(2).strip()
+                            card_title = f"{kind} {num} {sub}" if num else f"{kind} {sub}"
+                        else:
+                            card_title = f"{kind} {num}" if num else kind
+                            first_line = rest
+                        cur = ('card', 'knowledge', card_title, [first_line] if first_line else [], [])
+                        prev_line_empty = False
+                        continue
 
             # 注意 / 警告 / 注 / 想一想
             m = self.NOTE_RE.match(s)
@@ -342,9 +362,9 @@ class CardParser:
                     out.append(f'<{comp} title="{tok[2]}">\n{body}\n</{comp}>')
         return '\n\n'.join(out)
 
-    def render_body(self, lines: list[str], is_answer: bool = False) -> str:
+    def render_body(self, lines: list[str], is_answer: bool = False, is_notes: bool = False) -> str:
         """从原始行列表直接清洗并渲染为 MDX 内容正文字符串。"""
-        tokens = self.tokenize(lines, is_answer=is_answer)
+        tokens = self.tokenize(lines, is_answer=is_answer, is_notes=is_notes)
         return self.render_tokens(tokens)
 
     def render_parts(self, parts: list[tuple[str | None, list[str]]], with_footnotes: bool = True) -> str:

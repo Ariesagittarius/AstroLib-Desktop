@@ -10,6 +10,7 @@
  * ============================================================================
  */
 import DefaultPageFrame from '@astrojs/starlight/components/PageFrame.astro';
+import AlignmentHeatmapSheet from './bilingual/AlignmentHeatmapSheet.astro';
 ---
 
 <DefaultPageFrame {...Astro.props}>
@@ -20,6 +21,8 @@ import DefaultPageFrame from '@astrojs/starlight/components/PageFrame.astro';
 <div id="astro-overlay-root">
   <!-- 全局侧载抽屉遮罩 (在 Tablet/Mobile 抽屉模式下激活，置于顶层 Overlay 根节点，避免被侧栏 Stacking Context 囚禁) -->
   <div class="astrolib-sideload-scrim" id="astrolib-sideload-scrim" aria-hidden="true"></div>
+  <!-- 全局双语排版对照关联矩阵热力图抽屉 (仅在对比激活时呈现) -->
+  <AlignmentHeatmapSheet initialThreshold={0.55} />
 </div>
 
 <script is:inline>
@@ -46,6 +49,19 @@ import DefaultPageFrame from '@astrojs/starlight/components/PageFrame.astro';
         document.documentElement.dataset.sidebarRightCollapsed = 'true';
         document.documentElement.dataset.sideloadActive = 'none';
         document.documentElement.style.setProperty('--sl-sideload-width', '0rem');
+      }
+      var bridge = window.astrolib || window.astrolibDesktop;
+      if (bridge && typeof bridge.saveSetting === 'function') {
+        var origSet = localStorage.setItem.bind(localStorage);
+        localStorage.setItem = function(k, v) {
+          origSet(k, v);
+          try { bridge.saveSetting(k, String(v)); } catch(e) {}
+        };
+        var origRem = localStorage.removeItem.bind(localStorage);
+        localStorage.removeItem = function(k) {
+          origRem(k);
+          try { bridge.saveSetting(k, null); } catch(e) {}
+        };
       }
     } catch (e) {}
   })();

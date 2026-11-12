@@ -2,23 +2,56 @@
 
 /**
  * ============================================================================
- * Material You (Material 3) Semantic Tokens for AstroLib
+ * Material You (Material 3 / Expressive) Semantic Tokens for AstroLib
  * ============================================================================
- * Scope: Strictly scoped to html[data-site-theme='material-you']
+ * Scope: Universal system-wide theme tokens for AstroLib.
  *
  * Rules:
  * 1. Independent Design System tokens (M3 System Tokens).
- * 2. M3 tokens are consumed directly by official @material/web components.
+ * 2. M3 tokens are consumed directly by official @material/web and @m3e/web components.
  * 3. Bridges to Starlight/AstroLib semantic variables (--sl-color-*) within scope.
- * 4. Zero pollution of reading typography or other themes.
+ * 4. Pure academic typography preserved.
  * ============================================================================
  */
 
 /* --------------------------------------------------------------------------
-   1. Light Mode Tokens
+   0. Semantic Spacing & Layout Scale
    -------------------------------------------------------------------------- */
+:root {
+  /* 语义间距体系 (Semantic Spacing Scale) */
+  --space-inline: 0.25rem;     /* 4px: 行内微距 */
+  --space-related: 0.5rem;     /* 8px: 紧密相关元素 */
+  --space-paragraph: 1.15rem;  /* 18px: 自然段落呼吸间距 */
+  --space-block: 1.75rem;      /* 28px: 行间公式、学术环境块间距 */
+  --space-section: 2.5rem;     /* 40px: 小节标题垂直留白 */
+  --space-chapter: 3.75rem;    /* 60px: 章节标题主要留白 */
+
+  /* 核心版心与三栏尺寸规范 */
+  --sl-content-width: 48rem;   /* 768px: 740-800px 稳定学术书页版心 */
+  --sl-sidebar-width: 16rem;   /* 256px: 左侧书本目录 */
+  --sl-toc-width: 16.5rem;     /* 264px: 右侧阅读定位大纲 */
+  --sl-nav-height: 3rem;       /* 48px: 顶栏高度 */
+}
+
+@keyframes m3-content-enter {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes vp-content-enter {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* --------------------------------------------------------------------------
+   1. Light Mode Tokens (Default System-Wide)
+   -------------------------------------------------------------------------- */
+:root,
+:root[data-theme='light'],
 html[data-site-theme='material-you'],
-html[data-site-theme='material-you'][data-theme='light'] {
+html[data-site-theme='material-you'][data-theme='light'],
+html.desktop-app-html:not([data-theme='dark']) {
+  color-scheme: light;
   /* --- M3 Color System (Light) --- */
   --md-sys-color-primary: #0b57d0;
   --md-sys-color-on-primary: #ffffff;
@@ -99,7 +132,10 @@ html[data-site-theme='material-you'][data-theme='light'] {
 /* --------------------------------------------------------------------------
    2. Dark Mode Tokens
    -------------------------------------------------------------------------- */
-html[data-site-theme='material-you'][data-theme='dark'] {
+:root[data-theme='dark'],
+html[data-site-theme='material-you'][data-theme='dark'],
+html.desktop-app-html[data-theme='dark'] {
+  color-scheme: dark;
   /* --- M3 Color System (Dark) --- */
   --md-sys-color-primary: #a8c7fa;
   --md-sys-color-on-primary: #062e6f;
@@ -124,7 +160,7 @@ html[data-site-theme='material-you'][data-theme='dark'] {
   --md-sys-color-background: #111213;
   --md-sys-color-on-background: #e3e3e3;
 
-  --md-sys-color-surface: #1e1f20;
+  --md-sys-color-surface: #131316;
   --md-sys-color-on-surface: #e3e3e3;
   --md-sys-color-surface-variant: #444746;
   --md-sys-color-on-surface-variant: #c4c7c5;
@@ -180,6 +216,7 @@ html[data-site-theme='material-you'][data-theme='dark'] {
 /* --------------------------------------------------------------------------
    3. Common Shape, State & Typescale Tokens
    -------------------------------------------------------------------------- */
+:root,
 html[data-site-theme='material-you'] {
   /* Android Studio compact header height */
   --sl-nav-height: 3rem;

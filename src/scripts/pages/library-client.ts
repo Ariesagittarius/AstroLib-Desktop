@@ -1,7 +1,9 @@
 /**
  * src/scripts/pages/library-client.ts
- * 图书馆检索页客户端控制器：URL 参数解析、多维属性筛选、排序与详情弹窗
+ * 图书馆检索页客户端控制器：URL 参数解析、多维属性筛选、排序与详情弹窗、端侧 ABP 安装状态同步
  */
+
+import { getContentProvider } from '../../services/content-provider/index.ts';
 
 export function initLibraryClient(): void {
       interface FilterState {
@@ -229,10 +231,74 @@ export function initLibraryClient(): void {
         modal?.classList.remove('is-open');
       }
 
+      async function syncInstallStates() {
+        try {
+          const provider = getContentProvider();
+          const installed = await provider.getInstalledBooks();
+          const installedMap = new Set(installed.map(b => b.manifest.id));
+
+          document.querySelectorAll<HTMLElement>('.book-row-actions').forEach(actionsEl => {
+            const bookId = actionsEl.getAttribute('data-book-id');
+            const packFile = actionsEl.getAttribute('data-pack');
+            const col = actionsEl.getAttribute('data-col');
+            const slug = actionsEl.getAttribute('data-slug');
+            const installBtn = actionsEl.querySelector('.btn-install-action') as HTMLElement | null;
+            const enterLink = actionsEl.querySelector('.btn-enter-action') as HTMLElement | null;
+            const uninstallBtn = actionsEl.querySelector('.btn-uninstall-action') as HTMLElement | null;
+
+            const isInstalled = bookId && installedMap.has(bookId);
+
+            if (installBtn && enterLink && uninstallBtn) {
+              if (isInstalled) {
+                installBtn.style.display = 'none';
+                enterLink.style.display = 'inline-flex';
+                uninstallBtn.style.display = 'inline-flex';
+              } else {
+                installBtn.style.display = 'inline-flex';
+                installBtn.innerText = '📥 安装到书架';
+                enterLink.style.display = 'none';
+                uninstallBtn.style.display = 'none';
+              }
+
+              if (!installBtn.dataset.bound) {
+                installBtn.dataset.bound = 'true';
+                installBtn.addEventListener('click', async () => {
+                  if (!packFile) return;
+                  installBtn.innerText = '正在安装...';
+                  try {
+                    const res = await fetch(`/abp-packs/${packFile}`);
+                    if (!res.ok) throw new Error(`获取数据包失败 (${res.status})`);
+                    const buf = await res.arrayBuffer();
+                    await provider.installBookFromAbp(buf);
+                    await syncInstallStates();
+                  } catch (e: any) {
+                    alert(`安装失败: ${e.message}`);
+                    installBtn.innerText = '📥 安装到书架';
+                  }
+                });
+              }
+
+              if (!uninstallBtn.dataset.bound) {
+                uninstallBtn.dataset.bound = 'true';
+                uninstallBtn.addEventListener('click', async () => {
+                  if (col && slug && confirm('确定从本地书架卸载此书吗？')) {
+                    await provider.removeBook(col, slug);
+                    await syncInstallStates();
+                  }
+                });
+              }
+            }
+          });
+        } catch (e) {
+          console.warn('[library-client] 同步图书安装状态失败:', e);
+        }
+      }
+
       function init() {
         parseUrlParams();
         syncUI();
         applyFilters();
+        syncInstallStates();
 
         let timer: any;
         searchInput?.addEventListener('input', () => {

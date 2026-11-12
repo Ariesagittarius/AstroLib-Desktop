@@ -44,8 +44,8 @@ export const CJK_PRESETS: { value: CjkFont; label: string }[] = [
   { value: 'han-serif', label: '思源宋体' },
 ];
 
-/** 默认偏好：衬线拉丁 + 系统宋体（零网络字体下载，学术教材正统排版） */
-export const DEFAULT_PREF: FontPref = { latin: 'serif', cjk: 'serif' };
+/** 默认偏好：无衬线拉丁 + 思源黑体（学术教材统一现代无衬线质感） */
+export const DEFAULT_PREF: FontPref = { latin: 'sans', cjk: 'han-sans' };
 
 /** 旧单一档位字符串 → 新 { latin, cjk }（迁移用） */
 const LEGACY: Record<string, FontPref> = {

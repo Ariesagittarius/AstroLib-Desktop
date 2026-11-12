@@ -1,0 +1,108 @@
+---
+title: '4.8 逆变量'
+---
+
+import Guide from '@/components/Guide.astro';
+import Knowledge from '@/components/Knowledge.astro';
+import Example from '@/components/Example.astro';
+import Analysis from '@/components/Analysis.astro';
+import Solution from '@/components/Solution.astro';
+import Variant from '@/components/Variant.astro';
+import Note from '@/components/Note.astro';
+import Block from '@/components/Block.astro';
+import Method from '@/components/Method.astro';
+import Exercise from '@/components/Exercise.astro';
+
+## 4.8 逆变量
+
+基于指标表示法以及爱因斯坦求和约定的简便性，接下来就可以思考为什么矢量不仅可以看作一个既有大小又有方向的量，更是一种张量。在此之前，首先考虑如何将长度微元 ds 从一个坐标系变换到另一个坐标系。
+
+大部分情形下，表示从一个坐标系到其他坐标系坐标关系的方程不是简单的线性组合。例如，球面坐标 $(r, \theta, \varphi)$ 到笛卡儿坐标 $(x, y, z)$ 的变换中， $x$ 等于 $r$ 与 $\theta$ 正弦以及 $\varphi$ 余弦的乘积，因此 $x = a_{11}r + a_{12}\theta + a_{13}\varphi$ 不可能成立。同样， $y, z$ 与球坐标具有相似的非线性关系。
+
+那么 $x, y, z$ 的微分（即 $\mathrm{dx}, \mathrm{dy}, \mathrm{dz}$ ）与 $r, \theta, \varphi$ 的微分（即 $\mathrm{dr}, \mathrm{d}\theta, \mathrm{d}\varphi$ ）有什么关系？我们会发现，在非常小的范围上， $\mathrm{dx}$ 是 $\mathrm{dr}, \mathrm{d}\theta, \mathrm{d}\varphi$ 的线性组合（ $\mathrm{dy}, \mathrm{dz}$ 也一样），有：
+
+$$
+\mathrm{d} x = a _ {1 1} \mathrm{d} r + a _ {1 2} \mathrm{d} \theta + a _ {1 3} \mathrm{d} \varphi ,\tag{4.49}
+$$
+
+同样，dy，dz 也有一样的关系.
+
+只要两个坐标系的长度微分元素存在线性关系，它们之间的变换方程就很容易写出来。将一个坐标系中的微分记为 $\mathrm{dx}$ ， $\mathrm{dy}$ ， $\mathrm{dz}$ ，另一个坐标系中的微分为 $\mathrm{dx}'$ ， $\mathrm{dy}'$ ， $\mathrm{dz}'$ ，根据偏微分的运算法则可以直接得出从原坐标系到变换坐标系的变换方程，如下面式子的左列所示：
+
+$$
+\begin{array}{l} \mathrm {d x ^ {\prime}} = \frac {\partial x ^ {\prime}}{\partial x} \mathrm{dx} + \frac {\partial x ^ {\prime}}{\partial y} \mathrm{dy} + \frac {\partial x ^ {\prime}}{\partial z} \mathrm{dz} \Rightarrow \mathrm {d x ^ {\prime 1}} = \frac {\partial x ^ {\prime 1}}{\partial x ^ {1}} \mathrm{dx} ^ {1} + \frac {\partial x ^ {\prime 1}}{\partial x ^ {2}} \mathrm{dx} ^ {2} + \frac {\partial x ^ {\prime 1}}{\partial x ^ {3}} \mathrm{dx} ^ {3}, \\ \mathrm{dy} ^ {\prime} = \frac {\partial y ^ {\prime}}{\partial x} \mathrm{dx} + \frac {\partial y ^ {\prime}}{\partial y} \mathrm{dy} + \frac {\partial y ^ {\prime}}{\partial z} \mathrm{dz} \Rightarrow \mathrm {d x ^ {\prime 2}} = \frac {\partial x ^ {\prime 2}}{\partial x ^ {1}} \mathrm{dx} ^ {1} + \frac {\partial x ^ {\prime 2}}{\partial x ^ {2}} \mathrm{dx} ^ {2} + \frac {\partial x ^ {\prime 2}}{\partial x ^ {3}} \mathrm{dx} ^ {3}, \\ \mathrm{dz} ^ {\prime} = \frac {\partial z ^ {\prime}}{\partial x} \mathrm{dx} + \frac {\partial z ^ {\prime}}{\partial y} \mathrm{dy} + \frac {\partial z ^ {\prime}}{\partial z} \mathrm{dz} \Rightarrow \mathrm {d x ^ {\prime 3}} = \frac {\partial x ^ {\prime 3}}{\partial x ^ {1}} \mathrm{dx} ^ {1} + \frac {\partial x ^ {\prime 3}}{\partial x ^ {2}} \mathrm{dx} ^ {2} + \frac {\partial x ^ {\prime 3}}{\partial x ^ {3}} \mathrm{dx} ^ {3}. \end{array}\tag{4.50}
+$$
+
+根据指标表示法，用 $x<sup>1</sup>$ ， $x<sup>2</sup>$ ， $x<sup>3</sup>$ 代替 x，y，z 后为上式的右列 $^{\ominus}$ 。用矩阵表示法表示为
+
+$$
+\left( \begin{array}{l} \mathrm{d} x ^ {\prime 1} \\ \mathrm{d} x ^ {\prime 2} \\ \mathrm{d} x ^ {\prime 3} \end{array} \right) = \left( \begin{array}{l l l} \frac {\partial x ^ {\prime 1}}{\partial x ^ {1}} & \frac {\partial x ^ {\prime 1}}{\partial x ^ {2}} & \frac {\partial x ^ {\prime 1}}{\partial x ^ {3}} \\ \frac {\partial x ^ {\prime 2}}{\partial x ^ {1}} & \frac {\partial x ^ {\prime 2}}{\partial x ^ {2}} & \frac {\partial x ^ {\prime 2}}{\partial x ^ {3}} \\ \frac {\partial x ^ {\prime 3}}{\partial x ^ {1}} & \frac {\partial x ^ {\prime 3}}{\partial x ^ {2}} & \frac {\partial x ^ {\prime 3}}{\partial x ^ {3}} \end{array} \right) \left( \begin{array}{l} \mathrm{d} x ^ {1} \\ \mathrm{d} x ^ {2} \\ \mathrm{d} x ^ {3} \end{array} \right).\tag{4.51}
+$$
+
+或者用求和符号分别表示三个方程：
+
+$$
+\mathrm{d} x ^ {\prime 1} = \sum_ {j = 1} ^ {3} \frac {\partial x ^ {\prime 1}}{\partial x ^ {j}} \mathrm{d} x ^ {j}, \mathrm{d} x ^ {\prime 2} = \sum_ {j = 1} ^ {3} \frac {\partial x ^ {\prime 2}}{\partial x ^ {j}} \mathrm{d} x ^ {j}, \mathrm{d} x ^ {\prime 3} = \sum_ {j = 1} ^ {3} \frac {\partial x ^ {\prime 3}}{\partial x ^ {j}} \mathrm{d} x ^ {j},
+$$
+
+如果用 i 表示指标的数字 $(1, 2, 3)$ ，该式可以写成：
+
+$$
+\mathrm{d} x ^ {\prime i} = \sum_ {j = 1} ^ {3} \frac {\partial x ^ {\prime i}}{\partial x ^ {j}} \mathrm{d} x ^ {j}.\tag{4.52}
+$$
+
+因为指标 $j$ 是重复的，根据爱因斯坦求和约定可以得到最简单的表达式为
+
+$$
+\mathrm{d} x ^ {\prime i} = \frac {\partial x ^ {\prime i}}{\partial x ^ {j}} \mathrm{d} x ^ {j}.\tag{4.53}
+$$
+
+所以，指标表示法可以把式（4.50）这样包含三个方程，每个方程又包含三项的表达式用这样的一个方程表示出来。更重要的是从这个方程中，可以理解为什么长度微分元素可以看作是逆变量。
+
+要理解这个问题，先回到前一节的式（4.48）：
+
+$$
+A ^ {r i} = a _ {i j} A ^ {j}.
+$$
+
+该式说明变换坐标系中的矢量分量为同一矢量在未变换（原）坐标系中分量的加权线性组合，并且加权因子为变换矩阵的元素.
+
+现在将式（4.53）与式（4.48）相对比。等式的左边均为含有自由指标 $i$ 的变换后的分量（ $\mathrm{dx}^{\prime i}$ 或者 $A^{\prime i}$ ）。等式右边均为带自由指标 $i$ 以及哑指标 $j$ 的因子（ $\frac{\partial x^{\prime i}}{\partial x^j}$ 或者 $a_{ij}$ ）乘以带哑指标 $j$ 且与左边量对应的未变化分量（ $\mathrm{dx}^j$ 或者 $A^j$ ）。我们知道式（4.48）中的因子 $a_{ij}$ 表示变换前、后的坐标系之间矢量逆变分量变换矩阵的元素。自然可以得出结论：式（4.53）中 $\frac{\partial x^{\prime i}}{\partial x^j}$ 项可以看作长度微分元素变换矩阵的元素。
+
+因此，式（4.53）不仅是链式法则的指标表示法，它也可以看作是长度微分元素从变换前到变换后坐标系的变换方程（正如式（4.48）用来求矢量 $\vec{A}$ 的逆变分量）.
+
+$\frac{\partial x^{i}}{\partial x^j}$ 项不仅是变换前到变换后坐标系的变换矩阵的元素，也是在新（变换）坐标系下表示的与原（未变换）坐标轴相切的基矢量分量，这一点非常重要.
+
+此外，与原坐标轴相切的基矢量就是前面内容中所讲的协变基矢量。由于矢量逆变分量与协变基矢量相结合产生不变量，所以长度微分元素一定转换为矢量逆变分量。这就是为什么从式（4.51）到式（4.53）中的指标均记为上标；长度微分元素是矢量逆变分量的"原
+
+型".
+
+运用指标表示法表示基矢量分量（如 $\frac{\partial x^{i}}{\partial x^{j}}$ ）之后，我们就应该可以理解为什么矢量 $\vec{A}$ 的逆变分量变换方程经常写成：
+
+$$
+A ^ {\prime i} = \frac {\partial x ^ {\prime i}}{\partial x ^ {j}} A ^ {j}.\tag{4.54}
+$$
+
+很多作者都将该式作为逆变分量的定义.
+
+下面举例说明．不妨考虑从极坐标 $(r,\theta)$ 到二维笛卡儿坐标 $(x,y)$ 的变换．本例中， $x^{\prime1}=x,x^{\prime2}=y,x<sup>1</sup>=r,x<sup>2</sup>=\theta$ ，并且有 $x=r\cos(\theta),y=r\sin(\theta)$ ．那么本例中的加权因子（即变换矩阵的元素）是什么？通过偏导数就可以求出：
+
+$$
+\frac {\partial x ^ {\prime 1}}{\partial x ^ {1}} = \frac {\partial x}{\partial r} = \cos (\theta), \frac {\partial x ^ {\prime 2}}{\partial x ^ {1}} = \frac {\partial y}{\partial r} = \sin (\theta),\tag{4.55}
+$$
+
+$$
+\frac {\partial x ^ {\prime 1}}{\partial x ^ {2}} = \frac {\partial x}{\partial \theta} = - r \sin (\theta), \frac {\partial x ^ {\prime 2}}{\partial x ^ {2}} = \frac {\partial y}{\partial \theta} = r \cos (\theta),\tag{4.56}
+$$
+
+这些是原坐标轴（ $r, \theta$ ）切矢量的分量吗（即，指向是沿着原坐标轴的方向）？把这些项写成新坐标系（本例为笛卡儿坐标系）下的分量形式就能看出来：
+
+$$
+\vec {e} _ {1} = \frac {\partial x ^ {\prime 1}}{\partial x ^ {1}} \hat {i} + \frac {\partial x ^ {\prime 2}}{\partial x ^ {1}} \hat {j} = \cos (\theta) \hat {i} + \sin (\theta) \hat {j},\tag{4.57}
+$$
+
+$$
+\vec {e} _ {2} = \frac {\partial x ^ {\prime 1}}{\partial x ^ {2}} \hat {i} + \frac {\partial x ^ {\prime 2}}{\partial x ^ {2}} \hat {j} = - r \sin (\theta) \hat {i} + r \cos (\theta) \hat {j}.\tag{4.58}
+$$
+
+其中，第一个表达式为径向向外（在极坐标中沿 r 方向）的矢量，第二个表达式是垂直于径向（沿 $\theta$ 方向）的矢量 $^{\ominus}$ ．这表明式（4.53）中的偏导数确实代表了新（变换）坐标系中（未变换）协变基矢量分量.

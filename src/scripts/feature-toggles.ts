@@ -286,6 +286,12 @@ export function resetToggles(): void {
   TranslationStorage.setDisplayMode('sidebar');
   TranslationStorage.setProvider('google');
 
+  // 重置加载动画风格为 M3 灵动形变
+  setLoadingIndicatorStyle('morph');
+  document.querySelectorAll<HTMLButtonElement>('.ft-loading-style-btn').forEach((btn) => {
+    btn.classList.toggle('active', btn.getAttribute('data-loading-style-val') === 'morph');
+  });
+
   syncAllCheckboxes();
   syncAllThemeModes();
   syncAllFontButtons();
@@ -300,6 +306,9 @@ export function resetToggles(): void {
   syncAllFontSizeSliders();
   syncAllLiteMode();
   apply();
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('astrolib:settings-changed', { detail: { reset: true } }));
+  }
 }
 
 /** 同步全站所有界面的翻译呈现方式 Chips */
@@ -526,18 +535,24 @@ export function syncAllAiSettings(): void {
     const collapseToggle = root.querySelector<HTMLInputElement>('.ft-ai-collapse-preceding-toggle');
     if (collapseToggle) {
       collapseToggle.checked = getAiAutoCollapsePreceding();
+      const sw = collapseToggle.closest('.ft-switch')?.querySelector<any>('md-switch.m3-hydrated-switch');
+      if (sw) sw.selected = collapseToggle.checked;
     }
 
     // 同步折叠工具探索总结开关
     const toolsSummaryToggle = root.querySelector<HTMLInputElement>('.ft-ai-collapse-tools-summary-toggle');
     if (toolsSummaryToggle) {
       toolsSummaryToggle.checked = getAiCollapseToolsSummary();
+      const sw = toolsSummaryToggle.closest('.ft-switch')?.querySelector<any>('md-switch.m3-hydrated-switch');
+      if (sw) sw.selected = toolsSummaryToggle.checked;
     }
 
     // 同步侧载默认引用本章开关
     const refChapterToggle = root.querySelector<HTMLInputElement>('.ft-ai-ref-chapter-toggle');
     if (refChapterToggle) {
       refChapterToggle.checked = getAiSideloadRefChapter();
+      const sw = refChapterToggle.closest('.ft-switch')?.querySelector<any>('md-switch.m3-hydrated-switch');
+      if (sw) sw.selected = refChapterToggle.checked;
     }
 
     // 同步窗口宽度预设 Chips
@@ -696,6 +711,14 @@ export function applyLiteMode(enabled: boolean = loadLiteMode()): void {
 
 registerApplyLiteModeHook(applyLiteMode);
 
+function syncSwitchSibling(input: HTMLInputElement): void {
+  const sw = input.closest('.ft-switch')?.querySelector<any>('md-switch.m3-hydrated-switch');
+  if (sw) {
+    sw.selected = input.checked;
+    sw.disabled = input.disabled;
+  }
+}
+
 function syncAllCheckboxes(): void {
   const isLite = loadLiteMode();
 
@@ -710,6 +733,7 @@ function syncAllCheckboxes(): void {
         cb.checked = toggles[id] !== false;
         cb.disabled = !isRuntimeSwitchable(id);
       }
+      syncSwitchSibling(cb);
     });
 
   document
@@ -730,6 +754,7 @@ function syncAllCheckboxes(): void {
     .forEach((cb) => {
       cb.checked = loadThemeTransition() === 'animate';
       cb.disabled = !isEnabled('theme');
+      syncSwitchSibling(cb);
     });
 
   document
@@ -744,6 +769,7 @@ function syncAllCheckboxes(): void {
     .querySelectorAll<HTMLInputElement>('input[type="checkbox"][data-typography-indent]')
     .forEach((cb) => {
       cb.checked = loadParagraphIndent();
+      syncSwitchSibling(cb);
     });
 
   document
@@ -757,6 +783,7 @@ function syncAllCheckboxes(): void {
     .querySelectorAll<HTMLInputElement>('input[type="checkbox"][data-sidebar-hover-prefetch]')
     .forEach((cb) => {
       cb.checked = loadSidebarHoverPref();
+      syncSwitchSibling(cb);
     });
 
   document
@@ -788,6 +815,7 @@ function bindDocument(): void {
     if (isDesktopM3) return;
 
     document.querySelectorAll<StarlightFeatureToggles>('starlight-feature-toggles').forEach((host) => {
+      if (host.dataset.inlineHub === 'true') return;
       host.closePanel();
     });
   });
@@ -795,6 +823,7 @@ function bindDocument(): void {
   document.addEventListener('keydown', (e) => {
     if (e.key !== 'Escape') return;
     document.querySelectorAll<StarlightFeatureToggles>('starlight-feature-toggles').forEach((host) => {
+      if (host.dataset.inlineHub === 'true') return;
       host.closePanel();
     });
   });
@@ -816,14 +845,17 @@ class StarlightFeatureToggles extends HTMLElement {
     if (this.dataset.bound) return;
     this.dataset.bound = '1';
 
-    this.panel = this.querySelector('.ft-panel');
+    const isInlineHub = this.dataset.inlineHub === 'true';
+    this.panel = this.querySelector('.ft-panel') || (isInlineHub ? this : null);
     this.backdrop = this.querySelector('.ft-backdrop');
 
     meta = parseMeta(this);
-    this.ensurePortal();
-    this.bindToggle();
-    this.bindClose();
-    this.bindDrag();
+    if (!isInlineHub) {
+      this.ensurePortal();
+      this.bindToggle();
+      this.bindClose();
+      this.bindDrag();
+    }
     this.bindUI();
     this.bindThemeMode();
     this.bindFonts();
@@ -833,6 +865,15 @@ class StarlightFeatureToggles extends HTMLElement {
     this.bindCache();
     this.bindLiteMode();
     this.bindAiSettings();
+
+    if (isInlineHub && document.documentElement.dataset.siteTheme === 'material-you') {
+      import('../themes/material-you/index').then((m) => {
+        m.upgradeSwitchesToMaterialWeb?.();
+        syncAllCheckboxes();
+        syncAllLiteMode();
+        syncAllAiSettings();
+      }).catch(() => {});
+    }
 
     syncAllCheckboxes();
     syncAllThemeModes();
@@ -851,6 +892,7 @@ class StarlightFeatureToggles extends HTMLElement {
   }
 
   disconnectedCallback() {
+    if (this.dataset.inlineHub === 'true') return;
     this.closePanel();
     const overlayRoot = getOverlayRoot();
     if (this.panel && (this.panel.parentElement === overlayRoot || this.panel.parentElement === document.body)) {
@@ -1164,7 +1206,12 @@ class StarlightFeatureToggles extends HTMLElement {
     root.querySelectorAll<HTMLButtonElement>('[data-inspector-trigger]').forEach((btn) => {
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
-        this.closePanel();
+        if (this.dataset.inlineHub === 'true') {
+          window.dispatchEvent(new CustomEvent('astrolib:close-settings-hub'));
+          window.dispatchEvent(new CustomEvent('astrolib:open-inspector-from-hub'));
+        } else {
+          this.closePanel();
+        }
       });
     });
 
@@ -1174,6 +1221,7 @@ class StarlightFeatureToggles extends HTMLElement {
       cb.addEventListener('change', () => {
         saveParagraphIndent(cb.checked);
         syncAllCheckboxes();
+        window.dispatchEvent(new CustomEvent('astrolib:settings-changed', { detail: { key: TYPOGRAPHY_INDENT_KEY } }));
       });
     });
 
@@ -1182,6 +1230,7 @@ class StarlightFeatureToggles extends HTMLElement {
       sw.addEventListener('change', () => {
         saveParagraphIndent(sw.selected);
         syncAllCheckboxes();
+        window.dispatchEvent(new CustomEvent('astrolib:settings-changed', { detail: { key: TYPOGRAPHY_INDENT_KEY } }));
       });
     });
 
@@ -1191,6 +1240,7 @@ class StarlightFeatureToggles extends HTMLElement {
       cb.addEventListener('change', () => {
         saveSidebarHoverPref(cb.checked);
         syncAllCheckboxes();
+        window.dispatchEvent(new CustomEvent('astrolib:settings-changed', { detail: { key: SIDEBAR_HOVER_PREFETCH_KEY } }));
       });
     });
 
@@ -1199,6 +1249,7 @@ class StarlightFeatureToggles extends HTMLElement {
       sw.addEventListener('change', () => {
         saveSidebarHoverPref(sw.selected);
         syncAllCheckboxes();
+        window.dispatchEvent(new CustomEvent('astrolib:settings-changed', { detail: { key: SIDEBAR_HOVER_PREFETCH_KEY } }));
       });
     });
 
@@ -1217,6 +1268,7 @@ class StarlightFeatureToggles extends HTMLElement {
         e.stopPropagation();
         savePunctStyle(val);
         syncAllPunctChips(val);
+        window.dispatchEvent(new CustomEvent('astrolib:settings-changed', { detail: { key: PUNCT_STYLE_KEY } }));
       };
       chip.addEventListener('click', handleSelect);
     });
@@ -1232,6 +1284,7 @@ class StarlightFeatureToggles extends HTMLElement {
         if (!isNaN(val)) {
           slider.valueLabel = formatFontSizePt(val);
           saveFontSize(val);
+          window.dispatchEvent(new CustomEvent('astrolib:settings-changed', { detail: { key: FONT_SIZE_KEY } }));
         }
       };
 
@@ -1741,11 +1794,11 @@ class StarlightFeatureToggles extends HTMLElement {
     if (!(window as any).__astrolibOpenSettingsBound) {
       (window as any).__astrolibOpenSettingsBound = true;
       window.addEventListener('astrolib:open-settings', (e: any) => {
-        const target = document.querySelector<StarlightFeatureToggles>('starlight-feature-toggles');
-        if (target) {
-          target.openPanel();
+        const drawerTarget = document.querySelector<StarlightFeatureToggles>('starlight-feature-toggles:not([data-inline-hub="true"])');
+        if (drawerTarget) {
+          drawerTarget.openPanel();
           if (e?.detail?.section === 'ai') {
-            const panel = target.panel || target;
+            const panel = drawerTarget.panel || drawerTarget;
             const aiSec = panel.querySelector('.ft-section:has(.ft-ai-block), .ft-section:has([data-feature-id="aiAsk"])') as HTMLElement;
             if (aiSec) {
               setTimeout(() => {
@@ -1755,6 +1808,10 @@ class StarlightFeatureToggles extends HTMLElement {
               }, 120);
             }
           }
+        } else {
+          window.dispatchEvent(new CustomEvent('astrolib:open-settings-hub', {
+            detail: { panel: 'panel-reading', section: e?.detail?.section },
+          }));
         }
       });
     }
@@ -1920,12 +1977,17 @@ export function initFeatureToggles(): void {
     syncAllThemeColors();
   });
 
+  window.addEventListener('starlight-theme-change', () => {
+    syncAllThemeModes();
+  });
+
   window.addEventListener('storage', (e) => {
     if (e.key === STORAGE_KEY || e.key === THEME_TRANSITION_KEY) {
       loadToggles();
       syncAllCheckboxes();
       apply();
     } else if (e.key === THEME_MODE_STORAGE_KEY) {
+      applyThemeMode();
       syncAllThemeModes();
     } else if (e.key === 'starlight-m3-theme-color') {
       applyThemeColor();
@@ -1990,4 +2052,52 @@ export function initFeatureToggles(): void {
     // 初次启动同步 PWA 状态
     syncAllPwaCard();
   }
+}
+
+/**
+ * 无头读者运行时设置同步（供隐藏了顶栏设置齿轮的阅读视窗直接应用并监听全局设置变更）
+ */
+export function initHeadlessReaderSettings(readerMeta: FeatureMeta[]): void {
+  if (typeof window === 'undefined') return;
+  if (readerMeta && readerMeta.length > 0) {
+    meta = readerMeta;
+  }
+  loadToggles();
+  applyFontPref(loadFontPref());
+  applyParagraphIndent();
+  applyPunctStyle();
+  applyFontSize();
+  apply();
+
+  if ((window as any).__headlessReaderSettingsBound) return;
+  (window as any).__headlessReaderSettingsBound = true;
+
+  window.addEventListener('storage', (e) => {
+    if (e.key === STORAGE_KEY || e.key === THEME_TRANSITION_KEY) {
+      loadToggles();
+      apply();
+    } else if (e.key === 'starlight-m3-theme-color') {
+      applyThemeColor(e.newValue || undefined);
+    } else if (e.key === THEME_MODE_STORAGE_KEY) {
+      applyThemeMode();
+    } else if (e.key === 'starlight-font') {
+      applyFontPref(loadFontPref());
+    } else if (e.key === TYPOGRAPHY_INDENT_KEY || e.key === 'starlight-paragraph-indent') {
+      applyParagraphIndent();
+    } else if (e.key === PUNCT_STYLE_KEY) {
+      applyPunctStyle();
+    } else if (e.key === FONT_SIZE_KEY) {
+      applyFontSize();
+    } else if (e.key === LITE_MODE_KEY) {
+      applyLiteMode();
+    }
+  });
+
+  document.addEventListener('astro:page-load', () => {
+    loadToggles();
+    apply();
+    applyParagraphIndent();
+    applyPunctStyle(undefined, true);
+    applyFontSize();
+  });
 }

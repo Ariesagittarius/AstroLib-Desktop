@@ -2,17 +2,7 @@
 /**
  * src/pages/workspace/ingest.astro
  * ============================================================================
- * AstroLib MinerU 学术文献与切片解析双栏全屏工作台 (MD3E 风格)
- * ============================================================================
- * 核心功能：
- * 1. 顶栏：
- *    - 【高精 API】/【Agent 免密】/【本地】三档极简切换
- *    - [结构化对照] / [连续阅读] 视窗模式一键分流（适配低性能设备）
- *    - 可选页码切片 (如 1-20)、开始解析、下载清洗包、一键转入书籍库
- * 2. 左栏：PDF.js 矢量画布 + 百分比自适应 SVG 标注选框（带分类彩色标牌）
- * 3. 右栏：
- *    - 结构化对照模式：1:1 独立块级卡片，带序号与类型标签，双向点击平滑聚焦
- *    - 连续阅读模式：全篇流式 Markdown 与 KaTeX 排版，零多余 DOM 开销
+ * AstroLib MinerU 学术文献与切片解析全屏工作台 (Material 3 + Chrome 官方风格)
  * ============================================================================
  */
 
@@ -23,6 +13,7 @@ import '../../styles/tokens/layers.css';
 import '../../themes/material-you/tokens.css';
 import '../../styles/fonts.css';
 import 'katex/dist/katex.min.css';
+import './ingest.css';
 
 import { collections } from '../../config/collections.config.mjs';
 
@@ -37,6 +28,44 @@ const siteTitle = 'MinerU 学术文献智能解析工作台 · AstroLib';
     <title>{siteTitle}</title>
     <link rel="icon" href="/favicon.png" />
 
+    <!-- Google 官方 Material Symbols Outlined 图标库 -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+
+    <!-- 首屏免闪烁预注入 Material You 动态主题色与亮暗模式 -->
+    <script is:inline>
+      (function () {
+        try {
+          var t = localStorage.getItem('starlight-theme');
+          var resolvedT =
+            t === 'dark' || t === 'light'
+              ? t
+              : window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+                ? 'dark'
+                : 'light';
+          document.documentElement.dataset.theme = resolvedT;
+          document.documentElement.style.colorScheme = resolvedT;
+          document.documentElement.dataset.siteTheme = 'material-you';
+
+          var m3Color = localStorage.getItem('starlight-m3-theme-color');
+          if (m3Color) document.documentElement.dataset.m3ThemeColor = m3Color;
+
+          var cachedCss = localStorage.getItem('astrolib_m3_cached_css');
+          if (cachedCss) {
+            var styleEl = document.createElement('style');
+            styleEl.id = 'm3-dynamic-color-theme';
+            styleEl.textContent = cachedCss;
+            document.head.appendChild(styleEl);
+
+            document.addEventListener('DOMContentLoaded', function () {
+              if (styleEl && document.head.lastElementChild !== styleEl) {
+                document.head.appendChild(styleEl);
+              }
+            });
+          }
+        } catch (e) {}
+      })();
+    </script>
+
     <!-- 预加载 PDF.js CDN -->
     <script is:inline src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script is:inline>
@@ -44,1923 +73,468 @@ const siteTitle = 'MinerU 学术文献智能解析工作台 · AstroLib';
         window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
       }
     </script>
-
-    <style is:global>
-      * {
-        box-sizing: border-box;
-      }
-      body {
-        margin: 0;
-        font-family: var(--md-font-google-sans, 'Google Sans', 'Google Sans Text', 'Noto Sans SC', system-ui, sans-serif);
-        background-color: var(--md-sys-color-background, #ffffff);
-        color: var(--md-sys-color-on-background, #1f1f1f);
-        height: 100vh;
-        overflow: hidden;
-        display: flex;
-        flex-direction: column;
-      }
-      /* KaTeX 基础间距与滚动 */
-      .katex-display {
-        overflow-x: auto;
-        overflow-y: hidden;
-        padding: 0.35rem 0;
-        margin: 0.4rem 0 !important;
-      }
-    </style>
-
-    <style>
-      /* 顶栏控制面板 */
-      .ingest-topbar {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 0.85rem;
-        padding: 0.55rem 1.25rem;
-        border-bottom: 1px solid var(--md-sys-color-outline-variant, #e0e3e7);
-        background-color: var(--md-sys-color-surface, #ffffff);
-        flex-shrink: 0;
-        z-index: var(--layer-sticky);
-      }
-      [data-theme='dark'] .ingest-topbar {
-        background-color: var(--md-sys-color-surface, #1e1f20);
-        border-bottom-color: var(--md-sys-color-outline-variant, #3c4043);
-      }
-
-      .topbar-left {
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-        min-width: 0;
-      }
-
-      .back-home-link {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.3rem;
-        font-size: 0.85rem;
-        font-weight: 500;
-        color: var(--md-sys-color-primary, #0b57d0);
-        text-decoration: none;
-        padding: 0.35rem 0.65rem;
-        border-radius: var(--md-shape-corner-small, 8px);
-        transition: background-color 0.15s ease;
-      }
-      .back-home-link:hover {
-        background-color: var(--md-sys-color-surface-container-high, #eceff1);
-      }
-      [data-theme='dark'] .back-home-link {
-        color: var(--md-sys-color-primary, #a8c7fa);
-      }
-      [data-theme='dark'] .back-home-link:hover {
-        background-color: var(--md-sys-color-surface-container-high, #2b2e30);
-      }
-
-      .doc-info-badge {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        padding: 0.25rem 0.75rem;
-        border-radius: var(--md-shape-corner-full, 9999px);
-        background-color: var(--md-sys-color-surface-container-low, #f8f9fa);
-        border: 1px solid var(--md-sys-color-outline-variant, #e0e3e7);
-        font-size: 0.8125rem;
-        max-width: 240px;
-      }
-      [data-theme='dark'] .doc-info-badge {
-        background-color: var(--md-sys-color-surface-container-low, #18191a);
-        border-color: var(--md-sys-color-outline-variant, #3c4043);
-      }
-
-      .doc-name {
-        font-weight: 600;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-      }
-      .doc-pages {
-        color: var(--md-sys-color-outline, #72777d);
-        font-size: 0.75rem;
-        white-space: nowrap;
-      }
-
-      .topbar-center {
-        display: flex;
-        align-items: center;
-        gap: 0.65rem;
-      }
-
-      /* 通道选择 Chips (三档：【高精 API】/【Agent 免密】/【本地】) */
-      .engine-chips {
-        display: inline-flex;
-        align-items: center;
-        background-color: var(--md-sys-color-surface-container-low, #f1f3f4);
-        border-radius: var(--md-shape-corner-full, 9999px);
-        padding: 3px;
-        border: 1px solid var(--md-sys-color-outline-variant, #e0e3e7);
-      }
-      [data-theme='dark'] .engine-chips {
-        background-color: var(--md-sys-color-surface-container-low, #1a1c1e);
-        border-color: var(--md-sys-color-outline-variant, #373b3e);
-      }
-
-      .engine-chip {
-        border: none;
-        background: transparent;
-        color: var(--md-sys-color-on-surface-variant, #5f6368);
-        padding: 0.28rem 0.75rem;
-        border-radius: var(--md-shape-corner-full, 9999px);
-        font-size: 0.78rem;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.15s ease;
-      }
-      [data-theme='dark'] .engine-chip {
-        color: var(--md-sys-color-on-surface-variant, #9aa0a6);
-      }
-
-      .engine-chip.active {
-        background-color: var(--md-sys-color-surface, #ffffff);
-        color: var(--md-sys-color-primary, #0b57d0);
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-      }
-      [data-theme='dark'] .engine-chip.active {
-        background-color: var(--md-sys-color-surface-container-highest, #333537);
-        color: var(--md-sys-color-primary, #a8c7fa);
-      }
-
-      /* 视窗对齐模式切换 (结构化对照 vs 连续阅读) */
-      .view-mode-chips {
-        display: inline-flex;
-        align-items: center;
-        background-color: var(--md-sys-color-surface-container-low, #f1f3f4);
-        border-radius: var(--md-shape-corner-full, 9999px);
-        padding: 3px;
-        border: 1px solid var(--md-sys-color-outline-variant, #e0e3e7);
-      }
-      [data-theme='dark'] .view-mode-chips {
-        background-color: var(--md-sys-color-surface-container-low, #1a1c1e);
-        border-color: var(--md-sys-color-outline-variant, #373b3e);
-      }
-
-      .view-chip {
-        border: none;
-        background: transparent;
-        color: var(--md-sys-color-on-surface-variant, #5f6368);
-        padding: 0.28rem 0.65rem;
-        border-radius: var(--md-shape-corner-full, 9999px);
-        font-size: 0.75rem;
-        font-weight: 500;
-        cursor: pointer;
-        transition: all 0.15s ease;
-      }
-      .view-chip.active {
-        background-color: var(--md-sys-color-surface, #ffffff);
-        color: var(--md-sys-color-primary, #0b57d0);
-        font-weight: 600;
-        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
-      }
-      [data-theme='dark'] .view-chip.active {
-        background-color: var(--md-sys-color-surface-container-highest, #333537);
-        color: var(--md-sys-color-primary, #a8c7fa);
-      }
-
-      /* 双语研判工具栏 */
-      .bilingual-toolbar {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.35rem;
-      }
-      .bilingual-select {
-        padding: 0.35rem 0.55rem;
-        border-radius: var(--md-shape-corner-small, 8px);
-        border: 1px solid var(--md-sys-color-outline-variant, #c4c7c5);
-        background-color: var(--md-sys-color-surface, #ffffff);
-        color: inherit;
-        font-size: 0.78rem;
-        outline: none;
-      }
-      [data-theme='dark'] .bilingual-select {
-        background-color: var(--md-sys-color-surface-container, #1e1f20);
-        border-color: var(--md-sys-color-outline-variant, #444746);
-      }
-      .btn-compact {
-        padding: 0.28rem 0.65rem;
-        font-size: 0.75rem;
-      }
-
-      .page-range-input {
-        width: 120px;
-        padding: 0.35rem 0.55rem;
-        border-radius: var(--md-shape-corner-small, 8px);
-        border: 1px solid var(--md-sys-color-outline-variant, #c4c7c5);
-        background-color: var(--md-sys-color-surface, #ffffff);
-        color: inherit;
-        font-size: 0.78rem;
-        outline: none;
-        transition: border-color 0.15s ease;
-      }
-      [data-theme='dark'] .page-range-input {
-        background-color: var(--md-sys-color-surface-container, #1e1f20);
-        border-color: var(--md-sys-color-outline-variant, #444746);
-      }
-
-      .topbar-right {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-      }
-
-      .btn-primary {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.4rem;
-        padding: 0.4rem 0.95rem;
-        border-radius: var(--md-shape-corner-full, 9999px);
-        background-color: var(--md-sys-color-primary, #0b57d0);
-        color: var(--md-sys-color-on-primary, #ffffff);
-        border: none;
-        font-size: 0.8125rem;
-        font-weight: 600;
-        cursor: pointer;
-        transition: opacity 0.15s ease;
-      }
-      .btn-primary:hover:not(:disabled) {
-        opacity: 0.9;
-      }
-      .btn-primary:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-      }
-      [data-theme='dark'] .btn-primary {
-        background-color: var(--md-sys-color-primary, #a8c7fa);
-        color: var(--md-sys-color-on-primary, #042e6d);
-      }
-
-      .btn-secondary {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.35rem;
-        padding: 0.38rem 0.8rem;
-        border-radius: var(--md-shape-corner-full, 9999px);
-        background-color: transparent;
-        color: var(--md-sys-color-primary, #0b57d0);
-        border: 1px solid var(--md-sys-color-outline-variant, #c4c7c5);
-        font-size: 0.78rem;
-        font-weight: 500;
-        cursor: pointer;
-        transition: all 0.15s ease;
-      }
-      [data-theme='dark'] .btn-secondary {
-        color: var(--md-sys-color-primary, #a8c7fa);
-        border-color: var(--md-sys-color-outline-variant, #444746);
-      }
-
-      .btn-icon {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        width: 32px;
-        height: 32px;
-        border-radius: var(--md-shape-corner-full, 9999px);
-        background: transparent;
-        border: none;
-        color: var(--md-sys-color-on-surface-variant, #5f6368);
-        cursor: pointer;
-        transition: background-color 0.15s ease;
-      }
-      .btn-icon:hover {
-        background-color: var(--md-sys-color-surface-container-high, #eceff1);
-      }
-
-      /* 状态条 */
-      .status-bar {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 0.35rem 1.25rem;
-        background-color: var(--md-sys-color-surface-container-low, #f8f9fa);
-        border-bottom: 1px solid var(--md-sys-color-outline-variant, #e0e3e7);
-        font-size: 0.78rem;
-        color: var(--md-sys-color-on-surface-variant, #5f6368);
-      }
-      [data-theme='dark'] .status-bar {
-        background-color: var(--md-sys-color-surface-container-low, #18191a);
-        border-bottom-color: var(--md-sys-color-outline-variant, #3c4043);
-      }
-
-      .progress-track {
-        flex: 1;
-        max-width: 280px;
-        height: 4px;
-        background-color: var(--md-sys-color-outline-variant, #e0e3e7);
-        border-radius: 2px;
-        overflow: hidden;
-        margin-left: 1rem;
-      }
-      .progress-fill {
-        height: 100%;
-        width: 0%;
-        background-color: var(--md-sys-color-primary, #0b57d0);
-        transition: width 0.3s ease;
-      }
-      [data-theme='dark'] .progress-fill {
-        background-color: var(--md-sys-color-primary, #a8c7fa);
-      }
-
-      /* 双栏主体 */
-      .workspace-grid {
-        flex: 1;
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        min-height: 0;
-        overflow: hidden;
-      }
-
-      /* 左栏：PDF 原文 */
-      .pane-pdf {
-        position: relative;
-        overflow-y: auto;
-        overflow-x: hidden;
-        background-color: var(--md-sys-color-surface-container-lowest, #f0f2f5);
-        border-right: 1px solid var(--md-sys-color-outline-variant, #e0e3e7);
-        padding: 1.25rem;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 1.25rem;
-      }
-      [data-theme='dark'] .pane-pdf {
-        background-color: #121314;
-        border-right-color: var(--md-sys-color-outline-variant, #3c4043);
-      }
-
-      .pdf-page-container {
-        position: relative;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-        background-color: #ffffff;
-        border-radius: 4px;
-        overflow: hidden;
-        margin: 0 auto;
-        box-sizing: border-box;
-      }
-
-      .pdf-page-canvas {
-        display: block;
-        width: 100%;
-        height: auto;
-      }
-
-      /* 左侧 PDF 标注层与选框（归一化 1000 百分比坐标，参照 MinerU 客户端高精度样式） */
-      .pdf-overlay-layer {
-        position: absolute;
-        inset: 0;
-        width: 100%;
-        height: 100%;
-        pointer-events: none;
-      }
-
-      .bbox-highlight {
-        position: absolute;
-        border: 1.2px solid rgba(37, 99, 235, 0.45);
-        background-color: rgba(37, 99, 235, 0.02);
-        cursor: pointer;
-        border-radius: 2px;
-        pointer-events: auto;
-        box-sizing: border-box;
-        transition: border-color 0.12s ease, background-color 0.12s ease, box-shadow 0.12s ease;
-      }
-      .bbox-highlight:hover,
-      .bbox-highlight.hover-bbox {
-        border: 1.5px solid #2563eb;
-        background-color: rgba(37, 99, 235, 0.1);
-        z-index: 5;
-      }
-      .bbox-highlight.active {
-        border: 2px solid #2563eb;
-        background-color: rgba(37, 99, 235, 0.18);
-        box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.35);
-        z-index: 8;
-      }
-      .bbox-tag {
-        position: absolute;
-        top: 2px;
-        left: 2px;
-        font-size: 10px;
-        font-family: var(--md-font-google-sans, 'Noto Sans SC', system-ui, sans-serif);
-        font-weight: 600;
-        padding: 1px 5px;
-        border-radius: 2px;
-        background-color: #2563eb;
-        color: #ffffff;
-        pointer-events: none;
-        white-space: nowrap;
-        line-height: 1.2;
-        opacity: 0;
-        transition: opacity 0.12s ease;
-      }
-      .bbox-highlight:hover .bbox-tag,
-      .bbox-highlight.hover-bbox .bbox-tag,
-      .bbox-highlight.active .bbox-tag {
-        opacity: 1;
-      }
-
-      /* 语义类型专属微色阶 */
-      .bbox-highlight.type-equation { border-color: rgba(16, 185, 129, 0.55); }
-      .bbox-highlight.type-equation:hover, .bbox-highlight.type-equation.active { border-color: #059669; }
-      .bbox-highlight.type-equation .bbox-tag { background-color: #059669; }
-
-      .bbox-highlight.type-title { border-color: rgba(139, 92, 246, 0.55); }
-      .bbox-highlight.type-title:hover, .bbox-highlight.type-title.active { border-color: #7c3aed; }
-      .bbox-highlight.type-title .bbox-tag { background-color: #7c3aed; }
-
-      .bbox-highlight.type-table { border-color: rgba(245, 158, 11, 0.55); }
-      .bbox-highlight.type-table:hover, .bbox-highlight.type-table.active { border-color: #d97706; }
-      .bbox-highlight.type-table .bbox-tag { background-color: #d97706; }
-
-      .bbox-highlight.type-image, .bbox-highlight.type-figure { border-color: rgba(236, 72, 153, 0.55); }
-      .bbox-highlight.type-image:hover, .bbox-highlight.type-image.active { border-color: #db2777; }
-      .bbox-highlight.type-image .bbox-tag { background-color: #db2777; }
-
-      .bbox-highlight.type-header, .bbox-highlight.type-footer, .bbox-highlight.type-aside {
-        border-color: rgba(100, 116, 139, 0.4);
-      }
-      .bbox-highlight.type-header:hover, .bbox-highlight.type-footer:hover, .bbox-highlight.type-aside:hover,
-      .bbox-highlight.type-header.active, .bbox-highlight.type-footer.active, .bbox-highlight.type-aside.active {
-        border-color: #475569;
-      }
-      .bbox-highlight.type-header .bbox-tag, .bbox-highlight.type-footer .bbox-tag, .bbox-highlight.type-aside .bbox-tag {
-        background-color: #475569;
-      }
-
-      /* 右栏：结构化结果与连续阅读视窗 */
-      .pane-markdown {
-        overflow-y: auto;
-        padding: 2rem 2.8rem;
-        background-color: var(--md-sys-color-surface, #ffffff);
-        font-family: 'Noto Serif SC Variable', 'Noto Serif SC', 'Times New Roman', serif;
-        line-height: 1.85;
-      }
-      [data-theme='dark'] .pane-markdown {
-        background-color: var(--md-sys-color-surface, #1e1f20);
-      }
-
-      /* 结构化块级对齐容器 (Structured 1:1 Mode, 完美对齐 MinerU 客户端学术阅读体验) */
-      .structured-blocks-container {
-        display: flex;
-        flex-direction: column;
-        gap: 0.25rem;
-      }
-      .structured-block-item {
-        position: relative;
-        padding: 0.35rem 0.65rem;
-        border-left: 3px solid transparent;
-        border-radius: 4px;
-        background-color: transparent;
-        transition: border-color 0.15s ease, background-color 0.15s ease;
-        cursor: pointer;
-      }
-      .structured-block-item:hover,
-      .structured-block-item.hover-block {
-        background-color: rgba(37, 99, 235, 0.03);
-        border-left-color: rgba(37, 99, 235, 0.4);
-      }
-      .structured-block-item.active-block {
-        background-color: rgba(37, 99, 235, 0.07);
-        border-left-color: #2563eb;
-      }
-      [data-theme='dark'] .structured-block-item:hover,
-      [data-theme='dark'] .structured-block-item.hover-block {
-        background-color: rgba(168, 199, 250, 0.04);
-        border-left-color: rgba(168, 199, 250, 0.4);
-      }
-      [data-theme='dark'] .structured-block-item.active-block {
-        background-color: rgba(168, 199, 250, 0.1);
-        border-left-color: #a8c7fa;
-      }
-
-      .block-translate-trigger {
-        position: absolute;
-        top: 6px;
-        right: 8px;
-        display: inline-flex;
-        align-items: center;
-        gap: 3px;
-        padding: 2px 7px;
-        border-radius: 4px;
-        border: 1px solid var(--md-sys-color-outline-variant, #e0e3e7);
-        background-color: var(--md-sys-color-surface, #ffffff);
-        color: var(--md-sys-color-on-surface-variant, #5f6368);
-        font-size: 0.72rem;
-        font-family: var(--md-font-google-sans, 'Noto Sans SC', system-ui, sans-serif);
-        cursor: pointer;
-        opacity: 0;
-        transition: opacity 0.15s ease, background-color 0.15s ease;
-        z-index: 4;
-      }
-      .structured-block-item:hover .block-translate-trigger {
-        opacity: 1;
-      }
-      .block-translate-trigger:hover {
-        background-color: var(--md-sys-color-surface-container-high, #eceff1);
-        color: var(--md-sys-color-primary, #0b57d0);
-        border-color: var(--md-sys-color-primary, #0b57d0);
-      }
-      [data-theme='dark'] .block-translate-trigger {
-        background-color: #2b2e30;
-        border-color: #444746;
-        color: #c4c7c5;
-      }
-      [data-theme='dark'] .block-translate-trigger:hover {
-        background-color: #383b3e;
-        color: var(--md-sys-color-primary, #a8c7fa);
-        border-color: var(--md-sys-color-primary, #a8c7fa);
-      }
-
-      .block-item-translation {
-        margin-top: 0.6rem;
-        padding: 0.55rem 0.85rem;
-        background-color: var(--md-sys-color-surface-container-low, #f8f9fa);
-        border-left: 2px solid var(--md-sys-color-primary, #0b57d0);
-        border-radius: 0 4px 4px 0;
-        font-family: 'Noto Serif SC Variable', 'Noto Serif SC', 'Times New Roman', serif;
-        font-size: 0.98rem;
-        line-height: 1.8;
-        color: var(--md-sys-color-on-surface-variant, #374151);
-        text-align: justify;
-      }
-      [data-theme='dark'] .block-item-translation {
-        background-color: var(--md-sys-color-surface-container-low, #18191a);
-        border-left-color: var(--md-sys-color-primary, #a8c7fa);
-        color: var(--md-sys-color-on-surface-variant, #d1d5db);
-      }
-      .translation-loading {
-        font-size: 0.82rem;
-        color: var(--md-sys-color-outline, #6b7280);
-        font-style: italic;
-      }
-      .translation-error {
-        font-size: 0.82rem;
-        color: #ef4444;
-      }
-
-      .block-item-body {
-        font-size: 1.02rem;
-        line-height: 1.8;
-      }
-
-      /* 学术 AST 排版样式 (极简克制，去 SaaS 化) */
-      .doc-heading-1 {
-        font-size: 1.7rem;
-        font-weight: 700;
-        line-height: 1.3;
-        margin: 1.25rem 0 0.85rem 0;
-        font-family: var(--md-font-google-sans, 'Noto Sans SC', system-ui, sans-serif);
-        color: var(--md-sys-color-on-surface, #111827);
-        letter-spacing: -0.015em;
-      }
-      .doc-heading-2 {
-        font-size: 1.35rem;
-        font-weight: 600;
-        line-height: 1.35;
-        margin: 1.15rem 0 0.65rem 0;
-        font-family: var(--md-font-google-sans, 'Noto Sans SC', system-ui, sans-serif);
-        color: var(--md-sys-color-on-surface, #111827);
-        letter-spacing: -0.01em;
-      }
-      .doc-heading-3 {
-        font-size: 1.15rem;
-        font-weight: 600;
-        line-height: 1.4;
-        margin: 0.95rem 0 0.5rem 0;
-        font-family: var(--md-font-google-sans, 'Noto Sans SC', system-ui, sans-serif);
-        color: var(--md-sys-color-on-surface, #111827);
-      }
-      .doc-heading-4, .doc-heading-5, .doc-heading-6 {
-        font-size: 1.05rem;
-        font-weight: 600;
-        line-height: 1.4;
-        margin: 0.8rem 0 0.4rem 0;
-        font-family: var(--md-font-google-sans, 'Noto Sans SC', system-ui, sans-serif);
-        color: var(--md-sys-color-on-surface, #111827);
-      }
-      [data-theme='dark'] .doc-heading-1,
-      [data-theme='dark'] .doc-heading-2,
-      [data-theme='dark'] .doc-heading-3,
-      [data-theme='dark'] .doc-heading-4,
-      [data-theme='dark'] .doc-heading-5,
-      [data-theme='dark'] .doc-heading-6 {
-        color: var(--md-sys-color-on-surface, #f3f4f6);
-      }
-
-      .doc-paragraph {
-        margin: 0.35rem 0;
-        font-family: 'Noto Serif SC Variable', 'Noto Serif SC', 'Times New Roman', serif;
-        font-size: 1.02rem;
-        line-height: 1.82;
-        color: var(--md-sys-color-on-surface, #1f2937);
-        text-align: justify;
-        word-break: break-word;
-      }
-      [data-theme='dark'] .doc-paragraph {
-        color: var(--md-sys-color-on-surface, #e5e7eb);
-      }
-
-      .doc-equation-display {
-        margin: 1rem 0;
-        padding: 0.6rem 0;
-        text-align: center;
-        overflow-x: auto;
-        overflow-y: hidden;
-      }
-
-      .doc-figure {
-        margin: 1.5rem auto;
-        text-align: center;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-      }
-      .doc-figure img {
-        max-width: 100%;
-        height: auto;
-        border-radius: 4px;
-        box-shadow: 0 1px 6px rgba(0, 0, 0, 0.08);
-        display: block;
-      }
-      .doc-figcaption {
-        font-family: var(--md-font-google-sans, 'Noto Sans SC', system-ui, sans-serif);
-        font-size: 0.86rem;
-        color: var(--md-sys-color-outline, #6b7280);
-        margin-top: 0.55rem;
-        line-height: 1.55;
-        max-width: 90%;
-        text-align: center;
-      }
-      [data-theme='dark'] .doc-figcaption {
-        color: #9ca3af;
-      }
-
-      .doc-table-wrapper {
-        margin: 1.25rem 0;
-        overflow-x: auto;
-      }
-      .doc-table-wrapper table {
-        width: 100%;
-        border-collapse: collapse;
-        font-size: 0.9rem;
-      }
-      .doc-table-wrapper th,
-      .doc-table-wrapper td {
-        border: 1px solid var(--md-sys-color-outline-variant, #e5e7eb);
-        padding: 0.5rem 0.75rem;
-      }
-      [data-theme='dark'] .doc-table-wrapper th,
-      [data-theme='dark'] .doc-table-wrapper td {
-        border-color: #374151;
-      }
-      .doc-table-caption {
-        font-size: 0.85rem;
-        color: var(--md-sys-color-outline, #6b7280);
-        margin-top: 0.4rem;
-        text-align: center;
-      }
-
-      .doc-list {
-        margin: 0.5rem 0 0.5rem 1.5rem;
-        padding: 0;
-      }
-      .doc-list li {
-        margin: 0.25rem 0;
-      }
-
-      .doc-meta-header,
-      .doc-meta-aside {
-        font-size: 0.78rem;
-        color: var(--md-sys-color-outline, #9ca3af);
-        font-style: italic;
-        margin: 0.25rem 0;
-      }
-      .doc-meta-footnote {
-        font-size: 0.82rem;
-        color: var(--md-sys-color-on-surface-variant, #4b5563);
-        border-top: 1px solid var(--md-sys-color-outline-variant, #e5e7eb);
-        padding-top: 0.4rem;
-        margin-top: 0.75rem;
-      }
-      [data-theme='dark'] .doc-meta-footnote {
-        border-color: #374151;
-        color: #9ca3af;
-      }
-      }
-
-      .block-item-body {
-        font-size: 1.02rem;
-        line-height: 1.75;
-      }
-      .block-item-body h1,
-      .block-item-body h2,
-      .block-item-body h3 {
-        font-family: 'Noto Sans SC Variable', 'Noto Sans SC', sans-serif;
-        color: var(--md-sys-color-on-surface, #1f1f1f);
-        letter-spacing: -0.015em;
-        margin: 0.35rem 0;
-      }
-      .block-item-body p {
-        margin: 0;
-      }
-      .block-item-body img {
-        max-width: 100%;
-        height: auto;
-        border-radius: 6px;
-        display: block;
-        margin: 0.4rem auto;
-      }
-      .block-item-body table {
-        width: 100%;
-        border-collapse: collapse;
-        margin: 0.5rem 0;
-      }
-      .block-item-body th,
-      .block-item-body td {
-        border: 1px solid var(--md-sys-color-outline-variant, #e0e3e7);
-        padding: 0.4rem 0.65rem;
-      }
-
-      /* 连续阅读模式 (Continuous Reading Flow) */
-      .continuous-reading-flow {
-        font-size: 1.05rem;
-        line-height: 1.8;
-      }
-      .continuous-reading-flow h1,
-      .continuous-reading-flow h2,
-      .continuous-reading-flow h3 {
-        font-family: 'Noto Sans SC Variable', 'Noto Sans SC', sans-serif;
-        color: var(--md-sys-color-on-surface, #1f1f1f);
-        letter-spacing: -0.02em;
-        margin-top: 1.8rem;
-        margin-bottom: 0.8rem;
-      }
-      [data-theme='dark'] .continuous-reading-flow h1,
-      [data-theme='dark'] .continuous-reading-flow h2,
-      [data-theme='dark'] .continuous-reading-flow h3 {
-        color: var(--md-sys-color-on-surface, #e3e3e3);
-      }
-      .continuous-reading-flow p {
-        margin: 0.85rem 0;
-      }
-      .continuous-reading-flow img {
-        max-width: 100%;
-        height: auto;
-        border-radius: 8px;
-        display: block;
-        margin: 1.25rem auto;
-      }
-      .continuous-reading-flow table {
-        width: 100%;
-        border-collapse: collapse;
-        margin: 1.25rem 0;
-      }
-      .continuous-reading-flow th,
-      .continuous-reading-flow td {
-        border: 1px solid var(--md-sys-color-outline-variant, #e0e3e7);
-        padding: 0.5rem 0.8rem;
-      }
-
-      /* 空状态与弹窗 */
-      .empty-pane {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        height: 100%;
-        color: var(--md-sys-color-outline, #72777d);
-        text-align: center;
-        gap: 0.75rem;
-      }
-
-      .modal-backdrop {
-        position: fixed;
-        inset: 0;
-        background-color: rgba(0, 0, 0, 0.45);
-        backdrop-filter: blur(4px);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        z-index: var(--layer-dialog);
-      }
-      .modal-card {
-        width: 90%;
-        max-width: 440px;
-        background-color: var(--md-sys-color-surface, #ffffff);
-        border-radius: var(--md-shape-corner-extra-large, 24px);
-        padding: 1.5rem;
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
-        display: flex;
-        flex-direction: column;
-        gap: 1rem;
-      }
-      [data-theme='dark'] .modal-card {
-        background-color: var(--md-sys-color-surface-container-high, #2b2e30);
-      }
-      .modal-title {
-        font-size: 1.15rem;
-        font-weight: 600;
-        margin: 0;
-      }
-      .modal-input, .modal-select {
-        width: 100%;
-        padding: 0.6rem 0.8rem;
-        border-radius: var(--md-shape-corner-small, 8px);
-        border: 1px solid var(--md-sys-color-outline-variant, #c4c7c5);
-        background: transparent;
-        color: inherit;
-        font-size: 0.9rem;
-      }
-      .modal-actions {
-        display: flex;
-        justify-content: flex-end;
-        gap: 0.6rem;
-        margin-top: 0.5rem;
-      }
-    </style>
   </head>
-  <body>
-    <!-- 顶栏操作区 -->
-    <header class="ingest-topbar">
-      <div class="topbar-left">
-        <a href="/" class="back-home-link">← 首页</a>
-        <div class="doc-info-badge" id="doc-badge">
-          <span class="doc-name" id="doc-name-text">未加载文档</span>
-          <span class="doc-pages" id="doc-pages-text"></span>
-        </div>
+  <body class="ingest-app-body">
+    <!-- 1. 左侧工作台侧栏 (Sidebar - 对齐 AstroLib 文献研读工作台风格) -->
+    <aside class="ingest-sidebar" id="ingest-sidebar">
+      <div class="sidebar-brand-header">
+        <a href="/desktop/" class="sidebar-logo" data-return-library>
+          <img src="/astrolib-logo.webp" class="sidebar-logo-img" alt="AstroLib" />
+          <span class="sidebar-brand-name">AstroLib</span>
+          <span class="sidebar-brand-badge">文献研读</span>
+        </a>
+        <button type="button" class="sidebar-collapse-btn m3-icon-btn" id="btn-close-sidebar" title="收起侧栏" aria-label="收起侧栏">
+          <span class="material-symbols-outlined" style="font-size: 20px;">first_page</span>
+        </button>
       </div>
 
-      <div class="topbar-center">
-        <!-- 三档极简通道选择器 -->
-        <div class="engine-chips" role="radiogroup" aria-label="解析引擎通道">
-          <button type="button" class="engine-chip active" id="chip-api" title="官方云端 VLM 3.4.x 高精度解析，每日享 1000 页免费配额">
-            【高精 API】
+      <!-- 新解析 FAB 胶囊按钮 -->
+      <div class="sidebar-action-area">
+        <button type="button" class="sidebar-new-parse-btn" id="btn-new-parse">
+          <span class="material-symbols-outlined" style="font-size: 20px;">add</span>
+          <span>新解析文档</span>
+        </button>
+        <input type="file" id="file-input-hidden" accept="application/pdf" style="display: none;" />
+      </div>
+
+      <!-- 任务历史列表 -->
+      <div class="sidebar-section-title">
+        <span>任务管理</span>
+      </div>
+      <div class="sidebar-task-list" id="sidebar-task-list">
+        <!-- 动态注入任务列表项 -->
+      </div>
+
+      <!-- 侧栏底部实用操作 -->
+      <div class="sidebar-footer">
+        <a href="/desktop/" class="sidebar-footer-btn" data-return-library title="返回 AstroLib 研读书库">
+          <span class="material-symbols-outlined" style="font-size: 18px;">auto_stories</span>
+          <span>返回研读书库</span>
+        </a>
+      </div>
+    </aside>
+
+    <!-- 2. 主工作区 (Main Workspace) -->
+    <div class="ingest-workspace-root">
+      <!-- Chrome + MD3 顶栏 -->
+      <header class="ingest-topbar">
+        <div class="topbar-left">
+          <button type="button" class="m3-icon-btn sidebar-toggle-trigger" id="btn-toggle-sidebar" title="展开/收起文献侧栏 (Ctrl+B)" aria-label="展开/收起文献侧栏">
+            <span class="material-symbols-outlined">dock_to_left</span>
           </button>
-          <button type="button" class="engine-chip" id="chip-agent" title="免登录 / 免 Token / 限频轻量解析，专为 Agent 工作流与 <=20 页文档设计">
-            【Agent 免密】
+          <div class="doc-name-badge">
+            <span class="doc-name-text" id="doc-name-text">未加载文档</span>
+            <span class="doc-engine-pill" id="doc-engine-pill">高精排版引擎</span>
+          </div>
+        </div>
+
+        <div class="topbar-center">
+          <!-- 视窗对齐模式切换 (M3 Segmented Button) -->
+          <div class="m3-segmented-group" role="radiogroup" aria-label="双栏视图模式">
+            <button type="button" class="m3-segment-btn active" id="view-structured" title="1:1 结构化块级对照，双栏标注同步聚焦">结构化对照</button>
+            <button type="button" class="m3-segment-btn" id="view-bilingual" title="开启双语研判，呈现学术级中文译文与保留公式">双语研判</button>
+            <button type="button" class="m3-segment-btn" id="view-continuous" title="流式原生长文排版，零选框开销">连续阅读</button>
+          </div>
+        </div>
+
+        <!-- 顶栏右侧：统一采用单个 Icon + Tooltip 规范，极简得体 (全部采用 Google 官方 Material Symbols) -->
+        <div class="topbar-right">
+          <!-- 1. 统一设置入口 (Icon + Tooltip) -->
+          <button type="button" class="m3-icon-btn" id="btn-open-settings" title="解析通道与排版设置" aria-label="解析通道与排版设置">
+            <span class="material-symbols-outlined">settings</span>
           </button>
-          <button type="button" class="engine-chip" id="chip-local" title="本机 RTX 5060 8G 离线 Pipeline 硬件加速">
-            【本地】
+
+          <!-- 2. 下载清洗包 (Icon + Tooltip) -->
+          <button type="button" class="m3-icon-btn" id="btn-download-zip" style="display: none;" title="下载清洗包归档 (ZIP)" aria-label="下载清洗包归档 (ZIP)">
+            <span class="material-symbols-outlined">download</span>
+          </button>
+
+          <!-- 3. 转入书籍库 (Icon + Tooltip) -->
+          <button type="button" class="m3-icon-btn" id="btn-export-book" style="display: none;" title="转入 AstroLib 书籍合集" aria-label="转入 AstroLib 书籍合集">
+            <span class="material-symbols-outlined">auto_stories</span>
+          </button>
+
+          <!-- 4. 主解析按钮 (M3 Filled 胶囊按钮) -->
+          <button type="button" class="m3-btn-primary" id="btn-parse" title="开始全文献结构化深度解析" disabled>
+            <span class="material-symbols-outlined" style="font-size: 19px;">play_arrow</span>
+            <span id="btn-parse-text">开始解析</span>
+          </button>
+        </div>
+      </header>
+
+      <!-- 细致顶部进度条 -->
+      <div class="m3-progress-line">
+        <div class="m3-progress-fill" id="m3-progress-fill"></div>
+      </div>
+
+      <!-- 优雅 M3 错误提示横幅 (Banner) -->
+      <div class="ingest-error-banner" id="ingest-error-banner" style="display: none;" role="alert">
+        <div class="ingest-error-content">
+          <span class="material-symbols-outlined" style="font-size: 20px; color: var(--md-sys-color-error, #ba1a1a);">error</span>
+          <span class="ingest-error-text" id="ingest-error-text">解析出错</span>
+        </div>
+        <button type="button" class="m3-icon-btn" id="btn-close-error-banner" title="关闭提示" aria-label="关闭提示">
+          <span class="material-symbols-outlined" style="font-size: 18px;">close</span>
+        </button>
+      </div>
+
+      <!-- 双栏对照主体 -->
+      <main class="workspace-grid">
+        <!-- 左栏：PDF 原文视图 -->
+        <section class="pane-pdf">
+          <!-- PDF 控制条 (对齐 MinerU 截图 2) -->
+          <div class="pdf-toolbar">
+            <span class="pdf-toolbar-title">原文件</span>
+
+            <!-- 分页控制器 -->
+            <div class="pdf-page-controls">
+              <button type="button" class="pdf-page-btn" id="pdf-page-prev" title="上一页 (Page Up)" aria-label="上一页">
+                <span class="material-symbols-outlined" style="font-size: 18px;">chevron_left</span>
+              </button>
+              <input type="text" class="pdf-page-current-input" id="pdf-page-input" value="1" title="输入页码回车跳转" />
+              <span class="pdf-page-total-text" id="pdf-page-total">/ 1</span>
+              <button type="button" class="pdf-page-btn" id="pdf-page-next" title="下一页 (Page Down)" aria-label="下一页">
+                <span class="material-symbols-outlined" style="font-size: 18px;">chevron_right</span>
+              </button>
+            </div>
+
+            <!-- 缩放控制 -->
+            <div class="pdf-zoom-controls">
+              <button type="button" class="pdf-zoom-btn" id="pdf-zoom-out" title="缩小" aria-label="缩小">
+                <span class="material-symbols-outlined" style="font-size: 16px;">remove</span>
+              </button>
+              <span class="pdf-zoom-btn" id="pdf-zoom-val" style="cursor: default; font-weight: 600;">100%</span>
+              <button type="button" class="pdf-zoom-btn" id="pdf-zoom-in" title="放大" aria-label="放大">
+                <span class="material-symbols-outlined" style="font-size: 16px;">add</span>
+              </button>
+              <button type="button" class="pdf-zoom-btn" id="pdf-zoom-fit" title="适应页面宽度" aria-label="适应页面宽度">
+                <span class="material-symbols-outlined" style="font-size: 16px;">fit_screen</span>
+                <span>适应宽度</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- PDF 画布与标注叠加滚动视窗 -->
+          <div class="pdf-canvas-scroll-area" id="pdf-canvas-scroll-area">
+            <!-- 动态注入单页 PDF 矢量画布与精确叠加标注层 -->
+          </div>
+        </section>
+
+        <!-- 右栏：结构化内容与阅读视窗 -->
+        <section class="pane-markdown" id="pane-markdown">
+          <!-- 右栏 Tab 条 (Markdown vs JSON + 快捷学术排版控制器) -->
+          <div class="content-toolbar">
+            <div class="content-tab-group">
+              <button type="button" class="content-tab-btn active" id="tab-markdown">Markdown</button>
+              <button type="button" class="content-tab-btn" id="tab-json">JSON</button>
+            </div>
+
+            <!-- 快捷学术排版微调控制器 (字体与行距直接调节) -->
+            <div style="display: flex; align-items: center; gap: 0.75rem;">
+              <div class="quick-typography-controls" style="display: flex; align-items: center; gap: 0.4rem; flex-shrink: 0;">
+                <select class="m3-select-compact" id="quick-font-select" title="选用贴近原文质感的正文学术字体" style="max-width: 150px; font-size: 0.76rem; padding: 0.25rem 0.5rem;">
+                  <option value="latin-modern">正文: Latin Modern</option>
+                  <option value="termes">正文: TeX Gyre Termes</option>
+                  <option value="libertine">正文: Linux Libertine</option>
+                  <option value="noto-serif">正文: Noto Serif SC</option>
+                  <option value="sans">正文: Modern Sans</option>
+                </select>
+                <select class="m3-select-compact" id="quick-heading-font-select" title="选用标题学术排版字体" style="max-width: 150px; font-size: 0.76rem; padding: 0.25rem 0.5rem;">
+                  <option value="default">标题: 现代黑体 (推荐)</option>
+                  <option value="inherit">标题: 跟随正文字体</option>
+                  <option value="latin-modern">标题: Latin Modern</option>
+                  <option value="termes">标题: TeX Gyre Termes</option>
+                  <option value="libertine">标题: Linux Libertine</option>
+                  <option value="noto-serif">标题: Noto Serif SC</option>
+                </select>
+                <select class="m3-select-compact" id="quick-lh-select" title="选用正文排版行距" style="max-width: 105px; font-size: 0.76rem; padding: 0.25rem 0.5rem;">
+                  <option value="compact">行距: 紧凑</option>
+                  <option value="standard" selected>行距: 标准</option>
+                  <option value="spacious">行距: 宽松</option>
+                </select>
+              </div>
+
+              <button type="button" class="m3-icon-btn" id="btn-copy-content" title="复制内容" aria-label="复制内容">
+                <span class="material-symbols-outlined" style="font-size: 18px;">content_copy</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="content-scroll-area" id="content-scroll-area">
+            <!-- 结构化块级卡片视窗 -->
+            <div class="structured-blocks-container" id="structured-blocks-container"></div>
+            <!-- 连续流式长文视窗 -->
+            <article class="continuous-reading-flow" id="continuous-reading-container" style="display: none;"></article>
+            <!-- 原生 JSON 结构视窗 -->
+            <pre class="pane-json-container" id="json-view-container" style="display: none;"></pre>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <!-- 统一 M3 解析与排版设置对话框 (Unified Settings Dialog) -->
+    <div class="m3-modal-backdrop" id="settings-modal" style="display: none;">
+      <div class="m3-modal-card">
+        <div class="m3-modal-header">
+          <h3 class="m3-modal-title">解析与排版设置</h3>
+          <button type="button" class="m3-icon-btn" id="btn-close-settings" title="关闭设置" aria-label="关闭设置">
+            <span class="material-symbols-outlined" style="font-size: 20px;">close</span>
           </button>
         </div>
 
-        <!-- 视窗对齐模式切换 (三档单选视图) -->
-        <div class="view-mode-chips" role="radiogroup" aria-label="双栏对齐视图模式">
-          <button type="button" class="view-chip active" id="view-structured" title="1:1 结构化块级对照，双栏高亮同步聚焦">
-            结构化对照
-          </button>
-          <button type="button" class="view-chip" id="view-bilingual" title="开启双语研判对照模式，段落呈现学术级中文译文与保留公式">
-            双语研判
-          </button>
-          <button type="button" class="view-chip" id="view-continuous" title="流式原生长文排版，零选框 DOM 开销，适合低性能设备">
-            连续阅读
-          </button>
+        <!-- 分组 1：正文学术排版字体选用 -->
+        <div class="m3-settings-group">
+          <label class="m3-settings-label">正文学术排版字体</label>
+          <p class="m3-settings-desc">选用贴近原生 LaTeX 论文印制质感的经典学术字体栈，与 KaTeX 衬线数学公式浑然一体。</p>
+          <div class="m3-chip-selector" id="font-family-chips">
+            <button type="button" class="m3-chip-item active" data-font="latin-modern">Latin Modern (Computer Modern)</button>
+            <button type="button" class="m3-chip-item" data-font="termes">TeX Gyre Termes (Nimbus / Times)</button>
+            <button type="button" class="m3-chip-item" data-font="libertine">Linux Libertine (典雅书系)</button>
+            <button type="button" class="m3-chip-item" data-font="noto-serif">Noto Serif SC (思源学术宋体)</button>
+            <button type="button" class="m3-chip-item" data-font="sans">Modern Sans (屏幕高清晰黑体)</button>
+          </div>
+          <div class="font-preview-sample" id="font-preview-sample" style="font-family: var(--font-tex-latin-modern);">
+            Sample: Theorem 1.1. Let S = QK^T ∈ R^(N×N), then softmax(S) denotes the attention matrix.
+          </div>
         </div>
 
-        <!-- 双语服务选择与翻译动作 (在双语研判模式下展开) -->
-        <div class="bilingual-toolbar" id="bilingual-toolbar" style="display: none;">
-          <select class="bilingual-select" id="bilingual-provider-select" title="学术翻译引擎">
-            <option value="google">Google 翻译 (极速免费)</option>
-            <option value="gemini">Gemini 学术翻译</option>
-            <option value="bupt">北邮 DeepSeek 校内服务</option>
-            <option value="zhipu">智谱 GLM-4 学术</option>
+        <!-- 分组 1.2：标题学术排版字体选用 (可变字重微调，告别死重) -->
+        <div class="m3-settings-group">
+          <label class="m3-settings-label">标题学术排版字体</label>
+          <p class="m3-settings-desc">支持独立定制论文各级标题字体与可变字重，保留现代几何无衬线质感或选用古典论文衬线体，拒绝死重。</p>
+          <div class="m3-chip-selector" id="heading-font-chips">
+            <button type="button" class="m3-chip-item active" data-font="default">Google Sans / 现代黑体 (推荐)</button>
+            <button type="button" class="m3-chip-item" data-font="inherit">跟随正文字体</button>
+            <button type="button" class="m3-chip-item" data-font="latin-modern">Latin Modern (Computer Modern)</button>
+            <button type="button" class="m3-chip-item" data-font="termes">TeX Gyre Termes (Times)</button>
+            <button type="button" class="m3-chip-item" data-font="libertine">Linux Libertine</button>
+            <button type="button" class="m3-chip-item" data-font="noto-serif">Noto Serif SC (思源宋体)</button>
+          </div>
+          <div class="font-preview-sample" id="heading-font-preview-sample" style="font-family: var(--font-heading-default); font-weight: var(--ingest-heading-weight-h2); font-variation-settings: var(--ingest-heading-variation-h2); font-size: 1.08rem; letter-spacing: var(--ingest-heading-letter-spacing-h2);">
+            Sample: 2 Background, Gap, and Related Work
+          </div>
+        </div>
+
+        <!-- 分组 2：阅读行距与字阶 -->
+        <div class="m3-settings-group">
+          <label class="m3-settings-label">文字行距调整</label>
+          <p class="m3-settings-desc">针对数理公式密集型论文与长文阅读场景，自主调节文字行距。</p>
+          <div class="m3-chip-selector" id="dialog-line-height-chips">
+            <button type="button" class="m3-chip-item" data-lh="compact">紧凑 (1.48)</button>
+            <button type="button" class="m3-chip-item active" data-lh="standard">标准出版 (1.72)</button>
+            <button type="button" class="m3-chip-item" data-lh="spacious">宽裕 (2.0)</button>
+          </div>
+        </div>
+
+        <div class="m3-settings-group">
+          <label class="m3-settings-label">阅读字阶大小</label>
+          <div class="m3-chip-selector" id="dialog-font-size-chips">
+            <button type="button" class="m3-chip-item" data-size="compact">紧凑 (14px)</button>
+            <button type="button" class="m3-chip-item active" data-size="standard">标准 (15.5px)</button>
+            <button type="button" class="m3-chip-item" data-size="spacious">宽裕 (17px)</button>
+          </div>
+        </div>
+
+        <!-- 分组 2.5：物理版面与结构化元素显示 -->
+        <div class="m3-settings-group">
+          <label class="m3-settings-label">物理版面与结构化元素显示</label>
+          <p class="m3-settings-desc">自由控制跨页虚线标尺与页外刊物元信息的呈现状态，专注沉浸式研读。</p>
+          <div style="display: flex; flex-direction: column; gap: 0.65rem; margin-top: 0.35rem;">
+            <label style="display: flex; align-items: center; justify-content: space-between; font-size: 0.84rem; cursor: pointer;">
+              <span>显示物理跨页虚线标尺 (Page Divider)</span>
+              <input type="checkbox" id="toggle-show-page-dividers" checked style="accent-color: var(--md3-primary); width: 16px; height: 16px; cursor: pointer;" />
+            </label>
+            <label style="display: flex; align-items: center; justify-content: space-between; font-size: 0.84rem; cursor: pointer;">
+              <span>显示页外刊物与水印元注 (Page Meta Badge)</span>
+              <input type="checkbox" id="toggle-show-page-meta" checked style="accent-color: var(--md3-primary); width: 16px; height: 16px; cursor: pointer;" />
+            </label>
+            <label style="display: flex; align-items: center; justify-content: space-between; font-size: 0.84rem; cursor: pointer;">
+              <span>PDF 自动换页柔和渐变动画 (Smooth Page Fade)</span>
+              <input type="checkbox" id="toggle-pdf-page-transition" checked style="accent-color: var(--md3-primary); width: 16px; height: 16px; cursor: pointer;" />
+            </label>
+          </div>
+        </div>
+
+        <!-- 分组 3：解析通道与算力 -->
+        <div class="m3-settings-group">
+          <label class="m3-settings-label">解析通道与引擎</label>
+          <div class="m3-radio-tile-group" id="settings-engine-group">
+            <div class="m3-radio-tile selected" data-engine="api">
+              <input type="radio" name="settings-engine" value="api" checked />
+              <div>
+                <div class="m3-radio-tile-title">官方高精度云端 VLM 3.4.x</div>
+                <div class="m3-radio-tile-desc">精准识别复杂跨页表格、行间多行公式与图文绕排，每日免费 1000 页配额</div>
+              </div>
+            </div>
+            <div class="m3-radio-tile" data-engine="agent">
+              <input type="radio" name="settings-engine" value="agent" />
+              <div>
+                <div class="m3-radio-tile-title">免密 Agent 工作流通道</div>
+                <div class="m3-radio-tile-desc">零 Token 极速解析，适合快速抓取纯文字与基础版式</div>
+              </div>
+            </div>
+            <div class="m3-radio-tile" data-engine="local">
+              <input type="radio" name="settings-engine" value="local" />
+              <div>
+                <div class="m3-radio-tile-title">本机硬件加速推理 (RTX 5060)</div>
+                <div class="m3-radio-tile-desc">本地显卡离线推理，数据不出本机，速度快且无网络依赖</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 分组 4：切片页码范围 -->
+        <div class="m3-settings-group">
+          <label class="m3-settings-label">切片解析页码范围</label>
+          <p class="m3-settings-desc">留空默认解析整本文献；输入如 <code>1-10</code> 或 <code>3,5,7-9</code> 仅提取指定切片以节约配额。</p>
+          <input type="text" class="m3-input-field" id="settings-page-range" placeholder="如 1-15 (留空表示全本解析)" />
+        </div>
+
+        <!-- 分组 5：学术研判与翻译引擎 -->
+        <div class="m3-settings-group">
+          <label class="m3-settings-label">双语研判与学术翻译服务</label>
+          <select class="m3-select-field" id="settings-translate-provider">
+            <option value="google">Google 翻译 (极速免费，保留数学公式语法)</option>
+            <option value="gemini">Gemini 1.5 Pro / Flash 学术增强</option>
+            <option value="bupt">北京邮电大学 DeepSeek 校内大模型</option>
+            <option value="zhipu">智谱 GLM-4 学术翻译引擎</option>
           </select>
-          <button type="button" class="btn-secondary btn-compact" id="btn-translate-page" title="批量翻译当前可视页的所有段落">
-            译本页
-          </button>
-          <button type="button" class="btn-secondary btn-compact" id="btn-translate-all" title="全篇批量自动研判翻译">
-            全篇研判
-          </button>
+          <div style="display: flex; gap: 0.65rem; margin-top: 0.45rem;">
+            <button type="button" class="m3-btn-tonal" id="btn-batch-translate-current" title="批量研判当前可视页">
+              <span class="material-symbols-outlined" style="font-size: 18px;">translate</span>
+              <span>批量研判当前页</span>
+            </button>
+            <button type="button" class="m3-btn-outlined" id="btn-batch-translate-all" title="全篇自动批量研判">
+              <span class="material-symbols-outlined" style="font-size: 18px;">sync</span>
+              <span>全篇自动研判</span>
+            </button>
+          </div>
+          <label style="display: flex; align-items: center; justify-content: space-between; font-size: 0.84rem; cursor: pointer; margin-top: 0.65rem;">
+            <span>开启单词即点即译 (Click-to-Define 英语研读)</span>
+            <input type="checkbox" id="toggle-click-to-define" checked style="accent-color: var(--md3-primary); width: 16px; height: 16px; cursor: pointer;" />
+          </label>
+          <div style="margin-top: 0.5rem; display: flex; align-items: center; justify-content: space-between; font-size: 0.82rem;">
+            <span>查词字典服务源</span>
+            <select class="m3-select-compact" id="settings-dict-provider" style="font-size: 0.78rem; padding: 2px 8px; max-width: 200px;">
+              <option value="auto">自动优选 (有道高精 + 谷歌双擎)</option>
+              <option value="youdao">有道词典 (国内极速直连)</option>
+              <option value="google">Google 字典 (经典国际源)</option>
+              <option value="free">Free Dictionary (英英学术源)</option>
+            </select>
+          </div>
         </div>
 
-        <!-- 可选页码切片输入框 -->
-        <input
-          type="text"
-          class="page-range-input"
-          id="page-range-input"
-          placeholder="切片 (如 1-20)"
-          title="输入页码范围以节约配额并加速解析，默认全本解析"
-        />
-      </div>
-
-      <div class="topbar-right">
-        <!-- 开始解析主按钮 -->
-        <button type="button" class="btn-primary" id="btn-parse" disabled>
-          <span id="btn-parse-text">开始解析</span>
-        </button>
-
-        <!-- 成果出口动作组 -->
-        <button type="button" class="btn-secondary" id="btn-download-zip" style="display: none;">
-          下载清洗包
-        </button>
-        <button type="button" class="btn-secondary" id="btn-export-book" style="display: none;">
-          转入书籍库
-        </button>
-
-        <!-- API Key 设置按钮 -->
-        <button type="button" class="btn-icon" id="btn-open-token-modal" title="配置 MinerU API Token">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4" />
-          </svg>
-        </button>
-      </div>
-    </header>
-
-    <!-- 状态指示条 -->
-    <div class="status-bar" id="status-bar">
-      <span id="status-text">就绪</span>
-      <div class="progress-track">
-        <div class="progress-fill" id="progress-fill"></div>
-      </div>
-    </div>
-
-    <!-- 双栏对照主体 -->
-    <main class="workspace-grid">
-      <!-- 左栏：PDF 原文矢量视窗 -->
-      <section class="pane-pdf" id="pane-pdf">
-        <div class="empty-pane" id="pdf-empty-state">
-          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-            <polyline points="14 2 14 8 20 8" />
-          </svg>
-          <p>请选择或上传 PDF 文档</p>
+        <!-- 分组 6：服务鉴权 Token -->
+        <div class="m3-settings-group">
+          <label class="m3-settings-label">服务鉴权 Token</label>
+          <p class="m3-settings-desc">用于高精度 API 通道，密钥仅安全存储于本地浏览器缓存中。</p>
+          <input type="password" class="m3-input-field" id="settings-token-input" placeholder="输入 MinerU API Token..." />
         </div>
-      </section>
 
-      <!-- 右栏：结构化结果与连续阅读视窗 -->
-      <section class="pane-markdown" id="pane-markdown">
-        <div class="empty-pane" id="md-empty-state">
-          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-            <polyline points="4 7 4 4 20 4 20 7" />
-            <line x1="9" y1="20" x2="15" y2="20" />
-            <line x1="12" y1="4" x2="12" y2="20" />
-          </svg>
-          <p>解析完成后将在此呈现高保真数学公式 (KaTeX) 与排版结构</p>
-        </div>
-        <!-- 结构化块级卡片视窗 -->
-        <div class="structured-blocks-container" id="structured-blocks-container" style="display: none;"></div>
-        <!-- 连续流式阅读视窗 -->
-        <article class="continuous-reading-flow" id="continuous-reading-container" style="display: none;"></article>
-      </section>
-    </main>
-
-    <!-- 弹窗 1：配置 MinerU API Token -->
-    <div class="modal-backdrop" id="token-modal" style="display: none;">
-      <div class="modal-card">
-        <h3 class="modal-title">配置 MinerU API 凭证</h3>
-        <p style="font-size: 0.85rem; color: var(--md-sys-color-outline, #72777d); margin: 0;">
-          每个账号每天拥有 1000 页面免费极速解析额度。<br />
-          可在 <a href="https://mineru.net" target="_blank" style="color: var(--md-sys-color-primary, #0b57d0);">mineru.net</a> 用户中心免费获取 Token。
-        </p>
-        <input type="text" class="modal-input" id="token-input" placeholder="粘贴 API Token (如 f31d7c3a...)" />
-        <div class="modal-actions">
-          <button type="button" class="btn-secondary" id="btn-close-token">取消</button>
-          <button type="button" class="btn-primary" id="btn-save-token">保存</button>
+        <div class="m3-dialog-footer">
+          <button type="button" class="m3-btn-primary" id="btn-save-settings">完成设置</button>
         </div>
       </div>
     </div>
 
-    <!-- 弹窗 2：转入 AstroLib 书籍合集 -->
-    <div class="modal-backdrop" id="export-modal" style="display: none;">
-      <div class="modal-card">
-        <h3 class="modal-title">转入 AstroLib 书籍合集</h3>
-        <p style="font-size: 0.85rem; color: var(--md-sys-color-outline, #72777d); margin: 0;">
-          自动将解析成果清洗并转换为合法 MDX，注入全书侧边栏与阅读器。
-        </p>
+    <!-- 转入 AstroLib 书籍合集弹窗 -->
+    <div class="m3-modal-backdrop" id="export-modal" style="display: none;">
+      <div class="m3-modal-card">
+        <h3 style="margin: 0; font-size: 1.15rem; font-weight: 600;">转入 AstroLib 书籍合集</h3>
+        <p style="font-size: 0.82rem; color: var(--ingest-text-muted); margin: 0;">自动清洗解析成果为合法 MDX 并注入全书侧边栏与阅读器。</p>
         <div>
-          <label style="font-size: 0.8rem; font-weight: 500; display: block; margin-bottom: 0.3rem;">所属学科合集</label>
-          <select class="modal-select" id="export-collection-select">
-            {collections.map(c => (
+          <label style="font-size: 0.78rem; font-weight: 500; display: block; margin-bottom: 0.3rem;">所属学科合集</label>
+          <select class="m3-select-compact" style="width: 100%;" id="export-collection-select">
+            {collections.map((c) => (
               <option value={c.slug}>{c.title} ({c.slug})</option>
             ))}
           </select>
         </div>
         <div>
-          <label style="font-size: 0.8rem; font-weight: 500; display: block; margin-bottom: 0.3rem;">书籍/论文 Slug (URL 路径)</label>
-          <input type="text" class="modal-input" id="export-slug-input" placeholder="如 my-paper-2026" />
+          <label style="font-size: 0.78rem; font-weight: 500; display: block; margin-bottom: 0.3rem;">书籍/论文 Slug</label>
+          <input type="text" class="m3-input-pill" style="width: 100%; border-radius: 6px;" id="export-slug-input" placeholder="如 my-paper-2026" />
         </div>
         <div>
-          <label style="font-size: 0.8rem; font-weight: 500; display: block; margin-bottom: 0.3rem;">显示书名/文献标题</label>
-          <input type="text" class="modal-input" id="export-title-input" placeholder="文献完整标题" />
+          <label style="font-size: 0.78rem; font-weight: 500; display: block; margin-bottom: 0.3rem;">显示书名/文献标题</label>
+          <input type="text" class="m3-input-pill" style="width: 100%; border-radius: 6px;" id="export-title-input" placeholder="文献完整标题" />
         </div>
-        <div class="modal-actions">
-          <button type="button" class="btn-secondary" id="btn-close-export">取消</button>
-          <button type="button" class="btn-primary" id="btn-confirm-export">确认入库</button>
+        <div style="display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 0.5rem;">
+          <button type="button" class="m3-btn-outlined" id="btn-close-export">取消</button>
+          <button type="button" class="m3-btn-primary" id="btn-confirm-export">确认入库</button>
         </div>
       </div>
     </div>
 
-    <!-- Client-side Workspace Controller -->
+    <!-- 单例脚注悬停微浮窗 (Footnote Popover) -->
+    <div class="doc-footnote-popover" id="doc-footnote-popover"></div>
+
+    <!-- 单例 M3 单词即点即译浮动卡片 (M3 Word Definition Popover) -->
+    <div class="m3-word-popover" id="m3-word-popover" role="dialog" aria-hidden="true" style="display: none;"></div>
+
+    <!-- 客户端核心控制器 -->
     <script>
-      import { marked } from 'marked';
-      import katex from 'katex';
+      import { initIngestWorkspace } from './ingest-controller';
+      import { initColorEngine, applyThemeColor } from '../../themes/material-you/color-engine';
 
-      (function () {
-        const urlParams = new URLSearchParams(window.location.search);
-        let currentTaskId = urlParams.get('taskId') || '';
-        let currentEngine = 'api';
-        let currentViewMode: 'structured' | 'bilingual' | 'continuous' = 'structured';
-        let translationProvider = 'google';
-        const blockTranslationCache = new Map<string, string>();
-        let currentBlocks = [];
-        let currentMarkdown = '';
-        let pdfDocInstance = null;
-        let pollTimer = null;
-        let isTranslatingAll = false;
+      initColorEngine();
 
-        // DOM 元素
-        const chipApi = document.getElementById('chip-api');
-        const chipAgent = document.getElementById('chip-agent');
-        const chipLocal = document.getElementById('chip-local');
-        const viewStructured = document.getElementById('view-structured');
-        const viewBilingual = document.getElementById('view-bilingual');
-        const viewContinuous = document.getElementById('view-continuous');
-        const bilingualToolbar = document.getElementById('bilingual-toolbar');
-        const bilingualProviderSelect = document.getElementById('bilingual-provider-select') as HTMLSelectElement;
-        const btnTranslatePage = document.getElementById('btn-translate-page');
-        const btnTranslateAll = document.getElementById('btn-translate-all');
+      window.addEventListener('storage', (e) => {
+        if (e.key === 'starlight-m3-theme-color') {
+          applyThemeColor(e.newValue || undefined);
+        } else if (e.key === 'astrolib_m3_cached_css' && e.newValue) {
+          let styleEl = document.getElementById('m3-dynamic-color-theme') as HTMLStyleElement | null;
+          if (!styleEl) {
+            styleEl = document.createElement('style');
+            styleEl.id = 'm3-dynamic-color-theme';
+          }
+          styleEl.textContent = e.newValue;
+          document.head.appendChild(styleEl);
+        } else if (e.key === 'starlight-theme') {
+          const themeVal = e.newValue;
+          const effective = themeVal === 'dark' || themeVal === 'light'
+            ? themeVal
+            : (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+          document.documentElement.dataset.theme = effective;
+          document.documentElement.style.colorScheme = effective;
+        }
+      });
 
-        const pageRangeInput = document.getElementById('page-range-input') as HTMLInputElement;
-        const btnParse = document.getElementById('btn-parse') as HTMLButtonElement;
-        const btnParseText = document.getElementById('btn-parse-text');
-        const btnDownloadZip = document.getElementById('btn-download-zip') as HTMLButtonElement;
-        const btnExportBook = document.getElementById('btn-export-book') as HTMLButtonElement;
-        const statusBarText = document.getElementById('status-text');
-        const progressFill = document.getElementById('progress-fill');
-        const docNameText = document.getElementById('doc-name-text');
-        const docPagesText = document.getElementById('doc-pages-text');
-        const panePdf = document.getElementById('pane-pdf');
-        const pdfEmptyState = document.getElementById('pdf-empty-state');
-        const mdEmptyState = document.getElementById('md-empty-state');
-        const structuredBlocksContainer = document.getElementById('structured-blocks-container');
-        const continuousReadingContainer = document.getElementById('continuous-reading-container');
-
-        // 弹窗 DOM
-        const tokenModal = document.getElementById('token-modal');
-        const tokenInput = document.getElementById('token-input') as HTMLInputElement;
-        const btnOpenTokenModal = document.getElementById('btn-open-token-modal');
-        const btnCloseToken = document.getElementById('btn-close-token');
-        const btnSaveToken = document.getElementById('btn-save-token');
-
-        const exportModal = document.getElementById('export-modal');
-        const exportColSelect = document.getElementById('export-collection-select') as HTMLSelectElement;
-        const exportSlugInput = document.getElementById('export-slug-input') as HTMLInputElement;
-        const exportTitleInput = document.getElementById('export-title-input') as HTMLInputElement;
-        const btnCloseExport = document.getElementById('btn-close-export');
-        const btnConfirmExport = document.getElementById('btn-confirm-export');
-
-        // 1. 三档通道切换 Chip 监听
-        function setEngine(engine: string) {
-          currentEngine = engine;
-          chipApi?.classList.toggle('active', engine === 'api');
-          chipAgent?.classList.toggle('active', engine === 'agent');
-          chipLocal?.classList.toggle('active', engine === 'local');
-
-          if (engine === 'agent') {
-            const pageNum = parseInt(docPagesText?.textContent?.replace(/\D/g, '') || '0', 10);
-            if (pageNum > 20) {
-              updateStatus(`提示：当前文档共 ${pageNum} 页，Agent 免密模式支持最多 20 页。建议在上方输入切片范围（如 1-20），或切换【高精 API】`, 100);
+      window.addEventListener('message', (e) => {
+        if (e.data && e.data.type === 'M3_THEME_COLOR_CHANGED') {
+          if (e.data.theme || e.data.resolvedTheme) {
+            const effective = e.data.resolvedTheme === 'dark' || e.data.resolvedTheme === 'light'
+              ? e.data.resolvedTheme
+              : e.data.theme === 'dark' || e.data.theme === 'light'
+                ? e.data.theme
+                : (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            document.documentElement.dataset.theme = effective;
+            document.documentElement.style.colorScheme = effective;
+          }
+          const cssContent = e.data.schemeCss || e.data.css;
+          if (cssContent) {
+            let styleEl = document.getElementById('m3-dynamic-color-theme') as HTMLStyleElement | null;
+            if (!styleEl) {
+              styleEl = document.createElement('style');
+              styleEl.id = 'm3-dynamic-color-theme';
             }
+            styleEl.textContent = cssContent;
+            document.head.appendChild(styleEl);
+          } else if (e.data.color) {
+            applyThemeColor(e.data.color);
           }
         }
+      });
 
-        chipApi?.addEventListener('click', () => setEngine('api'));
-        chipAgent?.addEventListener('click', () => setEngine('agent'));
-        chipLocal?.addEventListener('click', () => setEngine('local'));
-
-        // 2. 视窗模式切换 (结构化对照 vs 双语研判 vs 连续阅读)
-        function setViewMode(mode: 'structured' | 'bilingual' | 'continuous') {
-          currentViewMode = mode;
-          try {
-            localStorage.setItem('astrolib_ingest_view_mode', mode);
-          } catch {}
-
-          viewStructured?.classList.toggle('active', mode === 'structured');
-          viewBilingual?.classList.toggle('active', mode === 'bilingual');
-          viewContinuous?.classList.toggle('active', mode === 'continuous');
-
-          if (bilingualToolbar) {
-            bilingualToolbar.style.display = mode === 'bilingual' ? 'inline-flex' : 'none';
-          }
-
-          if (currentMarkdown || currentBlocks.length > 0) {
-            if (mode === 'structured' || mode === 'bilingual') {
-              if (structuredBlocksContainer) structuredBlocksContainer.style.display = 'flex';
-              if (continuousReadingContainer) continuousReadingContainer.style.display = 'none';
-
-              // 恢复左侧选框图层显示
-              document.querySelectorAll('.pdf-overlay-layer').forEach((el) => {
-                (el as HTMLElement).style.display = 'block';
-              });
-
-              // 控制所有块的译文显隐
-              document.querySelectorAll('.block-item-translation').forEach((el) => {
-                const blockId = el.getAttribute('data-block-id');
-                if (mode === 'bilingual') {
-                  (el as HTMLElement).style.display = 'block';
-                } else {
-                  (el as HTMLElement).style.display = 'none';
-                }
-              });
-
-              if (mode === 'bilingual') {
-                // 切换至双语研判时，自动对当前可视页段落展开批量研判
-                translateCurrentVisiblePage(false);
-              }
-            } else {
-              // 连续阅读模式
-              if (structuredBlocksContainer) structuredBlocksContainer.style.display = 'none';
-              if (continuousReadingContainer) continuousReadingContainer.style.display = 'block';
-
-              // 连续阅读模式隐藏左侧选框图层，节省微渲染开销与事件消耗
-              document.querySelectorAll('.pdf-overlay-layer').forEach((el) => {
-                (el as HTMLElement).style.display = 'none';
-              });
-            }
-          }
-        }
-
-        try {
-          const savedMode = localStorage.getItem('astrolib_ingest_view_mode') as any;
-          if (savedMode === 'continuous' || savedMode === 'structured' || savedMode === 'bilingual') {
-            currentViewMode = savedMode;
-            viewStructured?.classList.toggle('active', savedMode === 'structured');
-            viewBilingual?.classList.toggle('active', savedMode === 'bilingual');
-            viewContinuous?.classList.toggle('active', savedMode === 'continuous');
-          }
-        } catch {}
-
-        viewStructured?.addEventListener('click', () => setViewMode('structured'));
-        viewBilingual?.addEventListener('click', () => setViewMode('bilingual'));
-        viewContinuous?.addEventListener('click', () => setViewMode('continuous'));
-
-        bilingualProviderSelect?.addEventListener('change', () => {
-          translationProvider = bilingualProviderSelect.value;
-          if (currentViewMode === 'bilingual') {
-            translateCurrentVisiblePage(true);
+      document.querySelectorAll('[data-return-library]').forEach((el) => {
+        el.addEventListener('click', (e) => {
+          if (window.parent && window.parent !== window) {
+            e.preventDefault();
+            window.parent.dispatchEvent(new CustomEvent('astrolib:switch-fragment', { detail: 'library' }));
           }
         });
+      });
 
-        btnTranslatePage?.addEventListener('click', () => {
-          translateCurrentVisiblePage(true);
-        });
-
-        btnTranslateAll?.addEventListener('click', () => {
-          translateAllDocument();
-        });
-
-        // 3. Token 弹窗
-        btnOpenTokenModal?.addEventListener('click', () => {
-          if (tokenModal) tokenModal.style.display = 'flex';
-        });
-        btnCloseToken?.addEventListener('click', () => {
-          if (tokenModal) tokenModal.style.display = 'none';
-        });
-        btnSaveToken?.addEventListener('click', async () => {
-          const val = tokenInput?.value?.trim();
-          if (!val) return;
-          try {
-            const res = await fetch('/api/ingest/token', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ token: val }),
-            });
-            const data = await res.json();
-            if (data.success) {
-              alert('MinerU API Token 保存成功！');
-              if (tokenModal) tokenModal.style.display = 'none';
-            } else {
-              alert('保存失败: ' + (data.error || '未知错误'));
-            }
-          } catch (e) {
-            alert('保存异常');
-          }
-        });
-
-        // 4. 初始化加载当前任务状态
-        if (currentTaskId) {
-          loadTaskInfo(currentTaskId);
-        } else {
-          updateStatus('请在首页上传 PDF 或将文件拖拽至此', 0);
-        }
-
-        async function loadTaskInfo(taskId: string) {
-          try {
-            updateStatus('正在加载文档元数据...', 10);
-            const res = await fetch(`/api/ingest/status?taskId=${encodeURIComponent(taskId)}`);
-            if (!res.ok) throw new Error(`未找到任务 ${taskId}`);
-            const data = await res.json();
-            const task = data.task;
-
-            if (docNameText) docNameText.textContent = task.fileName;
-            if (docPagesText) docPagesText.textContent = `共 ${task.pageCount} 页`;
-            if (exportTitleInput) exportTitleInput.value = task.fileName.replace(/\.pdf$/i, '');
-            if (exportSlugInput) exportSlugInput.value = task.fileName.replace(/\.pdf$/i, '').toLowerCase().replace(/[^a-z0-9_-]/g, '-');
-
-            btnParse.disabled = false;
-
-            // 加载左侧 PDF 矢量视图
-            loadPdfDocument(`/api/ingest/pdf?taskId=${encodeURIComponent(taskId)}`);
-
-            if (task.status === 'completed') {
-              updateStatus('解析已完成', 100);
-              fetchAndRenderResult(taskId);
-            } else if (task.status === 'processing' || task.status === 'uploading' || task.status === 'waiting-file' || task.status === 'downloading' || task.status === 'unpacking') {
-              startPollingStatus(taskId);
-            } else if (task.status === 'failed') {
-              updateStatus('解析失败：' + (task.error || '未知错误'), 0);
-            } else {
-              updateStatus('文档就绪，请点击“开始解析”', 0);
-            }
-          } catch (err) {
-            updateStatus('任务加载失败：' + (err instanceof Error ? err.message : String(err)), 0);
-          }
-        }
-
-        // 5. 开始解析按钮触发
-        btnParse?.addEventListener('click', async () => {
-          if (!currentTaskId) return;
-
-          btnParse.disabled = true;
-          if (btnParseText) btnParseText.textContent = '解析任务进行中...';
-
-          try {
-            const pageRanges = pageRangeInput?.value?.trim();
-            const res = await fetch('/api/ingest/parse', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                taskId: currentTaskId,
-                engine: currentEngine,
-                pageRanges,
-              }),
-            });
-
-            if (!res.ok) {
-              const errData = await res.json();
-              throw new Error(errData.error || '请求解析失败');
-            }
-
-            const labelMap: Record<string, string> = {
-              api: '已提交云端 VLM 识别集群...',
-              agent: '已提交 Agent 免密极速轻量解析...',
-              local: '启动本地 5060 推理引擎...',
-            };
-            updateStatus(labelMap[currentEngine] || '正在解析...', 25);
-            startPollingStatus(currentTaskId);
-          } catch (err) {
-            alert('启动解析失败：' + (err instanceof Error ? err.message : String(err)));
-            btnParse.disabled = false;
-            if (btnParseText) btnParseText.textContent = '开始解析';
-          }
-        });
-
-        // 6. 轮询状态
-        function startPollingStatus(taskId: string) {
-          if (pollTimer) clearInterval(pollTimer);
-
-          pollTimer = window.setInterval(async () => {
-            try {
-              const res = await fetch(`/api/ingest/status?taskId=${encodeURIComponent(taskId)}`);
-              if (!res.ok) return;
-              const data = await res.json();
-              const task = data.task;
-
-              const stateMap: Record<string, string> = {
-                'uploading': '正在上传文档...',
-                'waiting-file': '云端排队中...',
-                'pending': 'MinerU 调度解析中...',
-                'processing': 'MinerU 高精度识别中 (版面/公式/表格)...',
-                'downloading': '下载结构化成果 ZIP...',
-                'unpacking': '解包与资产格式化...',
-                'completed': '解析完成！',
-                'failed': '解析失败：' + (task.error || '未知错误'),
-              };
-
-              const msg = stateMap[task.status] || task.status;
-              updateStatus(msg, task.progress || 50);
-
-              if (task.status === 'completed') {
-                clearInterval(pollTimer);
-                btnParse.disabled = false;
-                if (btnParseText) btnParseText.textContent = '重新解析';
-                fetchAndRenderResult(taskId);
-              } else if (task.status === 'failed') {
-                clearInterval(pollTimer);
-                btnParse.disabled = false;
-                if (btnParseText) btnParseText.textContent = '重试解析';
-              }
-            } catch {
-              // ignore
-            }
-          }, 2000);
-        }
-
-        // 7. 获取并渲染解析结果
-        async function fetchAndRenderResult(taskId: string) {
-          try {
-            updateStatus('正在加载解析渲染数据...', 98);
-            const res = await fetch(`/api/ingest/result?taskId=${encodeURIComponent(taskId)}`);
-            if (!res.ok) return;
-            const data = await res.json();
-            const result = data.result;
-
-            currentBlocks = result.layoutBlocks || [];
-            currentMarkdown = result.markdown || '';
-
-            // 渲染两种视图模式
-            renderStructuredBlocks(currentBlocks, currentMarkdown, taskId);
-            renderContinuousMarkdown(currentMarkdown, taskId);
-
-            // 渲染左侧 PDF 标注选框（百分比精确坐标）
-            renderOverlayBboxes(currentBlocks);
-
-            // 根据当前选定的 viewMode 呈现对应面板
-            setViewMode(currentViewMode);
-
-            // 显示出口动作
-            if (btnDownloadZip) btnDownloadZip.style.display = 'inline-flex';
-            if (btnExportBook) btnExportBook.style.display = 'inline-flex';
-
-            updateStatus(`解析完成，提取 ${currentBlocks.length} 个结构化块`, 100);
-          } catch (e) {
-            updateStatus('渲染解析结果失败', 100);
-          }
-        }
-
-        // 8. 模式一：1:1 结构化块级阅读渲染 (Structured Mode，对齐 MinerU 客户端视觉体验)
-        function renderStructuredBlocks(blocks: any[], md: string, taskId: string) {
-          if (!structuredBlocksContainer) return;
-          structuredBlocksContainer.innerHTML = '';
-
-          if (mdEmptyState) mdEmptyState.style.display = 'none';
-
-          blocks.forEach((block) => {
-            try {
-              // 页码等无实质内容的元数据块不生成右侧独立正文段
-              if (!block.html && !block.text) return;
-
-              const item = document.createElement('div');
-              item.className = `structured-block-item type-${block.type || 'text'}`;
-              item.id = `card_${block.id}`;
-              item.setAttribute('data-block-id', block.id);
-              item.setAttribute('data-page-index', String(block.pageIndex));
-
-              // 正文内容容器
-              const body = document.createElement('div');
-              body.className = 'block-item-body';
-
-              if (block.html) {
-                // 优先使用 AST 编译器服务端高保真编译的 HTML (含公式 KaTeX、真实图片与表格)
-                body.innerHTML = block.html;
-              } else if (block.type === 'equation') {
-                try {
-                  const cleanEq = (block.text || '').replace(/^\$\$|\$\$$/g, '').trim();
-                  body.innerHTML = `<div class="doc-equation-display">${katex.renderToString(cleanEq, { displayMode: true, throwOnError: false })}</div>`;
-                } catch {
-                  body.textContent = block.text || '';
-                }
-              } else if (block.type === 'image' || block.type === 'figure') {
-                const match = (block.text || '').match(/!\[(.*?)\]\((.*?)\)/);
-                const alt = match ? match[1] : (block.caption || '插图');
-                const src = match ? match[2] : '';
-                const imgName = src.split('/').pop() || `img_${block.id}.png`;
-                body.innerHTML = `<figure class="doc-figure"><img src="/api/ingest/image?taskId=${encodeURIComponent(taskId)}&name=${encodeURIComponent(imgName)}" alt="${alt}" loading="lazy" />${alt ? `<figcaption class="doc-figcaption">${alt}</figcaption>` : ''}</figure>`;
-              } else if (block.type === 'table') {
-                if ((block.text || '').includes('<table')) {
-                  body.innerHTML = `<div class="doc-table-wrapper">${block.text}</div>`;
-                } else {
-                  body.innerHTML = safeParseMathMarkdown(block.text || '', taskId);
-                }
-              } else {
-                body.innerHTML = safeParseMathMarkdown(block.text || '', taskId);
-              }
-
-              item.appendChild(body);
-
-              // 学术双语研判容器
-              const transContainer = document.createElement('div');
-              transContainer.className = 'block-item-translation';
-              transContainer.id = `trans_${block.id}`;
-              transContainer.setAttribute('data-block-id', block.id);
-              transContainer.style.display = currentViewMode === 'bilingual' ? 'block' : 'none';
-              const cachedHtml = blockTranslationCache.get(block.id);
-              transContainer.innerHTML = `<div class="translation-body">${cachedHtml || '<span class="translation-loading">待研判 (点击右上角“研判”立即生成)</span>'}</div>`;
-              item.appendChild(transContainer);
-
-              // 单段学术研判触发按钮 (针对正文文本与标题段)
-              if ((block.type === 'text' || block.type === 'title') && block.text && block.text.trim()) {
-                const transBtn = document.createElement('button');
-                transBtn.type = 'button';
-                transBtn.className = 'block-translate-trigger';
-                transBtn.title = '双语学术研判';
-                transBtn.innerHTML = `
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="m5 8 6 6"/><path d="m4 14 6-6 2-3"/><path d="M2 5h12"/><path d="M7 2h1"/><path d="m22 22-5-10-5 10"/><path d="M14 18h6"/>
-                  </svg>
-                  <span>研判</span>
-                `;
-                transBtn.addEventListener('click', (e) => {
-                  e.stopPropagation();
-                  translateBlock(block, true, transBtn);
-                });
-                item.appendChild(transBtn);
-              }
-
-              // 交互联动：悬停时同步高亮左侧 PDF 选框
-              item.addEventListener('mouseenter', () => {
-                const targetBbox = document.getElementById(`bbox_${block.id}`);
-                if (targetBbox) targetBbox.classList.add('hover-bbox');
-              });
-              item.addEventListener('mouseleave', () => {
-                const targetBbox = document.getElementById(`bbox_${block.id}`);
-                if (targetBbox) targetBbox.classList.remove('hover-bbox');
-              });
-
-              // 点击时双向精准聚焦
-              item.addEventListener('click', () => {
-                focusBlock(block.id, block.pageIndex);
-              });
-
-              structuredBlocksContainer.appendChild(item);
-            } catch (blockErr) {
-              console.error(`渲染块 ${block.id} 出错，跳过继续:`, blockErr);
-            }
-          });
-        }
-
-        // 9. 模式二：连续长文阅读流渲染 (Continuous Reading Flow，低性能设备原生流)
-        function renderContinuousMarkdown(md: string, taskId: string) {
-          if (!continuousReadingContainer || !md) return;
-          continuousReadingContainer.innerHTML = safeParseMathMarkdown(md, taskId);
-        }
-
-        // 结构保护的高保真 Markdown 与 KaTeX 解析器 (采用 Token Masking，彻底杜绝标签错乱截断)
-        function safeParseMathMarkdown(content: string, taskId: string): string {
-          if (!content) return '';
-
-          const displayMathMap: string[] = [];
-          const inlineMathMap: string[] = [];
-
-          // 1. 抽取块级公式并替换为安全占位符 (防止 marked 将公式内部 _/*/~ 转为斜体/删除线)
-          let protectedMd = content.replace(/\$\$([\s\S]*?)\$\$/g, (_, eq) => {
-            const idx = displayMathMap.length;
-            try {
-              const rendered = katex.renderToString(eq.trim(), { displayMode: true, throwOnError: false });
-              displayMathMap.push(`<div class="doc-equation-display">${rendered}</div>`);
-            } catch {
-              displayMathMap.push(`<div class="doc-equation-display">$$\n${eq}\n$$</div>`);
-            }
-            return `\n\n%%ASTROLIB_DISPLAY_MATH_${idx}%%\n\n`;
-          });
-
-          // 2. 抽取行内公式并替换为安全占位符
-          protectedMd = protectedMd.replace(/\$([^\$\n]+?)\$/g, (_, eq) => {
-            const idx = inlineMathMap.length;
-            try {
-              const rendered = katex.renderToString(eq.trim(), { displayMode: false, throwOnError: false });
-              inlineMathMap.push(`<span class="katex-inline-wrapper">${rendered}</span>`);
-            } catch {
-              inlineMathMap.push(`$${eq}$`);
-            }
-            return `%%ASTROLIB_INLINE_MATH_${idx}%%`;
-          });
-
-          // 3. 重定向图片路径
-          protectedMd = protectedMd.replace(/!\[(.*?)\]\((.*?)\)/g, (match, alt, src) => {
-            const imgName = src.split('/').pop() || src;
-            const targetSrc = `/api/ingest/image?taskId=${encodeURIComponent(taskId)}&name=${encodeURIComponent(imgName)}`;
-            return `![${alt}](${targetSrc})`;
-          });
-
-          // 4. 使用 marked 解析干净纯净的 Markdown
-          let html = '';
-          try {
-            html = marked.parse(protectedMd) as string;
-          } catch (err) {
-            console.error('Marked parse error:', err);
-            html = `<pre>${content}</pre>`;
-          }
-
-          // 5. 将占位符安全还原为高保真 KaTeX DOM
-          html = html.replace(/%%ASTROLIB_DISPLAY_MATH_(\d+)%%/g, (_, idx) => {
-            return displayMathMap[parseInt(idx, 10)] || '';
-          });
-
-          html = html.replace(/%%ASTROLIB_INLINE_MATH_(\d+)%%/g, (_, idx) => {
-            return inlineMathMap[parseInt(idx, 10)] || '';
-          });
-
-          return html;
-        }
-
-        // 9.1 单段双语研判翻译调用
-        async function translateBlock(block: any, forceRefresh = false, triggerBtn?: HTMLElement) {
-          const transEl = document.getElementById(`trans_${block.id}`);
-          if (!transEl) return;
-          const transBody = transEl.querySelector('.translation-body') as HTMLElement;
-          if (!transBody) return;
-
-          if (!forceRefresh && blockTranslationCache.has(block.id)) {
-            transEl.style.display = 'block';
-            transBody.innerHTML = blockTranslationCache.get(block.id)!;
-            return;
-          }
-
-          transEl.style.display = 'block';
-          transBody.innerHTML = '<span class="translation-loading">正在进行结构保护学术研判翻译...</span>';
-          if (triggerBtn) triggerBtn.style.opacity = '0.5';
-
-          try {
-            const res = await fetch('/api/translate', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                text: block.text,
-                provider: translationProvider,
-                sourceLang: 'en',
-                targetLang: 'zh',
-                preserveStructure: true,
-              }),
-            });
-            const data = await res.json();
-            if (data.ok && data.translatedText) {
-              const rendered = safeParseMathMarkdown(data.translatedText, currentTaskId);
-              blockTranslationCache.set(block.id, rendered);
-              transBody.innerHTML = rendered;
-            } else {
-              transBody.innerHTML = `<span class="translation-error">研判未完成: ${data.error || '服务响应异常'}</span>`;
-            }
-          } catch (err) {
-            transBody.innerHTML = `<span class="translation-error">研判请求失败: ${err instanceof Error ? err.message : String(err)}</span>`;
-          } finally {
-            if (triggerBtn) triggerBtn.style.opacity = '';
-          }
-        }
-
-        // 9.2 精准获取当前视口正处于的真实页码
-        function getCurrentVisiblePageIndex(): number {
-          // 1. 优先基于左侧 PDF 视口当前显示的页面
-          if (panePdf) {
-            const paneRect = panePdf.getBoundingClientRect();
-            const pdfPages = Array.from(panePdf.querySelectorAll('.pdf-page-container'));
-            for (let i = 0; i < pdfPages.length; i++) {
-              const r = pdfPages[i].getBoundingClientRect();
-              if (r.bottom > paneRect.top + 50 && r.top < paneRect.bottom - 50) {
-                return i;
-              }
-            }
-          }
-
-          // 2. 其次基于右侧正文当前可见的块
-          const paneMd = document.getElementById('pane-markdown');
-          if (paneMd && structuredBlocksContainer && structuredBlocksContainer.style.display !== 'none') {
-            const paneRect = paneMd.getBoundingClientRect();
-            const items = Array.from(structuredBlocksContainer.querySelectorAll('.structured-block-item'));
-            for (const item of items) {
-              const r = item.getBoundingClientRect();
-              if (r.bottom > paneRect.top + 20 && r.top < paneRect.bottom - 20) {
-                const p = item.getAttribute('data-page-index');
-                if (p !== null) return parseInt(p, 10);
-              }
-            }
-          }
-
-          return 0;
-        }
-
-        // 9.3 批量研判当前可视页段落
-        async function translateCurrentVisiblePage(forceRefresh = false) {
-          if (!currentBlocks || currentBlocks.length === 0) return;
-
-          const targetPageIndex = getCurrentVisiblePageIndex();
-
-          const pageBlocks = currentBlocks.filter(
-            (b) => b.pageIndex === targetPageIndex && (b.type === 'text' || b.type === 'title') && b.text && b.text.trim().length > 0
-          );
-
-          if (pageBlocks.length === 0) {
-            updateStatus(`第 ${targetPageIndex + 1} 页无需要研判的正文段落`, 100);
-            return;
-          }
-
-          // 1. 立即展开该页所有块的译文容器并显示加载状态
-          pageBlocks.forEach((b) => {
-            const transEl = document.getElementById(`trans_${b.id}`);
-            if (transEl) {
-              transEl.style.display = 'block';
-              if (forceRefresh || !blockTranslationCache.has(b.id)) {
-                const transBody = transEl.querySelector('.translation-body');
-                if (transBody) {
-                  transBody.innerHTML = '<span class="translation-loading">正在进行结构保护学术研判...</span>';
-                }
-              }
-            }
-          });
-
-          // 2. 将右栏平滑定位至该页首个块 (若不在当前可视区)
-          const firstBlockEl = document.getElementById(`card_${pageBlocks[0].id}`);
-          if (firstBlockEl && structuredBlocksContainer && structuredBlocksContainer.style.display !== 'none') {
-            firstBlockEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-          }
-
-          updateStatus(`正在进行第 ${targetPageIndex + 1} 页双语研判 (${pageBlocks.length} 个段落)...`, 40);
-
-          const queue = [...pageBlocks];
-          const concurrency = 3;
-          const workers = Array(Math.min(concurrency, queue.length)).fill(null).map(async () => {
-            while (queue.length > 0) {
-              const block = queue.shift();
-              if (!block) break;
-              if (forceRefresh || !blockTranslationCache.has(block.id)) {
-                await translateBlock(block, forceRefresh);
-              }
-            }
-          });
-
-          await Promise.all(workers);
-          updateStatus(`第 ${targetPageIndex + 1} 页双语研判完成 (共 ${pageBlocks.length} 个段落)`, 100);
-        }
-
-        // 9.4 全篇自动批量研判
-        async function translateAllDocument() {
-          if (isTranslatingAll) return;
-          if (!currentBlocks || currentBlocks.length === 0) return;
-
-          const translatableBlocks = currentBlocks.filter(
-            (b) => (b.type === 'text' || b.type === 'title') && b.text && b.text.trim().length > 0
-          );
-
-          if (translatableBlocks.length === 0) return;
-
-          isTranslatingAll = true;
-          if (btnTranslateAll) btnTranslateAll.textContent = '全篇研判中...';
-          updateStatus(`开始全篇自动学术研判，共 ${translatableBlocks.length} 个段落...`, 10);
-
-          // 展开所有块
-          document.querySelectorAll('.block-item-translation').forEach((el) => {
-            (el as HTMLElement).style.display = 'block';
-          });
-
-          let completedCount = 0;
-          const queue = [...translatableBlocks];
-          const concurrency = 4;
-          const workers = Array(concurrency).fill(null).map(async () => {
-            while (queue.length > 0) {
-              const block = queue.shift();
-              if (!block) break;
-              if (!blockTranslationCache.has(block.id)) {
-                await translateBlock(block, false);
-              }
-              completedCount++;
-              const pct = Math.min(99, Math.round((completedCount / translatableBlocks.length) * 100));
-              updateStatus(`全篇双语研判进行中: ${completedCount}/${translatableBlocks.length} (${pct}%)`, pct);
-            }
-          });
-
-          await Promise.all(workers);
-          isTranslatingAll = false;
-          if (btnTranslateAll) btnTranslateAll.textContent = '全篇研判';
-          updateStatus(`🎉 全篇双语研判完成！共研判 ${translatableBlocks.length} 个段落`, 100);
-        }
-
-        // 10. PDF.js 矢量画布渲染与百分比自适应标注层挂载 (强化容错与页数校准)
-        async function loadPdfDocument(pdfUrl: string) {
-          if (!window.pdfjsLib || !panePdf) return;
-
-          try {
-            panePdf.innerHTML = '';
-            pdfDocInstance = await window.pdfjsLib.getDocument(pdfUrl).promise;
-            const totalPages = pdfDocInstance.numPages;
-
-            // 无论服务端估算如何，以 PDF.js 权威解析的真实总页数为准
-            if (docPagesText) {
-              docPagesText.textContent = `共 ${totalPages} 页`;
-            }
-
-            // 根据 panePdf 的可用宽度动态计算 scale，防止超出视口产生水平溢出和左右偏移
-            const availableWidth = Math.max(300, (panePdf.clientWidth || 560) - 40);
-
-            for (let pageNum = 1; pageNum <= totalPages; pageNum++) {
-              try {
-                const page = await pdfDocInstance.getPage(pageNum);
-                const unscaledViewport = page.getViewport({ scale: 1.0 });
-                const scale = availableWidth / unscaledViewport.width;
-                const viewport = page.getViewport({ scale });
-
-                const pageWrapper = document.createElement('div');
-                pageWrapper.className = 'pdf-page-container';
-                pageWrapper.id = `pdf-page-${pageNum - 1}`;
-                pageWrapper.style.width = '100%';
-                pageWrapper.style.maxWidth = `${viewport.width}px`;
-                pageWrapper.style.aspectRatio = `${unscaledViewport.width} / ${unscaledViewport.height}`;
-
-                const canvas = document.createElement('canvas');
-                canvas.className = 'pdf-page-canvas';
-
-                // 适配高分辨率屏幕 (devicePixelRatio)
-                const pixelRatio = window.devicePixelRatio || 1;
-                canvas.width = Math.floor(viewport.width * pixelRatio);
-                canvas.height = Math.floor(viewport.height * pixelRatio);
-                canvas.style.width = '100%';
-                canvas.style.height = '100%';
-
-                const context = canvas.getContext('2d');
-                if (pixelRatio !== 1) {
-                  context?.scale(pixelRatio, pixelRatio);
-                }
-                await page.render({ canvasContext: context, viewport }).promise;
-
-                // 挂载百分比选框标注层
-                const overlayLayer = document.createElement('div');
-                overlayLayer.className = 'pdf-overlay-layer';
-                overlayLayer.setAttribute('data-page-index', String(pageNum - 1));
-
-                pageWrapper.appendChild(canvas);
-                pageWrapper.appendChild(overlayLayer);
-                panePdf.appendChild(pageWrapper);
-
-                // 若解析块已就绪，立即渲染当前页选框，杜绝时序空窗
-                if (currentBlocks.length > 0) {
-                  renderOverlayBboxesForPage(pageNum - 1, currentBlocks);
-                }
-              } catch (pageErr) {
-                console.error(`渲染第 ${pageNum} 页出错，跳过继续:`, pageErr);
-              }
-            }
-          } catch (err) {
-            if (pdfEmptyState) {
-              pdfEmptyState.innerHTML = `<p style="color: #d32f2f;">PDF 加载失败: ${err instanceof Error ? err.message : String(err)}</p>`;
-            }
-          }
-        }
-
-        // 11. 渲染百分比绝对对齐 Bounding Box (消除缩放偏移，带 MinerU 客户端浮标)
-        function renderOverlayBboxes(blocks: any[]) {
-          if (!blocks || blocks.length === 0) return;
-
-          // 按页分别挂载
-          const pageIndices = new Set(blocks.map((b) => b.pageIndex));
-          pageIndices.forEach((pIdx) => {
-            renderOverlayBboxesForPage(pIdx, blocks);
-          });
-        }
-
-        function renderOverlayBboxesForPage(pageIndex: number, blocks: any[]) {
-          const pageContainer = document.getElementById(`pdf-page-${pageIndex}`);
-          if (!pageContainer) return;
-
-          const overlay = pageContainer.querySelector('.pdf-overlay-layer');
-          if (!overlay) return;
-
-          // 清空防止重复堆叠
-          overlay.innerHTML = '';
-
-          const typeNameMap: Record<string, string> = {
-            title: '标题',
-            text: '文本',
-            equation: '公式',
-            table: '表格',
-            image: '图片',
-            figure: '插图',
-            header: '页眉',
-            footer: '页脚',
-            aside: '旁注',
-            list: '列表',
-          };
-
-          const pageBlocks = blocks.filter((b) => b.pageIndex === pageIndex);
-
-          pageBlocks.forEach((block) => {
-            const bbox = block.bbox;
-            if (!bbox || bbox.length !== 4) return;
-
-            const pw = block.pageWidth || 1000;
-            const ph = block.pageHeight || 1000;
-
-            const [x0, y0, x1, y1] = bbox;
-            const leftPct = (x0 / pw) * 100;
-            const topPct = (y0 / ph) * 100;
-            const widthPct = ((x1 - x0) / pw) * 100;
-            const heightPct = ((y1 - y0) / ph) * 100;
-
-            const rect = document.createElement('div');
-            rect.className = `bbox-highlight type-${block.type || 'text'}`;
-            rect.id = `bbox_${block.id}`;
-            rect.style.left = `${leftPct}%`;
-            rect.style.top = `${topPct}%`;
-            rect.style.width = `${widthPct}%`;
-            rect.style.height = `${heightPct}%`;
-
-            const tag = document.createElement('span');
-            tag.className = 'bbox-tag';
-            tag.textContent = typeNameMap[block.type] || block.type;
-            rect.appendChild(tag);
-
-            // 悬停联动：高亮右侧对应卡片
-            rect.addEventListener('mouseenter', () => {
-              const targetCard = document.getElementById(`card_${block.id}`);
-              if (targetCard) targetCard.classList.add('hover-block');
-            });
-            rect.addEventListener('mouseleave', () => {
-              const targetCard = document.getElementById(`card_${block.id}`);
-              if (targetCard) targetCard.classList.remove('hover-block');
-            });
-
-            // 点击选框：双向聚焦
-            rect.addEventListener('click', (e) => {
-              e.stopPropagation();
-              focusBlock(block.id, block.pageIndex);
-            });
-
-            overlay.appendChild(rect);
-          });
-        }
-
-        // 12. 核心双向同步对齐聚焦函数
-        function focusBlock(blockId: string, pageIndex: number) {
-          // 1. 左侧 PDF 选框高亮与居中
-          document.querySelectorAll('.bbox-highlight').forEach((r) => r.classList.remove('active'));
-          const targetRect = document.getElementById(`bbox_${blockId}`);
-          if (targetRect) {
-            targetRect.classList.add('active');
-            targetRect.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          } else {
-            const pageEl = document.getElementById(`pdf-page-${pageIndex}`);
-            if (pageEl) pageEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          }
-
-          // 2. 右侧结构化条目高亮与居中
-          document.querySelectorAll('.structured-block-item').forEach((c) => c.classList.remove('active-block'));
-          const targetCard = document.getElementById(`card_${blockId}`);
-          if (targetCard) {
-            targetCard.classList.add('active-block');
-            targetCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          }
-        }
-
-        // 13. 出口操作：下载清洗包 ZIP
-        btnDownloadZip?.addEventListener('click', () => {
-          if (!currentTaskId) return;
-          window.location.href = `/api/ingest/download-zip?taskId=${encodeURIComponent(currentTaskId)}`;
-        });
-
-        // 14. 出口操作：转入 AstroLib 书籍合集
-        btnExportBook?.addEventListener('click', () => {
-          if (exportModal) exportModal.style.display = 'flex';
-        });
-        btnCloseExport?.addEventListener('click', () => {
-          if (exportModal) exportModal.style.display = 'none';
-        });
-        btnConfirmExport?.addEventListener('click', async () => {
-          if (!currentTaskId) return;
-          const col = exportColSelect?.value;
-          const slug = exportSlugInput?.value?.trim();
-          const title = exportTitleInput?.value?.trim();
-
-          if (!col || !slug) {
-            alert('请完整填写合集与 Slug');
-            return;
-          }
-
-          try {
-            btnConfirmExport.textContent = '入库中...';
-            const res = await fetch('/api/ingest/export-book', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                taskId: currentTaskId,
-                collectionSlug: col,
-                bookSlug: slug,
-                bookTitle: title || slug,
-              }),
-            });
-
-            const data = await res.json();
-            if (data.success) {
-              alert(`🎉 成功转入书籍合集！\n路径: /collections/${col}/${slug}/01_全文研判/`);
-              if (exportModal) exportModal.style.display = 'none';
-              window.location.href = `/collections/${col}/${slug}/01_全文研判/`;
-            } else {
-              alert('入库失败: ' + (data.error || '未知错误'));
-            }
-          } catch (e) {
-            alert('入库请求异常');
-          } finally {
-            btnConfirmExport.textContent = '确认入库';
-          }
-        });
-
-        function updateStatus(text: string, percent: number) {
-          if (statusBarText) statusBarText.textContent = text;
-          if (progressFill) progressFill.style.width = `${percent}%`;
-        }
-      })();
+      initIngestWorkspace();
     </script>
   </body>
 </html>

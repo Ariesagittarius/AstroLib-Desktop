@@ -1,0 +1,272 @@
+/**
+ * electron/services/book-manager.ts
+ * ============================================================================
+ * AstroLib 桌面端原生图书包与书架管理服务 (Node.js FS / zlib / IPC)
+ * ============================================================================
+ */
+
+import { app } from 'electron';
+import path from 'node:path';
+import fs from 'node:fs';
+import zlib from 'node:zlib';
+import type {
+  AstroBookManifest,
+  AstroBookChapterPayload,
+  InstalledBookMeta,
+} from '../../src/types/content-package.ts';
+import type { StorageStats } from '../../src/services/content-provider/types.ts';
+
+export class DesktopBookManager {
+  private readonly storageDir: string;
+  private readonly metaFile: string;
+
+  constructor(customStorageDir?: string) {
+    this.storageDir = customStorageDir || path.join(app.getPath('userData'), 'abp-packs');
+    this.metaFile = path.join(this.storageDir, 'installed_books.json');
+    this.ensureDir(this.storageDir);
+  }
+
+  public getStorageDir(): string {
+    return this.storageDir;
+  }
+
+  private ensureDir(dir: string): void {
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+  }
+
+  /**
+   * 获取本地已安装的书籍列表
+   */
+  public async getInstalledBooks(): Promise<InstalledBookMeta[]> {
+    try {
+      if (!fs.existsSync(this.metaFile)) {
+        return [];
+      }
+      const raw = fs.readFileSync(this.metaFile, 'utf8');
+      const list: InstalledBookMeta[] = JSON.parse(raw);
+      // 验证书籍物理目录是否存在
+      return list.filter((b) => {
+        const bookDir = path.join(this.storageDir, `${b.manifest.colSlug}-${b.manifest.slug}`);
+        return fs.existsSync(bookDir);
+      });
+    } catch (err) {
+      console.error('[DesktopBookManager] 读取已安装图书清单失败:', err);
+      return [];
+    }
+  }
+
+  /**
+   * 从 .abp (Gzip 压缩 JSON) 字节流安装书籍到本地持久化存储
+   */
+  public async installBookFromAbp(abpBuffer: Buffer | Uint8Array | ArrayBuffer | any): Promise<InstalledBookMeta> {
+    let nodeBuf: Buffer;
+    if (Buffer.isBuffer(abpBuffer)) {
+      nodeBuf = abpBuffer;
+    } else if (abpBuffer instanceof Uint8Array) {
+      nodeBuf = Buffer.from(abpBuffer.buffer, abpBuffer.byteOffset, abpBuffer.byteLength);
+    } else if (abpBuffer instanceof ArrayBuffer) {
+      nodeBuf = Buffer.from(abpBuffer);
+    } else if (Array.isArray(abpBuffer)) {
+      nodeBuf = Buffer.from(abpBuffer);
+    } else if (typeof abpBuffer === 'object' && abpBuffer !== null) {
+      const values = Object.values(abpBuffer) as number[];
+      nodeBuf = Buffer.from(values);
+    } else {
+      nodeBuf = Buffer.from(abpBuffer as any);
+    }
+
+    // 1. Gzip 解压缩
+    let jsonText: string;
+    try {
+      const decompressed = zlib.gunzipSync(nodeBuf);
+      jsonText = decompressed.toString('utf8');
+    } catch (err: any) {
+      throw new Error(`解压 .abp 数据包失败: ${err.message}`);
+    }
+
+    // 2. 解析 JSON 结构
+    const bundle = JSON.parse(jsonText);
+    const manifest: AstroBookManifest = bundle.manifest;
+    const chapters: Record<string, AstroBookChapterPayload> = bundle.chapters || {};
+    const assets: Record<string, string> = bundle.assets || {};
+
+    if (!manifest || !manifest.colSlug || !manifest.slug) {
+      throw new Error('无效的 ABP 数据包：缺少合法 manifest 清单！');
+    }
+
+    const bookKey = `${manifest.colSlug}-${manifest.slug}`;
+    const bookDir = path.join(this.storageDir, bookKey);
+    const chaptersDir = path.join(bookDir, 'chapters');
+    const imagesDir = path.join(bookDir, 'images');
+
+    this.ensureDir(chaptersDir);
+
+    // 3. 写入 manifest.json
+    fs.writeFileSync(
+      path.join(bookDir, 'manifest.json'),
+      JSON.stringify(manifest, null, 2),
+      'utf8'
+    );
+
+    // 4. 写入全部章节 JSON
+    for (const [chapKey, payload] of Object.entries(chapters)) {
+      const chapFile = path.join(chaptersDir, `${chapKey}.json`);
+      fs.writeFileSync(chapFile, JSON.stringify(payload, null, 2), 'utf8');
+    }
+
+    // 5. 写入配图资源 (Base64 解码)
+    for (const [relPath, b64Data] of Object.entries(assets)) {
+      try {
+        const destPath = path.join(bookDir, relPath);
+        this.ensureDir(path.dirname(destPath));
+        const imgBuffer = Buffer.from(b64Data, 'base64');
+        fs.writeFileSync(destPath, imgBuffer);
+      } catch (err) {
+        console.warn(`[DesktopBookManager] 写入插图失败: ${relPath}`, err);
+      }
+    }
+
+    // 5.1 写入切片元数据与离线量化向量 (若 bundle 包含 embeddings)
+    if (bundle.embeddings) {
+      try {
+        if (bundle.embeddings.meta) {
+          fs.writeFileSync(
+            path.join(bookDir, 'embeddings.meta.json'),
+            JSON.stringify(bundle.embeddings.meta, null, 2),
+            'utf8'
+          );
+        }
+        if (bundle.embeddings.binaryBase64) {
+          const binBuf = Buffer.from(bundle.embeddings.binaryBase64, 'base64');
+          fs.writeFileSync(path.join(bookDir, 'embeddings.bin'), binBuf);
+        }
+      } catch (err) {
+        console.warn(`[DesktopBookManager] 写入切片向量失败: ${manifest.title}`, err);
+      }
+    }
+
+    // 6. 更新已安装图书元数据
+    const installed = await this.getInstalledBooks();
+    const existingIdx = installed.findIndex((b) => b.manifest.id === manifest.id);
+
+    const meta: InstalledBookMeta = {
+      installedAt: new Date().toISOString(),
+      sourceType: 'local-file',
+      localPath: bookDir,
+      manifest,
+    };
+
+    if (existingIdx >= 0) {
+      installed[existingIdx] = meta;
+    } else {
+      installed.unshift(meta);
+    }
+
+    fs.writeFileSync(this.metaFile, JSON.stringify(installed, null, 2), 'utf8');
+    console.log(`[DesktopBookManager] 成功安装图书: 《${manifest.title}》(${bookKey})`);
+    return meta;
+  }
+
+  /**
+   * 卸载图书并清理磁盘资源
+   */
+  public async removeBook(colSlug: string, bookSlug: string): Promise<boolean> {
+    const bookKey = `${colSlug}-${bookSlug}`;
+    const bookDir = path.join(this.storageDir, bookKey);
+
+    try {
+      if (fs.existsSync(bookDir)) {
+        fs.rmSync(bookDir, { recursive: true, force: true });
+      }
+
+      const installed = await this.getInstalledBooks();
+      const filtered = installed.filter((b) => !(b.manifest.colSlug === colSlug && b.manifest.slug === bookSlug));
+      fs.writeFileSync(this.metaFile, JSON.stringify(filtered, null, 2), 'utf8');
+      console.log(`[DesktopBookManager] 成功卸载图书: ${bookKey}`);
+      return true;
+    } catch (err) {
+      console.error(`[DesktopBookManager] 卸载图书失败: ${bookKey}`, err);
+      return false;
+    }
+  }
+
+  /**
+   * 获取单本书籍的 Manifest
+   */
+  public async getBookManifest(colSlug: string, bookSlug: string): Promise<AstroBookManifest | null> {
+    const manifestFile = path.join(this.storageDir, `${colSlug}-${bookSlug}`, 'manifest.json');
+    if (fs.existsSync(manifestFile)) {
+      try {
+        return JSON.parse(fs.readFileSync(manifestFile, 'utf8'));
+      } catch {}
+    }
+    return null;
+  }
+
+  /**
+   * 获取单章节 Payload 数据
+   */
+  public async getChapterPayload(
+    colSlug: string,
+    bookSlug: string,
+    chapterSlug: string
+  ): Promise<AstroBookChapterPayload | null> {
+    const chapFile = path.join(this.storageDir, `${colSlug}-${bookSlug}`, 'chapters', `${chapterSlug}.json`);
+    if (fs.existsSync(chapFile)) {
+      try {
+        return JSON.parse(fs.readFileSync(chapFile, 'utf8'));
+      } catch {}
+    }
+    return null;
+  }
+
+  /**
+   * 磁盘占用统计
+   */
+  public async getStorageStats(): Promise<StorageStats> {
+    const installed = await this.getInstalledBooks();
+    let totalBytes = 0;
+
+    const calcDirSize = (dir: string): number => {
+      let size = 0;
+      if (!fs.existsSync(dir)) return 0;
+      const entries = fs.readdirSync(dir, { withFileTypes: true });
+      for (const entry of entries) {
+        const full = path.join(dir, entry.name);
+        if (entry.isDirectory()) size += calcDirSize(full);
+        else if (entry.isFile()) size += fs.statSync(full).size;
+      }
+      return size;
+    };
+
+    totalBytes = calcDirSize(this.storageDir);
+
+    return {
+      usedBytes: totalBytes,
+      bookCount: installed.length,
+    };
+  }
+
+  /**
+   * 清空所有本地安装的书籍包与索引
+   */
+  public async clearAllBooks(): Promise<void> {
+    try {
+      if (fs.existsSync(this.metaFile)) {
+        fs.unlinkSync(this.metaFile);
+      }
+      if (fs.existsSync(this.storageDir)) {
+        for (const item of fs.readdirSync(this.storageDir)) {
+          const itemPath = path.join(this.storageDir, item);
+          fs.rmSync(itemPath, { recursive: true, force: true });
+        }
+      }
+      console.log('[DesktopBookManager] 已清空所有本地安装的书籍数据');
+    } catch (err) {
+      console.error('[DesktopBookManager] 清空所有图书失败:', err);
+      throw err;
+    }
+  }
+}
