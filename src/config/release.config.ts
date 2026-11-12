@@ -9,7 +9,7 @@
  */
 
 export const DEFAULT_DESKTOP_RELEASE_REPO =
-  (typeof process !== 'undefined' && process.env?.ASTROLIB_RELEASE_REPO) || 'Ariesagittarius/AstroLib';
+  (typeof process !== 'undefined' && process.env?.ASTROLIB_RELEASE_REPO) || 'Ariesagittarius/AstroLib-Desktop';
 
 export function normalizeReleaseRepo(repo?: string): string {
   const raw = (repo || DEFAULT_DESKTOP_RELEASE_REPO).trim();

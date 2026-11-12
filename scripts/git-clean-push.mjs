@@ -140,11 +140,11 @@ async function pushPrivate(options, repoInfo) {
 async function pushClean(options, repoInfo) {
   console.log('\n🧹 [2/2] 正在准备推送【公共无注释版】...');
   const targetBranch = options.branch || repoInfo.branch;
-  const remote = options.remote || (repoInfo.remotes.includes('origin') ? 'origin' : (repoInfo.remotes.includes('web-upstream') ? 'web-upstream' : ''));
+  const remote = options.remote || (repoInfo.remotes.includes('origin') ? 'origin' : '');
 
   if (!remote || !repoInfo.remotes.includes(remote)) {
     throw new Error(
-      `未找到可用的公共远程仓库 '${options.remote || 'origin/web-upstream'}'（当前 remotes: ${repoInfo.remotes.join(', ') || '无'}）。请使用 --remote <name> 显式指定。`
+      `未找到可用的公共远程仓库 '${options.remote || 'origin'}'（当前 remotes: ${repoInfo.remotes.join(', ') || '无'}）。请先配置 origin 公开桌面仓，或使用 --remote <name> 显式指定。`
     );
   }
 

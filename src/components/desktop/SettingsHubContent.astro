@@ -12,6 +12,7 @@
  * ============================================================================
  */
 import { features } from '../../config/features.config.mjs';
+import { DEFAULT_DESKTOP_RELEASE_REPO } from '../../config/release.config';
 import { CJK_PRESETS, LATIN_PRESETS, DEFAULT_PREF } from '../../scripts/font-presets';
 import { THEME_COLOR_PRESETS } from '../../themes/material-you/color-engine';
 import '../../styles/components/feature-toggles.css';
@@ -128,7 +129,7 @@ const metaJson = JSON.stringify(featureMeta);
         <!-- 网页端降级提示 -->
         <div id="web-banner" class="web-degraded-banner">
           <span>当前处于 Web 预览模式。硬件探测、模型下载与本地引擎仅在 AstroLib 桌面端可用。</span>
-          <a href="https://github.com/Ariesagittarius/AstroLib/releases" target="_blank" style="color: var(--hub-primary); text-decoration: underline; font-weight: 500;">
+          <a href={`https://github.com/${DEFAULT_DESKTOP_RELEASE_REPO}/releases`} target="_blank" style="color: var(--hub-primary); text-decoration: underline; font-weight: 500;">
             下载官方桌面客户端
           </a>
         </div>

@@ -43,7 +43,7 @@
 ### 3.1 官方 ABP 获取通道（Release Channel）
 
 1. **发布载体**：GitHub Releases（随 `electron-release.yml` Tag 触发或 `workflow_dispatch` 同步发布）。
-   - 说明：当前 `electron/services/updater.ts` 硬编码 `GITHUB_REPO = 'Ariesagittarius/AstroLib'`，而桌面端独立仓库尚无 `origin`（仅 `private` 与 `web-upstream`）。G3/G5 须将 GitHub Releases 仓库坐标抽离为单一配置源（并与桌面仓实际发布 remote 对齐）。
+   - 说明：已通过 `src/config/release.config.ts` 收口唯一公开桌面端发布仓坐标 `DEFAULT_DESKTOP_RELEASE_REPO = 'Ariesagittarius/AstroLib-Desktop'`（与 `AppUpdater`、`RemoteCatalogService`、`pack-book-abp.mjs`、`electron-release.yml` 及 `release-desktop.mjs` 保持完全一致；`web-upstream` 保留为网页端 `Ariesagittarius/AstroLib`，`private` 为备份仓 `Ariesagittarius/AstroLib_Backup`）。
 2. **远程目录清单 URL 契约**：
    - 每个 Release 资产中必须包含唯一权威索引 `catalog.json`；
    - `catalog.json` 中的每个 `CatalogBookEntry` 必须提供 `packFileName`、`sizeBytes`、`contentHash`、`updatedAt` 以及可直连的 `remotePackUrl`（或由发行基址 + `packFileName` 确定性拼接，例如 `https://github.com/<owner>/<repo>/releases/latest/download/<packFileName>`）。

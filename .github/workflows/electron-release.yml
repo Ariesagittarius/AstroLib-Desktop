@@ -52,7 +52,7 @@ jobs:
         run: npm run build:exercises
 
       - name: Compile Official ABP Packages (artifacts/abp-packs/)
-        run: node scripts/pack-book-abp.mjs --all --no-vectors --release-repo="${{ github.repository }}" --release-tag="${{ github.ref_name || inputs.tag }}"
+        run: node scripts/pack-book-abp.mjs --all --no-vectors --release-repo="${{ github.repository }}" --release-tag="${{ inputs.tag || github.ref_name }}"
 
       - name: Execute Automated Test Suites (Unit, Contract, Acceptance)
         run: npm test
@@ -66,7 +66,8 @@ jobs:
         uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
         with:
-          name: AstroLib Desktop ${{ github.ref_name || inputs.tag }}
+          tag_name: ${{ inputs.tag || github.ref_name }}
+          name: AstroLib Desktop ${{ inputs.tag || github.ref_name }}
           draft: false
           prerelease: false
           generate_release_notes: true

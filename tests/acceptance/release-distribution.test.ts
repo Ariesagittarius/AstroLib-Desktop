@@ -5,6 +5,7 @@ import http from 'node:http';
 import { DesktopBookManager } from '../../electron/services/book-manager.ts';
 import { fetchOfficialCatalog, installOfficialBook } from '../../electron/services/remote-catalog-service.ts';
 import { resolveAbpArtifactsDir, resolveBookSourceDir } from '../../src/core/catalog/content-paths.ts';
+import { DEFAULT_DESKTOP_RELEASE_REPO } from '../../src/config/release.config.ts';
 import { ABP_SCHEMA_VERSION } from '../../src/types/content-package.ts';
 
 describe('Mode A Release & Content Distribution Acceptance Test (Gate G3)', () => {
@@ -88,9 +89,12 @@ describe('Mode A Release & Content Distribution Acceptance Test (Gate G3)', () =
     const yml = fs.readFileSync(workflowPath, 'utf8');
     expect(yml).toContain('npm run build:exercises');
     expect(yml).toContain('pack-book-abp.mjs --all');
+    expect(yml).toContain('--release-tag="${{ inputs.tag || github.ref_name }}"');
+    expect(yml).toContain('tag_name: ${{ inputs.tag || github.ref_name }}');
     expect(yml).toContain('artifacts/abp-packs/catalog.json');
     expect(yml).toContain('artifacts/abp-packs/*.abp');
     expect(yml).toContain('release/*.exe');
+    expect(DEFAULT_DESKTOP_RELEASE_REPO).toBe('Ariesagittarius/AstroLib-Desktop');
 
     const pkg = JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf8'));
     const files: string[] = pkg.build?.files || [];

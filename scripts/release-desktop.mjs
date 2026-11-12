@@ -17,6 +17,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { execSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { DEFAULT_DESKTOP_RELEASE_REPO, normalizeReleaseRepo } from '../src/config/release.config.ts';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -42,21 +43,36 @@ function bumpVersion(current, type) {
   return type.replace(/^v/, ''); // 自定义指定版本号
 }
 
-function resolveTargetRemotes(remotes, explicitRemote) {
+function getRemoteUrl(remoteName) {
+  try {
+    return runGit(`remote get-url ${remoteName}`);
+  } catch {
+    return '';
+  }
+}
+
+function resolveTargetRemotes(remotes, explicitRemote, allowPrivateOnly = false) {
+  const expectedRepo = normalizeReleaseRepo(DEFAULT_DESKTOP_RELEASE_REPO);
   if (explicitRemote) {
     if (!remotes.includes(explicitRemote)) {
       throw new Error(`指定的发布远程仓库 '${explicitRemote}' 不存在（当前 remotes: ${remotes.join(', ') || '无'}）`);
     }
     return [explicitRemote];
   }
-  const targets = [];
-  if (remotes.includes('private')) targets.push('private');
-  if (remotes.includes('origin')) targets.push('origin');
-  if (targets.length === 0) {
+
+  const publicRemote =
+    remotes.find((r) => getRemoteUrl(r).toLowerCase().includes(expectedRepo.toLowerCase())) ||
+    (remotes.includes('origin') ? 'origin' : '');
+
+  if (!publicRemote && !allowPrivateOnly) {
     throw new Error(
-      `未检测到可用的桌面发布远程仓库（期望 private 或 origin，当前 remotes: ${remotes.join(', ') || '无'}）。请配置 remote 或传入 --remote=<name>。`
+      `未检测到公开桌面发布远程仓库（期望匹配 ${expectedRepo} 或配置 origin，当前 remotes: ${remotes.join(', ') || '无'}）。请先执行 git remote add origin https://github.com/${expectedRepo}.git，或传入 --remote=<name>。`
     );
   }
+
+  const targets = [];
+  if (remotes.includes('private')) targets.push('private');
+  if (publicRemote && !targets.includes(publicRemote)) targets.push(publicRemote);
   return targets;
 }
 
@@ -69,12 +85,13 @@ async function main() {
 
   const cliArgs = process.argv.slice(2);
   const dryRun = cliArgs.includes('--dry-run');
+  const allowPrivateOnly = cliArgs.includes('--allow-private-only');
   const remoteArg = cliArgs.find((a) => a.startsWith('--remote='))?.slice('--remote='.length);
   const bumpArg = cliArgs.find((a) => !a.startsWith('--')) || 'patch';
 
   // 0. 预检远程仓库配置
   const remotes = runGit('remote').split(/\r?\n/).filter(Boolean);
-  const targetRemotes = resolveTargetRemotes(remotes, remoteArg);
+  const targetRemotes = resolveTargetRemotes(remotes, remoteArg, allowPrivateOnly);
 
   // 1. 检查工作区状态
   const status = runGit('status --porcelain');
@@ -117,12 +134,14 @@ async function main() {
     console.log(`✅ 已推送到 ${r} 仓库`);
   }
 
+  const releaseRepo = normalizeReleaseRepo(DEFAULT_DESKTOP_RELEASE_REPO);
   console.log(`
 ===================================================================
 🎉 桌面端发布流水线已成功触发！
 🔗 GitHub Actions 正在自动编译 Windows 安装包与绿色免安装包。
 可在以下地址查看编译进度与 Release 产物：
-https://github.com/Ariesagittarius/AstroLib/actions
+https://github.com/${releaseRepo}/actions
+https://github.com/${releaseRepo}/releases
 ===================================================================
 `);
 }
