@@ -10,23 +10,10 @@ import { rehypeCrossRef } from '@/plugins/rehype/rehype-cross-ref.mjs';
 
 describe('Cross-Reference AST Plugin Acceptance Suite', () => {
   const root = path.resolve('.');
-  const sampleMdxPrimary = path.join(
+  const sampleMdx = path.join(
     root,
     'content-sources/collections/math/engineering_analysis/1.5_连续函数.mdx'
   );
-  const sampleMdxLegacy = path.join(
-    root,
-    'src/content/docs/collections/math/engineering_analysis/1.5_连续函数.mdx'
-  );
-  const sampleMdxBackup = path.join(
-    root,
-    'backup/preset-books-source/math/engineering_analysis/1.5_连续函数.mdx'
-  );
-  const sampleMdx = fs.existsSync(sampleMdxPrimary)
-    ? sampleMdxPrimary
-    : fs.existsSync(sampleMdxLegacy)
-    ? sampleMdxLegacy
-    : sampleMdxBackup;
 
   it('成功处理 MDX AST 并生成构建期交叉引用徽章与元数据', async () => {
     expect(fs.existsSync(sampleMdx)).toBe(true);

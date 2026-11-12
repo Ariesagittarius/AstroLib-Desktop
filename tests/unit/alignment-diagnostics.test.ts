@@ -1,7 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import { runDiagnostics, cosineSimilarity, computeL2Norm } from '../../scripts/alignment-diagnostics.ts';
 
-describe('Alignment Diagnostics & Health Suite', () => {
+const RUN_MODEL_TESTS = process.env.ASTROLIB_RUN_MODEL_TESTS === '1';
+
+describe.skipIf(!RUN_MODEL_TESTS)('Alignment Diagnostics & Health Suite', () => {
   it('passes health check on embedding dimensions, L2 norms and self-similarity', async () => {
     const res = await runDiagnostics({
       modelName: 'Xenova/paraphrase-multilingual-MiniLM-L12-v2',

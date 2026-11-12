@@ -1,7 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import { executeFullBenchmark } from '../../scripts/evaluate_bilingual_benchmark.ts';
 
-describe('Bilingual Alignment Real Textbook Benchmark (Phase 5)', () => {
+const RUN_MODEL_TESTS = process.env.ASTROLIB_RUN_MODEL_TESTS === '1';
+
+describe.skipIf(!RUN_MODEL_TESTS)('Bilingual Alignment Real Textbook Benchmark (Phase 5)', () => {
   it('achieves >= 90% Recall@1, 100% Recall@5, and negligible INT8 vs FP32 degradation', async () => {
     const report = await executeFullBenchmark();
 

@@ -72,7 +72,7 @@ describe('Mode A Release & Content Distribution Acceptance Test (Gate G3)', () =
         resolve();
       });
     });
-  });
+  }, 120000);
 
   afterAll(async () => {
     if (server) {

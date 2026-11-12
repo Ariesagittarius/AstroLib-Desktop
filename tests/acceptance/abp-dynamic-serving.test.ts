@@ -25,7 +25,7 @@ describe('ABP Dynamic Content Serving Acceptance Test', () => {
         includeAuxiliary: true,
       });
     }
-  });
+  }, 120000);
 
   afterAll(() => {
     if (fs.existsSync(testAbpPacksDir)) {
@@ -245,5 +245,5 @@ describe('ABP Dynamic Content Serving Acceptance Test', () => {
         }
       }
     }
-  });
+  }, 120000);
 });

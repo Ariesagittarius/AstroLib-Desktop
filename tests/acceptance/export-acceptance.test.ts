@@ -94,24 +94,11 @@ describe('Publishing Export Acceptance Suite', () => {
     });
 
     it('真实章节精确提取当前章节引用的插图且目标文件均存在', () => {
-      const sampleMdxPrimary = path.join(
+      const sampleMdxPath = path.join(
         root,
         'content-sources/collections/math/engineering_analysis/1.1_集合映射与函数.mdx'
       );
-      const sampleMdxLegacy = path.join(
-        root,
-        'src/content/docs/collections/math/engineering_analysis/1.1_集合映射与函数.mdx'
-      );
-      const sampleMdxBackup = path.join(
-        root,
-        'backup/preset-books-source/math/engineering_analysis/1.1_集合映射与函数.mdx'
-      );
-      const sampleMdxPath = fs.existsSync(sampleMdxPrimary)
-        ? sampleMdxPrimary
-        : fs.existsSync(sampleMdxLegacy)
-        ? sampleMdxLegacy
-        : sampleMdxBackup;
-      expect(fs.existsSync(sampleMdxPath)).toBe(true);
+      expect(fs.existsSync(sampleMdxPath), `缺失真实源码文件: ${sampleMdxPath}`).toBe(true);
 
       const mdxContent = fs.readFileSync(sampleMdxPath, 'utf8');
       const exportRes = exportChapterToLatex({
@@ -131,9 +118,8 @@ describe('Publishing Export Acceptance Suite', () => {
     });
 
     it('成功解析普通相对图、点斜杠图与 public 根目录图为安全 POSIX 路径', () => {
-      const legacyChapterDir = path.join(root, 'src/content/docs/collections/math/engineering_analysis');
-      const sourceChapterDir = path.join(root, 'content-sources/collections/math/engineering_analysis');
-      const mockChapterDir = fs.existsSync(sourceChapterDir) ? sourceChapterDir : legacyChapterDir;
+      const mockChapterDir = path.join(root, 'content-sources/collections/math/engineering_analysis');
+      expect(fs.existsSync(mockChapterDir), `缺失真实源码目录: ${mockChapterDir}`).toBe(true);
       const testImages = [
         { url: 'images/0058c5383413a71167a7502db8fbe568ac47a8c7bd11c667a848abe03a4cd693.jpg', alt: '普通图片', originalPath: 'images/0058c5383413a71167a7502db8fbe568ac47a8c7bd11c667a848abe03a4cd693.jpg' },
         { url: './images/008819fd288f39957ed5119085579a8a3983c6b09d8fd5931739d29cb1e13781.jpg', alt: '相对点斜杠图片', originalPath: './images/008819fd288f39957ed5119085579a8a3983c6b09d8fd5931739d29cb1e13781.jpg' },
@@ -149,23 +135,10 @@ describe('Publishing Export Acceptance Suite', () => {
   });
 
   describe('学术版式与自适应图片语法规范', () => {
-    const sampleMdxPrimary = path.join(
+    const sampleMdxPath = path.join(
       root,
       'content-sources/collections/math/engineering_analysis/1.1_集合映射与函数.mdx'
     );
-    const sampleMdxLegacy = path.join(
-      root,
-      'src/content/docs/collections/math/engineering_analysis/1.1_集合映射与函数.mdx'
-    );
-    const sampleMdxBackup = path.join(
-      root,
-      'backup/preset-books-source/math/engineering_analysis/1.1_集合映射与函数.mdx'
-    );
-    const sampleMdxPath = fs.existsSync(sampleMdxPrimary)
-      ? sampleMdxPrimary
-      : fs.existsSync(sampleMdxLegacy)
-      ? sampleMdxLegacy
-      : sampleMdxBackup;
     const mdxContent = fs.readFileSync(sampleMdxPath, 'utf8');
     const exportRes = exportChapterToLatex({
       mdxSource: mdxContent,
@@ -211,23 +184,11 @@ describe('Publishing Export Acceptance Suite', () => {
     });
 
     it('宏包清除品牌字样并将页眉右上角绑定为书名', () => {
-      const sampleMdxPrimary = path.join(
+      const sampleMdxPath = path.join(
         root,
         'content-sources/collections/math/engineering_analysis/1.1_集合映射与函数.mdx'
       );
-      const sampleMdxLegacy = path.join(
-        root,
-        'src/content/docs/collections/math/engineering_analysis/1.1_集合映射与函数.mdx'
-      );
-      const sampleMdxBackup = path.join(
-        root,
-        'backup/preset-books-source/math/engineering_analysis/1.1_集合映射与函数.mdx'
-      );
-      const sampleMdxPath = fs.existsSync(sampleMdxPrimary)
-        ? sampleMdxPrimary
-        : fs.existsSync(sampleMdxLegacy)
-        ? sampleMdxLegacy
-        : sampleMdxBackup;
+      expect(fs.existsSync(sampleMdxPath), `缺失真实源码文件: ${sampleMdxPath}`).toBe(true);
       const mdxContent = fs.readFileSync(sampleMdxPath, 'utf8');
       const exportRes = exportChapterToLatex({
         mdxSource: mdxContent,
@@ -255,15 +216,10 @@ describe('Publishing Export Acceptance Suite', () => {
   });
 
   describe('Academic Digital Resource 数字资源学术排版与语义流', () => {
-    const sampleMdxPrimary = path.join(
+    const sampleMdxPath = path.join(
       root,
-      'src/content/docs/collections/math/engineering_analysis/1.1_集合映射与函数.mdx'
+      'content-sources/collections/math/engineering_analysis/1.1_集合映射与函数.mdx'
     );
-    const sampleMdxBackup = path.join(
-      root,
-      'backup/preset-books-source/math/engineering_analysis/1.1_集合映射与函数.mdx'
-    );
-    const sampleMdxPath = fs.existsSync(sampleMdxPrimary) ? sampleMdxPrimary : sampleMdxBackup;
     const mdxContent = fs.readFileSync(sampleMdxPath, 'utf8');
 
     it('提取并语义结构化数字资源块', () => {
