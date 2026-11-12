@@ -964,6 +964,7 @@ acceptance_commands:
 | G2 | `0dec5036` | `build-exercise-data.mjs` + `pack-book-abp --all --no-vectors` + `vitest` + `npm run check:all` | 0 | 13 包/1,251 章；4 本支持书单（`engineering_analysis` 101、`linear_algebra_geometry` 41、`digital_circuit` 22、`electronic_circuits` 16 文件）`bundle.exercises` 非空且真实落盘/HTTP 200；其余 9 本显式标记 `unsupported`；61/349 tests pass | `artifacts/audit/g2-evidence.json` | PASS | 待审计 |
 | G3 | `d33633c1` | `pack-book-abp --all --no-vectors` + `npm run check:all` + `build` + `build-electron` + `electron-builder --dir --win` + Mode A smoke | 0 | `electron-release.yml` 同步打包并上传 13 `.abp`+`catalog.json`；IPC 拉取+size/hash 校验+首次启动“官方书库”与本地导入 UI 就绪；`AstroLib.exe` 章节/习题均 200；62/352 tests pass | `artifacts/audit/g3-evidence.json` | PASS | 待审计 |
 | G4 | `a8d3403f` | `git grep` fallback 校验 + `npm run check:all` + `vitest bilingual-benchmark` | 0 | 生产/测试 `collections.length > 0` 与双候选残留=0；`getCatalogBooks()` 在 `collections` 空/非空双态均 exact 13 本；`content-sources/catalog.json` 标为生成投影；`tsc` 0 错，61/62 并行通过（`bilingual-benchmark` 并发 CPU 毛刺 63ms vs <=60ms，单独复测 2.45s PASS） | `artifacts/audit/g4-evidence.json` | PASS | 待审计 |
+| G5 | `59b1e24c` / `9d1077ad` | `npm run check:all` + `npm run build` + `build-electron` + `electron-builder --dir --win` + `packaging-hygiene` + `--dry-run` | 0 | `AGENTS.md`/`README.md`/`docs/README.md` 同步；`/workspace/ingest-controller` 死路由与警告消除；桌面 PWA/SEO 关闭；`katex-metrics`/`algorithm-block` 迁移实测；`validateAbpBundle` 强化与 `DesktopBookManager` 元数据失败回滚；63/357 tests pass，`app.asar` 契约通过 | `artifacts/audit/g5-evidence.json` | PASS | 待审计 |
 
 ---
 
