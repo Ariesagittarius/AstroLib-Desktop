@@ -34,7 +34,7 @@
     "test:acceptance": "vitest run tests/acceptance",
     "test:system": "vitest run tests/system",
     "test:all": "vitest run",
-    "check:types": "tsc --noEmit",
+    "check:types": "astro sync && tsc --noEmit",
     "check:all": "npm run check:types && npm test",
     "astro": "astro"
   },
