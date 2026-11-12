@@ -42,12 +42,21 @@ function writeFileAtomic(filePath: string, data: string | Buffer): void {
     fs.mkdirSync(dir, { recursive: true });
   }
   const tmpPath = `${filePath}.tmp.${process.pid}`;
-  if (typeof data === 'string') {
-    fs.writeFileSync(tmpPath, data, 'utf8');
-  } else {
-    fs.writeFileSync(tmpPath, data);
+  try {
+    if (typeof data === 'string') {
+      fs.writeFileSync(tmpPath, data, 'utf8');
+    } else {
+      fs.writeFileSync(tmpPath, data);
+    }
+    fs.renameSync(tmpPath, filePath);
+  } catch (err) {
+    if (fs.existsSync(tmpPath)) {
+      try {
+        fs.rmSync(tmpPath, { force: true });
+      } catch {}
+    }
+    throw err;
   }
-  fs.renameSync(tmpPath, filePath);
 }
 
 export class DesktopBookManager {
@@ -135,6 +144,8 @@ export class DesktopBookManager {
 
     this.ensureDir(stagingChaptersDir);
 
+    let backedUp = false;
+    let swapped = false;
     try {
       // 3. 写入 manifest.json
       writeFileAtomic(path.join(stagingDir, 'manifest.json'), JSON.stringify(manifest, null, 2));
@@ -192,20 +203,35 @@ export class DesktopBookManager {
         }
       }
 
-      // 5.3 原子替换目标目录并失效旧渲染缓存
-      let backedUp = false;
+      // 5.3 原子替换目标目录（保留 backupDir 直至元数据落盘成功）
       if (fs.existsSync(bookDir)) {
         fs.renameSync(bookDir, backupDir);
         backedUp = true;
       }
-      try {
-        fs.renameSync(stagingDir, bookDir);
-      } catch (swapErr) {
-        if (backedUp && fs.existsSync(backupDir) && !fs.existsSync(bookDir)) {
-          fs.renameSync(backupDir, bookDir);
-        }
-        throw swapErr;
+      fs.renameSync(stagingDir, bookDir);
+      swapped = true;
+
+      // 6. 更新已安装图书元数据（原子写入；失败时在 catch 中回滚 bookDir）
+      const installed = await this.getInstalledBooks();
+      const existingIdx = installed.findIndex(
+        (b) => b.manifest.id === manifest.id || (b.manifest.colSlug === manifest.colSlug && b.manifest.slug === manifest.slug)
+      );
+
+      const meta: InstalledBookMeta = {
+        installedAt: new Date().toISOString(),
+        sourceType: 'local-file',
+        localPath: bookDir,
+        manifest,
+      };
+
+      if (existingIdx >= 0) {
+        installed[existingIdx] = meta;
+      } else {
+        installed.unshift(meta);
       }
+
+      writeFileAtomic(this.metaFile, JSON.stringify(installed, null, 2));
+
       if (backedUp && fs.existsSync(backupDir)) {
         fs.rmSync(backupDir, { recursive: true, force: true });
       }
@@ -213,35 +239,29 @@ export class DesktopBookManager {
       if (fs.existsSync(bookCacheDir)) {
         fs.rmSync(bookCacheDir, { recursive: true, force: true });
       }
+
+      console.log(`[DesktopBookManager] 成功安装图书: 《${manifest.title}》(${bookKey})`);
+      return meta;
     } catch (err) {
+      if (swapped) {
+        try {
+          if (fs.existsSync(bookDir)) {
+            fs.rmSync(bookDir, { recursive: true, force: true });
+          }
+          if (backedUp && fs.existsSync(backupDir)) {
+            fs.renameSync(backupDir, bookDir);
+          }
+        } catch {}
+      } else if (backedUp && fs.existsSync(backupDir) && !fs.existsSync(bookDir)) {
+        try {
+          fs.renameSync(backupDir, bookDir);
+        } catch {}
+      }
       if (fs.existsSync(stagingDir)) {
         fs.rmSync(stagingDir, { recursive: true, force: true });
       }
       throw err;
     }
-
-    // 6. 更新已安装图书元数据（原子写入）
-    const installed = await this.getInstalledBooks();
-    const existingIdx = installed.findIndex(
-      (b) => b.manifest.id === manifest.id || (b.manifest.colSlug === manifest.colSlug && b.manifest.slug === manifest.slug)
-    );
-
-    const meta: InstalledBookMeta = {
-      installedAt: new Date().toISOString(),
-      sourceType: 'local-file',
-      localPath: bookDir,
-      manifest,
-    };
-
-    if (existingIdx >= 0) {
-      installed[existingIdx] = meta;
-    } else {
-      installed.unshift(meta);
-    }
-
-    writeFileAtomic(this.metaFile, JSON.stringify(installed, null, 2));
-    console.log(`[DesktopBookManager] 成功安装图书: 《${manifest.title}》(${bookKey})`);
-    return meta;
   }
 
   /**

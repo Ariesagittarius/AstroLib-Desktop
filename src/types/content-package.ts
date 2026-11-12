@@ -213,7 +213,12 @@ export function validateAbpBundle(raw: unknown): AbpBundlePayload {
   if (!manifest || typeof manifest !== 'object') {
     throw new Error('无效的 ABP 数据包：缺少 manifest 清单');
   }
-  for (const field of ['id', 'slug', 'colSlug', 'title'] as const) {
+  if (manifest.schemaVersion !== ABP_SCHEMA_VERSION) {
+    throw new Error(
+      `无效的 ABP manifest：不支持的 schemaVersion (${String(manifest.schemaVersion)}，期望 ${ABP_SCHEMA_VERSION})`
+    );
+  }
+  for (const field of ['id', 'slug', 'colSlug', 'title', 'entryPoint'] as const) {
     if (typeof manifest[field] !== 'string' || !manifest[field]) {
       throw new Error(`无效的 ABP manifest：缺少合法 ${field} 字段`);
     }
@@ -225,6 +230,9 @@ export function validateAbpBundle(raw: unknown): AbpBundlePayload {
     throw new Error('无效的 ABP 数据包：chapters 必须为章节映射对象');
   }
   const chapters = obj.chapters as Record<string, unknown>;
+  if (!Object.prototype.hasOwnProperty.call(chapters, manifest.entryPoint as string)) {
+    throw new Error(`无效的 ABP 数据包：chapters 中缺少入口章节 ${String(manifest.entryPoint)}`);
+  }
   for (const [slugKey, payload] of Object.entries(chapters)) {
     if (!payload || typeof payload !== 'object') {
       throw new Error(`无效的 ABP 章节载荷：${slugKey}`);
@@ -232,6 +240,16 @@ export function validateAbpBundle(raw: unknown): AbpBundlePayload {
     const p = payload as Record<string, unknown>;
     if (typeof p.html !== 'string' || typeof p.title !== 'string') {
       throw new Error(`无效的 ABP 章节载荷（缺少 title 或 html）：${slugKey}`);
+    }
+  }
+  for (const sec of manifest.sections) {
+    if (!sec || typeof sec !== 'object' || !Array.isArray((sec as any).chapters)) {
+      throw new Error('无效的 ABP manifest：section 条目缺少 chapters 数组');
+    }
+    for (const ch of (sec as any).chapters) {
+      if (!ch || typeof ch.slug !== 'string' || !Object.prototype.hasOwnProperty.call(chapters, ch.slug)) {
+        throw new Error(`无效的 ABP manifest：section 引用了不存在的章节 ${String(ch?.slug)}`);
+      }
     }
   }
   return raw as AbpBundlePayload;

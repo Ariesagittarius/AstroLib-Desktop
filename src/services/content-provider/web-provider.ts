@@ -5,11 +5,12 @@
  * ============================================================================
  */
 
-import type {
-  AstroBookManifest,
-  AstroBookChapterPayload,
-  LibraryCatalog,
-  InstalledBookMeta,
+import {
+  validateAbpBundle,
+  type AstroBookManifest,
+  type AstroBookChapterPayload,
+  type LibraryCatalog,
+  type InstalledBookMeta,
 } from '../../types/content-package.ts';
 import type { IContentProvider, RemoteSourceConfig, StorageStats } from './types.ts';
 
@@ -254,13 +255,9 @@ export class WebContentProvider implements IContentProvider {
     const jsonText = await decompressGzip(abpData);
 
     if (onProgress) onProgress(45, '解析书籍目录与章节...');
-    const bundle = JSON.parse(jsonText);
+    const bundle = validateAbpBundle(JSON.parse(jsonText));
     const manifest: AstroBookManifest = bundle.manifest;
     const chapters: Record<string, AstroBookChapterPayload> = bundle.chapters || {};
-
-    if (!manifest || !manifest.id || !manifest.slug) {
-      throw new Error('无效的 ABP 数据包：缺少合法 manifest 清单！');
-    }
 
     const meta: InstalledBookMeta = {
       manifest,

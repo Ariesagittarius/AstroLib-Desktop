@@ -150,4 +150,122 @@ describe('Electron Services & Infrastructure Unit Tests', () => {
 
     fs.rmSync(tmpStorage, { recursive: true, force: true });
   });
+
+  it('validateAbpBundle 应严格拦截 schemaVersion、entryPoint 与 section/chapter 不一致的损坏包', async () => {
+    const { validateAbpBundle } = await import('../../src/types/content-package.ts');
+
+    const baseBundle = {
+      manifest: {
+        schemaVersion: ABP_SCHEMA_VERSION,
+        id: 'math-bad',
+        slug: 'bad',
+        colSlug: 'math',
+        title: '损坏测试包',
+        entryPoint: '01_intro',
+        totalChapters: 1,
+        updatedAt: new Date().toISOString(),
+        contentHash: 'h1',
+        sections: [{ id: 's1', title: 'S1', slug: 's1', chapters: [{ id: 'c1', title: 'C1', slug: '01_intro', path: 'chapters/01_intro.json', hash: 'h', sizeBytes: 10 }] }],
+      },
+      chapters: {
+        '01_intro': {
+          schemaVersion: ABP_SCHEMA_VERSION,
+          bookId: 'math-bad',
+          bookSlug: 'bad',
+          colSlug: 'math',
+          chapterSlug: '01_intro',
+          title: '引言',
+          html: '<p>ok</p>',
+          headings: [],
+          updatedAt: new Date().toISOString(),
+        },
+      },
+    };
+
+    expect(() => validateAbpBundle(baseBundle)).not.toThrow();
+
+    // 1. 错误 schemaVersion
+    expect(() =>
+      validateAbpBundle({ ...baseBundle, manifest: { ...baseBundle.manifest, schemaVersion: '9.9.9' } })
+    ).toThrow(/schemaVersion/);
+
+    // 2. 入口章节不在 chapters 中
+    expect(() =>
+      validateAbpBundle({ ...baseBundle, manifest: { ...baseBundle.manifest, entryPoint: '99_missing' } })
+    ).toThrow(/入口章节/);
+
+    // 3. section 引用了不存在的章节
+    expect(() =>
+      validateAbpBundle({
+        ...baseBundle,
+        manifest: {
+          ...baseBundle.manifest,
+          sections: [{ id: 's1', title: 'S1', slug: 's1', chapters: [{ id: 'c2', title: 'C2', slug: '02_ghost', path: 'chapters/02_ghost.json', hash: 'h', sizeBytes: 10 }] }],
+        },
+      })
+    ).toThrow(/不存在的章节/);
+  });
+
+  it('DesktopBookManager 重复覆盖安装应幂等成功，且元数据写入失败时必须回滚目录', async () => {
+    const tmpStorage = fs.mkdtempSync(path.join(os.tmpdir(), 'astrolib-book-tx-'));
+    try {
+      const manager = new DesktopBookManager(tmpStorage);
+      const makeAbp = (title: string) => {
+        const bundle = {
+          manifest: {
+            schemaVersion: ABP_SCHEMA_VERSION,
+            id: 'cs-tx_demo',
+            slug: 'tx_demo',
+            colSlug: 'cs',
+            title,
+            entryPoint: '01_intro',
+            totalChapters: 1,
+            updatedAt: new Date().toISOString(),
+            contentHash: `hash-${title}`,
+            sections: [],
+          },
+          chapters: {
+            '01_intro': {
+              schemaVersion: ABP_SCHEMA_VERSION,
+              bookId: 'cs-tx_demo',
+              bookSlug: 'tx_demo',
+              colSlug: 'cs',
+              chapterSlug: '01_intro',
+              title: 'Intro',
+              html: `<p>${title}</p>`,
+              headings: [],
+              updatedAt: new Date().toISOString(),
+            },
+          },
+        };
+        return zlib.gzipSync(Buffer.from(JSON.stringify(bundle), 'utf8'));
+      };
+
+      // 1. 首次安装与重复覆盖安装
+      await manager.installBookFromAbp(makeAbp('V1'));
+      await manager.installBookFromAbp(makeAbp('V2'));
+      const books = await manager.getInstalledBooks();
+      expect(books).toHaveLength(1);
+      expect(books[0].manifest.title).toBe('V2');
+
+      // 2. 模拟元数据文件写入失败（将 installed_books.json 替换为目录触发 rename 失败），验证 bookDir 完整回滚回 V2
+      const metaPath = path.join(tmpStorage, 'installed_books.json');
+      const savedMeta = fs.readFileSync(metaPath, 'utf8');
+      fs.rmSync(metaPath, { force: true });
+      fs.mkdirSync(metaPath);
+
+      await expect(manager.installBookFromAbp(makeAbp('V3_SHOULD_ROLLBACK'))).rejects.toThrow();
+
+      const manifestAfterRollback = JSON.parse(
+        fs.readFileSync(path.join(tmpStorage, 'cs-tx_demo', 'manifest.json'), 'utf8')
+      );
+      expect(manifestAfterRollback.title).toBe('V2');
+
+      // 恢复文件以便清理
+      fs.rmSync(metaPath, { recursive: true, force: true });
+      fs.writeFileSync(metaPath, savedMeta, 'utf8');
+    } finally {
+      fs.rmSync(tmpStorage, { recursive: true, force: true });
+    }
+  });
 });
