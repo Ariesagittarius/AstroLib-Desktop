@@ -13,9 +13,9 @@ import type { Collection, Book } from '../types/collections.ts';
 export const collections: Collection[] = [];
 
 /**
- * 完整源书库元数据配置 (Source Collections Registry)
- * 12 本教材的权威模块定义 (modules)、交叉引用类名 (trackClasses) 及双语对齐配置。
- * 供 ABP 编译器 (pack-book-abp.mjs)、内容质检管线和离线测试使用。
+ * 完整源书库元数据配置 (Source Collections Registry — 13 本教材 SSOT)
+ * 权威模块定义 (modules)、交叉引用类名 (trackClasses) 及双语对齐配置。
+ * 供 ABP 编译器 (pack-book-abp.mjs)、内容索引/图谱/巡检管线和离线测试统一消费。
  */
 export const sourceCollections: Collection[] = [
   {
@@ -697,6 +697,15 @@ export interface FlatBook extends Book {
   collectionTitle: string;
 }
 
+/**
+ * 获取当前生效的内容目录合集：
+ * 若静态编译开关启用（collections 非空）则返回 collections，
+ * 否则返回权威源书库 sourceCollections（13 本教材 SSOT）。
+ */
+export function getCatalogCollections(): Collection[] {
+  return collections.length > 0 ? collections : sourceCollections;
+}
+
 export function getAllBooks(sourceMode = false): FlatBook[] {
   const target = sourceMode ? sourceCollections : collections;
   const list: FlatBook[] = [];
@@ -713,7 +722,25 @@ export function getAllBooks(sourceMode = false): FlatBook[] {
   return list;
 }
 
-export function findBookBySlug(bookSlug: string, sourceMode = false): FlatBook | null {
-  const all = getAllBooks(sourceMode);
+/**
+ * 获取权威源书库中的全部扁平书目列表（始终返回全部 13 本）
+ */
+export function getCatalogBooks(): FlatBook[] {
+  const list: FlatBook[] = [];
+  for (const col of getCatalogCollections()) {
+    for (const book of col.books || []) {
+      list.push({
+        ...book,
+        collectionId: col.id,
+        collectionSlug: col.slug,
+        collectionTitle: col.title,
+      });
+    }
+  }
+  return list;
+}
+
+export function findBookBySlug(bookSlug: string, sourceMode = true): FlatBook | null {
+  const all = sourceMode ? getCatalogBooks() : getAllBooks(false);
   return all.find((b) => b.slug === bookSlug) || null;
 }

@@ -20,10 +20,11 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
-import { collections } from '../../../config/collections.config.mjs';
+import { getCatalogCollections } from '../../../config/collections.config.mjs';
 import { cleanSlug } from '../../../utils/slug.mjs';
 import { naturalSort } from '../../../utils/natural-sort.mjs';
 import { buildGlobalBlockIndex } from '../../../core/indexing/cross-ref-indexer.mjs';
+import { resolveBookSourceDir, toCollectionRelativeSlug } from '../../../core/catalog/content-paths.ts';
 
 /** ECharts 节点分类和谐配色板（对齐 VitePress 调色） */
 const CATEGORY_COLORS = [
@@ -83,7 +84,7 @@ const relationGraphCache = new Map();
  */
 export function generateBookRelationGraph(colSlug, bookSlug, force = false) {
   const bookKey = `${colSlug}/${bookSlug}`;
-  const bookDir = path.resolve(`src/content/docs/collections/${colSlug}/${bookSlug}`);
+  const bookDir = resolveBookSourceDir(colSlug, bookSlug);
   if (!fs.existsSync(bookDir)) return null;
 
   const files = walkMdxFiles(bookDir);
@@ -99,7 +100,7 @@ export function generateBookRelationGraph(colSlug, bookSlug, force = false) {
   const globalIndex = buildGlobalBlockIndex(colSlug, bookSlug, force);
 
   let bookConfig = null;
-  for (const col of collections) {
+  for (const col of getCatalogCollections()) {
     if (col.slug === colSlug) {
       bookConfig = col.books.find(b => b.slug === bookSlug);
       if (bookConfig) break;
@@ -122,8 +123,7 @@ export function generateBookRelationGraph(colSlug, bookSlug, force = false) {
   const groupMap = new Map(); // groupName -> categoryIndex
 
   files.forEach(({ fullPath: filePath }, idx) => {
-    const relativePath = path.relative('src/content/docs', filePath);
-    const rawSlug = relativePath.replace(/\.mdx?$/, '').replace(/\\/g, '/');
+    const rawSlug = toCollectionRelativeSlug(filePath);
     const cleanedSlug = cleanSlug(rawSlug);
     const url = `/${cleanedSlug}/`;
     const filename = path.basename(filePath);

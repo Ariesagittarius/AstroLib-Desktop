@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { naturalSort } from '../../utils/natural-sort.mjs';
 import { cleanSlug } from '../../utils/slug.mjs';
+import { toCollectionRelativeSlug } from './content-paths.ts';
 
 /**
  * @typedef {Object} CatalogChapterNode
@@ -72,15 +73,14 @@ export function buildBookCatalog(directoryPath, options = {}) {
       const titleMatch = content.match(/title:\s*['"](.*?)['"]/);
       const title = titleMatch ? titleMatch[1] : path.basename(file, path.extname(file));
 
-      const relativePath = path.relative('src/content/docs', fullPath);
-      const rawSlug = relativePath.replace(/\.mdx?$/, '').replace(/\\/g, '/');
+      const rawSlug = toCollectionRelativeSlug(fullPath);
       const slug = cleanSlug(rawSlug);
 
       items.push({
         type: 'chapter',
         title,
         slug,
-        filePath: relativePath.replace(/\\/g, '/'),
+        filePath: path.relative(process.cwd(), fullPath).replace(/\\/g, '/'),
       });
     }
   }

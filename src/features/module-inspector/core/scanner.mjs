@@ -3,7 +3,8 @@ import path from 'node:path';
 import katex from 'katex';
 import { cleanSlug } from '../../../utils/slug.mjs';
 import { naturalSort } from '../../../utils/natural-sort.mjs';
-import { collections } from '../../../config/collections.config.mjs';
+import { getCatalogCollections } from '../../../config/collections.config.mjs';
+import { resolveBookSourceDir, toCollectionRelativeSlug } from '../../../core/catalog/content-paths.ts';
 
 /**
  * 学术规范卡片组件定义与元数据映射表（严格去 Emoji 化，采用学术编码与统一语义色板）
@@ -220,8 +221,8 @@ export function invalidateInspectorCache(colSlug, bookSlug) {
 function parseSingleFile(filePath, bookConfig) {
   const fileContent = fs.readFileSync(filePath, 'utf-8');
   const filename = path.basename(filePath);
-  const relativePath = path.relative('src/content/docs', filePath).replace(/\\/g, '/');
-  const rawSlug = relativePath.replace(/\.mdx?$/, '');
+  const rawSlug = toCollectionRelativeSlug(filePath);
+  const relativePath = rawSlug;
   const cleanChapterSlug = cleanSlug(rawSlug);
   const chapterUrl = `/${cleanChapterSlug}/`;
 
@@ -483,7 +484,7 @@ function parseSingleFile(filePath, bookConfig) {
 export function scanBookModules(colSlug, bookSlug, force = false) {
   // 1. 获取书籍配置与信息
   let bookConfig = null;
-  for (const col of collections) {
+  for (const col of getCatalogCollections()) {
     if (col.slug === colSlug) {
       const b = col.books.find((x) => x.slug === bookSlug);
       if (b) {
@@ -493,7 +494,7 @@ export function scanBookModules(colSlug, bookSlug, force = false) {
     }
   }
 
-  const bookDir = path.resolve(`src/content/docs/collections/${colSlug}/${bookSlug}`);
+  const bookDir = resolveBookSourceDir(colSlug, bookSlug);
   if (!fs.existsSync(bookDir)) {
     return {
       ok: false,
@@ -656,7 +657,7 @@ export function scanBookModules(colSlug, bookSlug, force = false) {
  */
 export function listAllBooks() {
   const books = [];
-  for (const col of collections) {
+  for (const col of getCatalogCollections()) {
     for (const book of col.books) {
       books.push({
         colSlug: col.slug,

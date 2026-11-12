@@ -19,7 +19,18 @@ import type {
   ReadingEntityKind,
 } from '../../src/types/library-entity.ts';
 import { DesktopBookManager } from './book-manager.ts';
-import { TaskManager } from '../../src/server/plugins/doc-ingestion/task-manager.ts';
+
+interface IngestTaskMetaLite {
+  taskId: string;
+  fileName: string;
+  status: string;
+  progress?: number;
+  error?: string;
+  engine?: string;
+  createdAt?: number;
+  fileSize?: number;
+  pageCount?: number;
+}
 
 interface RegistryStore {
   shelves: LibraryShelf[];
@@ -131,50 +142,29 @@ export class DesktopLibraryManager {
         });
       }
 
-      // 若用户目录下书籍较少，从工程 public/abp-packs/catalog.json 补充内置可选书籍
-      const catalogPath = path.join(this.projectRoot, 'public', 'abp-packs', 'catalog.json');
-      if (fs.existsSync(catalogPath)) {
-        try {
-          const cat = JSON.parse(fs.readFileSync(catalogPath, 'utf8'));
-          for (const cb of cat.books || []) {
-            const entityId = `book:${cb.colSlug}-${cb.slug}`;
-            if (!entities.some((e) => e.id === entityId)) {
-              const userMeta = this.store.customMeta[entityId] || {};
-              entities.push({
-                id: entityId,
-                kind: 'book',
-                title: cb.title,
-                subtitle: cb.subtitle || '',
-                author: cb.author || 'AstroLib',
-                publisher: cb.publisher || '高等教育出版社',
-                cover: cb.cover || '/favicon.png',
-                category: cb.colSlug || 'math',
-                shelfId: userMeta.shelfId,
-                createdAt: Date.now() - 86400000 * 10,
-                lastReadAt: userMeta.lastReadAt,
-                readProgress: userMeta.readProgress || 0,
-                status: 'ready',
-                metadata: {
-                  colSlug: cb.colSlug,
-                  bookSlug: cb.slug,
-                  entryPoint: cb.entryPoint || 'chapter-01',
-                  abpPackPath: `/abp-packs/${cb.colSlug}-${cb.slug}`,
-                  edition: cb.edition,
-                  isbn: cb.isbn,
-                },
-              });
-            }
-          }
-        } catch {}
-      }
     } catch (err) {
       console.error('[DesktopLibraryManager] 聚合书籍失败:', err);
     }
 
-    // 2. 聚合 MinerU 解析的学术文献
+    // 2. 聚合 MinerU 解析的学术文献（直接读取磁盘摄取任务目录，解耦 Vite 开发插件）
     try {
-      const taskMgr = TaskManager.getInstance();
-      const tasks = taskMgr.listTasks();
+      const ingestBaseDir = process.env.ASTROLIB_INGEST_DIR
+        ? path.resolve(process.env.ASTROLIB_INGEST_DIR)
+        : path.resolve(this.projectRoot, 'task/ingest');
+      const tasks: IngestTaskMetaLite[] = [];
+      if (fs.existsSync(ingestBaseDir)) {
+        const entries = fs.readdirSync(ingestBaseDir, { withFileTypes: true });
+        for (const ent of entries) {
+          if (!ent.isDirectory() || !ent.name.startsWith('task_')) continue;
+          const metaPath = path.join(ingestBaseDir, ent.name, 'meta.json');
+          if (!fs.existsSync(metaPath)) continue;
+          try {
+            const parsed = JSON.parse(fs.readFileSync(metaPath, 'utf8')) as IngestTaskMetaLite;
+            if (parsed && parsed.taskId) tasks.push(parsed);
+          } catch {}
+        }
+        tasks.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+      }
       for (const t of tasks) {
         const entityId = `paper:${t.taskId}`;
         const userMeta = this.store.customMeta[entityId] || {};

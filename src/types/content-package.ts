@@ -22,6 +22,8 @@ export interface AstroBookChapterSummary {
   id: string;
   title: string;
   slug: string;
+  sourcePath?: string; // 源 MDX 相对路径，仅 provenance
+  legacySlug?: string; // 仅迁移期兼容旧原始文件名链接
   path: string; // 相对包根目录的路径，例如 'chapters/01_intro.json'
   hash: string; // 内容 MD5 / SHA256 哈希，供增量同步使用
   sizeBytes: number;
@@ -62,11 +64,11 @@ export interface AstroBookChapterPayload {
   title: string;
   html: string; // 经打包管线预渲染的语义 HTML（内嵌 KaTeX 纯 HTML 与卡片结构）
   headings: ChapterHeadingItem[];
-  crossRefs?: Record<string, any>;
+  crossRefs?: Record<string, unknown>;
   notices?: NoticeConfig[];
   readingTimeMinutes?: number;
-  exercises?: any[];
-  aiChunks?: any[];
+  exercises?: unknown[];
+  aiChunks?: unknown[];
   updatedAt: string;
 }
 
@@ -175,4 +177,60 @@ export interface InstalledBookMeta {
   sourceType: 'local-file' | 'remote-repo' | 'pre-bundled';
   sourceUrl?: string;
   localPath?: string; // Electron 下有效
+}
+
+export interface AbpEmbeddingBundle {
+  binaryBase64?: string;
+  meta?: Record<string, unknown>;
+}
+
+/**
+ * 自包含 .abp 归档包完整载荷契约
+ */
+export interface AbpBundlePayload {
+  manifest: AstroBookManifest;
+  chapters: Record<string, AstroBookChapterPayload>;
+  assets?: Record<string, string>;
+  embeddings?: AbpEmbeddingBundle | null;
+  aiIndex?: Record<string, unknown> | null;
+  relationGraph?: Record<string, unknown> | null;
+  crossRefs?: Record<string, unknown> | null;
+  inspectorData?: Record<string, unknown> | null;
+  exercises?: Record<string, string> | null;
+}
+
+/**
+ * 在安装或导入入口校验解压后的 ABP 数据包结构合法性，防止非法包进入运行层
+ */
+export function validateAbpBundle(raw: unknown): AbpBundlePayload {
+  if (!raw || typeof raw !== 'object') {
+    throw new Error('无效的 ABP 数据包：根节点必须为 JSON 对象');
+  }
+  const obj = raw as Record<string, unknown>;
+  const manifest = obj.manifest as Record<string, unknown> | undefined;
+  if (!manifest || typeof manifest !== 'object') {
+    throw new Error('无效的 ABP 数据包：缺少 manifest 清单');
+  }
+  for (const field of ['id', 'slug', 'colSlug', 'title'] as const) {
+    if (typeof manifest[field] !== 'string' || !manifest[field]) {
+      throw new Error(`无效的 ABP manifest：缺少合法 ${field} 字段`);
+    }
+  }
+  if (!Array.isArray(manifest.sections)) {
+    throw new Error('无效的 ABP manifest：sections 必须为数组');
+  }
+  if (!obj.chapters || typeof obj.chapters !== 'object' || Array.isArray(obj.chapters)) {
+    throw new Error('无效的 ABP 数据包：chapters 必须为章节映射对象');
+  }
+  const chapters = obj.chapters as Record<string, unknown>;
+  for (const [slugKey, payload] of Object.entries(chapters)) {
+    if (!payload || typeof payload !== 'object') {
+      throw new Error(`无效的 ABP 章节载荷：${slugKey}`);
+    }
+    const p = payload as Record<string, unknown>;
+    if (typeof p.html !== 'string' || typeof p.title !== 'string') {
+      throw new Error(`无效的 ABP 章节载荷（缺少 title 或 html）：${slugKey}`);
+    }
+  }
+  return raw as AbpBundlePayload;
 }

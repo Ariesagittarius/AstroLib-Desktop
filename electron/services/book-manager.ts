@@ -9,12 +9,46 @@ import { app } from 'electron';
 import path from 'node:path';
 import fs from 'node:fs';
 import zlib from 'node:zlib';
-import type {
-  AstroBookManifest,
-  AstroBookChapterPayload,
-  InstalledBookMeta,
+import {
+  validateAbpBundle,
+  type AstroBookManifest,
+  type AstroBookChapterPayload,
+  type InstalledBookMeta,
 } from '../../src/types/content-package.ts';
 import type { StorageStats } from '../../src/services/content-provider/types.ts';
+
+/**
+ * 校验相对路径安全拼接：严禁路径穿越或写至基准目录之外
+ */
+function resolveSafeSubpath(baseDir: string, relPath: string): string {
+  if (!relPath || typeof relPath !== 'string') {
+    throw new Error('非法的相对路径（空路径）');
+  }
+  const normalized = relPath.replace(/\\/g, '/').replace(/^\/+/, '');
+  if (normalized.includes('..') || path.isAbsolute(relPath)) {
+    throw new Error(`检测到非法路径穿越字符: ${relPath}`);
+  }
+  const resolvedBase = path.resolve(baseDir);
+  const resolvedTarget = path.resolve(resolvedBase, normalized);
+  if (resolvedTarget !== resolvedBase && !resolvedTarget.startsWith(resolvedBase + path.sep)) {
+    throw new Error(`路径越界: ${relPath}`);
+  }
+  return resolvedTarget;
+}
+
+function writeFileAtomic(filePath: string, data: string | Buffer): void {
+  const dir = path.dirname(filePath);
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+  }
+  const tmpPath = `${filePath}.tmp.${process.pid}`;
+  if (typeof data === 'string') {
+    fs.writeFileSync(tmpPath, data, 'utf8');
+  } else {
+    fs.writeFileSync(tmpPath, data);
+  }
+  fs.renameSync(tmpPath, filePath);
+}
 
 export class DesktopBookManager {
   private readonly storageDir: string;
@@ -86,70 +120,111 @@ export class DesktopBookManager {
       throw new Error(`解压 .abp 数据包失败: ${err.message}`);
     }
 
-    // 2. 解析 JSON 结构
-    const bundle = JSON.parse(jsonText);
+    // 2. 解析并严格校验 ABP 数据包结构
+    const bundle = validateAbpBundle(JSON.parse(jsonText));
     const manifest: AstroBookManifest = bundle.manifest;
     const chapters: Record<string, AstroBookChapterPayload> = bundle.chapters || {};
     const assets: Record<string, string> = bundle.assets || {};
 
-    if (!manifest || !manifest.colSlug || !manifest.slug) {
-      throw new Error('无效的 ABP 数据包：缺少合法 manifest 清单！');
-    }
-
     const bookKey = `${manifest.colSlug}-${manifest.slug}`;
-    const bookDir = path.join(this.storageDir, bookKey);
-    const chaptersDir = path.join(bookDir, 'chapters');
-    const imagesDir = path.join(bookDir, 'images');
+    const bookDir = resolveSafeSubpath(this.storageDir, bookKey);
+    const stagingDir = resolveSafeSubpath(this.storageDir, `${bookKey}.__staging_${Date.now()}_${process.pid}`);
+    const backupDir = resolveSafeSubpath(this.storageDir, `${bookKey}.__backup_${Date.now()}_${process.pid}`);
+    const stagingChaptersDir = path.join(stagingDir, 'chapters');
+    const stagingExercisesDir = path.join(stagingDir, 'exercises');
 
-    this.ensureDir(chaptersDir);
+    this.ensureDir(stagingChaptersDir);
 
-    // 3. 写入 manifest.json
-    fs.writeFileSync(
-      path.join(bookDir, 'manifest.json'),
-      JSON.stringify(manifest, null, 2),
-      'utf8'
-    );
+    try {
+      // 3. 写入 manifest.json
+      writeFileAtomic(path.join(stagingDir, 'manifest.json'), JSON.stringify(manifest, null, 2));
 
-    // 4. 写入全部章节 JSON
-    for (const [chapKey, payload] of Object.entries(chapters)) {
-      const chapFile = path.join(chaptersDir, `${chapKey}.json`);
-      fs.writeFileSync(chapFile, JSON.stringify(payload, null, 2), 'utf8');
-    }
+      // 4. 写入全部章节 JSON（校验章节 key 无路径穿越）
+      for (const [chapKey, payload] of Object.entries(chapters)) {
+        const chapFile = resolveSafeSubpath(stagingChaptersDir, `${chapKey}.json`);
+        this.ensureDir(path.dirname(chapFile));
+        fs.writeFileSync(chapFile, JSON.stringify(payload, null, 2), 'utf8');
+      }
 
-    // 5. 写入配图资源 (Base64 解码)
-    for (const [relPath, b64Data] of Object.entries(assets)) {
-      try {
-        const destPath = path.join(bookDir, relPath);
+      // 5. 写入配图资源 (Base64 解码，严格校验相对路径)
+      for (const [relPath, b64Data] of Object.entries(assets)) {
+        const destPath = resolveSafeSubpath(stagingDir, relPath);
         this.ensureDir(path.dirname(destPath));
         const imgBuffer = Buffer.from(b64Data, 'base64');
         fs.writeFileSync(destPath, imgBuffer);
-      } catch (err) {
-        console.warn(`[DesktopBookManager] 写入插图失败: ${relPath}`, err);
       }
-    }
 
-    // 5.1 写入切片元数据与离线量化向量 (若 bundle 包含 embeddings)
-    if (bundle.embeddings) {
-      try {
+      // 5.1 写入切片元数据与离线量化向量 (若 bundle 包含 embeddings)
+      if (bundle.embeddings) {
         if (bundle.embeddings.meta) {
           fs.writeFileSync(
-            path.join(bookDir, 'embeddings.meta.json'),
+            path.join(stagingDir, 'embeddings.meta.json'),
             JSON.stringify(bundle.embeddings.meta, null, 2),
             'utf8'
           );
         }
         if (bundle.embeddings.binaryBase64) {
           const binBuf = Buffer.from(bundle.embeddings.binaryBase64, 'base64');
-          fs.writeFileSync(path.join(bookDir, 'embeddings.bin'), binBuf);
+          fs.writeFileSync(path.join(stagingDir, 'embeddings.bin'), binBuf);
         }
-      } catch (err) {
-        console.warn(`[DesktopBookManager] 写入切片向量失败: ${manifest.title}`, err);
       }
+
+      // 5.2 写入自包含辅助数据（AI 索引、知识图谱、交叉引用、模块巡检、课后习题）
+      if (bundle.aiIndex) {
+        fs.writeFileSync(path.join(stagingDir, 'ai-index.json'), JSON.stringify(bundle.aiIndex, null, 2), 'utf8');
+      }
+      if (bundle.relationGraph) {
+        fs.writeFileSync(path.join(stagingDir, 'relation-graph.json'), JSON.stringify(bundle.relationGraph, null, 2), 'utf8');
+      }
+      if (bundle.crossRefs) {
+        fs.writeFileSync(path.join(stagingDir, 'cross-refs.json'), JSON.stringify(bundle.crossRefs, null, 2), 'utf8');
+      }
+      if (bundle.inspectorData) {
+        fs.writeFileSync(path.join(stagingDir, 'inspector-data.json'), JSON.stringify(bundle.inspectorData, null, 2), 'utf8');
+      }
+      if (bundle.exercises && typeof bundle.exercises === 'object') {
+        this.ensureDir(stagingExercisesDir);
+        for (const [relPath, rawJson] of Object.entries(bundle.exercises)) {
+          if (typeof rawJson !== 'string') continue;
+          const destPath = resolveSafeSubpath(stagingExercisesDir, relPath);
+          this.ensureDir(path.dirname(destPath));
+          fs.writeFileSync(destPath, rawJson, 'utf8');
+        }
+      }
+
+      // 5.3 原子替换目标目录并失效旧渲染缓存
+      let backedUp = false;
+      if (fs.existsSync(bookDir)) {
+        fs.renameSync(bookDir, backupDir);
+        backedUp = true;
+      }
+      try {
+        fs.renameSync(stagingDir, bookDir);
+      } catch (swapErr) {
+        if (backedUp && fs.existsSync(backupDir) && !fs.existsSync(bookDir)) {
+          fs.renameSync(backupDir, bookDir);
+        }
+        throw swapErr;
+      }
+      if (backedUp && fs.existsSync(backupDir)) {
+        fs.rmSync(backupDir, { recursive: true, force: true });
+      }
+      const bookCacheDir = resolveSafeSubpath(this.storageDir, `.cache/${bookKey}`);
+      if (fs.existsSync(bookCacheDir)) {
+        fs.rmSync(bookCacheDir, { recursive: true, force: true });
+      }
+    } catch (err) {
+      if (fs.existsSync(stagingDir)) {
+        fs.rmSync(stagingDir, { recursive: true, force: true });
+      }
+      throw err;
     }
 
-    // 6. 更新已安装图书元数据
+    // 6. 更新已安装图书元数据（原子写入）
     const installed = await this.getInstalledBooks();
-    const existingIdx = installed.findIndex((b) => b.manifest.id === manifest.id);
+    const existingIdx = installed.findIndex(
+      (b) => b.manifest.id === manifest.id || (b.manifest.colSlug === manifest.colSlug && b.manifest.slug === manifest.slug)
+    );
 
     const meta: InstalledBookMeta = {
       installedAt: new Date().toISOString(),
@@ -164,26 +239,30 @@ export class DesktopBookManager {
       installed.unshift(meta);
     }
 
-    fs.writeFileSync(this.metaFile, JSON.stringify(installed, null, 2), 'utf8');
+    writeFileAtomic(this.metaFile, JSON.stringify(installed, null, 2));
     console.log(`[DesktopBookManager] 成功安装图书: 《${manifest.title}》(${bookKey})`);
     return meta;
   }
 
   /**
-   * 卸载图书并清理磁盘资源
+   * 卸载图书并清理磁盘资源与渲染缓存
    */
   public async removeBook(colSlug: string, bookSlug: string): Promise<boolean> {
     const bookKey = `${colSlug}-${bookSlug}`;
-    const bookDir = path.join(this.storageDir, bookKey);
+    const bookDir = resolveSafeSubpath(this.storageDir, bookKey);
+    const bookCacheDir = resolveSafeSubpath(this.storageDir, `.cache/${bookKey}`);
 
     try {
       if (fs.existsSync(bookDir)) {
         fs.rmSync(bookDir, { recursive: true, force: true });
       }
+      if (fs.existsSync(bookCacheDir)) {
+        fs.rmSync(bookCacheDir, { recursive: true, force: true });
+      }
 
       const installed = await this.getInstalledBooks();
       const filtered = installed.filter((b) => !(b.manifest.colSlug === colSlug && b.manifest.slug === bookSlug));
-      fs.writeFileSync(this.metaFile, JSON.stringify(filtered, null, 2), 'utf8');
+      writeFileAtomic(this.metaFile, JSON.stringify(filtered, null, 2));
       console.log(`[DesktopBookManager] 成功卸载图书: ${bookKey}`);
       return true;
     } catch (err) {

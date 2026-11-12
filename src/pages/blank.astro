@@ -13,7 +13,6 @@
  */
 import ScratchpadWorkspace from '../features/scratchpad/ui/ScratchpadWorkspace.astro';
 import ChapterExportModal from '../components/publishing/ChapterExportModal.astro';
-import Analytics from '../components/Analytics.astro';
 import { features } from '../config/features.config.mjs';
 
 import 'katex/dist/katex.min.css';
@@ -99,8 +98,6 @@ const pageDescription = '支持自主编辑元数据与正文，具备公式/Mer
       <div class="astrolib-sideload-scrim" id="astrolib-sideload-scrim" aria-hidden="true"></div>
       {features.chapterExport?.enabled && <ChapterExportModal />}
     </div>
-
-    <Analytics />
 
     <style is:global>
       body.scratchpad-page-body {

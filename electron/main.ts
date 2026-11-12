@@ -361,19 +361,11 @@ function setupIpcHandlers() {
 // 2. 应用程序准备就绪
 app.whenReady().then(async () => {
   const userAbpDir = path.join(app.getPath('userData'), 'abp-packs');
+  if (app.isPackaged && !process.env.ASTROLIB_INGEST_DIR) {
+    process.env.ASTROLIB_INGEST_DIR = path.join(app.getPath('userData'), 'ingest-tasks');
+  }
   bookManager = new DesktopBookManager(userAbpDir);
   libraryManager = new DesktopLibraryManager(bookManager, projectRoot);
-
-  // 自动清理过期的 ABP 预合成 HTML 缓存
-  const cacheDir = path.join(userAbpDir, '.cache');
-  if (fs.existsSync(cacheDir)) {
-    try {
-      fs.rmSync(cacheDir, { recursive: true, force: true });
-      log('[CACHE_REFRESH] 已自动刷新全部即时合成 HTML 缓存');
-    } catch (e) {
-      log(`[CACHE_CHECK_ERROR] ${e}`);
-    }
-  }
 
   setupIpcHandlers();
 
@@ -393,44 +385,6 @@ app.whenReady().then(async () => {
     log(`[astrolib-desktop] 本地服务已启动于 http://127.0.0.1:${serverPort}`);
 
     createMainWindow(serverPort);
-
-    // 异步在后台同步内置更新的书籍包至用户目录（非阻塞启动）
-    setTimeout(() => {
-      const candidateBundledDirs = [
-        path.join(distDir, 'abp-packs'),
-        path.join(projectRoot, 'public', 'abp-packs'),
-      ];
-      for (const bDirRoot of candidateBundledDirs) {
-        if (fs.existsSync(bDirRoot)) {
-          try {
-            const bookEntries = fs.readdirSync(bDirRoot);
-            for (const bEntry of bookEntries) {
-              const srcManifest = path.join(bDirRoot, bEntry, 'manifest.json');
-              if (fs.existsSync(srcManifest)) {
-                const destDir = path.join(userAbpDir, bEntry);
-                const destManifest = path.join(destDir, 'manifest.json');
-                let shouldSync = false;
-                if (!fs.existsSync(destManifest)) {
-                  shouldSync = true;
-                } else {
-                  const srcMtime = fs.statSync(srcManifest).mtimeMs;
-                  const destMtime = fs.statSync(destManifest).mtimeMs;
-                  if (srcMtime > destMtime) {
-                    shouldSync = true;
-                  }
-                }
-                if (shouldSync) {
-                  fs.cpSync(path.join(bDirRoot, bEntry), destDir, { recursive: true, force: true });
-                  log(`[BOOK_SYNC] 已自动同步更新书籍包: ${bEntry}`);
-                }
-              }
-            }
-          } catch (err: any) {
-            log(`[BOOK_SYNC_ERROR] ${err?.message || err}`);
-          }
-        }
-      }
-    }, 1000);
 
     // 后台静默预热 Qwen 信息高亮常驻模型（显存占用 ~1.14 GB，实现透镜秒级响应）
     setTimeout(() => {

@@ -12,7 +12,7 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
-import { collections } from '../../config/collections.config.mjs';
+import { getCatalogCollections } from '../../config/collections.config.mjs';
 import type { ChapterCanonicalMetadata } from '../../types/chapter-semantic';
 
 // 内存缓存：避免重复读取磁盘与题库 JSON
@@ -116,9 +116,9 @@ export function resolveChapterCanonicalMetadata(
   let bookTitle = input.bookTitle || '';
   let bookAuthor = input.bookAuthor || '';
 
-  // 1. 若缺少书籍信息，从 collections.config.mjs 权威查询
+  // 1. 若缺少书籍信息，从权威目录查询
   if ((!bookTitle || !bookAuthor) && bookSlug) {
-    for (const col of collections) {
+    for (const col of getCatalogCollections()) {
       const b = col.books.find((item) => item.slug === bookSlug || item.id === bookSlug);
       if (b) {
         if (!colSlug) colSlug = col.slug;

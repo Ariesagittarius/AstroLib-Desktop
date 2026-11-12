@@ -32,7 +32,9 @@ export class TaskManager {
   private activeJobs = new Map<string, Promise<void>>();
 
   private constructor() {
-    this.baseDir = path.resolve(process.cwd(), 'task/ingest');
+    this.baseDir = process.env.ASTROLIB_INGEST_DIR
+      ? path.resolve(process.env.ASTROLIB_INGEST_DIR)
+      : path.resolve(process.cwd(), 'task/ingest');
     if (!fs.existsSync(this.baseDir)) {
       fs.mkdirSync(this.baseDir, { recursive: true });
     }
@@ -496,7 +498,7 @@ export class TaskManager {
       throw new Error('未找到该任务的解析成果 Markdown');
     }
 
-    const colDir = path.resolve(process.cwd(), `src/content/docs/collections/${collectionSlug}`);
+    const colDir = path.resolve(process.cwd(), `content-sources/imports/${collectionSlug}`);
     if (!fs.existsSync(colDir)) {
       fs.mkdirSync(colDir, { recursive: true });
     }

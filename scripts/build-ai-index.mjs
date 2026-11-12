@@ -10,20 +10,21 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { features } from '../src/config/features.config.mjs';
-import { collections } from '../src/config/collections.config.mjs';
+import { getCatalogCollections } from '../src/config/collections.config.ts';
+import { resolveBookSourceDir } from '../src/core/catalog/content-paths.ts';
 import { buildBookIndex } from '../src/ai/indexer.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '..');
-const COLLECTION_ROOT = path.join(ROOT, 'src', 'content', 'docs', 'collections');
-const OUT_DIR = path.join(ROOT, 'public', 'ai-index');
+const OUT_DIR = path.join(ROOT, 'artifacts', 'ai-index');
 
 const args = process.argv.slice(2);
 const onlySlug = args.includes('--only') ? args[args.indexOf('--only') + 1] : null;
+const allowEmpty = args.includes('--allow-empty');
 
 function main() {
   if (!features.aiAsk.enabled) {
-    console.log('[ai-index] 已跳过：AI 智能问答功能关闭（features.config.mjs 中 aiAsk.enabled=false）。');
+    console.log('[ai-index] 已跳过：AI 智能问答功能关闭（features.config.ts 中 aiAsk.enabled=false）。');
     return;
   }
 
@@ -31,10 +32,10 @@ function main() {
   let total = 0;
   let books = 0;
 
-  for (const col of collections) {
+  for (const col of getCatalogCollections()) {
     for (const book of col.books || []) {
       if (onlySlug && book.slug !== onlySlug) continue;
-      const bookDir = path.join(COLLECTION_ROOT, col.slug, book.slug);
+      const bookDir = resolveBookSourceDir(col.slug, book.slug, ROOT);
       if (!fs.existsSync(bookDir)) continue;
 
       const idx = buildBookIndex({
@@ -51,6 +52,11 @@ function main() {
       books++;
       console.log(`  ✔ ${col.slug}/${book.slug} → ${path.relative(ROOT, outFile)}（${idx.chunks.length} 片段）`);
     }
+  }
+
+  if (books === 0 && !allowEmpty) {
+    console.error('❌ [ai-index] 未生成任何图书索引（输入目录为空或未匹配目标书目）。若确需空跑请传 --allow-empty。');
+    process.exit(1);
   }
 
   console.log(`\n✅ AI 索引完成：${books} 本、共 ${total} 片段 → ${path.relative(ROOT, OUT_DIR)}/`);

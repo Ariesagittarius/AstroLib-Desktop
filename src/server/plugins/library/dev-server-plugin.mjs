@@ -103,9 +103,13 @@ export function devLibraryServerPlugin() {
           if (req.method === 'GET' && pathname === `${LIBRARY_PATH_PREFIX}/entities`) {
             const entities = [];
 
-            // A. 读取内置 catalog.json 书籍
-            const catalogPath = path.resolve(projectRoot, 'public/abp-packs/catalog.json');
-            if (fs.existsSync(catalogPath)) {
+            // A. 读取开发产物或临时目录的 catalog.json 书籍（不再读取 public/abp-packs）
+            const candidateCatalogs = [
+              path.resolve(projectRoot, 'artifacts/abp-packs/catalog.json'),
+              path.resolve(projectRoot, '.tmp/dev-abp-packs/catalog.json'),
+            ];
+            const catalogPath = candidateCatalogs.find((p) => fs.existsSync(p));
+            if (catalogPath) {
               try {
                 const cat = JSON.parse(fs.readFileSync(catalogPath, 'utf8'));
                 for (const b of cat.books || []) {
@@ -229,7 +233,7 @@ export function devLibraryServerPlugin() {
             return sendJson(res, 200, { success: true });
           }
 
-          // 5. 上传并安装 .abp 书籍包
+          // 5. 上传并安装 .abp 书籍包（开发态写入 .tmp/dev-abp-packs，严禁污染 public/）
           if (req.method === 'POST' && pathname === `${LIBRARY_PATH_PREFIX}/upload-abp`) {
             const fileBuf = await readBufferBody(req);
             if (!fileBuf || fileBuf.length === 0) {
@@ -243,12 +247,29 @@ export function devLibraryServerPlugin() {
                 return sendJson(res, 400, { error: '无效的 ABP 数据包：缺少合法清单' });
               }
               const bookKey = `${manifest.colSlug}-${manifest.slug}`;
-              const targetDir = path.resolve(projectRoot, 'public/abp-packs', bookKey);
-              fs.mkdirSync(targetDir, { recursive: true });
+              if (bookKey.includes('..') || bookKey.includes('/') || bookKey.includes('\\')) {
+                return sendJson(res, 400, { error: '非法的书籍标识' });
+              }
+              const targetDir = path.resolve(projectRoot, '.tmp/dev-abp-packs', bookKey);
+              const chaptersDir = path.join(targetDir, 'chapters');
+              fs.mkdirSync(chaptersDir, { recursive: true });
               fs.writeFileSync(path.join(targetDir, 'manifest.json'), JSON.stringify(manifest, null, 2), 'utf8');
-              if (bundle.chapters) {
+              if (bundle.chapters && typeof bundle.chapters === 'object') {
                 for (const [cSlug, cData] of Object.entries(bundle.chapters)) {
-                  fs.writeFileSync(path.join(targetDir, `${cSlug}.json`), JSON.stringify(cData, null, 2), 'utf8');
+                  const safeRel = cSlug.replace(/\\/g, '/').replace(/^\/+/, '');
+                  if (safeRel.includes('..')) continue;
+                  const destChap = path.join(chaptersDir, `${safeRel}.json`);
+                  fs.mkdirSync(path.dirname(destChap), { recursive: true });
+                  fs.writeFileSync(destChap, JSON.stringify(cData, null, 2), 'utf8');
+                }
+              }
+              if (bundle.assets && typeof bundle.assets === 'object') {
+                for (const [relPath, b64] of Object.entries(bundle.assets)) {
+                  const safeRel = relPath.replace(/\\/g, '/').replace(/^\/+/, '');
+                  if (safeRel.includes('..')) continue;
+                  const destAsset = path.join(targetDir, safeRel);
+                  fs.mkdirSync(path.dirname(destAsset), { recursive: true });
+                  fs.writeFileSync(destAsset, Buffer.from(b64, 'base64'));
                 }
               }
               return sendJson(res, 200, { success: true, manifest });

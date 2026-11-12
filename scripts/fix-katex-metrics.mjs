@@ -19,7 +19,7 @@ const showDetail = args.includes('--detail') || args.includes('-v');
 const runCompileCheck = args.includes('--compile');
 
 const targetArg = args.find(a => !a.startsWith('-'));
-const targetDir = targetArg || 'src/content/docs/collections';
+const targetDir = targetArg || 'content-sources/collections';
 
 const romanMap = {
   'Ⅰ': 'I', 'Ⅱ': 'II', 'Ⅲ': 'III', 'Ⅳ': 'IV', 'Ⅴ': 'V',

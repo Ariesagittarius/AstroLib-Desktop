@@ -10,7 +10,6 @@ import ModuleInspector from './ModuleInspector.astro';
 import AIAsk from './AIAsk.astro';
 import BookRelationGraph from './BookRelationGraph.astro';
 import FeedbackMode from './FeedbackMode.astro';
-import Analytics from './Analytics.astro';
 import ExerciseModal from './exercises/ExerciseModal.astro';
 import ChapterExportModal from './publishing/ChapterExportModal.astro';
 import { features } from '../config/features.config.mjs';
@@ -40,8 +39,6 @@ const isDev = import.meta.env.DEV;
 {features.exercises?.enabled && <ExerciseModal />}
 
 {features.chapterExport?.enabled && <ChapterExportModal />}
-
-<Analytics />
 
 <style>
   footer {

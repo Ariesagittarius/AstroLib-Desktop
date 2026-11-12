@@ -13,11 +13,11 @@ const pathname = Astro.url.pathname;
 const filteredSidebar = buildTwoTierSidebar(sidebar, pathname, collections);
 const bookMatch = pathname.match(/\/collections\/([^/]+)\/([^/]+)/);
 
-// 当前图书的 EPUB 下载链接：优先探测本地 public/epub/<slug>.epub，若无则回退至 GitHub Release 资产链接。
+// 当前图书的 EPUB 下载链接：优先探测本地 artifacts/epub/<slug>.epub，若无则回退至 GitHub Release 资产链接。
 let epubHref = null;
 if (features.epub.enabled && bookMatch) {
   const bookSlug = bookMatch[2];
-  const epubPath = `public/epub/${bookSlug}.epub`;
+  const epubPath = `artifacts/epub/${bookSlug}.epub`;
   try {
     if (fs.existsSync(epubPath)) {
       epubHref = `/epub/${bookSlug}.epub`;

@@ -41,8 +41,6 @@ import { translationDevServerPlugin } from './src/server/plugins/translation/dev
 import { ingestDevServerPlugin } from './src/server/plugins/doc-ingestion/dev-server-plugin.mjs';
 // 双语向量关联与热力图推理模块：/__bilingual__/* 本地端点（Vite dev server 插件，仅 dev 启用）
 import { bilingualDevServerPlugin } from './src/server/plugins/bilingual-aligner/dev-server-plugin.mjs';
-// 离线数据包本地服务端点：/offline-packs/* 透明分发端点（Vite dev server 插件，仅 dev 启用）
-import { offlinePackDevServerPlugin } from './src/server/plugins/offline-pack/dev-server-plugin.mjs';
 // 本地 Qwen 信息高亮与关注点透镜端点：/__info_highlight__/*（Vite dev server 插件，仅 dev 启用）
 import { infoHighlightDevServerPlugin } from './src/server/plugins/info-highlight/dev-server-plugin.mjs';
 // 统一研读实体与书库端点：/api/library/* 本地服务端点（Vite dev server 插件，仅 dev 启用）
@@ -267,8 +265,6 @@ export default defineConfig({
       bilingualDevServerPlugin(),
       // BUPT AI 本地 Node.js 进程全双工中继反代端点（仅 dev 启用）
       buptProxyDevServerPlugin(),
-      // 离线数据包本地开发分发端点（仅 dev 启用）
-      offlinePackDevServerPlugin(),
       // 本地 Qwen 关注点透镜与信息高亮端点（仅 dev 启用）
       infoHighlightDevServerPlugin(),
       // 统一研读实体与书库端点（仅 dev 启用）
@@ -291,7 +287,7 @@ export default defineConfig({
           '**/task/**',
           '**/.temp/**',
           '**/.astro/**',
-          '**/public/epub/**',
+          '**/artifacts/**',
           '**/dist/**',
         ],
       },

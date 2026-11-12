@@ -24,8 +24,14 @@ import { fileURLToPath } from 'node:url';
 import katex from 'katex';
 import { marked } from 'marked';
 import { renderTitleHtml } from '../src/utils/render-title.ts';
+import { cleanSlug } from '../src/utils/slug.ts';
 import { ABP_SCHEMA_VERSION } from '../src/types/content-package.ts';
-import { collections, sourceCollections } from '../src/config/collections.config.mjs';
+import { getCatalogCollections } from '../src/config/collections.config.ts';
+import { resolveAbpArtifactsDir, resolveBookSourceDir, CONTENT_CATALOG_REL } from '../src/core/catalog/content-paths.ts';
+import { buildBookIndex } from '../src/ai/indexer.mjs';
+import { generateBookRelationGraph } from '../src/features/relation-graph/core/generator.mjs';
+import { buildGlobalBlockIndex } from '../src/core/indexing/cross-ref-indexer.mjs';
+import { scanBookModules } from '../src/features/module-inspector/core/scanner.mjs';
 import { chunkMdx } from '../src/ai/chunker.mjs';
 import { serializeEmbeddingsBinary } from '../src/features/search-rec/services/storage.ts';
 
@@ -439,7 +445,14 @@ function compileMarkdownToSemanticHtml(body, { colSlug = '', bookSlug = '', book
 /**
  * 编译单本图书为 ABP
  */
-export async function packBook({ bookDir, outDir, customManifest = null, withVectors = true, vectorFormat = 'int8' }) {
+export async function packBook({
+  bookDir,
+  outDir,
+  customManifest = null,
+  withVectors = true,
+  vectorFormat = 'int8',
+  includeAuxiliary = true,
+}) {
   if (!fs.existsSync(bookDir)) {
     throw new Error(`目标书籍目录不存在: ${bookDir}`);
   }
@@ -450,28 +463,15 @@ export async function packBook({ bookDir, outDir, customManifest = null, withVec
   const bookSlug = dirParts[dirParts.length - 1];
   const colSlug = dirParts[dirParts.length - 2] || 'general';
 
-  // 查找既有配置或源书库权威配置
+  // 从唯一 SSOT 目录配置检索权威书籍元数据
   let existingBook = null;
-  const candidateCollections = (collections && collections.length > 0) ? collections : sourceCollections;
-  for (const col of (candidateCollections || [])) {
-    const found = (col.books || []).find((b) => b.slug === bookSlug);
+  for (const col of getCatalogCollections()) {
+    const found = (col.books || []).find((b) => b.slug === bookSlug && col.slug === colSlug)
+      || (col.books || []).find((b) => b.slug === bookSlug);
     if (found) {
       existingBook = found;
       break;
     }
-  }
-
-  if (!existingBook) {
-    try {
-      const regPath = path.join(ROOT, 'content-sources', 'catalog-registry.json');
-      const catPath = path.join(ROOT, 'public', 'abp-packs', 'catalog.json');
-      const targetPath = fs.existsSync(regPath) ? regPath : catPath;
-      if (fs.existsSync(targetPath)) {
-        const cat = JSON.parse(fs.readFileSync(targetPath, 'utf8'));
-        const found = (cat.books || []).find((b) => b.slug === bookSlug || b.id === `${colSlug}-${bookSlug}`);
-        if (found) existingBook = found;
-      }
-    } catch {}
   }
 
   const manifest = {
@@ -484,6 +484,8 @@ export async function packBook({ bookDir, outDir, customManifest = null, withVec
     publisher: existingBook?.publisher || customManifest?.publisher,
     isbn: existingBook?.isbn || customManifest?.isbn,
     edition: existingBook?.edition || customManifest?.edition,
+    stage: existingBook?.stage || customManifest?.stage,
+    stageLabel: existingBook?.stageLabel || customManifest?.stageLabel,
     category: existingBook?.category || customManifest?.category || 'textbook',
     categoryLabel: existingBook?.categoryLabel || customManifest?.categoryLabel || '教材',
     subject: existingBook?.subject || customManifest?.subject || colSlug,
@@ -493,6 +495,8 @@ export async function packBook({ bookDir, outDir, customManifest = null, withVec
     cover: existingBook?.cover || customManifest?.cover,
     entryPoint: existingBook?.entryPoint || customManifest?.entryPoint || '',
     trackClasses: (existingBook?.trackClasses && existingBook.trackClasses.length > 0) ? existingBook.trackClasses : ['.toc-chunk'],
+    notices: existingBook?.notices || customManifest?.notices,
+    languages: existingBook?.languages || customManifest?.languages,
     modules: (existingBook?.modules && Object.keys(existingBook.modules).length > 0)
       ? existingBook.modules
       : {
@@ -540,9 +544,8 @@ export async function packBook({ bookDir, outDir, customManifest = null, withVec
     throw new Error(`未在目录 ${bookDir} 中找到任何 .mdx 或 .md 章节文件！`);
   }
 
-  if (!manifest.entryPoint) {
-    manifest.entryPoint = chapterFiles[0].replace(/\.(mdx|md)$/, '');
-  }
+  const rawEntry = manifest.entryPoint || chapterFiles[0].replace(/\.(mdx|md)$/, '');
+  manifest.entryPoint = cleanSlug(rawEntry);
 
   const chapterPayloads = {};
   const sectionChapters = [];
@@ -553,8 +556,10 @@ export async function packBook({ bookDir, outDir, customManifest = null, withVec
     const fullPath = path.join(resolvedDir, cFile);
     const rawContent = fs.readFileSync(fullPath, 'utf8');
     const { frontmatter, body } = parseFrontmatter(rawContent);
-    const chapterSlug = cFile.replace(/\.(mdx|md)$/, '');
-    const chapterTitle = frontmatter.title || chapterSlug;
+    const rawChapterSlug = cFile.replace(/\.(mdx|md)$/, '');
+    const chapterSlug = cleanSlug(rawChapterSlug);
+    const legacySlug = rawChapterSlug !== chapterSlug ? rawChapterSlug : undefined;
+    const chapterTitle = frontmatter.title || rawChapterSlug;
     const chapterHash = computeHash(rawContent);
     combinedHashData += chapterHash;
 
@@ -597,14 +602,19 @@ export async function packBook({ bookDir, outDir, customManifest = null, withVec
 
     chapterPayloads[chapterSlug] = payload;
 
-    sectionChapters.push({
+    const summary = {
       id: `ch-${chapterSlug}`,
       title: chapterTitle,
       slug: chapterSlug,
+      sourcePath: cFile,
       path: `chapters/${chapterSlug}.json`,
       hash: chapterHash,
       sizeBytes: Buffer.byteLength(JSON.stringify(payload), 'utf8'),
-    });
+    };
+    if (legacySlug) {
+      summary.legacySlug = legacySlug;
+    }
+    sectionChapters.push(summary);
   }
 
   manifest.sections = [
@@ -634,9 +644,12 @@ export async function packBook({ bookDir, outDir, customManifest = null, withVec
     }
   }
 
-  // 4. 输出散列流式分发目录
+  // 4. 输出散列流式分发目录（先清理旧章节防止历史未净化 slug 残留）
   const bookOutDir = path.join(outDir, `${manifest.colSlug}-${manifest.slug}`);
   const chaptersOutDir = path.join(bookOutDir, 'chapters');
+  if (fs.existsSync(chaptersOutDir)) {
+    fs.rmSync(chaptersOutDir, { recursive: true, force: true });
+  }
   fs.mkdirSync(chaptersOutDir, { recursive: true });
 
   fs.writeFileSync(path.join(bookOutDir, 'manifest.json'), JSON.stringify(manifest, null, 2), 'utf8');
@@ -703,17 +716,101 @@ export async function packBook({ bookDir, outDir, customManifest = null, withVec
     }
   }
 
-  // 5. 输出单文件 .abp 离线归档包 (Gzip 压缩)
+  // 4.6 自包含书籍附属索引打包 (AI 索引 / 关系图谱 / 跨页引用 / 卡片巡检 / 可选题库切片)
+  let aiIndex = null;
+  let relationGraph = null;
+  let crossRefs = null;
+  let inspectorData = null;
+  let exercisesBundle = null;
+
+  if (includeAuxiliary) {
+    try {
+      aiIndex = buildBookIndex({
+        colSlug: manifest.colSlug,
+        bookSlug: manifest.slug,
+        bookDir: resolvedDir,
+        modules: manifest.modules || {},
+        title: manifest.title,
+      });
+      fs.writeFileSync(path.join(bookOutDir, 'ai-index.json'), JSON.stringify(aiIndex), 'utf8');
+    } catch (e) {
+      console.warn(`   ⚠️ AI 索引生成跳过: ${e.message}`);
+    }
+
+    try {
+      relationGraph = generateBookRelationGraph(manifest.colSlug, manifest.slug);
+      if (relationGraph) {
+        fs.writeFileSync(path.join(bookOutDir, 'relation-graph.json'), JSON.stringify(relationGraph), 'utf8');
+      }
+    } catch (e) {
+      console.warn(`   ⚠️ 关系图谱生成跳过: ${e.message}`);
+    }
+
+    try {
+      crossRefs = buildGlobalBlockIndex(manifest.colSlug, manifest.slug);
+      if (crossRefs && Object.keys(crossRefs).length > 0) {
+        fs.writeFileSync(path.join(bookOutDir, 'cross-refs.json'), JSON.stringify(crossRefs), 'utf8');
+      }
+    } catch (e) {
+      console.warn(`   ⚠️ 跨页引用生成跳过: ${e.message}`);
+    }
+
+    try {
+      inspectorData = scanBookModules(manifest.colSlug, manifest.slug);
+      if (inspectorData?.ok) {
+        fs.writeFileSync(path.join(bookOutDir, 'inspector-data.json'), JSON.stringify(inspectorData), 'utf8');
+      }
+    } catch (e) {
+      console.warn(`   ⚠️ 模块巡检生成跳过: ${e.message}`);
+    }
+
+    // 若存在对应书目的编译题库切片，一并编入 .abp
+    const exCandidates = [
+      path.join(ROOT, 'artifacts', 'exercises', manifest.slug),
+      path.join(ROOT, 'public', 'data', 'exercises', manifest.slug),
+    ];
+    const exSrcDir = exCandidates.find((d) => fs.existsSync(d));
+    if (exSrcDir) {
+      const exMap = {};
+      const collectEx = (dir) => {
+        for (const ent of fs.readdirSync(dir, { withFileTypes: true })) {
+          const full = path.join(dir, ent.name);
+          if (ent.isDirectory()) collectEx(full);
+          else if (ent.isFile() && ent.name.endsWith('.json')) {
+            const rel = path.relative(exSrcDir, full).replace(/\\/g, '/');
+            const content = fs.readFileSync(full, 'utf8');
+            exMap[rel] = content;
+            const dest = path.join(bookOutDir, 'exercises', rel);
+            fs.mkdirSync(path.dirname(dest), { recursive: true });
+            fs.writeFileSync(dest, content, 'utf8');
+          }
+        }
+      };
+      collectEx(exSrcDir);
+      if (Object.keys(exMap).length > 0) {
+        exercisesBundle = exMap;
+      }
+    }
+  }
+
+  // 5. 原子输出单文件 .abp 离线归档包 (Gzip 压缩)
   const fullBundle = {
     manifest,
     chapters: chapterPayloads,
     assets: assetBuffers,
     embeddings: embeddingAsset,
+    aiIndex,
+    relationGraph,
+    crossRefs,
+    inspectorData,
+    exercises: exercisesBundle,
   };
   const bundleJson = JSON.stringify(fullBundle);
   const abpBuffer = zlib.gzipSync(Buffer.from(bundleJson, 'utf8'), { level: 9 });
   const abpPath = path.join(outDir, `${manifest.colSlug}-${manifest.slug}.abp`);
-  fs.writeFileSync(abpPath, abpBuffer);
+  const abpTmpPath = `${abpPath}.tmp.${process.pid}`;
+  fs.writeFileSync(abpTmpPath, abpBuffer);
+  fs.renameSync(abpTmpPath, abpPath);
 
   const abpSizeMb = (abpBuffer.length / (1024 * 1024)).toFixed(2);
   console.log(`\n✅ 成功编译图书包: [${manifest.title}] (${manifest.id})`);
@@ -721,7 +818,7 @@ export async function packBook({ bookDir, outDir, customManifest = null, withVec
   console.log(`   - 散列目录: ${bookOutDir}`);
   console.log(`   - 单文件包: ${abpPath} (${abpSizeMb} MB)`);
 
-  // 6. 增量更新/重新生成 outDir/catalog.json
+  // 6. 增量更新/重新生成 outDir/catalog.json 与权威投影 content-sources/catalog.json
   updateCatalogJson(outDir, manifest, `${manifest.colSlug}-${manifest.slug}.abp`, abpBuffer.length);
 
   return {
@@ -733,13 +830,14 @@ export async function packBook({ bookDir, outDir, customManifest = null, withVec
 }
 
 /**
- * 更新或创建书库总清单 catalog.json
+ * 原子更新或创建书库总清单 catalog.json
  */
 export function updateCatalogJson(outDir, manifest, packFileName, sizeBytes) {
   const catalogPath = path.join(outDir, 'catalog.json');
   let catalog = {
     schemaVersion: ABP_SCHEMA_VERSION,
     catalogName: 'AstroLib Book Catalog',
+    generatedBy: 'scripts/pack-book-abp.mjs',
     generatedAt: new Date().toISOString(),
     books: [],
   };
@@ -747,6 +845,7 @@ export function updateCatalogJson(outDir, manifest, packFileName, sizeBytes) {
   if (fs.existsSync(catalogPath)) {
     try {
       catalog = JSON.parse(fs.readFileSync(catalogPath, 'utf8'));
+      if (!Array.isArray(catalog.books)) catalog.books = [];
     } catch {}
   }
 
@@ -776,80 +875,71 @@ export function updateCatalogJson(outDir, manifest, packFileName, sizeBytes) {
     catalog.books.push(entry);
   }
 
+  catalog.generatedBy = 'scripts/pack-book-abp.mjs';
   catalog.generatedAt = new Date().toISOString();
-  fs.writeFileSync(catalogPath, JSON.stringify(catalog, null, 2), 'utf8');
+  const payload = JSON.stringify(catalog, null, 2);
+  const tmpPath = `${catalogPath}.tmp.${process.pid}`;
+  fs.writeFileSync(tmpPath, payload, 'utf8');
+  fs.renameSync(tmpPath, catalogPath);
 }
 
 // CLI 执行入口
 if (process.argv[1] && process.argv[1].endsWith('pack-book-abp.mjs')) {
   const args = process.argv.slice(2);
-  const outDir = path.join(ROOT, 'public', 'abp-packs');
-  const distOutDir = path.join(ROOT, 'dist', 'abp-packs');
+  const outArg = args.find((a) => a.startsWith('--out='))?.slice('--out='.length);
+  const outDir = outArg ? path.resolve(ROOT, outArg) : resolveAbpArtifactsDir(ROOT);
   fs.mkdirSync(outDir, { recursive: true });
-  fs.mkdirSync(distOutDir, { recursive: true });
 
   async function run() {
     const withVectors = !args.includes('--no-vectors');
+    const includeAuxiliary = !args.includes('--no-auxiliary');
     const vectorFormat = args.includes('--format=float32') ? 'float32' : 'int8';
-    const sourcesRoot = path.join(ROOT, 'content-sources', 'collections');
+
     if (args.includes('--all')) {
-      console.log('📦 正在批量编译 content-sources 全站所有书籍为官方标准 ABP 内容包...\n');
+      console.log('📦 正在依据 SSOT 目录批量编译全站书籍为自包含 ABP 内容包...\n');
       const allBooks = [];
-      
-      if (fs.existsSync(sourcesRoot)) {
-        for (const colEntry of fs.readdirSync(sourcesRoot, { withFileTypes: true })) {
-          if (!colEntry.isDirectory()) continue;
-          const colDir = path.join(sourcesRoot, colEntry.name);
-          for (const bookEntry of fs.readdirSync(colDir, { withFileTypes: true })) {
-            if (!bookEntry.isDirectory()) continue;
-            const bookDir = path.join(colDir, bookEntry.name);
-            allBooks.push({
-              bookDir,
-              title: `${colEntry.name}/${bookEntry.name}`,
-              id: `${colEntry.name}-${bookEntry.name}`,
-            });
+      for (const col of getCatalogCollections()) {
+        for (const book of col.books || []) {
+          const bookDir = resolveBookSourceDir(col.slug, book.slug, ROOT);
+          if (!fs.existsSync(bookDir)) {
+            throw new Error(`SSOT 目录书目源码缺失: ${bookDir}`);
           }
+          allBooks.push({
+            bookDir,
+            title: `${col.slug}/${book.slug}`,
+            id: `${col.slug}-${book.slug}`,
+          });
         }
+      }
+
+      if (allBooks.length === 0) {
+        throw new Error('SSOT 目录中没有任何可打包的书目！');
       }
 
       for (const b of allBooks) {
         console.log(`⏳ 正在打包: ${b.title}...`);
-        await packBook({ bookDir: b.bookDir, outDir, withVectors, vectorFormat });
+        await packBook({ bookDir: b.bookDir, outDir, withVectors, vectorFormat, includeAuxiliary });
       }
 
-      // 拷贝 catalog.json 和所有 .abp 至 dist/abp-packs
-      for (const file of fs.readdirSync(outDir)) {
-        const srcPath = path.join(outDir, file);
-        const destPath = path.join(distOutDir, file);
-        if (fs.statSync(srcPath).isDirectory()) {
-          fs.cpSync(srcPath, destPath, { recursive: true });
-        } else {
-          fs.copyFileSync(srcPath, destPath);
-        }
+      // 同步权威投影 content-sources/catalog.json
+      const generatedCatalog = path.join(outDir, 'catalog.json');
+      if (fs.existsSync(generatedCatalog)) {
+        fs.copyFileSync(generatedCatalog, path.join(ROOT, CONTENT_CATALOG_REL));
       }
 
       console.log(`\n🎉 全站 ${allBooks.length} 本书籍已全部打包完成！`);
-      console.log(`   - 存储目录: ${outDir}`);
-      console.log(`   - 静态目录: ${distOutDir}`);
+      console.log(`   - 产物目录: ${outDir}`);
+      console.log(`   - 目录投影: ${path.join(ROOT, CONTENT_CATALOG_REL)}`);
     } else {
       const defaultDir = path.join('content-sources', 'collections', 'math', 'math_senior');
       const targetDir = args.find((a) => !a.startsWith('--')) || defaultDir;
       await packBook({
         bookDir: path.resolve(ROOT, targetDir),
-        outDir: outDir,
+        outDir,
         withVectors,
         vectorFormat,
+        includeAuxiliary,
       });
-      // 拷贝至 distOutDir
-      for (const file of fs.readdirSync(outDir)) {
-        const s = path.join(outDir, file);
-        const d = path.join(distOutDir, file);
-        if (fs.statSync(s).isDirectory()) {
-          fs.cpSync(s, d, { recursive: true });
-        } else {
-          fs.copyFileSync(s, d);
-        }
-      }
     }
   }
 

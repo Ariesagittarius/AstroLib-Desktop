@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { cleanSlug } from '../../utils/slug.mjs';
+import { resolveBookSourceDir, toCollectionRelativeSlug } from '../catalog/content-paths.ts';
 
 function walkDir(dir, fileList = []) {
   if (!fs.existsSync(dir)) return fileList;
@@ -63,7 +64,7 @@ export function buildGlobalBlockIndex(colSlug, bookSlug, force = false) {
   const bookKey = `${colSlug}/${bookSlug}`;
 
   try {
-    const docsRoot = path.resolve(`src/content/docs/collections/${colSlug}/${bookSlug}`);
+    const docsRoot = resolveBookSourceDir(colSlug, bookSlug);
     if (fs.existsSync(docsRoot)) {
       const allMdxFiles = walkDir(docsRoot);
       const signature = allMdxFiles.map((f) => `${f.filePath}:${f.mtimeMs}`).join('|');
@@ -77,8 +78,7 @@ export function buildGlobalBlockIndex(colSlug, bookSlug, force = false) {
 
       allMdxFiles.forEach(({ filePath: file }) => {
         const fileContent = fs.readFileSync(file, 'utf-8');
-        const relativePath = path.relative('src/content/docs', file);
-        const rawSlug = relativePath.replace(/\.mdx?$/, '').replace(/\\/g, '/');
+        const rawSlug = toCollectionRelativeSlug(file);
 
         const cleanSlugPath = cleanSlug(rawSlug);
         let urlPath = `/${cleanSlugPath}/`;

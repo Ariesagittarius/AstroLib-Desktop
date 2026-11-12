@@ -15,9 +15,9 @@ import { features } from '../src/config/features.config.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '..');
-const CONTENT_ROOT = path.join(ROOT, 'src', 'content', 'docs', 'collections');
-const OUT_DIR = path.join(ROOT, 'public', 'epub');
-const KATEX_DIR = path.join(ROOT, 'node_modules', 'katex', 'dist');
+const CONTENT_ROOT = path.join(ROOT, 'content-sources', 'collections');
+const OUT_DIR = path.join(ROOT, 'artifacts', 'epub');
+const KATEX_DIR = path.join(__dirname, '..', 'node_modules', 'katex', 'dist');
 const PUB_COVERS = path.join(ROOT, 'public', 'covers');
 const SITE_CSS = path.join(__dirname, 'epub', 'site.css');
 
@@ -38,12 +38,13 @@ async function loadBookMeta() {
     if (book.cover) m.cover = book.cover;
   };
   try {
-    const mod = await import(pathToFileURL(path.join(ROOT, 'src', 'config', 'collections.config.mjs')).href);
-    for (const col of mod.collections || []) {
+    const mod = await import(pathToFileURL(path.join(ROOT, 'src', 'config', 'collections.config.ts')).href);
+    const list = typeof mod.getCatalogCollections === 'function' ? mod.getCatalogCollections() : (mod.sourceCollections || mod.collections || []);
+    for (const col of list) {
       for (const book of col.books || []) merge(col.slug, book);
     }
   } catch (e) {
-    console.warn(`[epub] 读取 collections.config.mjs 失败：`, e.message);
+    console.warn(`[epub] 读取 collections.config.ts 失败：`, e.message);
   }
   return meta;
 }

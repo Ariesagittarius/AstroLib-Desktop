@@ -20,12 +20,12 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '..');
 const SRC_EXAM_DATA = path.join(ROOT, 'src', 'data', 'exercises', 'engineering_analysis_exercises.json');
 const SRC_TEXTBOOK_DATA = path.join(ROOT, 'src', 'data', 'exercises', 'engineering_analysis_textbook_exercises.json');
-const OUT_DIR = path.join(ROOT, 'public', 'data', 'exercises', 'engineering_analysis');
+const OUT_DIR = path.join(ROOT, 'artifacts', 'exercises', 'engineering_analysis');
 const PAPERS_OUT_DIR = path.join(OUT_DIR, 'papers');
 
 const SRC_LAG_EXAM_DATA = path.join(ROOT, 'src', 'data', 'exercises', 'linear_algebra_geometry_exercises.json');
 const SRC_LAG_TEXTBOOK_DATA = path.join(ROOT, 'src', 'data', 'exercises', 'linear_algebra_geometry_textbook_exercises.json');
-const OUT_LAG_DIR = path.join(ROOT, 'public', 'data', 'exercises', 'linear_algebra_geometry');
+const OUT_LAG_DIR = path.join(ROOT, 'artifacts', 'exercises', 'linear_algebra_geometry');
 const PAPERS_LAG_OUT_DIR = path.join(OUT_LAG_DIR, 'papers');
 
 /** HTML 实体安全转义 */

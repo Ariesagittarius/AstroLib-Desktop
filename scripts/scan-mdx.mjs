@@ -26,7 +26,7 @@ const detailFile = process.argv.find(a => a.startsWith('--detail='))?.split('=')
 const showLines = process.argv.includes('--lines');
 const skipMath = process.argv.includes('--skip-math');
 const targetDir = process.argv.slice(2).find(a => !a.startsWith('--'))
-  || 'src/content/docs/collections/math/math_analysis';
+  || 'content-sources/collections/math/math_analysis';
 
 function walk(dir, list = []) {
   if (!fs.existsSync(dir)) return list;

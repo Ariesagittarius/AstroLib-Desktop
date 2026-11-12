@@ -10,8 +10,8 @@
 
 import type { NoticeConfig } from './notices.ts';
 
-export type BookStage = 'high-school' | 'university' | 'graduate' | 'research' | string;
-export type BookCategory = 'textbook' | 'supplement' | 'notes' | 'monograph' | string;
+export type BookStage = 'high-school' | 'university' | 'graduate' | 'research';
+export type BookCategory = 'textbook' | 'supplement' | 'notes' | 'monograph' | 'exercise';
 
 export interface ModuleItemConfig {
   emoji?: string;

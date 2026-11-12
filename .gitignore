@@ -24,6 +24,13 @@ pnpm-debug.log*
 task/
 .codex/
 
+# 编译产物：ABP 书籍包与配套索引/习题/EPUB 导出（不入库）
+artifacts/
+content-sources/catalog.json
+public/abp-packs/
+tests/fixtures/runtime-*/
+tests/fixtures/zero-book-*/
+
 # 构建产物：EPUB 下载文件（由 scripts/generate-epub.mjs 生成，不入库）
 public/epub/
 

@@ -17,21 +17,20 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
-import { collections } from '../../config/collections.config.mjs';
+import { getCatalogCollections } from '../../config/collections.config.mjs';
 import { buildBookCatalog } from '../../core/catalog/book-catalog.mjs';
+import { resolveBookSourceDir } from '../../core/catalog/content-paths.ts';
 import { buildBookIndex, walkDir } from '../indexer.mjs';
 import { createRetriever } from '../retriever.mjs';
 import { CHUNK_TEXT_CAP, mdToText } from '../chunker.mjs';
 import { buildOutline, matchChapter, sectionFrom, numberIn } from '../outline.mjs';
-
-const COLLECTION_ROOT = path.resolve('src/content/docs/collections');
 
 /** 已构建的书内索引缓存（同一 host 进程内复用，避免重复扫描整书） */
 const indexCache = new Map();
 
 /** 依 col/book 定位图书目录与配置 */
 function resolveBook(col, book) {
-  for (const c of collections) {
+  for (const c of getCatalogCollections()) {
     if (c.slug !== col) continue;
     const b = c.books.find((x) => x.slug === book);
     if (b) {
@@ -40,11 +39,11 @@ function resolveBook(col, book) {
         bookSlug: b.slug,
         title: b.title,
         modules: b.modules || {},
-        dir: path.join(COLLECTION_ROOT, c.slug, b.slug),
+        dir: resolveBookSourceDir(c.slug, b.slug),
       };
     }
   }
-  throw new Error(`未找到图书 ${col}/${book}（检查 collections.config.mjs）`);
+  throw new Error(`未找到图书 ${col}/${book}（检查 collections.config.ts）`);
 }
 
 function getIndex(col, book) {

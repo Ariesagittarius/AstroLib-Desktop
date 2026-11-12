@@ -92,13 +92,7 @@ export class LocalServer {
         const fn = mod.ingestDevServerPlugin || mod.default;
         return typeof fn === 'function' ? fn() : null;
       },
-      // 8. 离线数据包分发
-      async () => {
-        const mod: any = await import('../../src/server/plugins/offline-pack/dev-server-plugin.mjs');
-        const fn = mod.offlinePackDevServerPlugin || mod.default;
-        return typeof fn === 'function' ? fn() : null;
-      },
-      // 9. 章节关系图谱
+      // 8. 章节关系图谱
       async () => {
         const mod: any = await import('../../src/server/plugins/relation-graph/dev-server-plugin.mjs');
         const fn = mod.default || mod.devRelationGraphServerPlugin;

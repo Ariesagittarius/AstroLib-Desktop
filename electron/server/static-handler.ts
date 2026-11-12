@@ -9,7 +9,10 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { IncomingMessage, ServerResponse } from 'node:http';
-import { renderReaderPageHtml } from '../../src/services/content-provider/reader-shell-template.ts';
+import { renderReaderPageHtml } from './reader-shell-template.ts';
+import { cleanSlug } from '../../src/utils/slug.ts';
+import { resolveAbpArtifactsDir } from '../../src/core/catalog/content-paths.ts';
+import type { AstroBookManifest, AstroBookSection } from '../../src/types/content-package.ts';
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url));
 
@@ -175,11 +178,11 @@ export class StaticHandler {
       return directPath;
     }
 
-    // 1.1 若请求的是 /abp-packs/ 目录下的资源，按优先级依次检索：
+    // 1.1 若请求的是 /abp-packs/ 目录下的资源，按优先级检索：
     //    a. userAbpDir (用户目录动态解压或安装的书籍包与索引)
-    //    b. projectRoot/public/abp-packs (工程内置全量离线包与向量切片索引)
+    //    b. resolveAbpArtifactsDir(projectRoot) (开发期按需编译产物)
     if (cleanPath.startsWith('/abp-packs/') || cleanPath.startsWith('abp-packs/')) {
-      const relAbp = cleanPath.replace(/^\/?abp-packs\//, '');
+      const relAbp = cleanPath.replace(/^\/?abp-packs\//, '').replace(/\.\.(\/|\\)/g, '');
       if (this.userAbpDir) {
         const userDirectPath = path.join(this.userAbpDir, relAbp);
         if (fs.existsSync(userDirectPath) && fs.statSync(userDirectPath).isFile()) {
@@ -187,9 +190,66 @@ export class StaticHandler {
         }
       }
       if (this.projectRoot) {
-        const publicDirectPath = path.join(this.projectRoot, 'public', 'abp-packs', relAbp);
-        if (fs.existsSync(publicDirectPath) && fs.statSync(publicDirectPath).isFile()) {
-          return publicDirectPath;
+        const artifactDirectPath = path.join(resolveAbpArtifactsDir(this.projectRoot), relAbp);
+        if (fs.existsSync(artifactDirectPath) && fs.statSync(artifactDirectPath).isFile()) {
+          return artifactDirectPath;
+        }
+      }
+    }
+
+    // 1.1b 自包含辅助数据路由：优先从 userAbpDir 已解包的对应书籍包读取，开发期回退 artifacts/
+    const auxRouteMap: Array<{ prefix: string; internalFile: string; artifactDir: string }> = [
+      { prefix: '/ai-index/', internalFile: 'ai-index.json', artifactDir: 'ai-index' },
+      { prefix: '/relation-graphs/', internalFile: 'relation-graph.json', artifactDir: 'relation-graphs' },
+      { prefix: '/data/cross-ref/', internalFile: 'cross-refs.json', artifactDir: 'cross-ref' },
+      { prefix: '/inspector-data/', internalFile: 'inspector-data.json', artifactDir: 'inspector-data' },
+    ];
+    for (const rule of auxRouteMap) {
+      if (cleanPath.startsWith(rule.prefix) && cleanPath.endsWith('.json')) {
+        const bookFileName = cleanPath.slice(rule.prefix.length);
+        const bookKey = bookFileName.replace(/\.json$/i, '');
+        if (!bookKey.includes('..') && !bookKey.includes('/') && !bookKey.includes('\\')) {
+          if (this.userAbpDir) {
+            const installedAux = path.join(this.userAbpDir, bookKey, rule.internalFile);
+            if (fs.existsSync(installedAux) && fs.statSync(installedAux).isFile()) {
+              return installedAux;
+            }
+          }
+          if (this.projectRoot) {
+            const artifactAux = path.join(this.projectRoot, 'artifacts', rule.artifactDir, bookFileName);
+            if (fs.existsSync(artifactAux) && fs.statSync(artifactAux).isFile()) {
+              return artifactAux;
+            }
+          }
+        }
+      }
+    }
+
+    // 1.1c 自包含习题数据路由 (/data/exercises/<bookSlug>/<relPath>)
+    if (cleanPath.startsWith('/data/exercises/')) {
+      const exRel = cleanPath.slice('/data/exercises/'.length).replace(/\.\.(\/|\\)/g, '');
+      const firstSlash = exRel.indexOf('/');
+      if (firstSlash > 0) {
+        const exBookSlug = exRel.slice(0, firstSlash);
+        const exFileRel = exRel.slice(firstSlash + 1);
+        if (this.userAbpDir && fs.existsSync(this.userAbpDir)) {
+          try {
+            const dirs = fs.readdirSync(this.userAbpDir);
+            for (const d of dirs) {
+              if (d.endsWith(`-${exBookSlug}`)) {
+                const candidate = path.join(this.userAbpDir, d, 'exercises', exFileRel);
+                if (fs.existsSync(candidate) && fs.statSync(candidate).isFile()) {
+                  return candidate;
+                }
+              }
+            }
+          } catch {}
+        }
+        if (this.projectRoot) {
+          const artifactEx = path.join(this.projectRoot, 'artifacts', 'exercises', exRel);
+          if (fs.existsSync(artifactEx) && fs.statSync(artifactEx).isFile()) {
+            return artifactEx;
+          }
         }
       }
     }
@@ -208,33 +268,6 @@ export class StaticHandler {
       return dirIndexPath;
     }
 
-    // 2.1 针对 /collections/:col/:book/:chapter/ 路由，优先检索 dist/ 预渲染 Starlight HTML (兼容点号/连字符/下划线差异)
-    const colChapMatch = cleanPath.match(/^\/?collections\/([^/]+)\/([^/]+)\/([^/]+)/);
-    if (colChapMatch) {
-      const [, colSlug, bookSlug, rawChapterSlug] = colChapMatch;
-      const bookDistDir = path.join(this.distDir, 'collections', colSlug, bookSlug);
-      if (fs.existsSync(bookDistDir)) {
-        const directCandidate = path.join(bookDistDir, rawChapterSlug, 'index.html');
-        if (fs.existsSync(directCandidate) && fs.statSync(directCandidate).isFile()) {
-          return directCandidate;
-        }
-
-        const normalizedTarget = rawChapterSlug.replace(/\./g, '').replace(/[-_ ]/g, '').toLowerCase();
-        try {
-          const entries = fs.readdirSync(bookDistDir);
-          for (const entry of entries) {
-            const normEntry = entry.replace(/\./g, '').replace(/[-_ ]/g, '').toLowerCase();
-            if (normEntry === normalizedTarget) {
-              const candidate = path.join(bookDistDir, entry, 'index.html');
-              if (fs.existsSync(candidate) && fs.statSync(candidate).isFile()) {
-                return candidate;
-              }
-            }
-          }
-        } catch {}
-      }
-    }
-
     // 3. .html 后缀补齐
     const htmlPath = directPath + '.html';
     if (fs.existsSync(htmlPath) && fs.statSync(htmlPath).isFile()) {
@@ -247,23 +280,17 @@ export class StaticHandler {
     if (imgMatch) {
       const colSlug = imgMatch.length > 3 ? imgMatch[1] : '';
       const bookSlug = imgMatch.length > 3 ? imgMatch[2] : '';
-      const imgRel = imgMatch.length > 3 ? imgMatch[3] : imgMatch[1];
+      const imgRel = (imgMatch.length > 3 ? imgMatch[3] : imgMatch[1]).replace(/\.\.(\/|\\)/g, '');
       const imgFileName = path.basename(imgRel);
 
       const candidateDirs: string[] = [];
       if (colSlug && bookSlug) {
-        candidateDirs.push(path.join(this.distDir, 'abp-packs', `${colSlug}-${bookSlug}`));
-        if (this.projectRoot) {
-          candidateDirs.push(path.join(this.projectRoot, 'public', 'abp-packs', `${colSlug}-${bookSlug}`));
-          candidateDirs.push(path.join(this.projectRoot, 'dist', 'abp-packs', `${colSlug}-${bookSlug}`));
-        }
         if (this.userAbpDir) {
           candidateDirs.push(path.join(this.userAbpDir, `${colSlug}-${bookSlug}`));
         }
-        candidateDirs.push(path.join(this.distDir, 'collections', colSlug, bookSlug));
         if (this.projectRoot) {
+          candidateDirs.push(path.join(resolveAbpArtifactsDir(this.projectRoot), `${colSlug}-${bookSlug}`));
           candidateDirs.push(path.join(this.projectRoot, 'content-sources', 'collections', colSlug, bookSlug));
-          candidateDirs.push(path.join(this.projectRoot, 'src', 'content', 'docs', 'collections', colSlug, bookSlug));
         }
       }
       if (this.userAbpDir) candidateDirs.push(this.userAbpDir);
@@ -289,76 +316,63 @@ export class StaticHandler {
       }
     }
 
-    // 5. ABP 预编译内容包动态合成回退 (/collections/:col/:book/:chapter/)
+    // 5. ABP 动态内容包实时合成 (/collections/:col/:book/:chapter/)
     const colMatch = cleanPath.match(/^\/?collections\/([^/]+)\/([^/]+)\/([^/]+)/);
     if (colMatch) {
-      const [, colSlug, bookSlug, chapterSlug] = colMatch;
-      const distCandidate = path.join(this.distDir, 'abp-packs', `${colSlug}-${bookSlug}`);
-      const publicCandidate = this.projectRoot ? path.join(this.projectRoot, 'public', 'abp-packs', `${colSlug}-${bookSlug}`) : '';
-      const userCandidate = this.userAbpDir ? path.join(this.userAbpDir, `${colSlug}-${bookSlug}`) : '';
-
-      // 智能评判候选目录优先级：若内置 distDir / public 具有更新的 manifest 或用户目录缺失，优先使用内置权威内容
-      let candidateDirs: string[] = [];
-      let preferBundled = false;
-      const bundledCandidate = (distCandidate && fs.existsSync(path.join(distCandidate, 'manifest.json')))
-        ? distCandidate
-        : (publicCandidate && fs.existsSync(path.join(publicCandidate, 'manifest.json')))
-        ? publicCandidate
-        : null;
-
-      if (bundledCandidate) {
-        if (!userCandidate || !fs.existsSync(path.join(userCandidate, 'manifest.json'))) {
-          preferBundled = true;
-        } else {
-          try {
-            const bundledMtime = fs.statSync(path.join(bundledCandidate, 'manifest.json')).mtimeMs;
-            const userMtime = fs.statSync(path.join(userCandidate, 'manifest.json')).mtimeMs;
-            if (bundledMtime >= userMtime) {
-              preferBundled = true;
-            }
-          } catch {}
+      const [, colSlug, bookSlug, rawChapterSlug] = colMatch;
+      const candidateDirs: string[] = [];
+      if (this.userAbpDir) {
+        candidateDirs.push(path.join(this.userAbpDir, `${colSlug}-${bookSlug}`));
+      }
+      if (this.projectRoot) {
+        const artifactsBookDir = path.join(resolveAbpArtifactsDir(this.projectRoot), `${colSlug}-${bookSlug}`);
+        if (!candidateDirs.includes(artifactsBookDir)) {
+          candidateDirs.push(artifactsBookDir);
         }
       }
 
-      if (preferBundled && bundledCandidate) {
-        candidateDirs.push(bundledCandidate);
-        if (distCandidate && distCandidate !== bundledCandidate) candidateDirs.push(distCandidate);
-        if (publicCandidate && publicCandidate !== bundledCandidate) candidateDirs.push(publicCandidate);
-        if (userCandidate) candidateDirs.push(userCandidate);
-      } else {
-        if (userCandidate) candidateDirs.push(userCandidate);
-        if (distCandidate) candidateDirs.push(distCandidate);
-        if (publicCandidate) candidateDirs.push(publicCandidate);
-      }
-
+      const canonicalQuerySlug = cleanSlug(rawChapterSlug);
       for (const abpDir of candidateDirs) {
         const manifestFile = path.join(abpDir, 'manifest.json');
-        if (fs.existsSync(manifestFile)) {
-          let chapJsonFile = path.join(abpDir, 'chapters', `${chapterSlug}.json`);
-          if (!fs.existsSync(chapJsonFile)) {
-            const chapDir = path.join(abpDir, 'chapters');
-            if (fs.existsSync(chapDir)) {
-              try {
-                const chapFiles = fs.readdirSync(chapDir);
-                const targetNorm = chapterSlug.replace(/\./g, '').replace(/[-_ ]/g, '').toLowerCase();
-                const found = chapFiles.find((f) => {
-                  const base = f.replace(/\.json$/, '');
-                  if (base === chapterSlug) return true;
-                  if (base.toLowerCase() === chapterSlug.toLowerCase()) return true;
-                  const baseNorm = base.replace(/\./g, '').replace(/[-_ ]/g, '').toLowerCase();
-                  if (baseNorm === targetNorm) return true;
-                  return false;
-                });
-                if (found) {
-                  chapJsonFile = path.join(chapDir, found);
-                }
-              } catch {}
-            }
-          }
+        if (!fs.existsSync(manifestFile)) continue;
 
-          if (fs.existsSync(chapJsonFile)) {
-            return this.synthesizeAbpHtml(abpDir, manifestFile, chapJsonFile, chapterSlug);
+        let resolvedSlug = rawChapterSlug;
+        let chapJsonFile = path.join(abpDir, 'chapters', `${resolvedSlug}.json`);
+
+        if (!fs.existsSync(chapJsonFile) && canonicalQuerySlug && canonicalQuerySlug !== rawChapterSlug) {
+          const canonicalCandidate = path.join(abpDir, 'chapters', `${canonicalQuerySlug}.json`);
+          if (fs.existsSync(canonicalCandidate)) {
+            resolvedSlug = canonicalQuerySlug;
+            chapJsonFile = canonicalCandidate;
           }
+        }
+
+        // 若直接匹配未命中，检索 manifest 中的 legacySlug / canonicalSlug 别名映射（零模糊扫描）
+        if (!fs.existsSync(chapJsonFile)) {
+          try {
+            const manifest = JSON.parse(fs.readFileSync(manifestFile, 'utf8')) as AstroBookManifest;
+            const sections: AstroBookSection[] = Array.isArray(manifest.sections) ? manifest.sections : [];
+            for (const sec of sections) {
+              const matched = (sec.chapters || []).find(
+                (ch) =>
+                  ch.slug === rawChapterSlug ||
+                  ch.legacySlug === rawChapterSlug ||
+                  cleanSlug(ch.slug) === canonicalQuerySlug
+              );
+              if (matched) {
+                const aliasCandidate = path.join(abpDir, 'chapters', `${matched.slug}.json`);
+                if (fs.existsSync(aliasCandidate)) {
+                  resolvedSlug = matched.slug;
+                  chapJsonFile = aliasCandidate;
+                  break;
+                }
+              }
+            }
+          } catch {}
+        }
+
+        if (fs.existsSync(chapJsonFile)) {
+          return this.synthesizeAbpHtml(abpDir, manifestFile, chapJsonFile, resolvedSlug);
         }
       }
     }

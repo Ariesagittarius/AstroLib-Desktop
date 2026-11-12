@@ -12,7 +12,6 @@ import type {
   InstalledBookMeta,
 } from '../../types/content-package.ts';
 import type { IContentProvider, RemoteSourceConfig, StorageStats } from './types.ts';
-import { renderReaderPageHtml } from './reader-shell-template.ts';
 
 const DB_NAME = 'astrolib_books_db';
 const DB_VERSION = 1;
@@ -269,35 +268,14 @@ export class WebContentProvider implements IContentProvider {
       sourceType: 'local-file',
     };
 
-    if (onProgress) onProgress(65, '写入本地存储与离线缓存...');
+    if (onProgress) onProgress(65, '写入本地存储...');
     await this.db.putManifest(meta);
 
     let count = 0;
     const total = Object.keys(chapters).length;
-    let packCache: Cache | null = null;
-    if (typeof caches !== 'undefined') {
-      try {
-        packCache = await caches.open('astrolib-pwa-v1-pack');
-      } catch {}
-    }
 
     for (const [slug, payload] of Object.entries(chapters)) {
       await this.db.putChapter(manifest.id, slug, payload);
-
-      if (packCache) {
-        try {
-          const fullHtml = renderReaderPageHtml(manifest, payload);
-          const routePath = `/collections/${manifest.colSlug}/${manifest.slug}/${slug}/`;
-          const resp = new Response(fullHtml, {
-            headers: {
-              'Content-Type': 'text/html; charset=utf-8',
-              'X-Astrolib-Abp-Pack': 'true',
-            },
-          });
-          await packCache.put(routePath, resp.clone());
-          await packCache.put(routePath.slice(0, -1), resp);
-        } catch {}
-      }
 
       count++;
       if (onProgress && total > 0) {
@@ -316,6 +294,14 @@ export class WebContentProvider implements IContentProvider {
     try {
       await this.db.deleteBook(bookId);
       this.memoryCache.delete(`manifest:${bookId}`);
+      for (const k of Array.from(this.memoryCache.keys())) {
+        if (k.startsWith(`chapter:${bookId}:`)) {
+          this.memoryCache.delete(k);
+        }
+      }
+      if (typeof caches !== 'undefined') {
+        await caches.delete('astrolib-pwa-v1-pack').catch(() => {});
+      }
       return true;
     } catch {
       return false;
@@ -340,13 +326,29 @@ export class WebContentProvider implements IContentProvider {
 
   async getStorageStats(): Promise<StorageStats> {
     const books = await this.getInstalledBooks();
-    let approxBytes = 0;
-    for (const b of books) {
-      approxBytes += (b.manifest.totalChapters || 1) * 350 * 1024;
+    let usedBytes = 0;
+
+    if (typeof navigator !== 'undefined' && navigator.storage?.estimate) {
+      try {
+        const est = await navigator.storage.estimate();
+        if (typeof est.usage === 'number') {
+          usedBytes = est.usage;
+        }
+      } catch {}
+    }
+
+    if (usedBytes === 0 && books.length > 0) {
+      for (const b of books) {
+        const sumFromSections = (b.manifest.sections || []).reduce(
+          (acc, sec) => acc + (sec.chapters || []).reduce((cAcc, ch) => cAcc + (ch.sizeBytes || 0), 0),
+          0
+        );
+        usedBytes += sumFromSections || JSON.stringify(b.manifest).length;
+      }
     }
 
     return {
-      usedBytes: approxBytes,
+      usedBytes,
       bookCount: books.length,
     };
   }

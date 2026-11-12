@@ -12,7 +12,7 @@
  * ============================================================================
  */
 
-export type SideloadWidthTier = 'compact' | 'medium' | 'wide' | 'none';
+export type SideloadWidthTier = 'compact' | 'medium' | 'wide' | 'full' | 'none';
 
 export interface SideloadPanelConfig {
   id: string;
@@ -33,8 +33,9 @@ export interface SideloadState {
 
 const WIDTH_MAP: Record<SideloadWidthTier, string> = {
   compact: '16.5rem', // 264px（本章大纲标准宽）
-  medium: '22rem',   // 352px
+  medium: '20rem',    // 320px（M3 标准中宽面板）
   wide: 'clamp(20rem, 28vw, 25.5rem)', // 习题与宽面板标准宽 (~384px - 408px)
+  full: '28rem',      // 448px（极宽对照面板）
   none: '0rem',
 };
 
@@ -49,7 +50,7 @@ class SideloadManager {
   private isInitialized = false;
 
   constructor() {
-    // 默认内置注册两项核心面板
+    // 默认内置注册核心侧载面板（每项功能仅声明一次）
     this.register({
       id: 'toc',
       title: '本节大纲',
@@ -71,12 +72,6 @@ class SideloadManager {
     this.register({
       id: 'translate',
       title: '双语助读',
-      widthTier: 'wide',
-      allowDrawer: true,
-    });
-    this.register({
-      id: 'focus',
-      title: '关注点透镜',
       widthTier: 'wide',
       allowDrawer: true,
     });

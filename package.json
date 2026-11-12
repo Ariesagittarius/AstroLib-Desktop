@@ -7,11 +7,11 @@
   "scripts": {
     "dev": "astro dev",
     "start": "astro dev",
-    "build": "node --max-old-space-size=4096 scripts/build-exercise-data.mjs && node --max-old-space-size=4096 scripts/build-ai-index.mjs && node --max-old-space-size=4096 scripts/build-relation-graphs.mjs && node --max-old-space-size=4096 scripts/build-cross-ref-data.mjs && node --max-old-space-size=4096 scripts/build-inspector-data.mjs && node --max-old-space-size=4096 node_modules/astro/bin/astro.mjs build && node scripts/build-offline-pack.mjs && node scripts/submit-indexnow.mjs --on-build",
-    "build:offline": "node scripts/build-offline-pack.mjs",
+    "build": "node --max-old-space-size=4096 node_modules/astro/bin/astro.mjs build",
     "pack:book": "node scripts/pack-book-abp.mjs",
+    "pack:books": "node scripts/pack-book-abp.mjs --all",
     "build:exercises": "node scripts/build-exercise-data.mjs",
-    "build:all": "node scripts/generate-epub.mjs && npm run build",
+    "build:all": "npm run build && node scripts/pack-book-abp.mjs --all",
     "preview": "astro preview",
     "epub": "node scripts/generate-epub.mjs",
     "electron:build:scripts": "node scripts/build-electron.mjs",
@@ -36,7 +36,6 @@
     "test:all": "vitest run",
     "check:types": "tsc --noEmit",
     "check:all": "npm run check:types && npm test",
-    "seo:indexnow": "node scripts/submit-indexnow.mjs",
     "astro": "astro"
   },
   "dependencies": {
@@ -52,7 +51,6 @@
     "@material/material-color-utilities": "^0.3.0",
     "@material/web": "^2.5.0",
     "@myriaddreamin/typst-ts-node-compiler": "^0.7.0",
-    "@vercel/analytics": "^2.0.1",
     "astro": "^7.0.2",
     "jsqr": "^1.4.0",
     "lottie-web": "^5.13.0",
@@ -79,7 +77,12 @@
   "build": {
     "appId": "cloud.astrolib.desktop",
     "productName": "AstroLib",
-    "asar": false,
+    "asar": true,
+    "asarUnpack": [
+      "dist-electron/qwen-highlight-runner.py",
+      "public/favicon.png",
+      "**/*.node"
+    ],
     "directories": {
       "output": "release"
     },
@@ -89,11 +92,9 @@
       "!dist/abp-packs/*.abp",
       "!dist/abp-packs/*/**",
       "dist-electron/**/*",
-      "src/**/*",
-      "!src/content/docs/collections/**",
       "!content-sources/**",
       "public/favicon.png",
-      "public/abp-packs/**/*",
+      "public/data/exercises/community_ai_solutions.json",
       "package.json"
     ],
     "win": {

@@ -243,7 +243,7 @@ async function pushClean(options, repoInfo) {
     // 运行语法校验 (scan-mdx)
     console.log('🧪 正在对无注释沙箱执行 MDX 语法健康校验...');
     try {
-      execSync('node scripts/scan-mdx.mjs src/content/docs/collections/math/math_analysis', {
+      execSync('node scripts/scan-mdx.mjs content-sources/collections/math/math_analysis', {
         cwd: tempDir,
         stdio: 'ignore',
       });

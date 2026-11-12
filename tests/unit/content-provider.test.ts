@@ -5,7 +5,7 @@ import {
   WebContentProvider,
   ElectronContentProvider,
 } from '@/services/content-provider/index.ts';
-import { renderReaderPageHtml } from '@/services/content-provider/reader-shell-template.ts';
+import { renderReaderPageHtml } from '../../electron/server/reader-shell-template.ts';
 import { ABP_SCHEMA_VERSION, type AstroBookManifest } from '@/types/content-package.ts';
 
 describe('Content Provider Engine Unit Tests', () => {
@@ -65,17 +65,16 @@ describe('Content Provider Engine Unit Tests', () => {
     expect(retrievedChapter?.html).toContain('测试正文');
   });
 
-  it('ElectronContentProvider 在缺少 IPC 桥接时能优雅回退至 Web 存储且不抛错', async () => {
+  it('ElectronContentProvider 在缺少 IPC 桥接时必须显式报错且严禁静默降级至 Web 存储', async () => {
     const provider = new ElectronContentProvider();
-    const books = await provider.getInstalledBooks();
-    expect(Array.isArray(books)).toBe(true);
+    await expect(provider.getInstalledBooks()).rejects.toThrow('未检测到 Electron 桌面端 IPC 桥接接口');
 
     const mockManifest: AstroBookManifest = {
       schemaVersion: ABP_SCHEMA_VERSION,
       id: 'cs-demo',
       slug: 'demo',
       colSlug: 'cs',
-      title: '降级测试书目',
+      title: '原生 IPC 书目',
       entryPoint: '01_main',
       totalChapters: 1,
       updatedAt: new Date().toISOString(),
@@ -99,13 +98,25 @@ describe('Content Provider Engine Unit Tests', () => {
       },
     };
     const gzipped = zlib.gzipSync(Buffer.from(JSON.stringify(bundle), 'utf8'));
+    await expect(provider.installBookFromAbp(gzipped)).rejects.toThrow('未检测到 Electron 桌面端 IPC 桥接接口');
 
-    // 严禁抛出“未检测到 Electron IPC 桥接接口！”
-    const meta = await provider.installBookFromAbp(gzipped);
-    expect(meta.manifest.id).toBe('cs-demo');
-
-    const manifest = await provider.getBookManifest('cs', 'demo');
-    expect(manifest?.title).toBe('降级测试书目');
+    // 当注入 window.astrolib IPC 时，严格透传原生通道
+    const installed: any[] = [{ manifest: mockManifest, installedAt: new Date().toISOString(), sourceType: 'local-file' }];
+    vi.stubGlobal('window', {
+      astrolib: {
+        getInstalledBooks: vi.fn().mockResolvedValue(installed),
+        getBookManifest: vi.fn().mockResolvedValue(mockManifest),
+        installBookFromAbp: vi.fn().mockResolvedValue(installed[0]),
+      },
+    });
+    try {
+      const books = await provider.getInstalledBooks();
+      expect(books).toHaveLength(1);
+      const manifest = await provider.getBookManifest('cs', 'demo');
+      expect(manifest?.title).toBe('原生 IPC 书目');
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 
   it('fetchRemoteCatalog 针对相对路径或本地路径不应错误拼装 GitHub 域名', async () => {

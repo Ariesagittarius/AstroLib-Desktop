@@ -443,6 +443,30 @@ import '../../styles/desktop/reader-host.css';
                 ></iframe>
               `;
 
+              // 检查目标章节是否可用；若书籍未导入或章节缺失（404），给出清晰可恢复提示而非空白窗格
+              fetch(targetSrc, { method: 'HEAD' })
+                .then((resp) => {
+                  if (!resp.ok && paneWrap.querySelector('iframe')?.getAttribute('data-tab-id') === targetTab.id) {
+                    paneWrap.innerHTML = `
+                      <div class="pane-empty-slot" style="flex-direction: column; gap: 12px; padding: 24px; text-align: center;">
+                        <span class="material-symbols-outlined" style="font-size: 28px; opacity: 0.7;">menu_book</span>
+                        <div style="font-size: 14px; font-weight: 500; color: var(--sl-color-white);">章节暂不可用（HTTP ${resp.status}）</div>
+                        <div style="font-size: 12.5px; color: var(--sl-color-gray-3); max-width: 340px;">
+                          该教材包尚未导入或对应章节地址已失效，请前往书库导入对应的 .abp 书籍包。
+                        </div>
+                        <button type="button" class="empty-slot-btn" data-slot-recover="${i}">
+                          <span class="material-symbols-outlined" style="font-size: 18px;">library_books</span>
+                          <span>前往书库导入书籍</span>
+                        </button>
+                      </div>
+                    `;
+                    paneWrap.querySelector(`[data-slot-recover="${i}"]`)?.addEventListener('click', () => {
+                      window.dispatchEvent(new CustomEvent('astrolib:switch-fragment', { detail: 'library' }));
+                    });
+                  }
+                })
+                .catch(() => {});
+
               // 保证新载入的阅读器视窗与外层框架主题色及亮暗模式 100% 绝对一致
               const newIfr = paneWrap.querySelector('iframe');
               newIfr?.addEventListener('load', () => {

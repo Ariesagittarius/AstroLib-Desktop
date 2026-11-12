@@ -11,19 +11,20 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { features } from '../src/config/features.config.mjs';
-import { collections } from '../src/config/collections.config.mjs';
-import { scanBookModules, listAllBooks } from '../src/utils/module-inspector/scanner.mjs';
+import { getCatalogCollections } from '../src/config/collections.config.ts';
+import { scanBookModules, listAllBooks } from '../src/features/module-inspector/core/scanner.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '..');
-const OUT_DIR = path.join(ROOT, 'public', 'inspector-data');
+const OUT_DIR = path.join(ROOT, 'artifacts', 'inspector-data');
 
 const args = process.argv.slice(2);
 const onlySlug = args.includes('--only') ? args[args.indexOf('--only') + 1] : null;
+const allowEmpty = args.includes('--allow-empty');
 
 function main() {
   if (!features.inspector.enabled) {
-    console.log('[inspector-data] 已跳过：模块索引与巡检功能关闭（features.config.mjs 中 inspector.enabled=false）。');
+    console.log('[inspector-data] 已跳过：模块索引与巡检功能关闭（features.config.ts 中 inspector.enabled=false）。');
     return;
   }
 
@@ -36,7 +37,7 @@ function main() {
   fs.writeFileSync(path.join(OUT_DIR, 'books.json'), JSON.stringify({ ok: true, books }));
 
   // 2. 为每本书生成模块索引数据
-  for (const col of collections) {
+  for (const col of getCatalogCollections()) {
     for (const book of col.books || []) {
       if (onlySlug && book.slug !== onlySlug) continue;
 
@@ -54,6 +55,11 @@ function main() {
 
       console.log(`  ✔ [${col.slug}/${book.slug}] ${book.title} → ${path.relative(ROOT, outFile)} (${data.totalModules} 模块 / ${data.totalChapters} 章节)`);
     }
+  }
+
+  if (bookCount === 0 && !allowEmpty) {
+    console.error('❌ [inspector-data] 未生成任何模块巡检数据（输入为空）。若确需空跑请传 --allow-empty。');
+    process.exit(1);
   }
 
   console.log(`\n✅ 模块索引速查数据构建完成：${bookCount} 本书、共 ${totalModules} 个卡片模块 → ${path.relative(ROOT, OUT_DIR)}/`);
