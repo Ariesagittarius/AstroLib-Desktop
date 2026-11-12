@@ -7,7 +7,6 @@ import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import { rehypeKatexAnnotate, rehypeKatexPromote } from '@/plugins/rehype/rehype-katex-source.mjs';
 import { rehypeCrossRef } from '@/plugins/rehype/rehype-cross-ref.mjs';
-import { collections } from '@/config/collections.config.ts';
 
 describe('Cross-Reference AST Plugin Acceptance Suite', () => {
   const root = path.resolve('.');
@@ -40,7 +39,7 @@ describe('Cross-Reference AST Plugin Acceptance Suite', () => {
         rehypeKatexAnnotate,
         [rehypeKatex, { output: 'html', strict: false, throwOnError: false }],
         rehypeKatexPromote,
-        [rehypeCrossRef, { collections }],
+        [rehypeCrossRef, {}],
       ],
       jsx: true,
       outputFormat: 'function-body',
@@ -69,7 +68,7 @@ describe('Cross-Reference AST Plugin Acceptance Suite', () => {
         rehypeKatexAnnotate,
         [rehypeKatex, { output: 'html', strict: false, throwOnError: false }],
         rehypeKatexPromote,
-        [rehypeCrossRef, { collections }],
+        [rehypeCrossRef, {}],
       ],
       jsx: true,
       outputFormat: 'function-body',

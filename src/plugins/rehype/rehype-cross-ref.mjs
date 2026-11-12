@@ -28,7 +28,7 @@
  */
 
 import { visit } from 'unist-util-visit';
-import { sourceCollections } from '../../config/collections.config.ts';
+import { getCatalogCollections } from '../../config/collections.config.ts';
 
 /* ------------------------------------------------------------------ *
  *  通用工具
@@ -88,15 +88,11 @@ function resolveBookKey(file) {
   return m ? `${m[1]}/${m[2]}` : null;
 }
 
-/** 由书标识在 collections 配置中查找 book 配置 (带 sourceCollections 回退) */
-function findBook(collections, bookKey) {
-  const candidateLists = [collections, sourceCollections];
-  for (const list of candidateLists) {
-    if (!list || !Array.isArray(list)) continue;
-    for (const col of list) {
-      for (const book of col.books || []) {
-        if (`${col.slug}/${book.slug}` === bookKey) return book;
-      }
+/** 由书标识从单一权威目录 getCatalogCollections() 查找 book 配置 */
+function findBook(bookKey) {
+  for (const col of getCatalogCollections()) {
+    for (const book of col.books || []) {
+      if (`${col.slug}/${book.slug}` === bookKey) return book;
     }
   }
   return null;
@@ -377,11 +373,11 @@ function replaceTextNode(value, ctx) {
  *        'static' 时所有引用徽章强制为静态 chip（同页联动一并关闭）。
  */
 export function rehypeCrossRef(options = {}) {
-  const { collections, refs = 'interactive' } = options;
+  const { refs = 'interactive' } = options;
   const forceStatic = refs === 'static';
   return (tree, file) => {
     const bookKey = resolveBookKey(file);
-    const book = findBook(collections, bookKey);
+    const book = findBook(bookKey);
     if (!book || !book.modules) return;
 
     const modules = book.modules;

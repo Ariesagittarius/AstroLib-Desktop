@@ -1,10 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
-import { collections, sourceCollections } from '../../src/config/collections.config.ts';
+import { getCatalogCollections } from '../../src/config/collections.config.ts';
 
 describe('Bilingual Vectors and Tensors Book Contract', () => {
-  const colSource = collections.length > 0 ? collections : sourceCollections;
+  const colSource = getCatalogCollections();
   const scienceCol = colSource.find((c) => c.slug === 'science');
   const book = scienceCol?.books.find((b) => b.slug === 'vectors_and_tensors');
 

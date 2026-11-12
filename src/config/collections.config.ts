@@ -698,18 +698,18 @@ export interface FlatBook extends Book {
 }
 
 /**
- * 获取当前生效的内容目录合集：
- * 若静态编译开关启用（collections 非空）则返回 collections，
- * 否则返回权威源书库 sourceCollections（13 本教材 SSOT）。
+ * 获取权威内容目录合集（唯一 SSOT：sourceCollections，绝不回退空静态构建开关 collections）
  */
 export function getCatalogCollections(): Collection[] {
-  return collections.length > 0 ? collections : sourceCollections;
+  return sourceCollections;
 }
 
-export function getAllBooks(sourceMode = false): FlatBook[] {
-  const target = sourceMode ? sourceCollections : collections;
+/**
+ * 仅用于 Astro 静态构建期判断当前内置预编译书籍列表（Zero-Built-in 模式下为空数组）
+ */
+export function getBuiltinStaticBooks(): FlatBook[] {
   const list: FlatBook[] = [];
-  for (const col of target) {
+  for (const col of collections) {
     for (const book of col.books || []) {
       list.push({
         ...book,
@@ -723,11 +723,21 @@ export function getAllBooks(sourceMode = false): FlatBook[] {
 }
 
 /**
- * 获取权威源书库中的全部扁平书目列表（始终返回全部 13 本）
+ * 获取全库扁平书目列表（默认返回完整 13 本权威目录；仅在显式传入 false / 'builtin-static' 时返回静态内置列表）
+ */
+export function getAllBooks(scope: boolean | 'catalog' | 'builtin-static' = 'catalog'): FlatBook[] {
+  if (scope === false || scope === 'builtin-static') {
+    return getBuiltinStaticBooks();
+  }
+  return getCatalogBooks();
+}
+
+/**
+ * 获取权威源书库中的全部扁平书目列表（在任何静态构建开关状态下始终精确返回 13 本）
  */
 export function getCatalogBooks(): FlatBook[] {
   const list: FlatBook[] = [];
-  for (const col of getCatalogCollections()) {
+  for (const col of sourceCollections) {
     for (const book of col.books || []) {
       list.push({
         ...book,
@@ -741,6 +751,6 @@ export function getCatalogBooks(): FlatBook[] {
 }
 
 export function findBookBySlug(bookSlug: string, sourceMode = true): FlatBook | null {
-  const all = sourceMode ? getCatalogBooks() : getAllBooks(false);
+  const all = sourceMode ? getCatalogBooks() : getBuiltinStaticBooks();
   return all.find((b) => b.slug === bookSlug) || null;
 }

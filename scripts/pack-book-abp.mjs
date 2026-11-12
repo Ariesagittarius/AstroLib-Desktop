@@ -866,6 +866,7 @@ export function updateCatalogJson(outDir, manifest, packFileName, sizeBytes, rel
     ...(releaseTag ? { releaseTag } : {}),
     sourceUrl: buildReleaseCatalogUrl(releaseRepo, releaseTag),
     generatedBy: 'scripts/pack-book-abp.mjs',
+    sourceInput: 'src/config/collections.config.ts#sourceCollections',
     generatedAt: new Date().toISOString(),
     books: [],
   };
@@ -913,6 +914,7 @@ export function updateCatalogJson(outDir, manifest, packFileName, sizeBytes, rel
   }
   catalog.sourceUrl = buildReleaseCatalogUrl(releaseRepo, releaseTag);
   catalog.generatedBy = 'scripts/pack-book-abp.mjs';
+  catalog.sourceInput = 'src/config/collections.config.ts#sourceCollections';
   catalog.generatedAt = new Date().toISOString();
   const payload = JSON.stringify(catalog, null, 2);
   const tmpPath = `${catalogPath}.tmp.${process.pid}`;

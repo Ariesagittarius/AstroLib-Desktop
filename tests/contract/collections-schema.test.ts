@@ -1,5 +1,12 @@
 import { describe, it, expect } from 'vitest';
-import { collections, sourceCollections, getAllBooks } from '@/config/collections.config.ts';
+import {
+  collections,
+  sourceCollections,
+  getAllBooks,
+  getBuiltinStaticBooks,
+  getCatalogBooks,
+  getCatalogCollections,
+} from '@/config/collections.config.ts';
 
 describe('Collections Source of Truth Schema Contract', () => {
   it('collections 必须为合集数组，并支持零预编译书籍 (Zero-Built-in Books) 架构', () => {
@@ -46,6 +53,50 @@ describe('Collections Source of Truth Schema Contract', () => {
           }
         }
       }
+    }
+  });
+
+  it('单目录 SSOT 不受 collections 空/非空状态影响，始终精确返回 13 本既定书目', () => {
+    const expectedSlugs = [
+      'math_senior',
+      'math_analysis',
+      'engineering_analysis',
+      'linear_algebra',
+      'probability_statistics',
+      'linear_algebra_geometry',
+      'graph_theory',
+      'university_physics',
+      'vectors_and_tensors',
+      'communication_principles',
+      'digital_circuit',
+      'electronic_circuits',
+      'algorithms',
+    ];
+
+    expect(getBuiltinStaticBooks()).toHaveLength(0);
+    expect(getAllBooks()).toHaveLength(13);
+    expect(getAllBooks('builtin-static')).toHaveLength(0);
+
+    const emptyStateBooks = getCatalogBooks();
+    expect(emptyStateBooks).toHaveLength(13);
+    expect(emptyStateBooks.map((b) => b.slug)).toEqual(expectedSlugs);
+    expect(getCatalogCollections()).toBe(sourceCollections);
+
+    // 模拟静态构建开关 collections 非空时，catalog 仍严格单源返回 exact 13 本
+    collections.push({
+      id: 'mock',
+      slug: 'mock',
+      title: 'Mock Collection',
+      books: [{ id: 'mock-book', slug: 'mock_book', title: 'Mock Book', entryPoint: '00' }],
+    });
+    try {
+      const nonEmptyStateBooks = getCatalogBooks();
+      expect(nonEmptyStateBooks).toHaveLength(13);
+      expect(nonEmptyStateBooks.map((b) => b.slug)).toEqual(expectedSlugs);
+      expect(getCatalogCollections()).toBe(sourceCollections);
+      expect(getBuiltinStaticBooks()).toHaveLength(1);
+    } finally {
+      collections.length = 0;
     }
   });
 });

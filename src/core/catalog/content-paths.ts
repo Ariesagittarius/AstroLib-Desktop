@@ -10,6 +10,11 @@ import path from 'node:path';
 export const CONTENT_SOURCES_REL = 'content-sources';
 export const CONTENT_COLLECTIONS_REL = 'content-sources/collections';
 export const ARTIFACTS_ABP_REL = 'artifacts/abp-packs';
+/**
+ * 发布投影目录清单（Generated Projection Only）：
+ * 由 scripts/pack-book-abp.mjs 从 src/config/collections.config.ts#sourceCollections 投影生成，
+ * 严禁作为人工维护源或运行时读取源（遵循 Rule 3 / Rule 4）。
+ */
 export const CONTENT_CATALOG_REL = 'content-sources/catalog.json';
 
 /**

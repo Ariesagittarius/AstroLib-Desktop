@@ -1,13 +1,13 @@
 import { describe, it, expect } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
-import { collections, sourceCollections } from '../../src/config/collections.config.ts';
+import { getCatalogCollections } from '../../src/config/collections.config.ts';
 import { BilingualAlignerClient } from '../../src/services/bilingual/aligner-client.ts';
 import { BipartiteMatcher } from '../../src/services/bilingual/bipartite-matcher.ts';
 import type { ParagraphToken } from '../../src/services/bilingual/types.ts';
 
 describe('Bilingual Algorithms Book Contract', () => {
-  const colSource = collections.length > 0 ? collections : sourceCollections;
+  const colSource = getCatalogCollections();
   const csCol = colSource.find((c) => c.slug === 'cs');
   const algorithmsBook = csCol?.books.find((b) => b.slug === 'algorithms');
 
