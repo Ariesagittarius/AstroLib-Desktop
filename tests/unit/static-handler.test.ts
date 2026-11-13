@@ -121,11 +121,24 @@ describe('StaticHandler Unit & Invariant Contract Tests (P1-A1)', () => {
     expect(handled).toBe(true);
     expect(statusCode).toBe(404);
     expect(headers['Content-Type']).toContain('text/html');
+    expect(headers['Content-Length']).toBeDefined();
+    expect(headers['Cache-Control']).toContain('no-cache');
     expect(outputBuffer).not.toBeNull();
     const html = outputBuffer!.toString('utf8');
     expect(html).toContain('404 - 章节或资源未找到');
+    expect(html).toContain('学科合集:');
+    expect(html).toContain('math');
+    expect(html).toContain('书籍标识:');
+    expect(html).toContain('math_senior');
+    expect(html).toContain('章节标识:');
     expect(html).toContain('invalid_random_slug_xyz');
+    expect(html).toContain('data-action="return-library"');
+    expect(html).toContain('data-action="return-default-chapter"');
     expect(html).toContain('返回研读书库');
+    expect(html).toContain('返回默认章节');
+    expect(html).toContain('<svg class="academic-404-icon"');
+    expect(html).not.toContain('&#9888;');
+    expect(html).toContain('data-theme');
   });
 
   it('4. 模糊匹配必须彻底禁止：前缀模糊路径必须返回 HTTP 404', async () => {

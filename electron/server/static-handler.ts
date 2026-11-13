@@ -66,11 +66,18 @@ function escapeHtml(str?: string | null): string {
  * 极简学术规范 404 视窗渲染器
  * 复用 AstroLib M3 设计 tokens，无额外第三方依赖
  */
-function renderAcademic404Html(colSlug: string, bookSlug: string, chapterSlug: string, reason = '章节不存在或尚未安装'): string {
+function renderAcademic404Html(
+  colSlug: string,
+  bookSlug: string,
+  chapterSlug: string,
+  reason = '章节不存在或尚未安装',
+  defaultChapterUrl?: string
+): string {
   const safeCol = escapeHtml(colSlug);
   const safeBook = escapeHtml(bookSlug);
   const safeChap = escapeHtml(chapterSlug);
   const safeReason = escapeHtml(reason);
+  const safeDefaultUrl = escapeHtml(defaultChapterUrl || '/desktop/');
 
   return `<!doctype html>
 <html lang="zh-CN">
@@ -78,8 +85,20 @@ function renderAcademic404Html(colSlug: string, bookSlug: string, chapterSlug: s
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>404 - 章节未找到 | AstroLib</title>
+  <script>
+    (function() {
+      try {
+        var p = new URLSearchParams(window.location.search);
+        var t = p.get('theme') || localStorage.getItem('astrolib-theme');
+        if (t === 'dark' || t === 'light') {
+          document.documentElement.setAttribute('data-theme', t);
+        }
+      } catch (_) {}
+    })();
+  </script>
   <style>
-    :root {
+    :root,
+    :root[data-theme='light'] {
       --md-sys-color-surface: #fbf8fd;
       --md-sys-color-on-surface: #1b1b1f;
       --md-sys-color-surface-container: #f0edf1;
@@ -91,7 +110,7 @@ function renderAcademic404Html(colSlug: string, bookSlug: string, chapterSlug: s
       --md-sys-color-on-error: #ffffff;
     }
     @media (prefers-color-scheme: dark) {
-      :root {
+      :root:not([data-theme='light']) {
         --md-sys-color-surface: #121316;
         --md-sys-color-on-surface: #e2e2e6;
         --md-sys-color-surface-container: #1e1f23;
@@ -102,6 +121,17 @@ function renderAcademic404Html(colSlug: string, bookSlug: string, chapterSlug: s
         --md-sys-color-error: #ffb4ab;
         --md-sys-color-on-error: #690005;
       }
+    }
+    :root[data-theme='dark'] {
+      --md-sys-color-surface: #121316;
+      --md-sys-color-on-surface: #e2e2e6;
+      --md-sys-color-surface-container: #1e1f23;
+      --md-sys-color-outline: #8e9099;
+      --md-sys-color-outline-variant: #44474f;
+      --md-sys-color-primary: #9ecaff;
+      --md-sys-color-on-primary: #003258;
+      --md-sys-color-error: #ffb4ab;
+      --md-sys-color-on-error: #690005;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -125,7 +155,8 @@ function renderAcademic404Html(colSlug: string, bookSlug: string, chapterSlug: s
       box-shadow: 0 4px 20px rgba(0,0,0,0.06);
     }
     .academic-404-icon {
-      font-size: 48px;
+      width: 48px;
+      height: 48px;
       margin-bottom: 1rem;
       display: inline-block;
       color: var(--md-sys-color-error);
@@ -194,7 +225,11 @@ function renderAcademic404Html(colSlug: string, bookSlug: string, chapterSlug: s
 </head>
 <body>
   <div class="academic-404-card">
-    <div class="academic-404-icon">&#9888;</div>
+    <svg class="academic-404-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <circle cx="12" cy="12" r="10"></circle>
+      <line x1="12" y1="8" x2="12" y2="12"></line>
+      <line x1="12" y1="16" x2="12.01" y2="16"></line>
+    </svg>
     <h1 class="academic-404-title">404 - 章节或资源未找到</h1>
     <p class="academic-404-reason">${safeReason}</p>
     <div class="academic-404-details">
@@ -203,12 +238,12 @@ function renderAcademic404Html(colSlug: string, bookSlug: string, chapterSlug: s
       <div><strong>章节标识:</strong> ${safeChap}</div>
     </div>
     <div class="academic-404-actions">
-      <button type="button" class="btn-action btn-primary" onclick="if (window.parent && window.parent !== window) { window.parent.postMessage({ type: 'astrolib:switch-fragment', fragment: 'library' }, '*'); } else { window.location.href = '/desktop/'; }">
+      <a href="/desktop/" data-action="return-library" class="btn-action btn-primary" onclick="if (window.parent && window.parent !== window) { window.parent.postMessage({ type: 'astrolib:switch-fragment', fragment: 'library' }, '*'); return false; }">
         返回研读书库
-      </button>
-      <button type="button" class="btn-action btn-outlined" onclick="window.history.back()">
-        返回上一页
-      </button>
+      </a>
+      <a href="${safeDefaultUrl}" data-action="return-default-chapter" class="btn-action btn-outlined">
+        返回默认章节
+      </a>
     </div>
   </div>
 </body>
@@ -349,11 +384,15 @@ export class StaticHandler {
     }
 
     // 2. 第一级检查：Canonical Slug 直接物理命中
+    const defaultChapterUrl = manifest && manifest.entryPoint
+      ? `/collections/${colSlug}/${bookSlug}/${manifest.entryPoint}/`
+      : '/desktop/';
+
     const directChapJson = path.join(abpDir, 'chapters', `${rawChapterSlug}.json`);
     if (fs.existsSync(directChapJson)) {
       const cachedHtmlFile = this.synthesizeAbpHtml(abpDir, manifestFile, directChapJson, rawChapterSlug);
       if (!cachedHtmlFile || !fs.existsSync(cachedHtmlFile)) {
-        this.sendAcademic404(req, res, colSlug, bookSlug, rawChapterSlug, '章节合成失败');
+        this.sendAcademic404(req, res, colSlug, bookSlug, rawChapterSlug, '章节合成失败', defaultChapterUrl);
         return true;
       }
       return await this.serveFile(req, res, cachedHtmlFile, pathname);
@@ -388,7 +427,7 @@ export class StaticHandler {
     }
 
     // 4. 两级均未命中：绝不进行模糊猜测，直接输出 404 学术视窗
-    this.sendAcademic404(req, res, colSlug, bookSlug, rawChapterSlug, '章节不存在或链接已失效');
+    this.sendAcademic404(req, res, colSlug, bookSlug, rawChapterSlug, '章节不存在或链接已失效', defaultChapterUrl);
     return true;
   }
 
@@ -401,9 +440,10 @@ export class StaticHandler {
     colSlug: string,
     bookSlug: string,
     chapterSlug: string,
-    reason: string
+    reason: string,
+    defaultChapterUrl?: string
   ): void {
-    const html = renderAcademic404Html(colSlug, bookSlug, chapterSlug, reason);
+    const html = renderAcademic404Html(colSlug, bookSlug, chapterSlug, reason, defaultChapterUrl);
     const bodyBuf = Buffer.from(html, 'utf8');
     res.writeHead(404, {
       'Content-Type': 'text/html; charset=utf-8',
