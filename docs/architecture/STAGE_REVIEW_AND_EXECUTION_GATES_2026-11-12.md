@@ -1,7 +1,7 @@
 # AstroLib 阶段报告复核与下一阶段执行/审计门禁
 
 **文档编号**：ARCH-STAGE-REVIEW-2026-11-12  
-**文档状态**：`CONDITIONAL — NOT ACCEPTED AS COMPLETE`  
+**文档状态**：`P0 CLOSED — ACCEPTED FOR P1 HANDOFF`（2026-11-13）  
 **复核对象**：执行 Agent 提交的 `electron/main` 阶段报告（对话版，无独立报告文件）  
 **复核基线**：`electron/main` @ `cbb19a78`（`refactor(core): align electron desktop architecture with lean dynamic abp model`）  
 **对照基线**：`checkpoint/electron-pre-audit` @ `c36f8dbe`  
@@ -966,6 +966,7 @@ acceptance_commands:
 | G4 | `a8d3403f` | `git grep` fallback 校验 + `npm run check:all` + `vitest bilingual-benchmark` | 0 | 生产/测试 `collections.length > 0` 与双候选残留=0；`getCatalogBooks()` 在 `collections` 空/非空双态均 exact 13 本；`content-sources/catalog.json` 标为生成投影；`tsc` 0 错，61/62 并行通过（`bilingual-benchmark` 并发 CPU 毛刺 63ms vs <=60ms，单独复测 2.45s PASS） | `artifacts/audit/g4-evidence.json` | PASS | 待审计 |
 | G5 | `59b1e24c` / `9d1077ad` | `npm run check:all` + `npm run build` + `build-electron` + `electron-builder --dir --win` + `packaging-hygiene` + `--dry-run` | 0 | `AGENTS.md`/`README.md`/`docs/README.md` 同步；`/workspace/ingest-controller` 死路由与警告消除；桌面 PWA/SEO 关闭；`katex-metrics`/`algorithm-block` 迁移实测；`validateAbpBundle` 强化与 `DesktopBookManager` 元数据失败回滚；63/357 tests pass，`app.asar` 契约通过 | `artifacts/audit/g5-evidence.json` | PASS | 待审计 |
 | P0-R3 | `369b6aec` / `a027a02c` / `0ce20222` | 干净 `git archive` (`npm ci` + `check:types` + `build` + `build-electron` + `build:exercises` + `pack-book-abp --all --no-vectors` + `npm test` + `npx electron-builder --win` + Portable/NSIS smoke) | 0 | P0-B1/B2/B4 干净归档实测关闭：`check:types` 自执行 `astro sync` 0 错；`npm test` 61 passed / 2 skipped (`353 passed / 5 skipped`)，模型测试显式门禁 `ASTROLIB_RUN_MODEL_TESTS=1`，无 `backup/` 与 Electron 下载竞态；NSIS (`171.77 MB`) 与 Portable (`158.73 MB`) 启动均 200；`app.asar` `51.27 MB` / 1,981 条目 / 0 违规，`win-unpacked` `490.82 MB`；P0-B3 代码与 `workflow_dispatch` tag 已对齐 `Ariesagittarius/AstroLib-Desktop`，仅余发布负责人绑定 `origin` 并推送触发真实 GitHub Release HTTP 200 验证 | `artifacts/audit/p0-closure-round3-evidence.json` | CONDITIONAL | 待审计 |
+| P0-FINAL | `a2914a12` / `v0.0.3` | `origin` 绑定 (`Ariesagittarius/AstroLib-Desktop`) + `scripts/release-desktop.mjs` + GitHub Actions run `43349357437` + 全量资产 HTTP 200 活网探测 | 0 | P0 阻断项全部闭合：GitHub Actions CI 14 步全部 SUCCESS (耗时 306s)；Release v0.0.3 产出 19 项资产；`AstroLib.Setup.0.0.3.exe` (171.77 MB) 与 Portable (158.73 MB) 均 HTTP 200；全量 13 本 .abp 与 `catalog.json` 真实 200 可直连下载，哈希与体积严格吻合；干净 CI 跑通 61 files passed / 353 passed / 5 skipped；G0–G5 全部门禁通过 | `artifacts/audit/p0-closure-final-evidence.json` | PASS | CLOSED |
 
 ---
 
@@ -1075,10 +1076,18 @@ git check-ignore -v public/data/exercises/community_ai_solutions.json
 - **G5 PASS**：高价值文档/测试/工具链同步，无 P0/P1 未记录例外；
 - 所有 Gate 的执行日志和证据可由审计 Agent 从干净 clone 复现。
 
-在此之前，项目状态保持：
+**最终门禁达成状态（2026-11-13）**：
 
 ```text
-REFACTOR BASELINE — NOT RELEASE CANDIDATE
+G0: PASS (模式 A 零内置书 Shell 确立)
+G1: PASS (win-unpacked 490.82 MB, asar 51.27 MB, 0 违规路径)
+G2: PASS (13 包/1,251 章全量编译, 4 本支持书 exercises 真实落盘)
+G3: PASS (GitHub Release v0.0.3 产出 19 项资产, 安装包与 13 本 .abp 真实 HTTP 200)
+G4: PASS (sourceCollections 单轨收口, exact 13 本)
+G5: PASS (文档同步, 死路由消除, 测试真实性对齐, 干净 CI 100% 绿色)
+
+P0: CLOSED — ALL BLOCKERS RESOLVED
+STATUS: RELEASE CANDIDATE ACCEPTED FOR FORMAL P1 HANDOFF
 ```
 
 ---
