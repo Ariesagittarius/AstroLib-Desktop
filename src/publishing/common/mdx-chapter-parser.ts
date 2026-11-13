@@ -1,6 +1,15 @@
 /**
+ * @deprecated LEGACY-PENDING-IR
+ * ============================================================================
  * src/publishing/common/mdx-chapter-parser.ts
  * AstroLib Processing 层：MDX 教材章节解析器
+ * 架构定位说明 (ADR-CONTENT-IR-2026-11-13 / P1-B3)：
+ * 本解析器属于历史出版导出原型组件，非当前阅读器生产主路径（生产主路径为 pack-book-abp + Universal Reader）。
+ * 退出生产路径条件与时间点：
+ * 1. 条件：P1-E 阶段统一采用 unified / remark-rehype 共享管线接管 LaTeX / Typst 编译器输入；
+ * 2. 时间点：P1-E 系统性重构与遗留解绑 Wave。
+ * 现阶段严禁在生产阅读流程中依赖此文件，保持只读与标注状态。
+ * ============================================================================
  *
  * 职责：
  * - 纯 Processing 逻辑，负责将原始 MDX 内容解析为统一的 Chapter Semantic Model (ChapterDocument)

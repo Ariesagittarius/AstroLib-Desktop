@@ -1,7 +1,15 @@
 /**
- * src/server/plugins/doc-ingestion/ast-compiler.ts
+ * @deprecated LEGACY-PENDING-IR
  * ============================================================================
+ * src/server/plugins/doc-ingestion/ast-compiler.ts
  * AstroLib MinerU 结构化 AST 编译器
+ * 架构定位说明 (ADR-CONTENT-IR-2026-11-13 / P1-B3)：
+ * 本编译器属于 MinerU 摄取端实验性 AST 工具，非当前书籍阅读生产主路径。
+ * 退出生产路径条件与时间点：
+ * 1. 条件：摄取端全面迁移至统一的最小 ContentDocument IR，并由标准 ABP 打包流水线接管；
+ * 2. 时间点：P1-E 系统性重构与摄取管线收口阶段。
+ * 现阶段严禁在生产阅读流程中依赖此文件，保持只读与标注状态。
+ * ============================================================================
  * 将 MinerU content_list_v2.json / layout.json / full.md 编译为统一高质量 LayoutBlock
  * 深度解析物理分页标尺、本页学术脚注双向对应、页眉/刊物/水印折叠元注
  * ============================================================================
