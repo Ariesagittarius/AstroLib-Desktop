@@ -27,6 +27,13 @@ describe('Release Metadata and Update Contract Tests', () => {
     expect(evidence.actions?.runId).toBe(43355219380);
     expect(evidence.actions?.jobDuration).toBe('6m 55s (415s)');
     expect(evidence.actions?.conclusion).toBe('success');
+    expect(evidence.testSuiteSummary?.totalFiles).toBe(64);
+    expect(evidence.testSuiteSummary?.passedFiles).toBe(62);
+    expect(evidence.testSuiteSummary?.skippedFiles).toBe(2);
+    expect(evidence.testSuiteSummary?.totalTests).toBe(364);
+    expect(evidence.testSuiteSummary?.passedTests).toBe(359);
+    expect(evidence.testSuiteSummary?.skippedTests).toBe(5);
+    expect(evidence.testSuiteSummary?.conclusion).toBe('PASS');
   });
 
   it('latest.yml 元数据与 NSIS 安装包契约校验（无空格、SHA-512 与 HTTP 200）', () => {

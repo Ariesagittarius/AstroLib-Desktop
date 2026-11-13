@@ -173,7 +173,7 @@ P1: NOT ACCEPTED FOR FORMAL HANDOFF
    - electron-builder 产物为 `AstroLib-Setup-0.0.4.exe` 与 `AstroLib-Portable-0.0.4.exe`，上传至 GitHub 时不再产生空格与点号转义；
    - 活网抓取 `latest.yml`（HTTP 200），解析 `files[0].url` 为 `AstroLib-Setup-0.0.4.exe`；
    - 活网探测 `https://github.com/Ariesagittarius/AstroLib-Desktop/releases/latest/download/AstroLib-Setup-0.0.4.exe`：**实测 HTTP 200 OK，Content-Length: 180,109,589 B**；
-   - `electron/services/updater.ts` 强化运行时安装包选择：根据 `PORTABLE_EXECUTABLE_DIR` 自动分流 Setup 安装包与 Portable 免安装包，并新增 `tests/contract/release-metadata.test.ts` 发布契约测试（3/3 tests pass）。
+   - `electron/services/updater.ts` 强化运行时安装包选择：根据 `PORTABLE_EXECUTABLE_DIR` 自动分流 Setup 安装包与 Portable 免安装包，并新增 `tests/contract/release-metadata.test.ts` 发布契约测试（5/5 tests pass）。
 2. **F2 闭合（门禁文档矛盾彻底消除）**：
    - `STAGE_REVIEW_AND_EXECUTION_GATES_2026-11-12.md` §11 已消除单一旧结论，明确标记为历史快照指针并与 §10 最终状态对齐；
    - `docs/README.md` 索引全面同步最新审计条目，明确标注文档历史 snapshot 与最终 closure；
