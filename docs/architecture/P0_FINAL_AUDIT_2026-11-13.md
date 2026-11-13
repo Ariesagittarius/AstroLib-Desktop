@@ -1,11 +1,13 @@
-# AstroLib P0 最后一轮独立审计与最终闭环签发
+# AstroLib P0 最终审计与 P1 执行交接
 
-**最终审计结论（2026-11-13 闭环结论）：`P0 CLOSED — RELEASE CANDIDATE ACCEPTED`。准予正式签发发布候选（RC），准予正式进入 P1 阶段交接。**  
-*(初始核对注记：本报告前半部记录 2026-11-13 首轮对 v0.0.3 的独立核查事实与三项阻断发现；第 5 节记录随后实施的 v0.0.4 资产重构、契约测试、活网 HTTP 200 验证与最终闭环签发证据)*
+**最终审计结论（2026-11-13 闭环结论）：`P0 CLOSED — RELEASE CANDIDATE ACCEPTED`。P0 已闭环，P1 交接已就绪。**
+**P1 交接状态：`READY — NOT STARTED`，执行入口见本文第 6 节。**
+*(初始核对注记：本报告前半部记录 2026-11-13 首轮对 v0.0.3 的独立核查事实与三项阻断发现；第 5 节记录随后实施的 v0.0.4 资产重构、契约测试、活网 HTTP 200 验证与最终闭环签发证据；第 6 节是交给执行端的 P1 工作说明)*
 
 | 项目 | 内容 |
 |---|---|
-| 审计基线 | `electron/main` @ `df68e42c`；Tag `v0.0.4` |
+| P0 审计基线 | `electron/main` @ `df68e42c`；Tag `v0.0.4` |
+| P1 交接基线 | `electron/main` @ `24360c7d`（仅 docs/evidence/test 变更，发布资产仍为 v0.0.4） |
 | 审计日期 | 2026-11-13 |
 | 审计方式 | 只读代码/文档、`git ls-remote`、Release 页面与资产 HTTP 探测、Actions 运行页核对、发布契约单测、干净归档复测记录复核 |
 | 最终结论 | F1~F4 全部阻断彻底消除：NSIS 与 Portable 资产命名固化为无空格破折号格式，`latest.yml` 指向目标真实存在且 HTTP 200；门禁文档与索引消除矛盾；完整 18 项资产清单与校验数据已作为 tracked evidence 纳入 Git；全量 13 本书及安装包活网直连全部 200；正式达成 P0 闭环。 |
@@ -205,6 +207,300 @@ RC SIGN-OFF: ACCEPTED
 P1 STATUS: FORMAL HANDOFF GRANTED
 ==================================================
 ```
+
+---
+
+## 6. P0 → P1 执行交接
+
+> 本节是执行端 Agent 的 P1 入口。第 1–5 节记录 P0 审计与 v0.0.4 发布闭环；P0 已完成，P1 不得重做 P0、不得重新上传 v0.0.4 资产，也不得把 P1 当成一次大重构。
+
+## 6.1 P1 交接基线（不可回退）
+
+| 项目 | 当前值 |
+|---|---|
+| 分支 | `electron/main` |
+| HEAD | `24360c7d` |
+| origin/private | 两者均为 `24360c7d` |
+| 工作树 | clean |
+| 发布 Tag | `v0.0.4` @ `df68e42c` |
+| 发布资产 | 18 项，全部 HTTP 200 |
+| 更新元数据 | `latest.yml` → `AstroLib-Setup-0.0.4.exe`，200 / 180,109,589 B，SHA-512 匹配 |
+| 内容包 | 13 本 / 1,251 章；evidence、catalog、manifest 的 `contentHash` 13/13 一致 |
+| 最终测试 | 62 passed / 2 skipped 文件；359 passed / 5 skipped 用例 |
+| 证据 | [`p0-final-evidence.json`](./evidence/p0-final-evidence.json) |
+| 门禁 | G0–G5、P0-4 全部 PASS；`P0 CLOSED` |
+
+**P0 已完成的含义**：发行链路、内容包、安装包、更新元数据和发布证据已闭环，现有 v0.0.4 可作为 P1 基线。
+**P0 已闭环但未覆盖的结构债务**：`PROJECT_ARCHITECTURE_AUDIT_2026-11-12.md` 中的结构性 P1 债务并未因发行闭环自动消失；P1 处理的是这些结构问题，不是重新修发布。
+
+**P1 当前状态：NOT STARTED。** 本节只定义交接范围与第一条任务，不代表 P1 已实施或已验收。
+
+## 6.2 已完成任务清单（P1 不得重做）
+
+| 已完成任务 | 结果 | 证据 |
+|---|---|---|
+| P0-B1：干净 clone 类型检查 | `astro sync && tsc --noEmit` 通过 | 干净归档 `check:types` 记录 |
+| P0-B2：干净 clone 测试 | 62/2 文件，359/5 用例通过 | `p0-final-evidence.json`、本轮 `check:all` |
+| P0-B3：公开 Release 与 13 本 ABP | v0.0.4 的 18 项资产全部 200 | Release v0.0.4 活网探测 |
+| P0-B4：NSIS / Portable / 更新链路 | 命名无空格；`latest.yml` 与 Setup SHA-512 一致 | `latest.yml`、`p0-final-evidence.json` |
+| F1：资产命名与 404 | 固定 `artifactName`；Setup / Portable 实际存在 | `package.json`、Release 资产 |
+| F2：文档状态矛盾 | 主门禁 §10、P0-FINAL 行、README 与审计文档对齐 | `STAGE_REVIEW...`、`docs/README.md` |
+| F3：tracked evidence | 18 项资产、真实 contentHash、测试汇总已归档 | `p0-final-evidence.json` |
+| F4：耗时、体积、zip 声明 | 6m 55s / 415s；catalog 13,461 B；ADR/工作流移除 `.zip` | 门禁文档、ADR、workflow |
+| G4：单一目录 | `sourceCollections` 单轨，exact 13 | `src/config/collections.config.ts`、G4 证据 |
+| G5：治理与残留 | 测试真实性、文档索引、契约测试、清理项完成 | 主门禁 G5 行、契约测试 |
+| P0-4：干净归档发布链 | Actions 14 步 SUCCESS；干净归档构建链通过 | Actions `43355219380`、干净归档记录 |
+
+执行端规则：
+
+- **不得重跑/重发 v0.0.4**；除非 P1 改动明确影响发布，否则 Release 资产保持不动。
+- **不得回退** `latest.yml` 的命名与 SHA-512 契约。
+- **不得删除** `docs/architecture/evidence/p0-final-evidence.json` 或其测试。
+- 如 P1 迁移需要改动 ABP schema、13 本书内容或发布资产，先停止并提交审计，不得直接实施。
+
+## 6.3 P1 目标与硬约束
+
+**P1 目标**：把当前“发行已闭环、结构仍有双轨”的状态，收敛为：
+
+1. 一个 Reader 契约（路由、slug、ABP 运行时同源）；
+2. 一条内容管线（唯一 IR，不再各自解析 MDX/Markdown）；
+3. 一个书库/存储契约（安装、校验、元数据、Web/Electron 语义一致）；
+4. 一套 UI/控制层边界（Settings、Header、Library、控制器不重复）；
+5. 一套治理基线（依赖方向、类型、测试、文档、CI 不继续腐化）。
+
+**硬约束**：
+
+- 遵循 `AGENTS.md` Rule 10：**one boundary → one migration → one verification**；禁止 Big Bang。
+- 每个 Wave 先写 ADR/边界说明，再改代码；ADR 通过审计后才进入实现。
+- 不改书籍内容、不改 ABP Schema 1.0.0、不改已发布 v0.0.4 资产。
+- 不以“删代码”代替迁移：旧实现要么删除，要么明确标为 legacy 并退出生产路径。
+- 不弱化测试：旧路径缺失应 fail，不得用 early return 记为 pass。
+- 不新增 `any` / `| string` 扩宽；不新增无引用死组件。
+- 每个 Wave 一个原子 commit（或一组同边界 commit）；不得把多个 Wave 混在一个提交。
+
+## 6.4 P1 工作分解（Wave 与架构审计编号）
+
+[PROJECT_ARCHITECTURE_AUDIT_2026-11-12.md](./PROJECT_ARCHITECTURE_AUDIT_2026-11-12.md) 的 P1-01~P1-13 作为结构债务总表；其中若干“架构 P0”（P0-02/03/05/06/08）与本次发行 P0 不是同一编号体系，P1 阶段按下列 Wave 处理，执行前必须重新盘点当前代码，不能直接照搬旧行号。
+
+**2026-11-13 审计时结构快照**（仅作盘点起点，执行前复测）：
+
+- `src/config/collections.config.ts` 已移除 `collections.length > 0 ? ... : ...` fallback，`sourceCollections` 为唯一目录源（G4 已闭环）；
+- `src/pages/` 当前无 `collections` 阅读路由，仍只有 `desktop`、`hub`、`index`、`blank`、`workspace`；
+- `public/abp-packs/` 无已跟踪生成物；ABP 产物应在 `artifacts/abp-packs/`；
+- `src/content/docs/collections/` 不存在（Mode A 零内置书）；
+- 旧路径/旧产物引用仍约 193 处（含 docs/tests/scripts），CSS 约 27,554 行、约 6,189 个 `!important`；这些是 P1-D/P1-E 的清理对象，不应在 P1-A 一并处理。
+
+| Wave | 对应审计项 | 目标 | 主要文件/边界 |
+|---|---|---|---|
+| **P1-A** | P1-01；架构 P0-02/03 | Reader 契约与 canonical slug | `src/pages/`、`electron/server/static-handler.ts`、`scripts/pack-book-abp.mjs`、`src/utils/slug.ts`、`electron/server/reader-shell-template.ts` |
+| **P1-B** | 架构 P0-08；P1-10 的转换部分 | 单一内容 IR / 转换管线 | `scripts/pack-book-abp.mjs`、`src/publishing/`、`src/server/plugins/doc-ingestion/`、`scripts/epub/mdx-pipeline.mjs` |
+| **P1-C** | 架构 P0-05/06/07 | 书库/存储/安装事务与校验 | `electron/services/book-manager.ts`、`src/services/content-provider/`、`electron/services/library-manager.ts`、`validateAbpBundle` |
+| **P1-D** | P1-02/03/04/05/07/08/13 | UI、控制器、CSS、Feature 边界 | `src/components/desktop/FragmentLibrary.astro`、`src/pages/desktop.astro`、`src/components/FeatureToggles.astro`、`src/components/desktop/SettingsHubContent.astro`、`src/components/HeaderOverride.astro`、`src/components/m3/M3TopNavBar.astro` |
+| **P1-E** | P1-06/09/10/11/12 | 依赖方向、重复栈、类型、治理 | `src/services/`、`src/features/`、`src/publishing/`、`src/types/`、`tests/`、`docs/`、`.github/workflows/` |
+
+### P1-A：Reader 契约与 canonical slug（第一优先）
+
+**目标**：所有官方书章节只有一个 canonical 路径和一套 slug；桌面静态服务、Web 路由、ABP 打包共用同一规则。
+
+**先写 ADR**（P1-A0）：
+
+- 明确官方 13 本书的 Web 路由：`/collections/{colSlug}/{bookSlug}/{chapterSlug}/`，或明确“P1 仅桌面、Web 路由另行立项”；
+- 明确用户上传 ABP 的运行时入口：`/reader/?book=...&chapter=...`（不按上传书包生成静态路由）；
+- 明确 canonical slug 算法、legacy alias 的生命周期和删除条件；
+- 明确 Starlight 只负责 `/dev`、`/guides`、`/reference`，不再承担书籍阅读器（P1-01）；
+- 列出允许修改的文件、非目标、回滚方案和验收命令。
+
+**实现任务**：
+
+1. 盘点 `src/pages/`、`static-handler.ts`、`pack-book-abp.mjs` 当前的 slug 生成与查找路径；
+2. 增加唯一 canonical route（若 ADR 决定 Web 接纳）；
+3. 官方 13 本书生成 1,251 章路由或等价可验证路径；
+4. 上传书只走运行时入口，不生成静态路由；
+5. 删除模糊/多候选查找；legacy alias 必须显式、可枚举、可测试；
+6. 未安装/未找到章节时返回明确空状态，不能空白 iframe。
+
+**验收**：
+
+```powershell
+npm run check:types
+npm test
+npm run build
+# 13 本 / 1,251 章路由与章节文件存在性检查
+# 桌面启动后至少 1 本真实书章节 200
+```
+
+- 13 本目录 / 1,251 章无 404；
+- 同一章只有一个 canonical 路径；
+- 不允许通过 fuzzy match 把 404 掩盖为 200；
+- 不修改 ABP schema 或书籍内容；
+- 旧 URL 如保留，必须有显式 alias 表和测试。
+
+**停止条件**：需要改 ABP schema、需要改书籍正文、或无法在不破坏 v0.0.4 资产的前提下统一路由时，停止并提交审计。
+
+### P1-B：单一内容 IR / 转换管线
+
+**目标**：MDX/Markdown → 语义 HTML、ABP、EPUB、发布格式不再各写一套标题/slug/图片/卡片规则。
+
+**任务**：
+
+1. 盘点当前转换器及其输入/输出：`scripts/pack-book-abp.mjs`、`scripts/epub/mdx-pipeline.mjs`、`src/publishing/common/mdx-chapter-parser.ts`、`src/server/plugins/doc-ingestion/ast-compiler.ts`；
+2. 选一个最小公共 IR（章节、块、资源、锚点、卡片、公式、习题引用）；
+3. 先让两个消费者共用，再迁移第三个；每次只迁移一个边界；
+4. 为 13 本书建立 golden fixture/snapshot，保证输出内容不变；
+5. 清理重复转换器中已无消费者的入口。
+
+**验收**：
+
+- 13 本书 ABP 的章节数、contentHash、资源路径在迁移前后有对照；
+- 同一段 MDX 在 ABP / EPUB / publishing 的标题 id、图片路径、卡片结构一致；
+- 不以“只改注释”或“保留两套但改名”冒充统一；
+- 内容正文零改动，ABP schema 不变。
+
+### P1-C：书库/存储/安装契约
+
+**目标**：Web、Electron、dev-server、DesktopBookManager 对“安装一本书”只有一个语义。
+
+**任务**：
+
+1. 统一 `validateAbpBundle()`：schemaVersion、entryPoint、section/chapter 引用、chapters 与 manifest 一致性；
+2. 安装采用 staging → 校验 → 原子替换 → 元数据写入；元数据失败可回滚或标记可恢复；
+3. Web/Electron 使用同一校验入口，或明确 Web 不支持安装并返回显式错误；
+4. 清理重复的 library/storage 实现，保留一个 provider contract；
+5. 增加损坏包、重复安装、元数据写入失败、路径逃逸测试。
+
+**验收**：
+
+- 损坏包不能进入已安装目录；
+- 重复安装幂等；
+- 元数据失败不会留下“书已落盘、索引未记录”的半状态；
+- 13 本官方包安装/卸载/重装均通过；
+- 测试覆盖 Web 与 Electron 的明确行为。
+
+### P1-D：UI、控制器、CSS 与 Feature 边界
+
+**目标**：消除 Settings/Header/Library 双实现、God controller、CSS `!important` 扩散和运行时小缺陷；不改变视觉语言。
+
+**任务**：
+
+1. Settings：`FeatureToggles` / `SettingsHubContent` / `feature-toggles` 收敛为一个状态与一个视图入口；
+2. Header：`HeaderOverride` / `M3TopNavBar` / 零引用菜单与死组件收敛；
+3. Library：`src/components/desktop/FragmentLibrary.astro` / `src/pages/desktop.astro` / 原 `library-client` 逻辑共用一套数据与安装操作；
+4. 拆分 `chat-controller`、`exercise-controller`、`translation-dock`、`ingest-controller` 的状态迁移，补不依赖 DOM 的 unit test；
+5. 按功能边界迁移 `components/exercises`、`components/ai`、`components/bilingual` 到 `features/`；
+6. 清理 CSS 重复导入与新增 `!important`，保留既有视觉结果；
+7. 修复 `sideload-manager` 重复注册、宽度漂移、sitemap/index 死路等 P1-13 小缺陷。
+
+**验收**：
+
+- 每个 UI 能力只有一个生产实现；
+- 删除的组件有零引用证据；
+- 控制器状态迁移有单测，不靠 DOM 快照；
+- `npm run build` 无新增警告；
+- 桌面关键页面（书库、阅读、设置、习题、侧载）手工 smoke 通过；
+- 不进行 M3 重设计，不改学术排版基线。
+
+### P1-E：依赖方向、重复栈、类型与治理
+
+**目标**：阻止结构继续腐化，并把 P1-A~D 的边界固定下来。
+
+**任务**：
+
+1. 修正 `services → components`、`utils → server`、`features → translation/bilingual`、`electron → dev plugin` 等倒置依赖；
+2. 合并 AI / 翻译 / 检索重复栈：配置、tools client、retriever、翻译入口各保留一个；
+3. 清理 publishing 的 `.bak`、死 Typst、UI controller 与双 renderer；
+4. 收紧 `collections.ts`、`content-package.ts`、`library-entity.ts` 的 `| string` / `any`；
+5. 清理已删除路径引用；历史文档明确标记“归档，不作为执行指令”；
+6. 测试/CI：禁止空跑；目录缺失 fail；新增 exact 13、ABP exercises、asar 禁止路径契约；
+7. 文档：更新 `AGENTS.md`、`README.md`、`docs/README.md`，确保命令、路径、产物位置与代码一致。
+
+**验收**：
+
+- 生产代码无旧路径引用（历史归档文档除外）；
+- 依赖方向检查无新增倒置；
+- typecheck 0 错；测试无新增 skip；
+- 文档命令可执行，产物路径与实际一致；
+- 无新增 `any` / `| string` 扩宽；
+- `npm run check:all` 全绿。
+
+## 6.5 执行顺序与 Gate
+
+```text
+P1-A0  ADR（不写代码） → 审计通过
+P1-A   Reader/slug          → 审计通过
+P1-B   Content IR           → 审计通过
+P1-C   Library/storage      → 审计通过
+P1-D   UI/controller/CSS    → 审计通过
+P1-E   Dependency/governance → 最终 P1 审计
+```
+
+- **一次只做一个 Wave**；前一个 Wave 未通过审计，不进入下一个。
+- 每个 Wave 开始前记录：`gate / branch / base_commit / worktree_status / planned_scope / files_allowed / files_forbidden / acceptance_commands`。
+- 每个 Wave 完成后提交：变更文件、命令、exit code、关键观测、证据路径、回归检查、剩余风险。
+- **P0 回归门禁**：任何 Wave 结束后必须重跑 `npm run check:all`；若改动影响打包/updater，另跑发布契约测试，并确认 v0.0.4 的 `latest.yml`/18 项资产未被改写。
+
+## 6.6 P1 完成定义（Definition of Done）
+
+P1 完成必须同时满足：
+
+1. P1-A~E 全部有审计通过的 evidence；
+2. 官方 13 本书的阅读路径与 slug 契约唯一、可验证；
+3. 内容转换只保留一个生产 IR（或明确的兼容层，且旧入口退出生产路径）；
+4. 书库/安装只有一个生产 provider contract，事务与校验测试通过；
+5. Settings/Header/Library 各只有一个生产实现；
+6. 依赖方向、重复栈、类型、文档、测试、CI 的 P1 项均有“已修复”或“明确延期”的记录；
+7. `npm run check:all` 通过；干净归档仍可构建；
+8. v0.0.4 发布资产不被 P1 意外改写；如需新版，另走发布 Gate，不在 P1 内直接替换资产。
+
+## 6.7 执行端第一任务（P1-A0）
+
+**任务 ID**：`P1-A0`
+**交付物**：`docs/architecture/ADR-READER-CONTRACT-2026-11-13.md`（或经审计同意的等价路径）
+**性质**：决策文档，**不修改任何源码**。
+
+必须包含：
+
+- 官方书与上传书的路径表；
+- canonical slug / legacy alias 规则；
+- 桌面 `StaticHandler`、Web 路由、ABP 打包三者的责任边界；
+- 受影响文件清单与禁止修改清单；
+- 迁移步骤（每次只迁移一个边界）；
+- 验收命令与证据格式；
+- 回滚方案；
+- 对 v0.0.4 Release 资产的影响评估（预期：无）。
+
+**第一轮只提交该 ADR 和当前代码盘点**；审计通过后再开始 P1-A1。
+禁止在 P1-A0 中顺手改路由、slug、组件或测试。
+
+> **P1-A0 复核结论（2026-11-13）**：`CONDITIONAL PASS` —— 交付物齐全、事实与实测一致，但有 7 项须补正（F1–F4 阻断）。P1-A1 门禁规格与完成定义对账见 [`P1_A0_AUDIT_2026-11-13.md`](./P1_A0_AUDIT_2026-11-13.md)。
+
+## 6.8 执行报告模板
+
+```text
+gate:
+branch:
+base_commit:
+worktree_status:
+planned_scope:
+files_allowed:
+files_forbidden:
+files_changed:
+commands:
+exit_codes:
+key_observations:
+evidence_paths:
+regression_checks:
+remaining_risks:
+```
+
+**停止条件**：
+
+- 需要改书籍正文、ABP schema 或 v0.0.4 已发布资产；
+- 需要把旧路径测试改为 skip/early return 才能通过；
+- 发现 P1-A 的 ADR 与现有 Release 契约冲突；
+- 无法在一个 Wave 内保持可回滚；
+- 需要跨 Wave 合并提交或 Big Bang 迁移。
+
+出现上述任一情况，执行端应停止实现并提交审计，不得自行扩大范围。
 
 ---
 
