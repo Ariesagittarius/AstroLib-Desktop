@@ -836,8 +836,10 @@ const parseLatin = (v: unknown): LatinFont =>
 const parseCjk = (v: unknown): CjkFont =>
   CJK_PRESETS.some((p) => p.value === v) ? (v as CjkFont) : 'sans';
 
+const FeatureToggleBase = typeof HTMLElement !== 'undefined' ? HTMLElement : (class {} as unknown as typeof HTMLElement);
+
 /** 各实例自包含的开关逻辑：绑定 ⚙ 开合、关闭钮、面板复选框与重置操作 */
-class StarlightFeatureToggles extends HTMLElement {
+class StarlightFeatureToggles extends FeatureToggleBase {
   panel: HTMLElement | null = null;
   backdrop: HTMLElement | null = null;
 
@@ -1888,10 +1890,15 @@ class StarlightFeatureToggles extends HTMLElement {
   }
 }
 
+let _featureTogglesListenersBound = false;
+
 /**
  * 初始化：注册自定义元素（幂等）+ 首次应用到页面 + 订阅 SPA 路由/跨标签页。
  */
 export function initFeatureToggles(): void {
+  if (typeof window === 'undefined' || typeof document === 'undefined') {
+    return;
+  }
   // 清理任何历史残留的 M3 dialog
   document.querySelectorAll('#ft-m3-settings-dialog').forEach((el) => el.remove());
 
@@ -1902,7 +1909,7 @@ export function initFeatureToggles(): void {
   applyPunctStyle();
   applyFontSize();
 
-  if (!customElements.get('starlight-feature-toggles')) {
+  if (typeof customElements !== 'undefined' && !customElements.get('starlight-feature-toggles')) {
     customElements.define('starlight-feature-toggles', StarlightFeatureToggles);
   }
 
@@ -1913,6 +1920,11 @@ export function initFeatureToggles(): void {
   syncAllFontSizeSliders();
   syncAllTransModeChips();
   syncAllTransProviderChips();
+
+  if (_featureTogglesListenersBound) {
+    return;
+  }
+  _featureTogglesListenersBound = true;
 
   // 当 @material/web 的 md-filter-chip 完成注册后触发初次水合对齐
   if (typeof customElements !== 'undefined' && customElements.whenDefined) {

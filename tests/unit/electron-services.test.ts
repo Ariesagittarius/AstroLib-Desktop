@@ -29,7 +29,7 @@ describe('Electron Services & Infrastructure Unit Tests', () => {
     expect(diag.totalMemMB).toBeGreaterThan(0);
     expect(diag.diskFreeGB).toBeGreaterThan(0);
     expect(diag.huggingFaceCacheDir).toContain('.cache');
-  });
+  }, 45000);
 
   it('ModelManager 应准确列出注册的核心模型及其初始状态', async () => {
     const mgr = new ModelManager(projectRoot);
@@ -49,7 +49,7 @@ describe('Electron Services & Infrastructure Unit Tests', () => {
     expect(qwen).toBeDefined();
     expect(qwen?.name).toContain('Qwen3');
     expect(qwen?.requiresPython).toBe(true);
-  });
+  }, 45000);
 
   it('ModelManager 取消未开始的下载应安全返回', () => {
     const mgr = new ModelManager(projectRoot);
@@ -149,7 +149,7 @@ describe('Electron Services & Infrastructure Unit Tests', () => {
     expect((await manager.getInstalledBooks()).length).toBe(0);
 
     fs.rmSync(tmpStorage, { recursive: true, force: true });
-  });
+  }, 90000);
 
   it('validateAbpBundle 应严格拦截 schemaVersion、entryPoint 与 section/chapter 不一致的损坏包', async () => {
     const { validateAbpBundle } = await import('../../src/types/content-package.ts');

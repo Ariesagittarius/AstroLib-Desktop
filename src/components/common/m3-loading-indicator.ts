@@ -101,10 +101,12 @@ export function parseIndicatorSize(sizeAttr: string | number | null | undefined)
   }
 }
 
+const BaseElement = typeof HTMLElement !== 'undefined' ? HTMLElement : (class {} as unknown as typeof HTMLElement);
+
 /**
  * <m3-loading-indicator> 自定义 Web Component
  */
-export class M3LoadingIndicatorElement extends HTMLElement {
+export class M3LoadingIndicatorElement extends BaseElement {
   static get observedAttributes() {
     return ['size', 'variant', 'mode', 'color', 'container-color', 'speed', 'paused'];
   }

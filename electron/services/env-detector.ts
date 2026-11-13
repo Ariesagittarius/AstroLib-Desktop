@@ -203,35 +203,37 @@ export class EnvDetector {
       'print("___ASTROLIB_PY___" + json.dumps(info))',
     ].join('\n');
 
-    for (const cand of candidateSet) {
-      try {
-        const { stdout } = await execFileAsync(cand, ['-c', probeCode], { timeout: 12000 });
-        const marker = '___ASTROLIB_PY___';
-        const idx = stdout.indexOf(marker);
-        if (idx !== -1) {
-          const jsonStr = stdout.slice(idx + marker.length).trim();
-          const data = JSON.parse(jsonStr);
+    await Promise.all(
+      Array.from(candidateSet).map(async (cand) => {
+        try {
+          const { stdout } = await execFileAsync(cand, ['-c', probeCode], { timeout: 6000 });
+          const marker = '___ASTROLIB_PY___';
+          const idx = stdout.indexOf(marker);
+          if (idx !== -1) {
+            const jsonStr = stdout.slice(idx + marker.length).trim();
+            const data = JSON.parse(jsonStr);
 
-          // 启发式评分：CUDA 加速(10分) > PyTorch(4分) > Transformers(2分) > 基础可用(1分)
-          let score = 1;
-          if (data.cuda) score += 10;
-          if (data.torch) score += 4;
-          if (data.tf) score += 2;
+            // 启发式评分：CUDA 加速(10分) > PyTorch(4分) > Transformers(2分) > 基础可用(1分)
+            let score = 1;
+            if (data.cuda) score += 10;
+            if (data.torch) score += 4;
+            if (data.tf) score += 2;
 
-          evaluated.push({
-            path: cand,
-            version: data.ver || null,
-            hasTorch: Boolean(data.torch),
-            hasTransformers: Boolean(data.tf),
-            hasCuda: Boolean(data.cuda),
-            cudaDeviceName: data.device || null,
-            score,
-          });
+            evaluated.push({
+              path: cand,
+              version: data.ver || null,
+              hasTorch: Boolean(data.torch),
+              hasTransformers: Boolean(data.tf),
+              hasCuda: Boolean(data.cuda),
+              cudaDeviceName: data.device || null,
+              score,
+            });
+          }
+        } catch {
+          // 该候选执行失败，跳过继续测试下一个
         }
-      } catch (err) {
-        // 该候选执行失败，跳过继续测试下一个
-      }
-    }
+      })
+    );
 
     // 按得分由高到低排序，优选最高质量的环境
     evaluated.sort((a, b) => b.score - a.score);

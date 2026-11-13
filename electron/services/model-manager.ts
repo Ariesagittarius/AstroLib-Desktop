@@ -98,7 +98,7 @@ export class ModelManager {
   /**
    * 检查单个模型状态
    */
-  async checkModelStatus(modelId: string): Promise<ModelInfoPayload> {
+  async checkModelStatus(modelId: string, cachedDiag?: any): Promise<ModelInfoPayload> {
     const entry = REGISTERED_MODELS.find((m) => m.id === modelId);
     if (!entry) {
       return {
@@ -129,7 +129,7 @@ export class ModelManager {
       };
     }
 
-    const diag = await EnvDetector.getDiagnostics(this.projectRoot, this.customModelsDir);
+    const diag = cachedDiag || await EnvDetector.getDiagnostics(this.projectRoot, this.customModelsDir);
 
     if (entry.requiresPython && !diag.pythonPath) {
       return {
@@ -185,9 +185,10 @@ export class ModelManager {
    * 获取所有可用模型列表及状态
    */
   async getAvailableModels(): Promise<ModelInfoPayload[]> {
+    const diag = await EnvDetector.getDiagnostics(this.projectRoot, this.customModelsDir);
     const list: ModelInfoPayload[] = [];
     for (const entry of REGISTERED_MODELS) {
-      list.push(await this.checkModelStatus(entry.id));
+      list.push(await this.checkModelStatus(entry.id, diag));
     }
     return list;
   }

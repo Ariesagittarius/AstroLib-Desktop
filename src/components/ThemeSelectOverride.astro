@@ -11,10 +11,7 @@
 // 动作区，移动端出现在左侧抽屉底部（MobileMenuFooter 复用本组件），无需额外布线。
 // 仅当 features.fonts.enabled（字体系统启用）时渲染，关闭字体功能即不打包/不显示。
 //
-// 设置按钮（FeatureToggles，右下角 ⚙ 功能开关面板）也已并入本顶栏槽位：作为兄弟控件
-// 与主题/字体切换并排，桌面 header 与移动端抽屉底部各渲染一个 <starlight-feature-toggles>
-// 实例，各自管理自己的开合与下拉面板（详见 FeatureToggles.astro / feature-toggles.ts）。
-import FeatureToggles from './FeatureToggles.astro';
+// 设置按钮：以标准 M3 空心齿轮图标直连全局控制中心与设置路由 (/hub/)。
 import { features } from '../config/features.config.mjs';
 ---
 
@@ -70,11 +67,37 @@ import { features } from '../config/features.config.mjs';
   </button>
 </starlight-theme-select>
 
-<FeatureToggles />
+<a
+  href="/hub/"
+  class="m3-icon-button ft-hub-link"
+  title="设置与控制中心"
+  aria-label="打开设置与控制中心"
+>
+  <!-- Google Material Symbols 官方 Outlined 空心齿轮 (settings) -->
+  <svg class="ft-gear-icon header-mdicon" viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true">
+    <path d="M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zm-1.98-1.71c.04.31.05.52.05.73 0 .21-.02.43-.05.73l-.14 1.13.89.7 1.08.84-.7 1.21-1.27-.51-1.04-.42-.9.68c-.43.32-.84.56-1.3.73l-1.06.42-.16 1.13-.2 1.35h-1.4l-.19-1.35-.16-1.13-1.06-.42c-.46-.18-.88-.42-1.31-.74l-.9-.67-1.04.42-1.28.51-.7-1.21 1.08-.84.89-.7-.14-1.13c-.04-.31-.05-.52-.05-.73 0-.21.02-.43.05-.73l.14-1.13-.89-.7-1.08-.84.7-1.21 1.27.51 1.04.42.9-.68c.43-.32.84-.56 1.3-.73l1.06-.42.16-1.13.2-1.35h1.39l.19 1.35.16 1.13 1.06.42c.46.18.87.42 1.31.74l.9.67 1.04-.42 1.28-.51.7 1.21-1.08.84-.89.7.14 1.13zM12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm0 6c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z" />
+  </svg>
+</a>
 <style>
   .vp-theme-switch {
     display: flex;
     align-items: center;
+  }
+
+  .ft-hub-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    color: var(--sl-color-text, #1f1f1f);
+    text-decoration: none;
+    transition: background-color 0.2s;
+    margin-left: 6px;
+  }
+  .ft-hub-link:hover {
+    background-color: var(--sl-color-gray-6, rgba(0, 0, 0, 0.05));
   }
 
   /* VitePress VPSwitchAppearance：40px×22px 胶囊底座 + 18px 滑块 */
