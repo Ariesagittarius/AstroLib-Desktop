@@ -1,0 +1,45 @@
+{
+  "gate": "P1-A",
+  "baseCommit": "24360c7d",
+  "closureCommit": "0c79939f",
+  "timestamp": "2026-11-13T10:29:00.000Z",
+  "commands": [
+    "npm run check:types",
+    "npx vitest run tests/unit/reader-entry.test.ts",
+    "npx vitest run tests/unit/static-handler.test.ts",
+    "npx vitest run tests/contract/reader-routability.test.ts",
+    "npm run build",
+    "npm test"
+  ],
+  "exitCodes": {
+    "checkTypes": 0,
+    "routability": 0,
+    "npmTest": 0
+  },
+  "metrics": {
+    "totalBooks": 13,
+    "totalChapters": 1251,
+    "slugMismatchCount": 0,
+    "legacySlugCoveredCount": 1195,
+    "canonicalHttp200": 1251,
+    "legacyHttp301": 1191,
+    "fuzzyMatchLinesInStaticHandler": 0
+  },
+  "notFoundProbe": {
+    "testUrl": "/collections/math/math_senior/not_exist_slug/",
+    "httpStatus": 404,
+    "contentType": "text/html; charset=utf-8",
+    "containsDiagnosticText": true,
+    "containsReturnLibraryAction": true,
+    "containsReturnDefaultChapterAction": true,
+    "containsSvgIcon": true
+  },
+  "artifactSha256": {
+    "catalog.json": "e5613db473bd4ce22860340b1e94a54820980d1e74b9d62ed37326e749f4e446",
+    "math-math_senior.abp": "1aa9b47355af683cdb9ec371048024ced5b0244861f87c8b119474ba99d88efb"
+  },
+  "testSuite": {
+    "testFiles": "66 passed | 2 skipped (68)",
+    "tests": "395 passed | 5 skipped (400)"
+  }
+}
