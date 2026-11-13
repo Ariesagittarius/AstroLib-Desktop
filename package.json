@@ -1,7 +1,7 @@
 {
   "name": "my-astro-site",
   "type": "module",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "license": "GPL-3.0-or-later",
   "main": "dist-electron/main.mjs",
   "scripts": {
