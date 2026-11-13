@@ -1,7 +1,7 @@
 ---
 import config from 'virtual:starlight/user-config';
-
 import Search from 'virtual:starlight/components/Search';
+import M3TopNavBar from './m3/M3TopNavBar.astro';
 
 /**
  * Render the `Search` component if Pagefind is enabled or default search is overridden.
@@ -67,9 +67,16 @@ const shouldRenderSearch =
 	})();
 </script>
 
-<div class="m3-header-inner vp-header-inner">
-	<!-- Left: Directory Toggle Button (Clean Reader Window - No redundant Brand/Logo) -->
-	<div class="m3-brand-wrapper vp-brand-wrapper">
+<M3TopNavBar
+	currentPath={Astro.url.pathname}
+	siteTitle={typeof config.title === 'string' ? config.title : 'AstroLib'}
+	showSearch={shouldRenderSearch}
+	showThemeToggle={false}
+	showHubButton={false}
+	showGithubLink={false}
+	class="m3-header-starlight-override vp-header-inner"
+>
+	<div slot="brand-extra" class="m3-brand-wrapper vp-brand-wrapper">
 		<!-- 左侧栏收放切换按钮 (全视口统一：桌面折叠/移动端抽屉) -->
 		<button
 			type="button"
@@ -92,13 +99,11 @@ const shouldRenderSearch =
 		</button>
 	</div>
 
-	<!-- Search Trigger (Google Drive Centered Pill Style) -->
-	<div class="m3-search-wrapper vp-search-wrapper print:hidden">
+	<div slot="search" class="m3-search-wrapper vp-search-wrapper print:hidden">
 		{shouldRenderSearch && <Search />}
 	</div>
 
-	<!-- Right Control Group: Reading Utilities Only (TOC, Bilingual, Lens) -->
-	<div class="print:hidden m3-right-group vp-right-group right-group">
+	<div slot="actions" class="print:hidden m3-right-group vp-right-group right-group">
 		<!-- 0. 右侧栏 / 本章大纲收放按钮 (全视口统一：桌面折叠/移动端大纲) -->
 		<button
 			type="button"
@@ -142,7 +147,7 @@ const shouldRenderSearch =
 			<md-icon class="header-mdicon vp-focus-icon" aria-hidden="true">center_focus_strong</md-icon>
 		</button>
 	</div>
-</div>
+</M3TopNavBar>
 
 <style>
 	.vp-header-inner {
