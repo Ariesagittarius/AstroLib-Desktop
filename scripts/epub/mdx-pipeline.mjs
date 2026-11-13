@@ -341,7 +341,7 @@ export function plainTitle(title) {
 /**
  * 渲染一篇 MDX 章节
  * @param {string} mdxSource
- * @returns {{ title: string, body: string, images: Set<string> }}
+ * @returns {Promise<{ title: string, body: string, images: Set<string>, headings: import('../../src/core/content/headings.ts').ChapterHeadingItem[] }>}
  */
 export async function renderChapter(mdxSource) {
   // 1. frontmatter

@@ -1,0 +1,43 @@
+{
+  "gate": "P1-B",
+  "baseCommit": "d4e09245",
+  "packRegenerated": true,
+  "timestamp": "2026-11-13T13:30:00.000Z",
+  "before": {
+    "books": 13,
+    "chapters": 1251,
+    "headingsCoverage": 465,
+    "headingAnchorCoverage": 983,
+    "anchorAlignMismatch": 6,
+    "duplicateIdChapters": 10
+  },
+  "after": {
+    "books": 13,
+    "chapters": 1251,
+    "headingsCoverage": 983,
+    "headingAnchorCoverage": 983,
+    "anchorAlignMismatch": 0,
+    "duplicateIdChapters": 0
+  },
+  "contentHashes": {
+    "cs-algorithms": "b779db982724728e -> b779db982724728e",
+    "math-engineering_analysis": "6e44a033ef7c9424 -> 6e44a033ef7c9424",
+    "math-graph_theory": "cd014c16fa64be6b -> cd014c16fa64be6b",
+    "math-linear_algebra": "f330dcc3a9dc7764 -> f330dcc3a9dc7764",
+    "math-linear_algebra_geometry": "3056805a1ebde661 -> 3056805a1ebde661",
+    "math-math_analysis": "25c14fab32476e56 -> 25c14fab32476e56",
+    "math-math_senior": "291aba549099255f -> 291aba549099255f",
+    "math-probability_statistics": "112e972c52615d5e -> 112e972c52615d5e",
+    "science-university_physics": "5e46d03a68c99141 -> 5e46d03a68c99141",
+    "science-vectors_and_tensors": "6a1d99dcc23546ed -> 6a1d99dcc23546ed",
+    "telecom-communication_principles": "c97a2d483abfbd5c -> c97a2d483abfbd5c",
+    "telecom-digital_circuit": "288abfd259d6dfc1 -> 288abfd259d6dfc1",
+    "telecom-electronic_circuits": "4e9c67a2645ef64e -> 4e9c67a2645ef64e"
+  },
+  "tests": {
+    "files": "68 passed | 2 skipped (70)",
+    "passed": 408,
+    "skipped": 5
+  },
+  "notes": "重打包仅作用于本地 artifacts 生成物，未改动 Release 资产，未破坏基线。headings.ts 实现唯一标题 slug 算法与 HTML-first 提取去重契约。"
+}

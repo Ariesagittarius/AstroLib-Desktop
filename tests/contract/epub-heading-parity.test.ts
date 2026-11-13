@@ -52,7 +52,12 @@ describe('EPUB / ABP Heading Parity Contract Suite (P1-B2)', () => {
       const abpPayload = JSON.parse(fs.readFileSync(abpJsonPath, 'utf8'));
 
       // 运行 EPUB 渲染管线
-      const epubResult = await renderChapter(mdxSource);
+      const epubResult = (await renderChapter(mdxSource)) as {
+        title: string;
+        body: string;
+        images: Set<string>;
+        headings: any[];
+      };
       expect(epubResult.headings).toBeDefined();
 
       const abpHeadings = abpPayload.headings || [];
