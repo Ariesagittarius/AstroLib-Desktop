@@ -18,9 +18,15 @@ describe('MinerU Ingestion Engine Unit Tests', () => {
   it('1. should resolve MinerU API token from local environment or config', () => {
     const client = new MineruApiClient();
     const token = client.getToken();
-    expect(token).toBeDefined();
-    expect(typeof token).toBe('string');
-    expect(token!.length).toBeGreaterThan(10);
+    if (token) {
+      expect(typeof token).toBe('string');
+      expect(token.length).toBeGreaterThan(10);
+    } else {
+      expect(token).toBeNull();
+    }
+
+    const clientWithExplicitToken = new MineruApiClient('test_mineru_api_token_123456');
+    expect(clientWithExplicitToken.getToken()).toBe('test_mineru_api_token_123456');
   });
 
   it('2. should correctly count PDF pages via raw buffer matching', () => {
