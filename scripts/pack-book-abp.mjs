@@ -25,6 +25,7 @@ import katex from 'katex';
 import { marked } from 'marked';
 import { renderTitleHtml } from '../src/utils/render-title.ts';
 import { cleanSlug } from '../src/utils/slug.ts';
+import { slugifyHeading, collectHeadingsFromHtml, rewriteHeadingIdsInHtml } from '../src/core/content/headings.ts';
 import { ABP_SCHEMA_VERSION } from '../src/types/content-package.ts';
 import { getCatalogCollections } from '../src/config/collections.config.ts';
 import { resolveAbpArtifactsDir, resolveBookSourceDir, CONTENT_CATALOG_REL } from '../src/core/catalog/content-paths.ts';
@@ -140,26 +141,6 @@ function renderKatexMathInMarkdown(content) {
 }
 
 /**
- * 提取 Markdown 中的 H1-H4 标题作为大纲树
- */
-function extractHeadings(content) {
-  const headings = [];
-  const lines = content.split('\n');
-  for (const line of lines) {
-    const headingMatch = line.match(/^(#{1,4})\s+(.+)$/);
-    if (headingMatch) {
-      const depth = headingMatch[1].length;
-      const rawText = headingMatch[2].trim();
-      // 生成干净的纯文本 ID，去除 HTML 标签，保留数学变量字母
-      const plainText = rawText.replace(/\$([^$]+)\$/g, '$1').replace(/<[^>]+>/g, '').trim();
-      const id = plainText.toLowerCase().replace(/[^\w\u4e00-\u9fa5-]+/g, '-').replace(/^-+|-+$/g, '') || `heading-${headings.length + 1}`;
-      headings.push({ depth, text: rawText, id });
-    }
-  }
-  return headings;
-}
-
-/**
  * 将 Markdown 转换为具备学术卡片、KaTeX 预渲染与标准语义的 HTML
  */
 function compileMarkdownToSemanticHtml(body, { colSlug = '', bookSlug = '', bookTitle = '' } = {}) {
@@ -257,7 +238,7 @@ function compileMarkdownToSemanticHtml(body, { colSlug = '', bookSlug = '', book
     const rawTitle = t1 || t2 || '查看解析与步骤';
     let plainTitle = rawTitle.replace(/%%%MATH_(?:BLOCK|INLINE)_(\d+)%%%/g, (_, idx) => mathPlaceholders[Number(idx)]?.rawTex || '');
     plainTitle = plainTitle.replace(/<[^>]+>/g, '').trim();
-    const cleanId = plainTitle.toLowerCase().replace(/[^\w\u4e00-\u9fa5-]+/g, '-').replace(/^-+|-+$/g, '') || `solution-${cardPlaceholders.length}`;
+    const cleanId = slugifyHeading(plainTitle) || `solution-${cardPlaceholders.length}`;
 
     let titleWithMath = rawTitle.replace(/%%%MATH_(?:BLOCK|INLINE)_(\d+)%%%/g, (_, idx) => mathPlaceholders[Number(idx)]?.html || '');
     const titleHtml = rawTitle.includes('%%%MATH_') ? titleWithMath : renderTitleHtml(titleWithMath);
@@ -402,7 +383,7 @@ function compileMarkdownToSemanticHtml(body, { colSlug = '', bookSlug = '', book
       const rawTitle = t1 || t2 || defaultTitle;
       let plainTitle = rawTitle.replace(/%%%MATH_(?:BLOCK|INLINE)_(\d+)%%%/g, (_, idx) => mathPlaceholders[Number(idx)]?.rawTex || '');
       plainTitle = plainTitle.replace(/<[^>]+>/g, '').trim();
-      const cleanId = plainTitle.toLowerCase().replace(/[^\w\u4e00-\u9fa5-]+/g, '-').replace(/^-+|-+$/g, '') || `card-${cardPlaceholders.length}`;
+      const cleanId = slugifyHeading(plainTitle) || `card-${cardPlaceholders.length}`;
       
       let titleWithMath = rawTitle.replace(/%%%MATH_(?:BLOCK|INLINE)_(\d+)%%%/g, (_, idx) => mathPlaceholders[Number(idx)]?.html || '');
       const titleHtml = rawTitle.includes('%%%MATH_') ? titleWithMath : renderTitleHtml(titleWithMath);
@@ -424,7 +405,7 @@ function compileMarkdownToSemanticHtml(body, { colSlug = '', bookSlug = '', book
       const innerHtml = this.parser.parseInline(tokens);
       let plainText = text.replace(/%%%MATH_(?:BLOCK|INLINE)_(\d+)%%%/g, (_, idx) => mathPlaceholders[Number(idx)]?.rawTex || '');
       plainText = plainText.replace(/<[^>]+>/g, '').trim();
-      const slug = plainText.toLowerCase().replace(/[^\w\u4e00-\u9fa5-]+/g, '-').replace(/^-+|-+$/g, '') || `heading-${depth}`;
+      const slug = slugifyHeading(plainText) || `heading-${depth}`;
       const anchorSvg = `<a class="anchor-link" href="#${slug}" aria-label="标题直链"><svg class="anchor-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></a>`;
       return `<h${depth} id="${slug}"><span>${innerHtml}</span>${anchorSvg}</h${depth}>\n`;
     }
@@ -447,6 +428,9 @@ function compileMarkdownToSemanticHtml(body, { colSlug = '', bookSlug = '', book
     prevHtml = html;
     html = html.replace(/%%%MATH_(BLOCK|INLINE)_(\d+)%%%/g, (_m, type, idx) => mathPlaceholders[Number(idx)]?.html || '');
   }
+
+  // 9. 统一重写并去重标题锚点 ID（单章重复追加 -1/-2）
+  html = rewriteHeadingIdsInHtml(html);
 
   return `<div class="astrolib-chapter-content">${html}</div>`;
 }
@@ -592,12 +576,12 @@ export async function packBook({
       }
     } catch {}
 
-    const headings = extractHeadings(body);
     const html = compileMarkdownToSemanticHtml(body, {
       colSlug: manifest.colSlug,
       bookSlug: manifest.slug,
       bookTitle: manifest.title,
     });
+    const headings = collectHeadingsFromHtml(html);
 
     const payload = {
       schemaVersion: ABP_SCHEMA_VERSION,
