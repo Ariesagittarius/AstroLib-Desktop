@@ -10,6 +10,8 @@
  * ============================================================================
  */
 
+import type { ChapterHeadingItem } from '../../types/content-package.ts';
+
 export type EmptyStateReason =
   | 'missing-book'
   | 'missing-chapter'
@@ -36,6 +38,37 @@ export interface EmptyStateViewModel {
   title: string;
   description: string;
   action: EmptyStateAction;
+}
+
+export interface ReaderOutlineItem {
+  href: string;
+  text: string;
+  depth: 2 | 3;
+}
+
+/**
+ * 将章节 payload 的 headings 映射为右侧大纲条目。
+ * 仅保留 h2/h3 且具备有效锚点 id 的标题：payload 的 ChapterHeadingItem 字段为
+ * `{ depth, text, id }`，锚点必须取自 `id`（历史实现误用不存在的 `slug` 字段，
+ * 导致所有大纲链接退化为 `#undefined`）。
+ */
+export function buildOutlineItems(
+  headings: readonly ChapterHeadingItem[] | null | undefined
+): ReaderOutlineItem[] {
+  if (!Array.isArray(headings)) return [];
+
+  const items: ReaderOutlineItem[] = [];
+  for (const heading of headings) {
+    if (!heading || (heading.depth !== 2 && heading.depth !== 3)) continue;
+    const id = typeof heading.id === 'string' ? heading.id.trim() : '';
+    if (!id) continue;
+    items.push({
+      href: `#${id}`,
+      text: typeof heading.text === 'string' ? heading.text : '',
+      depth: heading.depth,
+    });
+  }
+  return items;
 }
 
 /**

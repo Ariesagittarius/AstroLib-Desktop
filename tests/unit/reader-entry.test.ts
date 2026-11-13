@@ -5,6 +5,7 @@ import {
   parseReaderQuery,
   splitBookId,
   buildEmptyStateViewModel,
+  buildOutlineItems,
   type EmptyStateReason,
 } from '../../src/services/content-provider/reader-entry.ts';
 
@@ -113,8 +114,43 @@ describe('Universal Reader Entry Pure Functions (P1-A3)', () => {
     });
   });
 
-  describe('浏览器端打包安全性负向断言 (Zero Node API in Client Bundles)', () => {
-    const targetFiles = [
+  describe('buildOutlineItems()', () => {
+    it('仅保留 h2/h3，且锚点必须取自 heading.id（回归 #undefined）', () => {
+      const items = buildOutlineItems([
+        { depth: 1, text: '章标题', id: 'chapter' },
+        { depth: 2, text: '小节 A', id: 'sec-a' },
+        { depth: 3, text: '子节 B', id: 'sec-b' },
+        { depth: 4, text: '过深标题', id: 'too-deep' },
+      ]);
+
+      expect(items).toEqual([
+        { href: '#sec-a', text: '小节 A', depth: 2 },
+        { href: '#sec-b', text: '子节 B', depth: 3 },
+      ]);
+      expect(items.some((item) => item.href === '#undefined')).toBe(false);
+    });
+
+    it('缺少 id 的标题必须跳过，空输入返回空数组', () => {
+      const items = buildOutlineItems([
+        { depth: 2, text: '无锚点标题', id: '' },
+        { depth: 3, text: '有效标题', id: 'ok' },
+      ]);
+
+      expect(items).toHaveLength(1);
+      expect(items[0].href).toBe('#ok');
+      expect(buildOutlineItems(undefined)).toEqual([]);
+      expect(buildOutlineItems(null)).toEqual([]);
+      expect(buildOutlineItems([])).toEqual([]);
+    });
+
+    it('reader.astro 必须经 buildOutlineItems 渲染大纲，且不得引用 heading.slug', () => {
+      const source = fs.readFileSync(path.resolve(process.cwd(), 'src/pages/reader.astro'), 'utf8');
+      expect(source).toContain('buildOutlineItems(');
+      expect(source).not.toMatch(/h\.slug|heading\.slug|\$\{h\.slug\}/);
+    });
+  });
+
+  describe('浏览器端打包安全性负向断言 (Zero Node API in Client Bundles)', () => {    const targetFiles = [
       'src/services/content-provider/reader-entry.ts',
       'src/pages/reader.astro',
       'src/services/content-provider/web-provider.ts',

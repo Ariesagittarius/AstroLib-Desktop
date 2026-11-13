@@ -59,6 +59,7 @@ export const prerender = true;
     parseReaderQuery,
     splitBookId,
     buildEmptyStateViewModel,
+    buildOutlineItems,
     type EmptyStateReason,
   } from '../services/content-provider/reader-entry.ts';
 
@@ -133,23 +134,20 @@ export const prerender = true;
         chapterBodyEl.innerHTML = payload.html;
       }
 
-      // 渲染大纲
-      if (payload.headings && payload.headings.length > 0 && outlineList && outlineAside) {
+      // 渲染大纲（锚点取自 heading.id，绝不使用不存在的 slug 字段）
+      const outlineItems = buildOutlineItems(payload.headings);
+      if (outlineItems.length > 0 && outlineList && outlineAside) {
         outlineList.textContent = '';
-        for (const h of payload.headings) {
-          if (h.depth === 2 || h.depth === 3) {
-            const li = document.createElement('li');
-            const a = document.createElement('a');
-            a.className = `reader-outline-link reader-heading-depth-${h.depth}`;
-            a.href = `#${h.slug}`;
-            a.textContent = h.text;
-            li.appendChild(a);
-            outlineList.appendChild(li);
-          }
+        for (const item of outlineItems) {
+          const li = document.createElement('li');
+          const a = document.createElement('a');
+          a.className = `reader-outline-link reader-heading-depth-${item.depth}`;
+          a.href = item.href;
+          a.textContent = item.text;
+          li.appendChild(a);
+          outlineList.appendChild(li);
         }
-        if (outlineList.children.length > 0) {
-          outlineAside.style.display = 'block';
-        }
+        outlineAside.style.display = 'block';
       }
 
       if (emptyWrapper) emptyWrapper.style.display = 'none';
