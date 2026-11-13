@@ -11,7 +11,7 @@
     "conclusion": "success",
     "totalSteps": 14,
     "successfulSteps": 14,
-    "jobDuration": "6m 45s (405s)"
+    "jobDuration": "6m 55s (415s)"
   },
   "updaterMetadata": {
     "latestYmlUrl": "https://github.com/Ariesagittarius/AstroLib-Desktop/releases/latest/download/latest.yml",
@@ -39,6 +39,7 @@
       "name": "AstroLib-Setup-0.0.4.exe",
       "category": "nsis-installer",
       "sizeBytes": 180109589,
+      "sha512": "PT+oHgO0jSDKgTeREPNwFZs6R1Z4bJo1XqhayFF8iAhesH7LIwnYlSA/I93r7Rnd58ka+6Fg5JTb9OgwUlPlIw==",
       "httpStatus": 200,
       "downloadUrl": "https://github.com/Ariesagittarius/AstroLib-Desktop/releases/download/v0.0.4/AstroLib-Setup-0.0.4.exe"
     },
@@ -74,7 +75,7 @@
       "name": "math-math_senior.abp",
       "category": "abp-package",
       "sizeBytes": 2768561,
-      "contentHash": "18f97fc48b0c822d",
+      "contentHash": "cbc6bc3bbd4c199c",
       "httpStatus": 200,
       "downloadUrl": "https://github.com/Ariesagittarius/AstroLib-Desktop/releases/download/v0.0.4/math-math_senior.abp"
     },
@@ -82,7 +83,7 @@
       "name": "math-math_analysis.abp",
       "category": "abp-package",
       "sizeBytes": 4418567,
-      "contentHash": "b2c1537237936a79",
+      "contentHash": "c1cf9ed358b6ff68",
       "httpStatus": 200,
       "downloadUrl": "https://github.com/Ariesagittarius/AstroLib-Desktop/releases/download/v0.0.4/math-math_analysis.abp"
     },
@@ -90,7 +91,7 @@
       "name": "math-engineering_analysis.abp",
       "category": "abp-package",
       "sizeBytes": 9215209,
-      "contentHash": "270d061c47186dd8",
+      "contentHash": "0c94ee2cea9ffb80",
       "httpStatus": 200,
       "downloadUrl": "https://github.com/Ariesagittarius/AstroLib-Desktop/releases/download/v0.0.4/math-engineering_analysis.abp"
     },
@@ -98,7 +99,7 @@
       "name": "math-linear_algebra.abp",
       "category": "abp-package",
       "sizeBytes": 7491875,
-      "contentHash": "f5f5906ef259b581",
+      "contentHash": "719c38a2f015a161",
       "httpStatus": 200,
       "downloadUrl": "https://github.com/Ariesagittarius/AstroLib-Desktop/releases/download/v0.0.4/math-linear_algebra.abp"
     },
@@ -106,7 +107,7 @@
       "name": "math-probability_statistics.abp",
       "category": "abp-package",
       "sizeBytes": 3735808,
-      "contentHash": "c57ec99252c42c26",
+      "contentHash": "2bf3b693c6b758f1",
       "httpStatus": 200,
       "downloadUrl": "https://github.com/Ariesagittarius/AstroLib-Desktop/releases/download/v0.0.4/math-probability_statistics.abp"
     },
@@ -114,7 +115,7 @@
       "name": "math-linear_algebra_geometry.abp",
       "category": "abp-package",
       "sizeBytes": 3323316,
-      "contentHash": "29199321da3b246a",
+      "contentHash": "a1abdb241f2dae21",
       "httpStatus": 200,
       "downloadUrl": "https://github.com/Ariesagittarius/AstroLib-Desktop/releases/download/v0.0.4/math-linear_algebra_geometry.abp"
     },
@@ -122,7 +123,7 @@
       "name": "math-graph_theory.abp",
       "category": "abp-package",
       "sizeBytes": 5447977,
-      "contentHash": "9b1ca290e29087ea",
+      "contentHash": "d91de2bac0b5a2f4",
       "httpStatus": 200,
       "downloadUrl": "https://github.com/Ariesagittarius/AstroLib-Desktop/releases/download/v0.0.4/math-graph_theory.abp"
     },
@@ -130,7 +131,7 @@
       "name": "science-university_physics.abp",
       "category": "abp-package",
       "sizeBytes": 10657475,
-      "contentHash": "c2005aee17724a2f",
+      "contentHash": "2832c580504e69b0",
       "httpStatus": 200,
       "downloadUrl": "https://github.com/Ariesagittarius/AstroLib-Desktop/releases/download/v0.0.4/science-university_physics.abp"
     },
@@ -138,7 +139,7 @@
       "name": "science-vectors_and_tensors.abp",
       "category": "abp-package",
       "sizeBytes": 10024557,
-      "contentHash": "ef384d6b63c76bb8",
+      "contentHash": "6a1d99dcc23546ed",
       "httpStatus": 200,
       "downloadUrl": "https://github.com/Ariesagittarius/AstroLib-Desktop/releases/download/v0.0.4/science-vectors_and_tensors.abp"
     },
@@ -146,7 +147,7 @@
       "name": "telecom-communication_principles.abp",
       "category": "abp-package",
       "sizeBytes": 50346492,
-      "contentHash": "9e5c4ecbe6587c47",
+      "contentHash": "629eb930be385dfa",
       "httpStatus": 200,
       "downloadUrl": "https://github.com/Ariesagittarius/AstroLib-Desktop/releases/download/v0.0.4/telecom-communication_principles.abp"
     },
@@ -154,7 +155,7 @@
       "name": "telecom-digital_circuit.abp",
       "category": "abp-package",
       "sizeBytes": 15410280,
-      "contentHash": "d8205caee408d24f",
+      "contentHash": "288abfd259d6dfc1",
       "httpStatus": 200,
       "downloadUrl": "https://github.com/Ariesagittarius/AstroLib-Desktop/releases/download/v0.0.4/telecom-digital_circuit.abp"
     },
@@ -162,7 +163,7 @@
       "name": "telecom-electronic_circuits.abp",
       "category": "abp-package",
       "sizeBytes": 14835555,
-      "contentHash": "ca9a5ef28247cead",
+      "contentHash": "b86aeace1be90781",
       "httpStatus": 200,
       "downloadUrl": "https://github.com/Ariesagittarius/AstroLib-Desktop/releases/download/v0.0.4/telecom-electronic_circuits.abp"
     },
@@ -170,7 +171,7 @@
       "name": "cs-algorithms.abp",
       "category": "abp-package",
       "sizeBytes": 18140573,
-      "contentHash": "349141f19f2008f8",
+      "contentHash": "b779db982724728e",
       "httpStatus": 200,
       "downloadUrl": "https://github.com/Ariesagittarius/AstroLib-Desktop/releases/download/v0.0.4/cs-algorithms.abp"
     }

@@ -1082,9 +1082,9 @@ git check-ignore -v public/data/exercises/community_ai_solutions.json
 G0: PASS (模式 A 零内置书 Shell 确立)
 G1: PASS (win-unpacked 490.82 MB, asar 51.27 MB, 0 违规路径)
 G2: PASS (13 包/1,251 章全量编译, 4 本支持书 exercises 真实落盘)
-G3: PASS (GitHub Release v0.0.3 产出 19 项资产, 安装包与 13 本 .abp 真实 HTTP 200)
+G3: PASS (GitHub Release v0.0.4 产出 18 项资产, latest.yml 与实际安装包 100% 对齐 HTTP 200)
 G4: PASS (sourceCollections 单轨收口, exact 13 本)
-G5: PASS (文档同步, 死路由消除, 测试真实性对齐, 干净 CI 100% 绿色)
+G5: PASS (文档同步消除矛盾, tracked evidence 归档入库, 发布契约测试通过, 干净 CI 100% 绿色)
 
 P0: CLOSED — ALL BLOCKERS RESOLVED
 STATUS: RELEASE CANDIDATE ACCEPTED FOR FORMAL P1 HANDOFF

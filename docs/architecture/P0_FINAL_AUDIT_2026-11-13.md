@@ -55,7 +55,7 @@ Release 页面：
 
 ---
 
-## 2. 阻断项
+## 2. 阻断项（v0.0.3 初始审计发现）
 
 ### F1（P0/G3）：`latest.yml` 指向不存在的安装包
 
@@ -128,7 +128,7 @@ HEAD .../v0.0.3/AstroLib.Setup.0.0.3.exe
 
 ---
 
-## 3. Gate 裁决
+## 3. Gate 裁决（v0.0.3 初始核查快照）
 
 | Gate | 裁决 | 说明 |
 |---|---|---|
@@ -180,9 +180,9 @@ P1: NOT ACCEPTED FOR FORMAL HANDOFF
    - `P0_CLOSURE_AUDIT_ROUND2_2026-11-12.md` 明确历史段落标注，避免状态混淆。
 3. **F3 闭合（最终证据纳入 Git 跟踪且完整详实）**：
    - 建立 tracked 证据文件：[`docs/architecture/evidence/p0-final-evidence.json`](./evidence/p0-final-evidence.json)；
-   - 完整收录 18 项资产的真实文件名、分类、字节大小、SHA-512、内容哈希、Actions run ID、运行耗时及 HTTP 200 状态，彻底摆脱 `.gitignore` 丢失问题。
+   - 完整收录 18 项资产的真实文件名、分类、字节大小、安装包 SHA-512、各教材包 Schema 1.0.0 contentHash、Actions run ID、运行耗时及 HTTP 200 状态，彻底摆脱 `.gitignore` 丢失问题。
 4. **F4 闭合（参数与表述对齐）**：
-   - Actions 耗时纠正为实测完整任务时长 **6m 45s（405s）**；
+   - Actions 耗时纠正为实测完整任务时长 **6m 55s（415s）**；
    - `catalog.json` 真实体积确认为 **13,461 字节**；
    - `.github/workflows/electron-release.yml` 与 `ADR-DISTRIBUTION-2026-11-12.md` 移除不存在的 `release/*.zip`，仅保留实际生产的 `.exe`、`.blockmap`、`latest.yml`、`catalog.json` 与 `.abp`。
 
@@ -215,7 +215,7 @@ P1 STATUS: FORMAL HANDOFF GRANTED
 - NSIS 安装包：`https://github.com/Ariesagittarius/AstroLib-Desktop/releases/latest/download/AstroLib-Setup-0.0.4.exe`（200 OK，180,109,589 B）
 - 便携绿色版：`https://github.com/Ariesagittarius/AstroLib-Desktop/releases/latest/download/AstroLib-Portable-0.0.4.exe`（200 OK，166,442,473 B）
 - 官方目录索引：`https://github.com/Ariesagittarius/AstroLib-Desktop/releases/latest/download/catalog.json`（200 OK，13,461 B）
-- Actions 流水线：`https://github.com/Ariesagittarius/AstroLib-Desktop/actions/runs/43355219380`（Success，6m 45s）
+- Actions 流水线：`https://github.com/Ariesagittarius/AstroLib-Desktop/actions/runs/43355219380`（Success，6m 55s）
 - Tracked 证据文件：[p0-final-evidence.json](./evidence/p0-final-evidence.json)
 - 主门禁文档：[STAGE_REVIEW_AND_EXECUTION_GATES_2026-11-12.md](./STAGE_REVIEW_AND_EXECUTION_GATES_2026-11-12.md)
 - 既有审计：[P0_CLOSURE_AUDIT_ROUND2_2026-11-12.md](./P0_CLOSURE_AUDIT_ROUND2_2026-11-12.md)
