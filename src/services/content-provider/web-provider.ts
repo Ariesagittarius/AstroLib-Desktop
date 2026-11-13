@@ -12,6 +12,11 @@ import {
   type LibraryCatalog,
   type InstalledBookMeta,
 } from '../../types/content-package.ts';
+import {
+  validateInstallPayload,
+  AbpInstallError,
+  AbpInstallErrorCode,
+} from './install-validation.ts';
 import type { IContentProvider, RemoteSourceConfig, StorageStats } from './types.ts';
 
 const DB_NAME = 'astrolib_books_db';
@@ -168,6 +173,41 @@ class BrowserBookDb {
       tx.onerror = () => reject(tx.error);
     });
   }
+
+  async cleanStaleChapters(bookId: string, validSlugs: Set<string>): Promise<void> {
+    if (!this.isSupported) {
+      for (const k of Array.from(BrowserBookDb.memoryFallback.chapters.keys())) {
+        if (k.startsWith(`${bookId}:`)) {
+          const slug = k.slice(bookId.length + 1);
+          if (!validSlugs.has(slug)) {
+            BrowserBookDb.memoryFallback.chapters.delete(k);
+          }
+        }
+      }
+      return;
+    }
+    const db = await this.openDb();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(STORE_CHAPTERS, 'readwrite');
+      const chapStore = tx.objectStore(STORE_CHAPTERS);
+      const cursorReq = chapStore.openCursor();
+      cursorReq.onsuccess = (e: any) => {
+        const cursor = e.target.result;
+        if (cursor) {
+          const key = String(cursor.key);
+          if (key.startsWith(`${bookId}:`)) {
+            const slug = key.slice(bookId.length + 1);
+            if (!validSlugs.has(slug)) {
+              cursor.delete();
+            }
+          }
+          cursor.continue();
+        }
+      };
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    });
+  }
 }
 
 /**
@@ -252,10 +292,29 @@ export class WebContentProvider implements IContentProvider {
   ): Promise<InstalledBookMeta> {
     if (onProgress) onProgress(15, '正在解压 .abp 数据包...');
 
-    const jsonText = await decompressGzip(abpData);
+    let jsonText: string;
+    try {
+      jsonText = await decompressGzip(abpData);
+    } catch (err: any) {
+      throw new AbpInstallError(
+        AbpInstallErrorCode.INVALID_PAYLOAD,
+        `解压 .abp 数据包失败: ${err?.message || String(err)}`
+      );
+    }
 
     if (onProgress) onProgress(45, '解析书籍目录与章节...');
-    const bundle = validateAbpBundle(JSON.parse(jsonText));
+    let rawJson: unknown;
+    try {
+      rawJson = JSON.parse(jsonText);
+    } catch (err: any) {
+      throw new AbpInstallError(
+        AbpInstallErrorCode.INVALID_PAYLOAD,
+        `解析 ABP JSON 失败: ${err?.message || String(err)}`
+      );
+    }
+
+    // 统一安装校验入口 (P1-C1)
+    const bundle = validateInstallPayload(rawJson);
     const manifest: AstroBookManifest = bundle.manifest;
     const chapters: Record<string, AstroBookChapterPayload> = bundle.chapters || {};
 
@@ -265,25 +324,65 @@ export class WebContentProvider implements IContentProvider {
       sourceType: 'local-file',
     };
 
-    if (onProgress) onProgress(65, '写入本地存储...');
-    await this.db.putManifest(meta);
+    // 逆序提交原子安装 (P1-C2)：
+    // 先写章节 → 全部成功后再写 manifest；中途任何异常立即触发 deleteBook 回滚
+    try {
+      if (onProgress) onProgress(60, '持久化章节数据...');
 
-    let count = 0;
-    const total = Object.keys(chapters).length;
+      let count = 0;
+      const total = Object.keys(chapters).length;
 
-    for (const [slug, payload] of Object.entries(chapters)) {
-      await this.db.putChapter(manifest.id, slug, payload);
-
-      count++;
-      if (onProgress && total > 0) {
-        const pct = 65 + Math.floor((count / total) * 30);
-        onProgress(pct, `持久化章节 (${count}/${total})...`);
+      for (const [slug, payload] of Object.entries(chapters)) {
+        await this.db.putChapter(manifest.id, slug, payload);
+        count++;
+        if (onProgress && total > 0) {
+          const pct = 60 + Math.floor((count / total) * 25);
+          onProgress(pct, `持久化章节 (${count}/${total})...`);
+        }
       }
-    }
 
-    this.memoryCache.set(`manifest:${manifest.id}`, manifest);
-    if (onProgress) onProgress(100, '安装完成！');
-    return meta;
+      if (onProgress) onProgress(88, '提交书籍主清单...');
+      await this.db.putManifest(meta);
+
+      if (onProgress) onProgress(94, '清理过时章节...');
+      await this.db.cleanStaleChapters(manifest.id, new Set(Object.keys(chapters)));
+
+      // 同时从内存缓存中剔除不再存在的过时章节 (P1-C3 降级安装彻底清理)
+      const validSlugs = new Set(Object.keys(chapters));
+      for (const k of Array.from(this.memoryCache.keys())) {
+        if (k.startsWith(`chapter:${manifest.id}:`)) {
+          const slug = k.slice(`chapter:${manifest.id}:`.length);
+          if (!validSlugs.has(slug)) {
+            this.memoryCache.delete(k);
+          }
+        }
+      }
+
+      this.memoryCache.set(`manifest:${manifest.id}`, manifest);
+
+      if (onProgress) onProgress(100, '安装完成！');
+      return meta;
+    } catch (err: any) {
+      // 异常自动回滚：清理可能已写入的孤立章节，确保书库无半残状态
+      try {
+        await this.db.deleteBook(manifest.id);
+        this.memoryCache.delete(`manifest:${manifest.id}`);
+        for (const k of Array.from(this.memoryCache.keys())) {
+          if (k.startsWith(`chapter:${manifest.id}:`)) {
+            this.memoryCache.delete(k);
+          }
+        }
+      } catch {}
+
+      throw err;
+    }
+  }
+
+  async installToDisk(): Promise<never> {
+    throw new AbpInstallError(
+      AbpInstallErrorCode.OPERATION_NOT_SUPPORTED,
+      'Web 浏览器环境不支持写入本地文件系统磁盘'
+    );
   }
 
   async removeBook(colSlug: string, bookSlug: string): Promise<boolean> {

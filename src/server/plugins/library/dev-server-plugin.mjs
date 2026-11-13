@@ -266,28 +266,111 @@ export function devLibraryServerPlugin() {
 
               const manifest = bundle.manifest;
               const bookKey = `${manifest.colSlug}-${manifest.slug}`;
-              const targetDir = path.resolve(projectRoot, '.tmp/dev-abp-packs', bookKey);
-              const chaptersDir = path.join(targetDir, 'chapters');
-              fs.mkdirSync(chaptersDir, { recursive: true });
-              fs.writeFileSync(path.join(targetDir, 'manifest.json'), JSON.stringify(manifest, null, 2), 'utf8');
-              if (bundle.chapters && typeof bundle.chapters === 'object') {
-                for (const [cSlug, cData] of Object.entries(bundle.chapters)) {
-                  const destChap = path.join(chaptersDir, `${cSlug}.json`);
-                  fs.mkdirSync(path.dirname(destChap), { recursive: true });
-                  fs.writeFileSync(destChap, JSON.stringify(cData, null, 2), 'utf8');
+              const baseDir = path.resolve(projectRoot, '.tmp/dev-abp-packs');
+              const targetDir = path.join(baseDir, bookKey);
+              const ts = Date.now();
+              const stagingDir = path.join(baseDir, `${bookKey}.__staging_${ts}_${process.pid}`);
+              const backupDir = path.join(baseDir, `${bookKey}.__backup_${ts}_${process.pid}`);
+
+              fs.mkdirSync(baseDir, { recursive: true });
+              const stagingChaptersDir = path.join(stagingDir, 'chapters');
+              fs.mkdirSync(stagingChaptersDir, { recursive: true });
+
+              let backedUp = false;
+              let swapped = false;
+
+              try {
+                // 1. 写入 manifest 到 staging
+                fs.writeFileSync(path.join(stagingDir, 'manifest.json'), JSON.stringify(manifest, null, 2), 'utf8');
+
+                // 2. 写入章节
+                if (bundle.chapters && typeof bundle.chapters === 'object') {
+                  for (const [cSlug, cData] of Object.entries(bundle.chapters)) {
+                    const destChap = path.join(stagingChaptersDir, `${cSlug}.json`);
+                    fs.mkdirSync(path.dirname(destChap), { recursive: true });
+                    fs.writeFileSync(destChap, JSON.stringify(cData, null, 2), 'utf8');
+                  }
                 }
-              }
-              if (bundle.assets && typeof bundle.assets === 'object') {
-                for (const [relPath, b64] of Object.entries(bundle.assets)) {
-                  const destAsset = path.join(targetDir, relPath);
-                  fs.mkdirSync(path.dirname(destAsset), { recursive: true });
-                  fs.writeFileSync(destAsset, Buffer.from(b64, 'base64'));
+
+                // 3. 写入资源
+                if (bundle.assets && typeof bundle.assets === 'object') {
+                  for (const [relPath, b64] of Object.entries(bundle.assets)) {
+                    const destAsset = path.join(stagingDir, relPath);
+                    fs.mkdirSync(path.dirname(destAsset), { recursive: true });
+                    fs.writeFileSync(destAsset, Buffer.from(b64, 'base64'));
+                  }
                 }
+
+                // 4. 写入习题
+                if (bundle.exercises && typeof bundle.exercises === 'object') {
+                  const stagingExercisesDir = path.join(stagingDir, 'exercises');
+                  fs.mkdirSync(stagingExercisesDir, { recursive: true });
+                  for (const [relPath, rawJson] of Object.entries(bundle.exercises)) {
+                    if (typeof rawJson !== 'string') continue;
+                    const destPath = path.join(stagingExercisesDir, relPath);
+                    fs.mkdirSync(path.dirname(destPath), { recursive: true });
+                    fs.writeFileSync(destPath, rawJson, 'utf8');
+                  }
+                }
+
+                // 5. 三段式原子重命名替换 (P1-C2)
+                if (fs.existsSync(targetDir)) {
+                  fs.renameSync(targetDir, backupDir);
+                  backedUp = true;
+                }
+                fs.renameSync(stagingDir, targetDir);
+                swapped = true;
+
+                // 6. 成功后物理清理 backup (P1-C3 降级与幂等彻底清理)
+                if (backedUp && fs.existsSync(backupDir)) {
+                  fs.rmSync(backupDir, { recursive: true, force: true });
+                }
+
+                return sendJson(res, 200, { success: true, manifest });
+              } catch (writeErr) {
+                // 写入或替换异常，触发回滚 (P1-C2)
+                if (swapped) {
+                  try {
+                    if (fs.existsSync(targetDir)) {
+                      fs.rmSync(targetDir, { recursive: true, force: true });
+                    }
+                    if (backedUp && fs.existsSync(backupDir)) {
+                      fs.renameSync(backupDir, targetDir);
+                    }
+                  } catch {}
+                } else if (backedUp && fs.existsSync(backupDir) && !fs.existsSync(targetDir)) {
+                  try {
+                    fs.renameSync(backupDir, targetDir);
+                  } catch {}
+                }
+                if (fs.existsSync(stagingDir)) {
+                  try {
+                    fs.rmSync(stagingDir, { recursive: true, force: true });
+                  } catch {}
+                }
+                throw writeErr;
               }
-              return sendJson(res, 200, { success: true, manifest });
             } catch (err) {
               return sendJson(res, 500, { error: `安装 ABP 失败: ${err.message}`, code: 'INSTALL_FAILED' });
             }
+          }
+
+          // 6. 删除已安装书籍包 (/api/library/books/:bookKey) (P1-C3)
+          if (req.method === 'DELETE' && pathname.startsWith(`${LIBRARY_PATH_PREFIX}/books/`)) {
+            const bookKey = pathname.slice(`${LIBRARY_PATH_PREFIX}/books/`.length);
+            if (!bookKey || bookKey.includes('..') || bookKey.includes('/') || bookKey.includes('\\')) {
+              return sendJson(res, 400, { error: '非法的书籍标识', code: 'INVALID_BOOK_KEY' });
+            }
+            const targetDir = path.resolve(projectRoot, '.tmp/dev-abp-packs', bookKey);
+            if (fs.existsSync(targetDir)) {
+              fs.rmSync(targetDir, { recursive: true, force: true });
+            }
+            const entityId = `book:${bookKey}`;
+            if (store.customMeta[entityId]) {
+              delete store.customMeta[entityId];
+              saveStore(store);
+            }
+            return sendJson(res, 200, { success: true });
           }
 
           return sendJson(res, 404, { error: '未找到对应 API 接口' });
