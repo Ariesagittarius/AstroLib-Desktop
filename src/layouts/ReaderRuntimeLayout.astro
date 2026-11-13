@@ -1,0 +1,50 @@
+---
+/**
+ * src/layouts/ReaderRuntimeLayout.astro
+ * ============================================================================
+ * Universal Reader 运行时独立页面骨架 (Runtime Page Layout)
+ * ============================================================================
+ * 架构规范：
+ * - 纯净独立骨架，禁止 import HeaderOverride, PageSidebarOverride 等 Starlight 组件
+ * - 遵守 ADR-READER-CONTRACT-2026-11-13 与 P1-A3 规格
+ * ============================================================================
+ */
+
+import '../styles/tokens/layers.css';
+import '../themes/material-you/tokens.css';
+import '../styles/reader-entry.css';
+
+interface Props {
+  title?: string;
+  description?: string;
+}
+
+const {
+  title = '章节阅读 · AstroLib',
+  description = 'AstroLib 学术数字阅读器运行时界面',
+} = Astro.props;
+---
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-site-theme="material-you">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <meta name="robots" content="noindex, nofollow" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+
+    <script is:inline>
+      (function() {
+        try {
+          var t = localStorage.getItem('astrolib-theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+          document.documentElement.setAttribute('data-theme', t);
+        } catch (_) {}
+      })();
+    </script>
+  </head>
+  <body>
+    <slot />
+  </body>
+</html>

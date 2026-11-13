@@ -1,0 +1,167 @@
+---
+/**
+ * src/pages/reader.astro
+ * ============================================================================
+ * Universal Reader 独立运行时页面路由 (/reader/)
+ * ============================================================================
+ * 职责：
+ * 1. 作为上传书/自制书在 Web 与 Electron 端的统一运行时阅读入口；
+ * 2. 静态预渲染页面骨架（prerender = true），客户端动态根据 URL 参数获取章节有效负载；
+ * 3. 严格禁止引入 Node.js 专属环境依赖；
+ * 4. 遵循 ADR-READER-CONTRACT-2026-11-13 与 P1-A3 门禁规格。
+ * ============================================================================
+ */
+import ReaderRuntimeLayout from '../layouts/ReaderRuntimeLayout.astro';
+
+export const prerender = true;
+---
+
+<ReaderRuntimeLayout title="章节阅读 · AstroLib">
+  <div class="reader-shell">
+    <header class="reader-top-bar">
+      <a href="/desktop/" class="reader-back-link" id="reader-back-btn">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="19" y1="12" x2="5" y2="12"></line>
+          <polyline points="12 19 5 12 12 5"></polyline>
+        </svg>
+        <span>返回研读书库</span>
+      </a>
+      <div id="reader-book-indicator" style="font-size: 0.875rem; color: var(--md-sys-color-on-surface-variant);"></div>
+    </header>
+
+    <div id="reader-empty-wrapper" class="reader-empty-wrapper" style="display: none;">
+      <div class="reader-empty-card">
+        <h2 id="reader-empty-title" class="reader-empty-title"></h2>
+        <p id="reader-empty-desc" class="reader-empty-description"></p>
+        <a id="reader-empty-action" href="/desktop/" class="reader-empty-action">返回研读书库</a>
+      </div>
+    </div>
+
+    <main id="reader-content-layout" class="reader-main-layout" style="display: none;">
+      <article class="reader-article-wrap">
+        <h1 id="reader-chapter-title" class="reader-chapter-title"></h1>
+        <div id="reader-chapter-body" class="reader-article-content"></div>
+      </article>
+
+      <aside id="reader-outline-aside" class="reader-outline-aside" style="display: none;">
+        <nav class="reader-outline-sticky" aria-label="本章大纲">
+          <div class="reader-outline-title">本章大纲</div>
+          <ul id="reader-outline-list" class="reader-outline-list"></ul>
+        </nav>
+      </aside>
+    </main>
+  </div>
+</ReaderRuntimeLayout>
+
+<script>
+  import { getContentProvider } from '../services/content-provider/index.ts';
+  import {
+    parseReaderQuery,
+    splitBookId,
+    buildEmptyStateViewModel,
+    type EmptyStateReason,
+  } from '../services/content-provider/reader-entry.ts';
+
+  async function initReader() {
+    const emptyWrapper = document.getElementById('reader-empty-wrapper');
+    const emptyTitle = document.getElementById('reader-empty-title');
+    const emptyDesc = document.getElementById('reader-empty-desc');
+    const emptyAction = document.getElementById('reader-empty-action') as HTMLAnchorElement | null;
+    const contentLayout = document.getElementById('reader-content-layout');
+    const chapterTitleEl = document.getElementById('reader-chapter-title');
+    const chapterBodyEl = document.getElementById('reader-chapter-body');
+    const outlineAside = document.getElementById('reader-outline-aside');
+    const outlineList = document.getElementById('reader-outline-list');
+    const bookIndicator = document.getElementById('reader-book-indicator');
+
+    function showEmpty(reason: EmptyStateReason | 'invalid-book-id') {
+      const vm = buildEmptyStateViewModel(reason);
+      if (emptyTitle) emptyTitle.textContent = vm.title;
+      if (emptyDesc) emptyDesc.textContent = vm.description;
+      if (emptyAction) {
+        emptyAction.textContent = vm.action.label;
+        emptyAction.href = vm.action.href;
+      }
+      if (contentLayout) contentLayout.style.display = 'none';
+      if (emptyWrapper) emptyWrapper.style.display = 'flex';
+    }
+
+    const query = parseReaderQuery(window.location.search);
+    if (query.error) {
+      showEmpty(query.error);
+      return;
+    }
+
+    const { bookId, chapterSlug } = query;
+    if (!bookId || !chapterSlug) {
+      showEmpty('missing-book');
+      return;
+    }
+
+    const split = splitBookId(bookId);
+    if (!split) {
+      showEmpty('invalid-book-id');
+      return;
+    }
+
+    try {
+      const provider = getContentProvider();
+      const payload = await provider.getChapterPayload(split.colSlug, split.bookSlug, chapterSlug);
+
+      if (!payload) {
+        // 进一步判断是书籍未安装，还是章节不存在
+        const manifest = await provider.getBookManifest(split.colSlug, split.bookSlug);
+        if (!manifest) {
+          showEmpty('not-installed');
+        } else {
+          showEmpty('chapter-missing');
+        }
+        return;
+      }
+
+      // 成功命中有效负载
+      if (payload.title) {
+        document.title = `${payload.title} · AstroLib`;
+        if (chapterTitleEl) chapterTitleEl.textContent = payload.title;
+      }
+
+      if (bookIndicator) {
+        bookIndicator.textContent = `${split.colSlug} / ${split.bookSlug}`;
+      }
+
+      if (chapterBodyEl) {
+        chapterBodyEl.innerHTML = payload.html;
+      }
+
+      // 渲染大纲
+      if (payload.headings && payload.headings.length > 0 && outlineList && outlineAside) {
+        outlineList.textContent = '';
+        for (const h of payload.headings) {
+          if (h.depth === 2 || h.depth === 3) {
+            const li = document.createElement('li');
+            const a = document.createElement('a');
+            a.className = `reader-outline-link reader-heading-depth-${h.depth}`;
+            a.href = `#${h.slug}`;
+            a.textContent = h.text;
+            li.appendChild(a);
+            outlineList.appendChild(li);
+          }
+        }
+        if (outlineList.children.length > 0) {
+          outlineAside.style.display = 'block';
+        }
+      }
+
+      if (emptyWrapper) emptyWrapper.style.display = 'none';
+      if (contentLayout) contentLayout.style.display = 'flex';
+    } catch {
+      showEmpty('chapter-missing');
+    }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initReader);
+  } else {
+    initReader();
+  }
+</script>

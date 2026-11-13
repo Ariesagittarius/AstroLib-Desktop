@@ -1,0 +1,200 @@
+/**
+ * src/styles/reader-entry.css
+ * ============================================================================
+ * Universal Reader 运行时界面专用样式
+ * ============================================================================
+ * 架构规范：
+ * - 0 个 !important (P1-A3 门禁强制约束)
+ * - 遵循 Material 3 色彩与排版 Token
+ * - 正文排版：行宽 --reader-measure: 72ch，纯学术排版
+ * ============================================================================
+ */
+
+:root {
+  --reader-measure: 72ch;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--md-sys-color-surface, #ffffff);
+  color: var(--md-sys-color-on-surface, #1d1b20);
+  font-family: var(--font-latin, var(--sl-font, system-ui, sans-serif));
+  line-height: 1.75;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.reader-shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.reader-top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 3rem;
+  padding: 0 1.5rem;
+  border-bottom: 1px solid var(--md-sys-color-outline-variant, #cac4d0);
+  background-color: var(--md-sys-color-surface, #ffffff);
+}
+
+.reader-back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--md-sys-color-primary, #0b57d0);
+  text-decoration: none;
+  font-size: 0.875rem;
+  font-weight: 500;
+  padding: 0.375rem 0.75rem;
+  border-radius: 9999px;
+  background-color: transparent;
+  transition: background-color 0.15s ease;
+}
+
+.reader-back-link:hover {
+  background-color: var(--md-sys-color-surface-container-high, #ece6f0);
+}
+
+.reader-main-layout {
+  display: flex;
+  flex: 1;
+  max-width: calc(var(--reader-measure) + 20rem);
+  margin: 0 auto;
+  width: 100%;
+  padding: 2rem 1.5rem;
+  box-sizing: border-box;
+  gap: 2.5rem;
+}
+
+.reader-article-wrap {
+  flex: 1;
+  min-width: 0;
+  max-width: var(--reader-measure);
+}
+
+.reader-chapter-title {
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1.3;
+  margin: 0 0 1.5rem 0;
+  color: var(--md-sys-color-on-surface, #1d1b20);
+}
+
+.reader-article-content {
+  font-size: 1rem;
+  line-height: 1.8;
+  color: var(--md-sys-color-on-surface, #1d1b20);
+}
+
+.reader-article-content p {
+  margin: 0 0 1.25rem 0;
+}
+
+.reader-outline-aside {
+  width: 16rem;
+  flex-shrink: 0;
+}
+
+.reader-outline-sticky {
+  position: sticky;
+  top: 2rem;
+  padding: 1rem;
+  border-left: 1px solid var(--md-sys-color-outline-variant, #cac4d0);
+}
+
+.reader-outline-title {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--md-sys-color-on-surface-variant, #49454f);
+  margin-bottom: 0.75rem;
+}
+
+.reader-outline-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.reader-outline-link {
+  display: block;
+  font-size: 0.875rem;
+  color: var(--md-sys-color-on-surface-variant, #49454f);
+  text-decoration: none;
+  line-height: 1.4;
+  transition: color 0.15s ease;
+}
+
+.reader-outline-link:hover {
+  color: var(--md-sys-color-primary, #0b57d0);
+}
+
+.reader-outline-link.reader-heading-depth-3 {
+  padding-left: 1rem;
+  font-size: 0.8125rem;
+}
+
+/* 空态卡片排版 */
+.reader-empty-wrapper {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 1.5rem;
+}
+
+.reader-empty-card {
+  width: 100%;
+  max-width: 32rem;
+  padding: 2rem;
+  border-radius: 1rem;
+  border: 1px solid var(--md-sys-color-outline-variant, #cac4d0);
+  background-color: var(--md-sys-color-surface-container-lowest, #ffffff);
+  text-align: left;
+  box-sizing: border-box;
+}
+
+.reader-empty-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--md-sys-color-on-surface, #1d1b20);
+  margin: 0 0 0.75rem 0;
+}
+
+.reader-empty-description {
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  color: var(--md-sys-color-on-surface-variant, #49454f);
+  margin: 0 0 1.5rem 0;
+}
+
+.reader-empty-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem 1.25rem;
+  border-radius: 9999px;
+  background-color: var(--md-sys-color-primary, #0b57d0);
+  color: var(--md-sys-color-on-primary, #ffffff);
+  text-decoration: none;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: opacity 0.15s ease;
+}
+
+.reader-empty-action:hover {
+  opacity: 0.9;
+}
+
+@media (max-width: 64rem) {
+  .reader-outline-aside {
+    display: none;
+  }
+}
