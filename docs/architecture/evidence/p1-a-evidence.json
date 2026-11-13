@@ -41,5 +41,20 @@
   "testSuite": {
     "testFiles": "66 passed | 2 skipped (68)",
     "tests": "395 passed | 5 skipped (400)"
+  },
+  "remediation": {
+    "commit": "c58456fe",
+    "finding": "reader.astro 以 `#${heading.slug}` 生成大纲锚点，但 ChapterHeadingItem 字段为 { depth, text, id }，导致 465 个含标题的章节大纲链接全部退化为 #undefined。",
+    "fix": "新增纯函数 buildOutlineItems()（仅 h2/h3、跳过空锚点、href 取自 heading.id），reader.astro 改为消费该函数，并补 3 条单测与源码负向断言。",
+    "testSuiteAfterFix": {
+      "testFiles": "66 passed | 2 skipped (68)",
+      "tests": "398 passed | 5 skipped (403)"
+    },
+    "buildAfterFix": {
+      "command": "npm run build",
+      "exitCode": 0,
+      "readerChunkUsesHeadingId": true,
+      "readerChunkHasUndefinedAnchor": false
+    }
   }
 }
