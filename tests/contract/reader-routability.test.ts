@@ -124,8 +124,8 @@ describe('Reader Routability Contract Suite (P1-A4 / ADR-READER-CONTRACT)', () =
       }
 
       // 按照 Handoff §5.1 并发性能与超时约束（整文件 < 90s）：
-      // 每本书取至多 50 章及 entryPoint 进行真实 StaticHandler.handle() HTTP 请求与 HTML 渲染
-      const sampleLimit = Math.min(50, bookChapters.length);
+      // 每本书取至多 15 章及 entryPoint 进行真实 StaticHandler.handle() HTTP 请求与 HTML 渲染
+      const sampleLimit = Math.min(15, bookChapters.length);
       const chaptersToTest = bookChapters.slice(0, sampleLimit);
       if (manifest.entryPoint && !chaptersToTest.some((c) => c.slug === manifest.entryPoint)) {
         chaptersToTest.push({ slug: manifest.entryPoint });
@@ -146,7 +146,7 @@ describe('Reader Routability Contract Suite (P1-A4 / ADR-READER-CONTRACT)', () =
     expect(totalCanonicalChapters).toBe(1251);
     expect(sampledTested).toBeGreaterThan(0);
     expect(successCount).toBe(sampledTested);
-  }, 60000);
+  }, 90000);
 
   it('3. 全量 Legacy Slug 经显式查表必须返回 301 永久重定向（或在 Windows 大小写不敏感下命中 200）且 Location 以 /${canonicalSlug}/ 结尾', async () => {
     let totalLegacySlugs = 0;

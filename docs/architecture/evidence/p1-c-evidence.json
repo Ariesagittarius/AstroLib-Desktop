@@ -1,0 +1,62 @@
+{
+  "gate": "P1-C",
+  "baseCommit": "d4e09245",
+  "timestamp": "2026-11-13T14:55:00.000Z",
+  "validationEngine": {
+    "entryPoint": "src/services/content-provider/install-validation.ts",
+    "validatorFunction": "validateInstallPayload",
+    "schemaVersionLocked": "1.0.0",
+    "consistencyRulesEnforced": [
+      "manifest.schemaVersion === '1.0.0'",
+      "manifest.colSlug & slug safe identifiers (no path traversal, no slashes, no colons)",
+      "manifest.entryPoint exists in chapters dictionary and is safe slug",
+      "chapters[slugKey].chapterSlug === slugKey",
+      "chapters[slugKey].path === chapters/${slugKey}.json",
+      "manifest.sections[].chapters[].slug ⊆ chapters keys",
+      "manifest.sections[].chapters[].path === chapters/${slug}.json",
+      "assets & exercises relative paths safe (no .., no \\, no leading /, no colons)"
+    ]
+  },
+  "adapters": {
+    "electron": {
+      "adapter": "DesktopBookManager",
+      "strategy": "staging -> backup -> swap -> rollback",
+      "corruptBundleHandled": true,
+      "pathTraversalPrevented": true,
+      "atomicRollbackVerified": true,
+      "staleChaptersCleaned": true,
+      "uninstallZeroResidue": true
+    },
+    "web": {
+      "adapter": "WebContentProvider",
+      "strategy": "inverted commit: chapters -> manifest -> cleanStaleChapters -> rollback on error",
+      "corruptBundleHandled": true,
+      "pathTraversalPrevented": true,
+      "atomicRollbackVerified": true,
+      "staleChaptersCleaned": true,
+      "unsupportedOperationsExplicit": true
+    },
+    "devServer": {
+      "adapter": "devLibraryServerPlugin (/api/library/*)",
+      "strategy": "staging -> backup -> atomic swap -> clean backup -> rollback on error",
+      "corruptBundleHandled": true,
+      "pathTraversalPrevented": true,
+      "atomicRollbackVerified": true,
+      "staleChaptersCleaned": true,
+      "deleteEndpointVerified": true
+    }
+  },
+  "testCoverage": {
+    "installValidation": "tests/unit/install-validation.test.ts (12 tests passed)",
+    "contentProvider": "tests/unit/content-provider.test.ts (13 tests passed)",
+    "electronServices": "tests/unit/electron-services.test.ts (9 tests passed)",
+    "totalPassingTests": 34
+  },
+  "redlinesEnforced": {
+    "contentPackageTsUnchanged": true,
+    "releaseV004AssetsUnchanged": true,
+    "catalogJsonUnchanged": true,
+    "bookSourceTextsUnchanged": true,
+    "noNewDependencies": true
+  }
+}

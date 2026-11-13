@@ -268,4 +268,119 @@ describe('Electron Services & Infrastructure Unit Tests', () => {
       fs.rmSync(tmpStorage, { recursive: true, force: true });
     }
   });
+
+  it('DesktopBookManager 遇到损坏包或路径逃逸包必须显式拒绝且磁盘零残留', async () => {
+    const tmpStorage = fs.mkdtempSync(path.join(os.tmpdir(), 'astrolib-book-err-'));
+    try {
+      const manager = new DesktopBookManager(tmpStorage);
+
+      // 1. 损坏包（缺 manifest）
+      const badBundle = { invalid: true };
+      const badGzip = zlib.gzipSync(Buffer.from(JSON.stringify(badBundle), 'utf8'));
+      await expect(manager.installBookFromAbp(badGzip)).rejects.toThrow();
+      expect(fs.readdirSync(tmpStorage).filter((f) => !f.startsWith('.'))).toHaveLength(0);
+
+      // 2. 路径逃逸包 (colSlug: ../escape)
+      const escapeBundle = {
+        manifest: {
+          schemaVersion: ABP_SCHEMA_VERSION,
+          id: 'bad',
+          slug: 'escape_book',
+          colSlug: '../escape',
+          title: 'Escape',
+          entryPoint: '01',
+          sections: [],
+        },
+        chapters: {
+          '01': {
+            schemaVersion: ABP_SCHEMA_VERSION,
+            bookId: 'bad',
+            bookSlug: 'escape_book',
+            colSlug: '../escape',
+            chapterSlug: '01',
+            title: '01',
+            html: '<p>ok</p>',
+            headings: [],
+            updatedAt: new Date().toISOString(),
+          },
+        },
+      };
+      const escapeGzip = zlib.gzipSync(Buffer.from(JSON.stringify(escapeBundle), 'utf8'));
+      await expect(manager.installBookFromAbp(escapeGzip)).rejects.toThrow();
+      expect(fs.existsSync(path.join(tmpStorage, '..', 'escape-escape_book'))).toBe(false);
+    } finally {
+      fs.rmSync(tmpStorage, { recursive: true, force: true });
+    }
+  });
+
+  it('DesktopBookManager 降级安装必须物理清除旧章节且卸载后四处零残留', async () => {
+    const tmpStorage = fs.mkdtempSync(path.join(os.tmpdir(), 'astrolib-book-downgrade-'));
+    try {
+      const manager = new DesktopBookManager(tmpStorage);
+
+      const makeBundle = (chaptersList: string[]) => {
+        const bundle = {
+          manifest: {
+            schemaVersion: ABP_SCHEMA_VERSION,
+            id: 'cs-downgrade_demo',
+            slug: 'downgrade_demo',
+            colSlug: 'cs',
+            title: '降级测试',
+            entryPoint: chaptersList[0],
+            sections: [
+              {
+                id: 's1',
+                title: 'S1',
+                slug: 's1',
+                chapters: chaptersList.map((c) => ({
+                  id: 'ch-' + c,
+                  slug: c,
+                  title: 'Ch ' + c,
+                  path: `chapters/${c}.json`,
+                  hash: 'h',
+                  sizeBytes: 50,
+                })),
+              },
+            ],
+          },
+          chapters: Object.fromEntries(
+            chaptersList.map((c) => [
+              c,
+              {
+                schemaVersion: ABP_SCHEMA_VERSION,
+                bookId: 'cs-downgrade_demo',
+                bookSlug: 'downgrade_demo',
+                colSlug: 'cs',
+                chapterSlug: c,
+                title: 'Ch ' + c,
+                html: `<p>${c}</p>`,
+                headings: [],
+                updatedAt: new Date().toISOString(),
+              },
+            ])
+          ),
+        };
+        return zlib.gzipSync(Buffer.from(JSON.stringify(bundle), 'utf8'));
+      };
+
+      const bookDir = path.join(tmpStorage, 'cs-downgrade_demo');
+
+      // 1. 初次安装：c1, c2
+      await manager.installBookFromAbp(makeBundle(['c1', 'c2']));
+      expect(fs.existsSync(path.join(bookDir, 'chapters/c1.json'))).toBe(true);
+      expect(fs.existsSync(path.join(bookDir, 'chapters/c2.json'))).toBe(true);
+
+      // 2. 降级安装：仅 c1。c2 必须被物理清除
+      await manager.installBookFromAbp(makeBundle(['c1']));
+      expect(fs.existsSync(path.join(bookDir, 'chapters/c1.json'))).toBe(true);
+      expect(fs.existsSync(path.join(bookDir, 'chapters/c2.json'))).toBe(false);
+
+      // 3. 卸载操作：目录、缓存彻底删除，零残留
+      await manager.removeBook('cs', 'downgrade_demo');
+      expect(fs.existsSync(bookDir)).toBe(false);
+      expect(await manager.getInstalledBooks()).toHaveLength(0);
+    } finally {
+      fs.rmSync(tmpStorage, { recursive: true, force: true });
+    }
+  });
 });
