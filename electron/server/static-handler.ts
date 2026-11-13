@@ -255,12 +255,18 @@ export class StaticHandler {
     }
 
     // 0. 特别处理 /collections/ 章节与书本根路由（排除静态配图资产）
+    // 章节 slug 允许包含多级路径（如 zh-wp/001_books-and-algorithms），以支持官方多卷本目录结构
     const isImageRequest = safePath.includes('/images/') || /\.(png|jpe?g|gif|svg|webp|ico|woff2?|ttf|otf)$/i.test(safePath);
-    if (!isImageRequest && /^\/?collections\/[^/]+\/[^/]+(?:\/[^/]+)?\/?$/.test(safePath)) {
-      const colMatch = safePath.match(/^\/?collections\/([^/]+)\/([^/]+)(?:\/([^/]+))?\/?$/);
-      if (colMatch) {
-        return await this.handleCollectionsRoute(req, res, colMatch[1], colMatch[2], colMatch[3], pathname);
+    const collectionsMatch = isImageRequest
+      ? null
+      : safePath.match(/^\/?collections\/([^/]+)\/([^/]+)(?:\/(.+?))?\/?$/);
+    if (collectionsMatch) {
+      const rawChapterSlug = collectionsMatch[3];
+      if (rawChapterSlug && (rawChapterSlug.includes('\\') || rawChapterSlug.startsWith('/'))) {
+        this.sendAcademic404(req, res, collectionsMatch[1], collectionsMatch[2], rawChapterSlug, '章节标识不合法');
+        return true;
       }
+      return await this.handleCollectionsRoute(req, res, collectionsMatch[1], collectionsMatch[2], rawChapterSlug, pathname);
     }
 
     const filePath = this.resolveFilePath(safePath);
@@ -656,6 +662,8 @@ export class StaticHandler {
         : path.join(abpDir, '.cache');
       fs.mkdirSync(cacheDir, { recursive: true });
       const cachedHtmlFile = path.join(cacheDir, `${chapterSlug}.html`);
+      // 多级章节 slug（如 zh-wp/001_x）会形成嵌套缓存目录，需递归创建
+      fs.mkdirSync(path.dirname(cachedHtmlFile), { recursive: true });
 
       const manifestStat = fs.statSync(manifestFile);
       const chapStat = fs.statSync(chapJsonFile);

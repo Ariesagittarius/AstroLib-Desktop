@@ -196,8 +196,51 @@ describe('StaticHandler Unit & Invariant Contract Tests (P1-A1)', () => {
     expect(decodeURIComponent(headers['Location'])).toContain('06_第1章-三角函数');
   });
 
-  it('7. 官方 13 本书全量 1,251 章 Canonical Slug 绝对契约普查', () => {
-    const catalogPath = path.join(artifactsAbpDir, 'catalog.json');
+  it('7. 多级章节 slug（zh-wp/…、zh/…）必须可路由并返回 HTTP 200', async () => {
+    const handler = new StaticHandler(distDir, undefined, ROOT);
+
+    for (const [col, book, slug] of [
+      ['cs', 'algorithms', 'zh-wp/001_books-and-algorithms'],
+      ['science', 'vectors_and_tensors', 'zh/011_definitions-basic'],
+    ]) {
+      let statusCode = 0;
+      let headers: Record<string, string> = {};
+      let outputBuffer: Buffer | null = null;
+
+      const handled = await handler.handle(
+        { method: 'GET', url: `/collections/${col}/${book}/${slug}/`, headers: {} } as any,
+        {
+          writeHead: (code: number, h: any) => { statusCode = code; headers = h; },
+          end: (chunk?: any) => { if (chunk) outputBuffer = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk); },
+        } as any
+      );
+
+      expect(handled, `${col}/${book}/${slug} 应被 /collections 路由接管`).toBe(true);
+      expect(statusCode, `${col}/${book}/${slug} 应为 200`).toBe(200);
+      expect(headers['Content-Type']).toContain('text/html');
+      expect(outputBuffer).not.toBeNull();
+    }
+  });
+
+  it('8. 多级历史别名（zh-wp/00.1_…）必须 301 到多级 Canonical slug', async () => {
+    const handler = new StaticHandler(distDir, undefined, ROOT);
+    let statusCode = 0;
+    let headers: Record<string, string> = {};
+
+    const handled = await handler.handle(
+      { method: 'GET', url: '/collections/cs/algorithms/zh-wp/00.1_books-and-algorithms/', headers: {} } as any,
+      {
+        writeHead: (code: number, h: any) => { statusCode = code; headers = h; },
+        end: () => {},
+      } as any
+    );
+
+    expect(handled).toBe(true);
+    expect(statusCode).toBe(301);
+    expect(headers['Location']).toContain('/zh-wp/001_books-and-algorithms/');
+  });
+
+  it('9. 官方 13 本书全量 1,251 章 Canonical Slug 绝对契约普查', () => {    const catalogPath = path.join(artifactsAbpDir, 'catalog.json');
     expect(fs.existsSync(catalogPath)).toBe(true);
 
     const catalog = JSON.parse(fs.readFileSync(catalogPath, 'utf8'));
