@@ -1,0 +1,190 @@
+{
+  "timestamp": "2026-11-13T03:02:00.000Z",
+  "auditReport": "docs/architecture/P0_FINAL_AUDIT_2026-11-13.md",
+  "releaseTag": "v0.0.4",
+  "repository": "Ariesagittarius/AstroLib-Desktop",
+  "releaseUrl": "https://github.com/Ariesagittarius/AstroLib-Desktop/releases/tag/v0.0.4",
+  "actions": {
+    "runId": 43355219380,
+    "workflow": "AstroLib Desktop Release (Electron)",
+    "runUrl": "https://github.com/Ariesagittarius/AstroLib-Desktop/actions/runs/43355219380",
+    "conclusion": "success",
+    "totalSteps": 14,
+    "successfulSteps": 14,
+    "jobDuration": "6m 45s (405s)"
+  },
+  "updaterMetadata": {
+    "latestYmlUrl": "https://github.com/Ariesagittarius/AstroLib-Desktop/releases/latest/download/latest.yml",
+    "httpStatus": 200,
+    "sizeBytes": 345,
+    "parsedVersion": "0.0.4",
+    "targetInstaller": "AstroLib-Setup-0.0.4.exe",
+    "targetInstallerUrl": "https://github.com/Ariesagittarius/AstroLib-Desktop/releases/latest/download/AstroLib-Setup-0.0.4.exe",
+    "targetInstallerHttpStatus": 200,
+    "targetInstallerSize": 180109589,
+    "targetInstallerSha512": "PT+oHgO0jSDKgTeREPNwFZs6R1Z4bJo1XqhayFF8iAhesH7LIwnYlSA/I93r7Rnd58ka+6Fg5JTb9OgwUlPlIw==",
+    "status": "PASS"
+  },
+  "catalog": {
+    "url": "https://github.com/Ariesagittarius/AstroLib-Desktop/releases/latest/download/catalog.json",
+    "httpStatus": 200,
+    "sizeBytes": 13461,
+    "schemaVersion": "1.0.0",
+    "totalBooks": 13,
+    "totalChapters": 1251,
+    "supportedExerciseBooksCount": 4
+  },
+  "assets": [
+    {
+      "name": "AstroLib-Setup-0.0.4.exe",
+      "category": "nsis-installer",
+      "sizeBytes": 180109589,
+      "httpStatus": 200,
+      "downloadUrl": "https://github.com/Ariesagittarius/AstroLib-Desktop/releases/download/v0.0.4/AstroLib-Setup-0.0.4.exe"
+    },
+    {
+      "name": "AstroLib-Portable-0.0.4.exe",
+      "category": "portable-binary",
+      "sizeBytes": 166442473,
+      "httpStatus": 200,
+      "downloadUrl": "https://github.com/Ariesagittarius/AstroLib-Desktop/releases/download/v0.0.4/AstroLib-Portable-0.0.4.exe"
+    },
+    {
+      "name": "AstroLib-Setup-0.0.4.exe.blockmap",
+      "category": "update-blockmap",
+      "sizeBytes": 189301,
+      "httpStatus": 200,
+      "downloadUrl": "https://github.com/Ariesagittarius/AstroLib-Desktop/releases/download/v0.0.4/AstroLib-Setup-0.0.4.exe.blockmap"
+    },
+    {
+      "name": "latest.yml",
+      "category": "update-manifest",
+      "sizeBytes": 345,
+      "httpStatus": 200,
+      "downloadUrl": "https://github.com/Ariesagittarius/AstroLib-Desktop/releases/download/v0.0.4/latest.yml"
+    },
+    {
+      "name": "catalog.json",
+      "category": "content-catalog",
+      "sizeBytes": 13461,
+      "httpStatus": 200,
+      "downloadUrl": "https://github.com/Ariesagittarius/AstroLib-Desktop/releases/download/v0.0.4/catalog.json"
+    },
+    {
+      "name": "math-math_senior.abp",
+      "category": "abp-package",
+      "sizeBytes": 2768561,
+      "contentHash": "18f97fc48b0c822d",
+      "httpStatus": 200,
+      "downloadUrl": "https://github.com/Ariesagittarius/AstroLib-Desktop/releases/download/v0.0.4/math-math_senior.abp"
+    },
+    {
+      "name": "math-math_analysis.abp",
+      "category": "abp-package",
+      "sizeBytes": 4418567,
+      "contentHash": "b2c1537237936a79",
+      "httpStatus": 200,
+      "downloadUrl": "https://github.com/Ariesagittarius/AstroLib-Desktop/releases/download/v0.0.4/math-math_analysis.abp"
+    },
+    {
+      "name": "math-engineering_analysis.abp",
+      "category": "abp-package",
+      "sizeBytes": 9215209,
+      "contentHash": "270d061c47186dd8",
+      "httpStatus": 200,
+      "downloadUrl": "https://github.com/Ariesagittarius/AstroLib-Desktop/releases/download/v0.0.4/math-engineering_analysis.abp"
+    },
+    {
+      "name": "math-linear_algebra.abp",
+      "category": "abp-package",
+      "sizeBytes": 7491875,
+      "contentHash": "f5f5906ef259b581",
+      "httpStatus": 200,
+      "downloadUrl": "https://github.com/Ariesagittarius/AstroLib-Desktop/releases/download/v0.0.4/math-linear_algebra.abp"
+    },
+    {
+      "name": "math-probability_statistics.abp",
+      "category": "abp-package",
+      "sizeBytes": 3735808,
+      "contentHash": "c57ec99252c42c26",
+      "httpStatus": 200,
+      "downloadUrl": "https://github.com/Ariesagittarius/AstroLib-Desktop/releases/download/v0.0.4/math-probability_statistics.abp"
+    },
+    {
+      "name": "math-linear_algebra_geometry.abp",
+      "category": "abp-package",
+      "sizeBytes": 3323316,
+      "contentHash": "29199321da3b246a",
+      "httpStatus": 200,
+      "downloadUrl": "https://github.com/Ariesagittarius/AstroLib-Desktop/releases/download/v0.0.4/math-linear_algebra_geometry.abp"
+    },
+    {
+      "name": "math-graph_theory.abp",
+      "category": "abp-package",
+      "sizeBytes": 5447977,
+      "contentHash": "9b1ca290e29087ea",
+      "httpStatus": 200,
+      "downloadUrl": "https://github.com/Ariesagittarius/AstroLib-Desktop/releases/download/v0.0.4/math-graph_theory.abp"
+    },
+    {
+      "name": "science-university_physics.abp",
+      "category": "abp-package",
+      "sizeBytes": 10657475,
+      "contentHash": "c2005aee17724a2f",
+      "httpStatus": 200,
+      "downloadUrl": "https://github.com/Ariesagittarius/AstroLib-Desktop/releases/download/v0.0.4/science-university_physics.abp"
+    },
+    {
+      "name": "science-vectors_and_tensors.abp",
+      "category": "abp-package",
+      "sizeBytes": 10024557,
+      "contentHash": "ef384d6b63c76bb8",
+      "httpStatus": 200,
+      "downloadUrl": "https://github.com/Ariesagittarius/AstroLib-Desktop/releases/download/v0.0.4/science-vectors_and_tensors.abp"
+    },
+    {
+      "name": "telecom-communication_principles.abp",
+      "category": "abp-package",
+      "sizeBytes": 50346492,
+      "contentHash": "9e5c4ecbe6587c47",
+      "httpStatus": 200,
+      "downloadUrl": "https://github.com/Ariesagittarius/AstroLib-Desktop/releases/download/v0.0.4/telecom-communication_principles.abp"
+    },
+    {
+      "name": "telecom-digital_circuit.abp",
+      "category": "abp-package",
+      "sizeBytes": 15410280,
+      "contentHash": "d8205caee408d24f",
+      "httpStatus": 200,
+      "downloadUrl": "https://github.com/Ariesagittarius/AstroLib-Desktop/releases/download/v0.0.4/telecom-digital_circuit.abp"
+    },
+    {
+      "name": "telecom-electronic_circuits.abp",
+      "category": "abp-package",
+      "sizeBytes": 14835555,
+      "contentHash": "ca9a5ef28247cead",
+      "httpStatus": 200,
+      "downloadUrl": "https://github.com/Ariesagittarius/AstroLib-Desktop/releases/download/v0.0.4/telecom-electronic_circuits.abp"
+    },
+    {
+      "name": "cs-algorithms.abp",
+      "category": "abp-package",
+      "sizeBytes": 18140573,
+      "contentHash": "349141f19f2008f8",
+      "httpStatus": 200,
+      "downloadUrl": "https://github.com/Ariesagittarius/AstroLib-Desktop/releases/download/v0.0.4/cs-algorithms.abp"
+    }
+  ],
+  "testSuiteSummary": {
+    "totalFiles": 64,
+    "passedFiles": 62,
+    "skippedFiles": 2,
+    "failedFiles": 0,
+    "totalTests": 362,
+    "passedTests": 357,
+    "skippedTests": 5,
+    "failedTests": 0,
+    "conclusion": "PASS"
+  },
+  "overallVerdict": "P0 CLOSED — RELEASE CANDIDATE ACCEPTED FOR P1 HANDOFF"
+}

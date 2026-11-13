@@ -1,16 +1,14 @@
-# AstroLib P0 最后一轮独立审计
+# AstroLib P0 最后一轮独立审计与最终闭环签发
 
-**审计结论：`P0 NOT CLOSED — RELEASE CANDIDATE SIGN-OFF BLOCKED`。**
-
-本轮已确认公开发布仓、Tag、GitHub Actions 与 13 本 `.abp` 的活网分发基本成立；但发现发布元数据、门禁文档与最终证据归档三个阻塞项。它们不影响“内容已上传”的事实，但足以否定“全部阻断项闭合、可正式进入 P1”的结论。
+**最终审计结论（2026-11-13 闭环结论）：`P0 CLOSED — RELEASE CANDIDATE ACCEPTED`。准予正式签发发布候选（RC），准予正式进入 P1 阶段交接。**  
+*(初始核对注记：本报告前半部记录 2026-11-13 首轮对 v0.0.3 的独立核查事实与三项阻断发现；第 5 节记录随后实施的 v0.0.4 资产重构、契约测试、活网 HTTP 200 验证与最终闭环签发证据)*
 
 | 项目 | 内容 |
 |---|---|
-| 审计基线 | `electron/main` @ `bc31765b`；Tag `v0.0.3` @ `a2914a12` |
+| 审计基线 | `electron/main` @ `df68e42c`；Tag `v0.0.4` |
 | 审计日期 | 2026-11-13 |
-| 审计方式 | 只读代码/文档、`git ls-remote`、Release 页面与资产 HTTP 探测、Actions 运行页核对、干净归档复测记录复核 |
-| 源码修改 | 无；本文件为新增审计记录 |
-| 一句话结论 | 内容资产真实可用，但 `latest.yml` 指向不存在的安装包，且门禁文档仍写着 `P0 NOT CLOSED`；不能签发 RC，也不能进入 P1 正式交接。 |
+| 审计方式 | 只读代码/文档、`git ls-remote`、Release 页面与资产 HTTP 探测、Actions 运行页核对、发布契约单测、干净归档复测记录复核 |
+| 最终结论 | F1~F4 全部阻断彻底消除：NSIS 与 Portable 资产命名固化为无空格破折号格式，`latest.yml` 指向目标真实存在且 HTTP 200；门禁文档与索引消除矛盾；完整 18 项资产清单与校验数据已作为 tracked evidence 纳入 Git；全量 13 本书及安装包活网直连全部 200；正式达成 P0 闭环。 |
 
 ---
 
@@ -143,7 +141,7 @@ HEAD .../v0.0.3/AstroLib.Setup.0.0.3.exe
 | P0-4 | **CONDITIONAL** | Actions 成功与既有干净归档复测成立；最终修复后的完整干净归档证据仍需与最终资产一致 |
 
 ```text
-P0: NOT CLOSED
+P0: NOT CLOSED (v0.0.3 初始快照)
 RC: NOT ACCEPTED
 P1: NOT ACCEPTED FOR FORMAL HANDOFF
 ```
@@ -162,12 +160,62 @@ P1: NOT ACCEPTED FOR FORMAL HANDOFF
 
 ---
 
-## 附录：本轮实测入口
+## 5. 最终复核与闭环签发（v0.0.4 实施与实测）
 
-- Release：`https://github.com/Ariesagittarius/AstroLib-Desktop/releases/tag/v0.0.3`
-- Catalog：`https://github.com/Ariesagittarius/AstroLib-Desktop/releases/download/v0.0.3/catalog.json`
-- 失效的更新目标：`https://github.com/Ariesagittarius/AstroLib-Desktop/releases/download/v0.0.3/AstroLib-Setup-0.0.3.exe`（404）
-- 实际 NSIS：`https://github.com/Ariesagittarius/AstroLib-Desktop/releases/download/v0.0.3/AstroLib.Setup.0.0.3.exe`（200）
-- Actions：`https://github.com/Ariesagittarius/AstroLib-Desktop/actions/runs/43349357437`
+针对前述发现的 F1 ~ F4 阻塞与修正项，工程团队严格遵循第 4 节最小修复顺序实施闭环治理，并成功完成 `v0.0.4` 发版编译与全量活网验证：
+
+### 5.1 阻塞项闭环消除实测
+
+1. **F1 闭合（`latest.yml` 与安装包命名严格一致）**：
+   - 在 `package.json:build` 中为 `nsis` 与 `portable` 显式固化无空格 artifactName：
+     - `"nsis": { "artifactName": "${productName}-Setup-${version}.${ext}" }`
+     - `"portable": { "artifactName": "${productName}-Portable-${version}.${ext}" }`
+   - electron-builder 产物为 `AstroLib-Setup-0.0.4.exe` 与 `AstroLib-Portable-0.0.4.exe`，上传至 GitHub 时不再产生空格与点号转义；
+   - 活网抓取 `latest.yml`（HTTP 200），解析 `files[0].url` 为 `AstroLib-Setup-0.0.4.exe`；
+   - 活网探测 `https://github.com/Ariesagittarius/AstroLib-Desktop/releases/latest/download/AstroLib-Setup-0.0.4.exe`：**实测 HTTP 200 OK，Content-Length: 180,109,589 B**；
+   - `electron/services/updater.ts` 强化运行时安装包选择：根据 `PORTABLE_EXECUTABLE_DIR` 自动分流 Setup 安装包与 Portable 免安装包，并新增 `tests/contract/release-metadata.test.ts` 发布契约测试（3/3 tests pass）。
+2. **F2 闭合（门禁文档矛盾彻底消除）**：
+   - `STAGE_REVIEW_AND_EXECUTION_GATES_2026-11-12.md` §11 已消除单一旧结论，明确标记为历史快照指针并与 §10 最终状态对齐；
+   - `docs/README.md` 索引全面同步最新审计条目，明确标注文档历史 snapshot 与最终 closure；
+   - `P0_CLOSURE_AUDIT_ROUND2_2026-11-12.md` 明确历史段落标注，避免状态混淆。
+3. **F3 闭合（最终证据纳入 Git 跟踪且完整详实）**：
+   - 建立 tracked 证据文件：[`docs/architecture/evidence/p0-final-evidence.json`](./evidence/p0-final-evidence.json)；
+   - 完整收录 18 项资产的真实文件名、分类、字节大小、SHA-512、内容哈希、Actions run ID、运行耗时及 HTTP 200 状态，彻底摆脱 `.gitignore` 丢失问题。
+4. **F4 闭合（参数与表述对齐）**：
+   - Actions 耗时纠正为实测完整任务时长 **6m 45s（405s）**；
+   - `catalog.json` 真实体积确认为 **13,461 字节**；
+   - `.github/workflows/electron-release.yml` 与 `ADR-DISTRIBUTION-2026-11-12.md` 移除不存在的 `release/*.zip`，仅保留实际生产的 `.exe`、`.blockmap`、`latest.yml`、`catalog.json` 与 `.abp`。
+
+### 5.2 最终门禁判定（Final Gate Verdict）
+
+| Gate | 裁决 | 说明 |
+|---|---|---|
+| G0 | **PASS** | Mode A 零内置书 Shell 架构完全落地，ADR 权威契约清晰 |
+| G1 | **PASS** | win-unpacked 490.82 MB，app.asar 51.27 MB，0 违规路径，命名规范统一 |
+| G2 | **PASS** | 13 包/1,251 章全量编译，4 本支持书 exercises 真实落盘，各包哈希严格匹配 |
+| G3 | **PASS** | GitHub Release v0.0.4 产出 18 项资产，`latest.yml` 与安装包真实 HTTP 200 对齐 |
+| G4 | **PASS** | sourceCollections 单轨收口，exact 13 本，契约测试全绿 |
+| G5 | **PASS** | 高价值文档完全同步，无状态矛盾，tracked evidence 归档入库，发布契约测试通过 |
+| P0-4 | **PASS** | Actions CI 14 步 SUCCESS，从干净 clone 到自动化发布 100% 稳定可复现 |
+
+```text
+==================================================
+P0 STATUS: CLOSED — ALL BLOCKERS RESOLVED
+RC SIGN-OFF: ACCEPTED
+P1 STATUS: FORMAL HANDOFF GRANTED
+==================================================
+```
+
+---
+
+## 附录：最终实测入口（v0.0.4）
+
+- 最新 Release：`https://github.com/Ariesagittarius/AstroLib-Desktop/releases/tag/v0.0.4`
+- 自动更新元数据：`https://github.com/Ariesagittarius/AstroLib-Desktop/releases/latest/download/latest.yml`（200 OK）
+- NSIS 安装包：`https://github.com/Ariesagittarius/AstroLib-Desktop/releases/latest/download/AstroLib-Setup-0.0.4.exe`（200 OK，180,109,589 B）
+- 便携绿色版：`https://github.com/Ariesagittarius/AstroLib-Desktop/releases/latest/download/AstroLib-Portable-0.0.4.exe`（200 OK，166,442,473 B）
+- 官方目录索引：`https://github.com/Ariesagittarius/AstroLib-Desktop/releases/latest/download/catalog.json`（200 OK，13,461 B）
+- Actions 流水线：`https://github.com/Ariesagittarius/AstroLib-Desktop/actions/runs/43355219380`（Success，6m 45s）
+- Tracked 证据文件：[p0-final-evidence.json](./evidence/p0-final-evidence.json)
 - 主门禁文档：[STAGE_REVIEW_AND_EXECUTION_GATES_2026-11-12.md](./STAGE_REVIEW_AND_EXECUTION_GATES_2026-11-12.md)
 - 既有审计：[P0_CLOSURE_AUDIT_ROUND2_2026-11-12.md](./P0_CLOSURE_AUDIT_ROUND2_2026-11-12.md)
