@@ -14,10 +14,11 @@ import remarkRehype from 'remark-rehype';
 import rehypeKatex from 'rehype-katex';
 import rehypeStringify from 'rehype-stringify';
 import katex from 'katex';
+import { slugifyHeading, rewriteHeadingIdsInHtml, collectHeadingsFromHtml } from '../../src/core/content/headings.ts';
 
 // ---------------------------------------------------------------- 组件映射
 function slugify(s = '') {
-  return encodeURIComponent(String(s).trim().replace(/\s+/g, '-'));
+  return slugifyHeading(s);
 }
 function escAttr(s) {
   return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
@@ -384,5 +385,9 @@ export async function renderChapter(mdxSource) {
   html = unlinkInternal(html);
   html = normalizeVoidTags(html);
 
-  return { title: title || '', body: html, images };
+  // 7. 标题锚点去重重写
+  html = rewriteHeadingIdsInHtml(html);
+  const headings = collectHeadingsFromHtml(html);
+
+  return { title: title || '', body: html, images, headings };
 }
