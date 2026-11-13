@@ -1,0 +1,37 @@
+{
+  "gate": "P1-A1",
+  "baseCommit": "f6b42c05",
+  "timestamp": "2026-11-13T16:30:00.000Z",
+  "commands": [
+    "npm run check:types",
+    "npx vitest run tests/acceptance/abp-dynamic-serving.test.ts tests/contract/release-metadata.test.ts",
+    "npx vitest run tests/unit/static-handler.test.ts",
+    "npm test"
+  ],
+  "exitCodes": {
+    "checkTypes": 0,
+    "staticHandlerTest": 0,
+    "abpDynamicServing": 0,
+    "releaseMetadata": 0,
+    "npmTest": 0
+  },
+  "metrics": {
+    "totalBooks": 13,
+    "totalChapters": 1251,
+    "slugMismatchCount": 0,
+    "legacySlugCoveredCount": 1195,
+    "fuzzyMatchLinesInStaticHandler": 0,
+    "cleanSlugCallsInStaticHandler": 0
+  },
+  "notFoundProbe": {
+    "testUrl": "/collections/math/math_senior/not_exist_slug/",
+    "httpStatus": 404,
+    "contentType": "text/html; charset=utf-8",
+    "containsDiagnosticText": true
+  },
+  "legacyRedirectProbe": {
+    "testUrl": "/collections/math/math_senior/07_1.1_%E5%9F%BA%E6%9C%AC%E5%85%AC%E5%BC%8F/",
+    "httpStatus": 301,
+    "location": "/collections/math/math_senior/07_11_%E5%9F%BA%E6%9C%AC%E5%85%AC%E5%BC%8F/"
+  }
+}

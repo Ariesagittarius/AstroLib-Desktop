@@ -3,6 +3,12 @@
  * ============================================================================
  * AstroLib 静态资源服务引擎 (Zero-Dependency High-Performance Static Handler)
  * ============================================================================
+ * 遵循 P1-A1 架构规范与 ADR-READER-CONTRACT-2026-11-13：
+ * 1. 严格 0 模糊匹配：彻底删除 cleanSlug 扫描与正则降级逻辑；
+ * 2. 章节两级精确匹配：第一级物理命中 Canonical Slug，第二级显式查表 legacySlug；
+ * 3. 规范重定向与 404：legacySlug 返回 301 永久重定向；未命中返回标准学术 404 视窗；
+ * 4. 高性能缓存：内存 LRU 缓存与 ETag 304 协商，零磁盘 I/O 延迟。
+ * ============================================================================
  */
 
 import fs from 'node:fs';
@@ -10,7 +16,6 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { renderReaderPageHtml } from './reader-shell-template.ts';
-import { cleanSlug } from '../../src/utils/slug.ts';
 import { resolveAbpArtifactsDir } from '../../src/core/catalog/content-paths.ts';
 import type { AstroBookManifest, AstroBookSection } from '../../src/types/content-package.ts';
 
@@ -46,6 +51,168 @@ interface MemoryCacheEntry {
   etag: string;
   mtimeMs: number;
   size: number;
+}
+
+function escapeHtml(str?: string | null): string {
+  return String(str ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+/**
+ * 极简学术规范 404 视窗渲染器
+ * 复用 AstroLib M3 设计 tokens，无额外第三方依赖
+ */
+function renderAcademic404Html(colSlug: string, bookSlug: string, chapterSlug: string, reason = '章节不存在或尚未安装'): string {
+  const safeCol = escapeHtml(colSlug);
+  const safeBook = escapeHtml(bookSlug);
+  const safeChap = escapeHtml(chapterSlug);
+  const safeReason = escapeHtml(reason);
+
+  return `<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>404 - 章节未找到 | AstroLib</title>
+  <style>
+    :root {
+      --md-sys-color-surface: #fbf8fd;
+      --md-sys-color-on-surface: #1b1b1f;
+      --md-sys-color-surface-container: #f0edf1;
+      --md-sys-color-outline: #74777f;
+      --md-sys-color-outline-variant: #c4c6d0;
+      --md-sys-color-primary: #0061a4;
+      --md-sys-color-on-primary: #ffffff;
+      --md-sys-color-error: #ba1a1a;
+      --md-sys-color-on-error: #ffffff;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --md-sys-color-surface: #121316;
+        --md-sys-color-on-surface: #e2e2e6;
+        --md-sys-color-surface-container: #1e1f23;
+        --md-sys-color-outline: #8e9099;
+        --md-sys-color-outline-variant: #44474f;
+        --md-sys-color-primary: #9ecaff;
+        --md-sys-color-on-primary: #003258;
+        --md-sys-color-error: #ffb4ab;
+        --md-sys-color-on-error: #690005;
+      }
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background-color: var(--md-sys-color-surface);
+      color: var(--md-sys-color-on-surface);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+    }
+    .academic-404-card {
+      background-color: var(--md-sys-color-surface-container);
+      border: 1px solid var(--md-sys-color-outline-variant);
+      border-radius: 16px;
+      padding: 2.5rem 2rem;
+      max-width: 520px;
+      width: 100%;
+      text-align: center;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+    }
+    .academic-404-icon {
+      font-size: 48px;
+      margin-bottom: 1rem;
+      display: inline-block;
+      color: var(--md-sys-color-error);
+    }
+    .academic-404-title {
+      font-size: 1.35rem;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+      margin-bottom: 0.75rem;
+    }
+    .academic-404-reason {
+      font-size: 0.92rem;
+      color: var(--md-sys-color-outline);
+      margin-bottom: 1.5rem;
+      line-height: 1.5;
+    }
+    .academic-404-details {
+      background-color: var(--md-sys-color-surface);
+      border: 1px solid var(--md-sys-color-outline-variant);
+      border-radius: 8px;
+      padding: 0.75rem 1rem;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 0.8rem;
+      text-align: left;
+      margin-bottom: 1.5rem;
+      word-break: break-all;
+    }
+    .academic-404-details div {
+      margin: 0.25rem 0;
+    }
+    .academic-404-actions {
+      display: flex;
+      gap: 0.75rem;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .btn-action {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.5rem 1.25rem;
+      border-radius: 20px;
+      font-size: 0.88rem;
+      font-weight: 500;
+      text-decoration: none;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: all 0.2s ease;
+    }
+    .btn-primary {
+      background-color: var(--md-sys-color-primary);
+      color: var(--md-sys-color-on-primary);
+    }
+    .btn-primary:hover {
+      opacity: 0.9;
+    }
+    .btn-outlined {
+      border-color: var(--md-sys-color-outline);
+      color: var(--md-sys-color-primary);
+      background: transparent;
+    }
+    .btn-outlined:hover {
+      background-color: rgba(0, 97, 164, 0.08);
+    }
+  </style>
+</head>
+<body>
+  <div class="academic-404-card">
+    <div class="academic-404-icon">&#9888;</div>
+    <h1 class="academic-404-title">404 - 章节或资源未找到</h1>
+    <p class="academic-404-reason">${safeReason}</p>
+    <div class="academic-404-details">
+      <div><strong>学科合集:</strong> ${safeCol}</div>
+      <div><strong>书籍标识:</strong> ${safeBook}</div>
+      <div><strong>章节标识:</strong> ${safeChap}</div>
+    </div>
+    <div class="academic-404-actions">
+      <button type="button" class="btn-action btn-primary" onclick="if (window.parent && window.parent !== window) { window.parent.postMessage({ type: 'astrolib:switch-fragment', fragment: 'library' }, '*'); } else { window.location.href = '/desktop/'; }">
+        返回研读书库
+      </button>
+      <button type="button" class="btn-action btn-outlined" onclick="window.history.back()">
+        返回上一页
+      </button>
+    </div>
+  </div>
+</body>
+</html>`;
 }
 
 export class StaticHandler {
@@ -87,14 +254,173 @@ export class StaticHandler {
       return true;
     }
 
+    // 0. 特别处理 /collections/ 章节与书本根路由（排除静态配图资产）
+    const isImageRequest = safePath.includes('/images/') || /\.(png|jpe?g|gif|svg|webp|ico|woff2?|ttf|otf)$/i.test(safePath);
+    if (!isImageRequest && /^\/?collections\/[^/]+\/[^/]+(?:\/[^/]+)?\/?$/.test(safePath)) {
+      const colMatch = safePath.match(/^\/?collections\/([^/]+)\/([^/]+)(?:\/([^/]+))?\/?$/);
+      if (colMatch) {
+        return await this.handleCollectionsRoute(req, res, colMatch[1], colMatch[2], colMatch[3], pathname);
+      }
+    }
+
     const filePath = this.resolveFilePath(safePath);
     if (!filePath || !fs.existsSync(filePath)) {
       return false;
     }
 
+    return await this.serveFile(req, res, filePath, pathname);
+  }
+
+  /**
+   * 获取某本书籍的候选存储根目录 (用户安装目录优先，回退开发期构建目录)
+   */
+  private getBookCandidateDirs(colSlug: string, bookSlug: string): string[] {
+    const candidateDirs: string[] = [];
+    if (this.userAbpDir) {
+      candidateDirs.push(path.join(this.userAbpDir, `${colSlug}-${bookSlug}`));
+    }
+    if (this.projectRoot) {
+      const artifactsBookDir = path.join(resolveAbpArtifactsDir(this.projectRoot), `${colSlug}-${bookSlug}`);
+      if (!candidateDirs.includes(artifactsBookDir)) {
+        candidateDirs.push(artifactsBookDir);
+      }
+    }
+    return candidateDirs;
+  }
+
+  /**
+   * 精确处理 /collections/:col/:book/:chapter/ 动态章节阅读与 301 重定向
+   */
+  private async handleCollectionsRoute(
+    req: IncomingMessage,
+    res: ServerResponse,
+    colSlug: string,
+    bookSlug: string,
+    rawChapterSlug: string | undefined,
+    pathname: string
+  ): Promise<boolean> {
+    const candidateDirs = this.getBookCandidateDirs(colSlug, bookSlug);
+    let abpDir: string | null = null;
+    let manifestFile: string | null = null;
+
+    for (const dir of candidateDirs) {
+      const mf = path.join(dir, 'manifest.json');
+      if (fs.existsSync(mf)) {
+        abpDir = dir;
+        manifestFile = mf;
+        break;
+      }
+    }
+
+    if (!abpDir || !manifestFile) {
+      this.sendAcademic404(req, res, colSlug, bookSlug, rawChapterSlug || '', '书籍未安装或不存在');
+      return true;
+    }
+
+    let manifest: AstroBookManifest;
     try {
-      // 1. 检查内存缓存有效性
-      const cached = this.memoryCache.get(filePath);
+      manifest = JSON.parse(await fs.promises.readFile(manifestFile, 'utf8')) as AstroBookManifest;
+    } catch {
+      this.sendAcademic404(req, res, colSlug, bookSlug, rawChapterSlug || '', '书籍清单数据损坏');
+      return true;
+    }
+
+    // 1. 若请求未指定章节 (形如 /collections/:col/:book/ 或 /collections/:col/:book)
+    // 302 临时重定向至书籍默认入口章节
+    if (!rawChapterSlug) {
+      const entryPoint = manifest.entryPoint || 'chapter-01';
+      const redirectUrl = `/collections/${colSlug}/${bookSlug}/${entryPoint}/`;
+      res.writeHead(302, {
+        Location: encodeURI(redirectUrl),
+        'Content-Type': 'text/html; charset=utf-8',
+      });
+      if (req.method === 'HEAD') {
+        res.end();
+        return true;
+      }
+      res.end(`<!DOCTYPE html><html><head><meta http-equiv="refresh" content="0;url=${encodeURI(redirectUrl)}"><title>302 Redirect</title></head><body>Redirecting to <a href="${encodeURI(redirectUrl)}">${entryPoint}</a></body></html>`);
+      return true;
+    }
+
+    // 2. 第一级检查：Canonical Slug 直接物理命中
+    const directChapJson = path.join(abpDir, 'chapters', `${rawChapterSlug}.json`);
+    if (fs.existsSync(directChapJson)) {
+      const cachedHtmlFile = this.synthesizeAbpHtml(abpDir, manifestFile, directChapJson, rawChapterSlug);
+      if (!cachedHtmlFile || !fs.existsSync(cachedHtmlFile)) {
+        this.sendAcademic404(req, res, colSlug, bookSlug, rawChapterSlug, '章节合成失败');
+        return true;
+      }
+      return await this.serveFile(req, res, cachedHtmlFile, pathname);
+    }
+
+    // 3. 第二级检查：显式单项查表检索 legacySlug 别名映射
+    const sections: AstroBookSection[] = Array.isArray(manifest.sections) ? manifest.sections : [];
+    let matchedCanonicalSlug: string | null = null;
+    for (const sec of sections) {
+      for (const ch of (sec.chapters || [])) {
+        if (ch.legacySlug === rawChapterSlug) {
+          matchedCanonicalSlug = ch.slug;
+          break;
+        }
+      }
+      if (matchedCanonicalSlug) break;
+    }
+
+    if (matchedCanonicalSlug) {
+      // 命中历史别名：301 永久重定向至规范化 Canonical URL
+      const canonicalUrl = `/collections/${colSlug}/${bookSlug}/${matchedCanonicalSlug}/`;
+      res.writeHead(301, {
+        Location: encodeURI(canonicalUrl),
+        'Content-Type': 'text/html; charset=utf-8',
+      });
+      if (req.method === 'HEAD') {
+        res.end();
+        return true;
+      }
+      res.end(`<!DOCTYPE html><html><head><meta http-equiv="refresh" content="0;url=${encodeURI(canonicalUrl)}"><title>301 Moved Permanently</title></head><body>Moved to <a href="${encodeURI(canonicalUrl)}">${matchedCanonicalSlug}</a></body></html>`);
+      return true;
+    }
+
+    // 4. 两级均未命中：绝不进行模糊猜测，直接输出 404 学术视窗
+    this.sendAcademic404(req, res, colSlug, bookSlug, rawChapterSlug, '章节不存在或链接已失效');
+    return true;
+  }
+
+  /**
+   * 输出标准 404 学术视窗
+   */
+  private sendAcademic404(
+    req: IncomingMessage,
+    res: ServerResponse,
+    colSlug: string,
+    bookSlug: string,
+    chapterSlug: string,
+    reason: string
+  ): void {
+    const html = renderAcademic404Html(colSlug, bookSlug, chapterSlug, reason);
+    const bodyBuf = Buffer.from(html, 'utf8');
+    res.writeHead(404, {
+      'Content-Type': 'text/html; charset=utf-8',
+      'Content-Length': bodyBuf.byteLength,
+      'Cache-Control': 'no-cache, must-revalidate',
+    });
+    if (req.method === 'HEAD') {
+      res.end();
+      return;
+    }
+    res.end(bodyBuf);
+  }
+
+  /**
+   * 基础静态文件传输与协商缓存引擎
+   */
+  private async serveFile(
+    req: IncomingMessage,
+    res: ServerResponse,
+    filePath: string,
+    pathname: string
+  ): Promise<boolean> {
+    try {
       const stat = await fs.promises.stat(filePath);
       if (stat.isDirectory()) {
         return false;
@@ -130,14 +456,15 @@ export class StaticHandler {
         return true;
       }
 
-      // 2. 命中内存缓存：直接纳秒级输出 Buffer
+      // 命中内存缓存：直接纳秒级输出 Buffer
+      const cached = this.memoryCache.get(filePath);
       if (cached && cached.mtimeMs === stat.mtimeMs && cached.size === stat.size) {
         res.writeHead(200, headers);
         res.end(cached.buffer);
         return true;
       }
 
-      // 3. 小文件写入内存缓存
+      // 小文件写入内存缓存
       if (stat.size <= this.MAX_CACHE_FILE_SIZE) {
         const fileBuf = await fs.promises.readFile(filePath);
         if (this.memoryCache.size >= this.MAX_CACHE_ENTRIES) {
@@ -157,7 +484,7 @@ export class StaticHandler {
         return true;
       }
 
-      // 4. 超大文件流式传输
+      // 超大文件流式传输
       res.writeHead(200, headers);
       const stream = fs.createReadStream(filePath);
       stream.pipe(res);
@@ -312,67 +639,6 @@ export class StaticHandler {
               return candidate;
             }
           } catch {}
-        }
-      }
-    }
-
-    // 5. ABP 动态内容包实时合成 (/collections/:col/:book/:chapter/)
-    const colMatch = cleanPath.match(/^\/?collections\/([^/]+)\/([^/]+)\/([^/]+)/);
-    if (colMatch) {
-      const [, colSlug, bookSlug, rawChapterSlug] = colMatch;
-      const candidateDirs: string[] = [];
-      if (this.userAbpDir) {
-        candidateDirs.push(path.join(this.userAbpDir, `${colSlug}-${bookSlug}`));
-      }
-      if (this.projectRoot) {
-        const artifactsBookDir = path.join(resolveAbpArtifactsDir(this.projectRoot), `${colSlug}-${bookSlug}`);
-        if (!candidateDirs.includes(artifactsBookDir)) {
-          candidateDirs.push(artifactsBookDir);
-        }
-      }
-
-      const canonicalQuerySlug = cleanSlug(rawChapterSlug);
-      for (const abpDir of candidateDirs) {
-        const manifestFile = path.join(abpDir, 'manifest.json');
-        if (!fs.existsSync(manifestFile)) continue;
-
-        let resolvedSlug = rawChapterSlug;
-        let chapJsonFile = path.join(abpDir, 'chapters', `${resolvedSlug}.json`);
-
-        if (!fs.existsSync(chapJsonFile) && canonicalQuerySlug && canonicalQuerySlug !== rawChapterSlug) {
-          const canonicalCandidate = path.join(abpDir, 'chapters', `${canonicalQuerySlug}.json`);
-          if (fs.existsSync(canonicalCandidate)) {
-            resolvedSlug = canonicalQuerySlug;
-            chapJsonFile = canonicalCandidate;
-          }
-        }
-
-        // 若直接匹配未命中，检索 manifest 中的 legacySlug / canonicalSlug 别名映射（零模糊扫描）
-        if (!fs.existsSync(chapJsonFile)) {
-          try {
-            const manifest = JSON.parse(fs.readFileSync(manifestFile, 'utf8')) as AstroBookManifest;
-            const sections: AstroBookSection[] = Array.isArray(manifest.sections) ? manifest.sections : [];
-            for (const sec of sections) {
-              const matched = (sec.chapters || []).find(
-                (ch) =>
-                  ch.slug === rawChapterSlug ||
-                  ch.legacySlug === rawChapterSlug ||
-                  cleanSlug(ch.slug) === canonicalQuerySlug
-              );
-              if (matched) {
-                const aliasCandidate = path.join(abpDir, 'chapters', `${matched.slug}.json`);
-                if (fs.existsSync(aliasCandidate)) {
-                  resolvedSlug = matched.slug;
-                  chapJsonFile = aliasCandidate;
-                  break;
-                }
-              }
-            }
-          } catch {}
-        }
-
-        if (fs.existsSync(chapJsonFile)) {
-          return this.synthesizeAbpHtml(abpDir, manifestFile, chapJsonFile, resolvedSlug);
         }
       }
     }

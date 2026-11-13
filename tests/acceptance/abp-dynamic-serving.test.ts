@@ -60,16 +60,14 @@ describe('ABP Dynamic Content Serving Acceptance Test', () => {
   it('StaticHandler 能即时合成 canonical slug 与 legacySlug 别名章节及自包含辅助数据', async () => {
     const handler = new StaticHandler(distDir, testAbpPacksDir);
 
-    // 1. Canonical slug 与 Legacy 别名双重命中
-    for (const url of [
-      '/collections/math/math_senior/07_11_%E5%9F%BA%E6%9C%AC%E5%85%AC%E5%BC%8F/',
-      '/collections/math/math_senior/07_1.1_%E5%9F%BA%E6%9C%AC%E5%85%AC%E5%BC%8F/',
-    ]) {
+    // 1. Canonical slug 精确直接命中 (HTTP 200)
+    {
+      const canonicalUrl = '/collections/math/math_senior/07_11_%E5%9F%BA%E6%9C%AC%E5%85%AC%E5%BC%8F/';
       let statusCode = 0;
       let headers: any = {};
       let outputBuffer: Buffer | null = null;
       const handled = await handler.handle(
-        { method: 'GET', url, headers: {} } as any,
+        { method: 'GET', url: canonicalUrl, headers: {} } as any,
         {
           writeHead: (code: number, h: any) => {
             statusCode = code;
@@ -88,7 +86,71 @@ describe('ABP Dynamic Content Serving Acceptance Test', () => {
       expect(htmlText).toContain('三角函数');
     }
 
-    // 2. 自包含辅助数据端点从已安装目录直出（无需 public/ 或 projectRoot）
+    // 2. Legacy 历史别名显式查表命中 (HTTP 301 永久重定向至 Canonical URL)
+    {
+      const legacyUrl = '/collections/math/math_senior/07_1.1_%E5%9F%BA%E6%9C%AC%E5%85%AC%E5%BC%8F/';
+      let statusCode = 0;
+      let headers: any = {};
+      let outputBuffer: Buffer | null = null;
+      const handled = await handler.handle(
+        { method: 'GET', url: legacyUrl, headers: {} } as any,
+        {
+          writeHead: (code: number, h: any) => {
+            statusCode = code;
+            headers = h;
+          },
+          end: (chunk?: any) => {
+            if (chunk) outputBuffer = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
+          },
+        } as any
+      );
+      expect(handled).toBe(true);
+      expect(statusCode).toBe(301);
+      expect(headers['Location']).toContain('07_11_%E5%9F%BA%E6%9C%AC%E5%85%AC%E5%BC%8F');
+    }
+
+    // 3. 不存在的章节返回标准 404 学术视窗 (HTTP 404, text/html)
+    {
+      const notFoundUrl = '/collections/math/math_senior/not_exist_slug/';
+      let statusCode = 0;
+      let headers: any = {};
+      let outputBuffer: Buffer | null = null;
+      const handled = await handler.handle(
+        { method: 'GET', url: notFoundUrl, headers: {} } as any,
+        {
+          writeHead: (code: number, h: any) => {
+            statusCode = code;
+            headers = h;
+          },
+          end: (chunk?: any) => {
+            if (chunk) outputBuffer = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
+          },
+        } as any
+      );
+      expect(handled).toBe(true);
+      expect(statusCode).toBe(404);
+      expect(headers['Content-Type']).toContain('text/html');
+      const htmlText = outputBuffer!.toString('utf8');
+      expect(htmlText).toContain('404 - 章节或资源未找到');
+      expect(htmlText).toContain('not_exist_slug');
+    }
+
+    // 4. 模糊前缀绝对不命中 (HTTP 404, 杜绝模糊匹配隐患)
+    {
+      const fuzzyUrl = '/collections/math/math_senior/07_1/';
+      let statusCode = 0;
+      const handled = await handler.handle(
+        { method: 'GET', url: fuzzyUrl, headers: {} } as any,
+        {
+          writeHead: (code: number) => { statusCode = code; },
+          end: () => {},
+        } as any
+      );
+      expect(handled).toBe(true);
+      expect(statusCode).toBe(404);
+    }
+
+    // 5. 自包含辅助数据端点从已安装目录直出（无需 public/ 或 projectRoot）
     for (const auxUrl of [
       '/ai-index/math-math_senior.json',
       '/relation-graphs/math-math_senior.json',
