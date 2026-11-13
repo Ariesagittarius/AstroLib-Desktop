@@ -30,7 +30,7 @@ const GIT = getGitPath();
 
 function runGit(args, cwd = PROJECT_ROOT, options = {}) {
   const cmd = `"${GIT}" ${args}`;
-  return execSync(cmd, { cwd, encoding: 'utf8', stdio: options.stdio || 'pipe', ...options });
+  return execSync(cmd, { cwd, encoding: 'utf8', stdio: options.stdio || 'pipe', maxBuffer: 64 * 1024 * 1024, ...options });
 }
 
 // 2. 解析 CLI 参数
