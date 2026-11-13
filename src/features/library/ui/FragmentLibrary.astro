@@ -1,18 +1,19 @@
 ---
 /**
- * src/components/desktop/FragmentLibrary.astro
+ * src/features/library/ui/FragmentLibrary.astro
  * ============================================================================
  * Fragment 2: 学术研读书库 (严格对齐 Google Play 图书 Web 版范式)
  * ============================================================================
  * 规范：
  * 1. 严格实现书籍 (ABP) 与文献 (MinerU) 同级化一等公民呈现；
  * 2. 预留幻灯片 (Slides) 与研讨视频 (Videos) 架构体系；
- * 3. 左侧二级书架抽屉 + 顶栏 Chip 过滤 + 3:4 实体书封卡片网格 + 统一上传管线。
+ * 3. 左侧二级书架抽屉 + 顶栏 Chip 过滤 + 3:4 实体书封卡片网格；
+ * 4. 彻底解耦：数据与安装走 LibraryClient 适配器，文档摄取/OCR 归 features/doc-ingestion。
  * ============================================================================
  */
 
-import M3Icon from '../m3/M3Icon.astro';
-import '../../styles/desktop/library.css';
+import M3Icon from '../../../components/m3/M3Icon.astro';
+import '../../../styles/desktop/library.css';
 ---
 
 <div class="fragment-library-container" id="fragment-library">
@@ -98,11 +99,11 @@ import '../../styles/desktop/library.css';
           <option value="title">名称排序</option>
         </select>
 
-        <!-- MinerU 凭据管理 -->
-        <button type="button" class="library-token-btn" id="btn-manage-mineru-token" title="配置 MinerU API Token">
-          <M3Icon name="vpn_key" size={16} />
-          <span>MinerU 凭证</span>
-        </button>
+        <!-- 文献研读工作台入口 (features/doc-ingestion) -->
+        <a href="/workspace/" class="library-token-btn" id="btn-goto-workspace" title="打开文献解析研读工作台" style="text-decoration: none;">
+          <M3Icon name="science" size={16} />
+          <span>文献工作台</span>
+        </a>
 
         <!-- 官方书库通道 (Mode A: GitHub Releases 在线获取 .abp) -->
         <button type="button" class="library-token-btn" id="btn-official-catalog" title="从官方 Release 获取教材 .abp">
@@ -110,12 +111,12 @@ import '../../styles/desktop/library.css';
           <span>官方书库</span>
         </button>
 
-        <!-- 上传文件按钮 (接受 .abp 或 .pdf) -->
+        <!-- 上传教材包按钮 (接受 .abp) -->
         <button type="button" class="library-upload-btn" id="btn-library-upload">
           <M3Icon name="upload" size={19} />
-          <span>上传文件</span>
+          <span>安装教材包</span>
         </button>
-        <input type="file" id="library-file-input" accept=".abp,.pdf" style="display: none;" />
+        <input type="file" id="library-file-input" accept=".abp" style="display: none;" />
 
         <!-- 视图切换 (网格 vs 列表) -->
         <div class="library-view-toggle">
@@ -141,7 +142,7 @@ import '../../styles/desktop/library.css';
       </md-chip-set>
     </div>
 
-    <!-- 上传/解析实时通知横幅 -->
+    <!-- 上传/安装实时通知横幅 -->
     <div class="library-status-banner" id="library-status-banner" style="display: none;">
       <div class="banner-content">
         <M3Icon name="sync" size={18} class="banner-spinner" id="banner-status-icon" />
@@ -189,7 +190,8 @@ import '../../styles/desktop/library.css';
 
 <!-- 客户端书库控制器 -->
 <script>
-  import type { UnifiedReadingEntity, LibraryShelf } from '../../types/library-entity';
+  import type { UnifiedReadingEntity, LibraryShelf } from '../../../types/library-entity';
+  import { libraryClient } from '../core/library-client';
 
   class DesktopLibraryController {
     private entities: UnifiedReadingEntity[] = [];
@@ -206,7 +208,6 @@ import '../../styles/desktop/library.css';
     private fileInput: HTMLInputElement | null = null;
     private bannerEl: HTMLElement | null = null;
     private bannerText: HTMLElement | null = null;
-    private bannerIcon: HTMLElement | null = null;
 
     constructor() {
       this.gridEl = document.getElementById('library-entities-grid');
@@ -214,7 +215,6 @@ import '../../styles/desktop/library.css';
       this.fileInput = document.getElementById('library-file-input') as HTMLInputElement;
       this.bannerEl = document.getElementById('library-status-banner');
       this.bannerText = document.getElementById('library-banner-text');
-      this.bannerIcon = document.getElementById('banner-status-icon');
 
       this.initEventListeners();
       this.fetchData();
@@ -308,26 +308,6 @@ import '../../styles/desktop/library.css';
         }
       });
 
-      // 9. MinerU Token 管理
-      document.getElementById('btn-manage-mineru-token')?.addEventListener('click', async () => {
-        try {
-          const res = await fetch('/api/ingest/token');
-          const data = await res.json();
-          const currToken = data.token || '';
-          const input = prompt('请输入 MinerU 官方 API Token (从 mineru.net 获取)：', currToken);
-          if (input !== null) {
-            await fetch('/api/ingest/token', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ token: input.trim() }),
-            });
-            alert('MinerU API Token 已成功更新！');
-          }
-        } catch (e: any) {
-          alert('获取 Token 状态失败: ' + e.message);
-        }
-      });
-
       window.addEventListener('astrolib:library-updated', () => {
         this.fetchData();
       });
@@ -340,22 +320,10 @@ import '../../styles/desktop/library.css';
 
     private async fetchData() {
       try {
-        let entitiesRes: any[] = [];
-        let shelvesRes: any[] = [];
-
-        const bridge = (window as any).astrolib;
-        if (bridge && typeof bridge.getLibraryEntities === 'function') {
-          entitiesRes = await bridge.getLibraryEntities();
-          shelvesRes = await bridge.getLibraryShelves();
-        } else {
-          const res1 = await fetch('/api/library/entities');
-          const data1 = await res1.json();
-          entitiesRes = data1.entities || [];
-
-          const res2 = await fetch('/api/library/shelves');
-          const data2 = await res2.json();
-          shelvesRes = data2.shelves || [];
-        }
+        const [entitiesRes, shelvesRes] = await Promise.all([
+          libraryClient.getEntities(),
+          libraryClient.getShelves(),
+        ]);
 
         this.entities = entitiesRes;
         this.shelves = shelvesRes;
@@ -405,148 +373,32 @@ import '../../styles/desktop/library.css';
     }
 
     private async createShelf(name: string) {
-      const bridge = (window as any).astrolib;
-      if (bridge && typeof bridge.createLibraryShelf === 'function') {
-        const shelf = await bridge.createLibraryShelf(name);
+      try {
+        const shelf = await libraryClient.createShelf(name);
         this.shelves.push(shelf);
-      } else {
-        const res = await fetch('/api/library/shelves', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name }),
-        });
-        const data = await res.json();
-        if (data.shelf) this.shelves.push(data.shelf);
+        this.renderShelves();
+      } catch (e: any) {
+        alert('创建书架失败: ' + (e.message || e));
       }
-      this.renderShelves();
     }
 
     private async handleFileUpload(file: File) {
       const fileName = file.name;
-      this.showBanner(`正在上传: ${fileName}...`);
+      this.showBanner(`正在上传安装: ${fileName}...`);
 
       try {
         if (fileName.endsWith('.abp')) {
-          const bridge = (window as any).astrolib;
           const arrayBuffer = await file.arrayBuffer();
-          if (bridge && typeof bridge.installBookFromAbp === 'function') {
-            await bridge.installBookFromAbp(arrayBuffer);
-          } else {
-            const res = await fetch('/api/library/upload-abp', {
-              method: 'POST',
-              body: arrayBuffer,
-            });
-            const d = await res.json();
-            if (!d.success) throw new Error(d.error || '安装失败');
-          }
+          await libraryClient.installAbp(arrayBuffer);
           this.showBanner(`《${fileName}》安装成功！`, 3000);
           await this.fetchData();
-        } else if (fileName.toLowerCase().endsWith('.pdf')) {
-          // 上传 PDF 学术文献
-          const arrayBuffer = await file.arrayBuffer();
-          const uploadRes = await fetch('/api/ingest/upload', {
-            method: 'POST',
-            headers: {
-              'x-file-name': encodeURIComponent(fileName),
-              'x-engine': 'api',
-            },
-            body: arrayBuffer,
-          });
-          const uploadData = await uploadRes.json();
-          if (!uploadData.success || !uploadData.task) {
-            throw new Error(uploadData.error || '上传失败');
-          }
-
-          // 核心修复：兼顾 taskId 与 id
-          const taskId = uploadData.task.taskId || uploadData.task.id;
-          if (!taskId) {
-            throw new Error('服务返回任务 ID 异常');
-          }
-
-          this.showBanner(`PDF 上传成功，正在请求 MinerU 结构化解析...`);
-
-          // 检查是否有 MinerU Token
-          const tokenRes = await fetch('/api/ingest/token');
-          const tokenData = await tokenRes.json();
-          let userToken = tokenData.token || '';
-
-          if (!userToken) {
-            const promptToken = prompt('未检测到 MinerU API Token。请输入 Token 以启动解析（或留空使用本地 Agent 解析）：');
-            if (promptToken && promptToken.trim()) {
-              userToken = promptToken.trim();
-              await fetch('/api/ingest/token', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ token: userToken }),
-              });
-            }
-          }
-
-          // 触发解析，若无 token 则自动降级至 agent 免密模式
-          const chosenEngine = userToken ? 'api' : 'agent';
-          const parseRes = await fetch('/api/ingest/parse', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ taskId, engine: chosenEngine, token: userToken }),
-          });
-
-          const parseData = await parseRes.json();
-          if (!parseData.success) {
-            throw new Error(parseData.error || '触发解析接口失败');
-          }
-
-          await this.fetchData();
-          this.pollTaskProgress(taskId, fileName);
         } else {
-          alert('暂不支持该文件格式，仅支持 .abp (教材包) 与 .pdf (文献)');
+          alert('书库仅直接支持安装 .abp 教材包；文献解析请前往“文献工作台”(/workspace/)。');
           this.hideBanner();
         }
       } catch (err: any) {
-        this.showBanner(`处理失败: ${err.message}`, 6000, true);
+        this.showBanner(`安装失败: ${err.message || err}`, 6000, true);
       }
-    }
-
-    private pollTaskProgress(taskId: string, fileName: string) {
-      let pollCount = 0;
-      const maxPolls = 100; // 100 * 3s = 5 分钟超时保护
-      const timer = setInterval(async () => {
-        pollCount++;
-        if (pollCount > maxPolls) {
-          clearInterval(timer);
-          this.showBanner(`文献《${fileName}》解析超时 (已超过 5 分钟)，请检查网络或配置 Token`, 8000, true);
-          this.fetchData();
-          return;
-        }
-        try {
-          const res = await fetch(`/api/ingest/status?taskId=${encodeURIComponent(taskId)}`);
-          if (!res.ok) {
-            const errData = await res.json().catch(() => ({}));
-            clearInterval(timer);
-            this.showBanner(`文献《${fileName}》查询出错: ${errData.error || res.statusText}`, 6000, true);
-            this.fetchData();
-            return;
-          }
-
-          const data = await res.json();
-          if (data && data.task) {
-            const t = data.task;
-            if (t.status === 'completed') {
-              clearInterval(timer);
-              this.showBanner(`文献《${fileName}》解析完成，已加入研读书库！`, 4000);
-              this.fetchData();
-            } else if (t.status === 'failed') {
-              clearInterval(timer);
-              this.showBanner(`文献《${fileName}》解析失败: ${t.error || '未知错误'}`, 8000, true);
-              this.fetchData();
-            } else {
-              this.showBanner(`文献《${fileName}》MinerU 正在识别排版与公式... (${t.progress || 0}%)`);
-            }
-          }
-        } catch (err: any) {
-          clearInterval(timer);
-          this.showBanner(`轮询异常: ${err.message}`, 5000, true);
-        }
-      }, 3000);
     }
 
     private showBanner(text: string, autoHideMs: number = 0, isError: boolean = false) {
@@ -612,12 +464,12 @@ import '../../styles/desktop/library.css';
             <p>${isFirstLaunch ? '书库尚未安装教材' : '暂无符合条件的研读资源'}</p>
             <span class="empty-sub">${
               isFirstLaunch
-                ? '当前为精简安装壳，请从官方 Release 拉取教材包或导入本地 .abp / .pdf 文件'
-                : '尝试切换筛选条件，或导入新的 .abp 教材包与 .pdf 学术文献'
+                ? '当前为精简安装壳，请从官方 Release 拉取教材包或导入本地 .abp 文件'
+                : '尝试切换筛选条件，或导入新的 .abp 教材包'
             }</span>
             <div class="library-empty-actions">
               <md-filled-button id="btn-empty-official-catalog">获取官方教材 (.abp)</md-filled-button>
-              <md-outlined-button id="btn-empty-upload">导入本地 .abp / .pdf</md-outlined-button>
+              <md-outlined-button id="btn-empty-upload">导入本地 .abp</md-outlined-button>
             </div>
           </div>
         `;
@@ -705,20 +557,10 @@ import '../../styles/desktop/library.css';
       `;
 
       try {
-        const bridge = (window as any).astrolib;
-        let catalog: any;
-        let installedBooks: any[] = [];
-
-        if (bridge && typeof bridge.fetchOfficialCatalog === 'function') {
-          [catalog, installedBooks] = await Promise.all([
-            bridge.fetchOfficialCatalog(),
-            typeof bridge.getInstalledBooks === 'function' ? bridge.getInstalledBooks() : Promise.resolve([]),
-          ]);
-        } else {
-          const res = await fetch('/abp-packs/catalog.json');
-          if (!res.ok) throw new Error(`HTTP ${res.status} (${res.url})`);
-          catalog = await res.json();
-        }
+        const [catalog, installedBooks] = await Promise.all([
+          libraryClient.fetchOfficialCatalog(),
+          libraryClient.getInstalledBooks(),
+        ]);
 
         if (sourceEl && catalog?.sourceUrl) {
           sourceEl.textContent = `源清单: ${catalog.sourceUrl}${catalog.releaseTag ? ` (${catalog.releaseTag})` : ''}`;
@@ -770,17 +612,7 @@ import '../../styles/desktop/library.css';
               btn.textContent = '安装中...';
               this.showBanner(`正在从官方 Release 下载并校验《${entry.title}》...`);
               try {
-                if (bridge && typeof bridge.installOfficialBook === 'function') {
-                  await bridge.installOfficialBook(entry);
-                } else {
-                  const packUrl = entry.remotePackUrl || `/abp-packs/${entry.packFileName}`;
-                  const packRes = await fetch(packUrl);
-                  if (!packRes.ok) throw new Error(`HTTP ${packRes.status} (${packUrl})`);
-                  const buf = await packRes.arrayBuffer();
-                  const upRes = await fetch('/api/library/upload-abp', { method: 'POST', body: buf });
-                  const upData = await upRes.json();
-                  if (!upData.success) throw new Error(upData.error || '安装失败');
-                }
+                await libraryClient.installOfficialBook(entry);
                 btn.textContent = '已安装';
                 this.showBanner(`《${entry.title}》安装并校验完成！`, 3500);
                 await this.fetchData();
