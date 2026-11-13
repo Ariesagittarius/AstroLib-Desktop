@@ -1,0 +1,6 @@
+/**
+ * src/styles/layers/components.css
+ * Layer 3: Shared Reusable Component Styles
+ */
+@import '../components/mermaid.css';
+@import '../components/notice-framework.css';

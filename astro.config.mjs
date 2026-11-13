@@ -170,9 +170,7 @@ if (features.imageBlur.enabled) {
 //   关闭某功能即不引入对应 CSS（如关闭 fonts 则不打包 @fontsource 与 fonts.css）。
 const customCss = [];
 if (features.katex.enabled) customCss.push('katex/dist/katex.min.css');
-customCss.push('./src/styles/tokens/layers.css');
 customCss.push('./src/styles/custom.css');
-customCss.push('./src/styles/components/bilingual-reader.css');
 if (features.theme.enabled) {
   customCss.push('./src/themes/material-you/theme.css');
 }

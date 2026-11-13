@@ -127,7 +127,10 @@ describe('Mermaid Integrity Invariant Contract (图表语法与数学公式契�
 
     const customCssPath = path.resolve('src/styles/custom.css');
     const customCssContent = fs.readFileSync(customCssPath, 'utf-8');
-    expect(customCssContent).toContain("components/mermaid.css");
+    const componentsLayerPath = path.resolve('src/styles/layers/components.css');
+    const importsMermaid = customCssContent.includes("components/mermaid.css") ||
+      (fs.existsSync(componentsLayerPath) && fs.readFileSync(componentsLayerPath, 'utf-8').includes("components/mermaid.css"));
+    expect(importsMermaid).toBe(true);
   });
 
   it('Mermaid 客户端加载器 mermaid-loader.ts 必须配置 themeCSS 防漂移内联保护与换行自愈', () => {

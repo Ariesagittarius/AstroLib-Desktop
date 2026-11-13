@@ -1,0 +1,5 @@
+/**
+ * src/styles/layers/features.css
+ * Layer 4: Feature-Level Styles (Bilingual Reader, etc.)
+ */
+@import '../components/bilingual-reader.css';
