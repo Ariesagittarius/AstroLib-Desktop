@@ -1351,23 +1351,15 @@ class ExerciseCenterController {
     const answer = card.getAttribute('data-answer') || '';
     const isCorrect = userKey.trim().toUpperCase() === answer.trim().toUpperCase();
 
-    const record: UserPracticeRecord = {
-      answered: true,
-      userChoice: userKey,
-      isCorrect,
-    };
+    const record: UserPracticeRecord = { answered: true, userChoice: userKey, isCorrect };
     this.practiceRecords.set(qid, record);
 
-    const optBtns = card.querySelectorAll('.ex-option-btn');
-    optBtns.forEach((btn) => {
+    card.querySelectorAll('.ex-option-btn').forEach((btn) => {
       const k = btn.getAttribute('data-key');
       btn.classList.remove('is-selected', 'is-correct', 'is-wrong');
       if (k === userKey) btn.classList.add('is-selected');
-      if (k === answer) {
-        btn.classList.add('is-correct');
-      } else if (k === userKey && !isCorrect) {
-        btn.classList.add('is-wrong');
-      }
+      if (k === answer) btn.classList.add('is-correct');
+      else if (k === userKey && !isCorrect) btn.classList.add('is-wrong');
     });
 
     const solBox = card.querySelector(`#sol-${qid}`);
@@ -1381,42 +1373,31 @@ class ExerciseCenterController {
 
   private handleBlankCheck(qid: string) {
     const card = this.bodyContainer?.querySelector(`#q-card-${qid}`);
-    if (!card) return;
-    const input = card.querySelector('.ex-blank-input') as HTMLInputElement;
-    if (!input) return;
+    const input = card?.querySelector('.ex-blank-input') as HTMLInputElement;
+    if (!card || !input) return;
 
     const record = this.practiceRecords.get(qid);
     if (record && record.answered) {
       this.practiceRecords.delete(qid);
       input.removeAttribute('readonly');
       input.value = '';
-      const wrap = card.querySelector('.ex-blank-wrap');
-      wrap?.classList.remove('is-correct', 'is-wrong');
+      card.querySelector('.ex-blank-wrap')?.classList.remove('is-correct', 'is-wrong');
       const btn = card.querySelector('.ex-blank-check-btn');
       if (btn) btn.textContent = '核对答案';
-      const solBox = card.querySelector(`#sol-${qid}`);
-      if (solBox) solBox.classList.add('hidden');
+      card.querySelector(`#sol-${qid}`)?.classList.add('hidden');
       this.filterAndRenderStatsOnly();
       return;
     }
 
     const userVal = input.value.trim();
-    if (!userVal) {
-      this.showToast('请输入计算答案后再核对');
-      return;
-    }
+    if (!userVal) { this.showToast('请输入计算答案后再核对'); return; }
 
     const answer = card.getAttribute('data-answer') || '';
     const cleanUser = userVal.replace(/\$/g, '').replace(/\s+/g, '');
     const cleanAns = answer.replace(/\$/g, '').replace(/\s+/g, '');
     const isCorrect = cleanUser === cleanAns || cleanAns.includes(cleanUser);
 
-    this.practiceRecords.set(qid, {
-      answered: true,
-      userBlank: userVal,
-      isCorrect,
-    });
-
+    this.practiceRecords.set(qid, { answered: true, userBlank: userVal, isCorrect });
     input.setAttribute('readonly', 'true');
     const wrap = card.querySelector('.ex-blank-wrap');
     wrap?.classList.remove('is-correct', 'is-wrong');
@@ -1458,27 +1439,19 @@ class ExerciseCenterController {
 
   private toggleHints(qid: string) {
     const card = this.bodyContainer?.querySelector(`#q-card-${qid}`);
-    if (!card) return;
-    const hintsBox = card.querySelector(`#hints-${qid}`);
-    if (!hintsBox) return;
+    const hintsBox = card?.querySelector(`#hints-${qid}`);
+    if (!card || !hintsBox) return;
 
     if (!hintsBox.hasChildNodes()) {
       const q = this.currentFilteredQuestions.find((item) => item.id === qid);
       if (q) {
         hintsBox.innerHTML = this.renderHintsBoxContent(q);
-        try {
-          renderMathInElement(hintsBox as HTMLElement, KATEX_OPTIONS);
-        } catch (e) {}
+        try { renderMathInElement(hintsBox as HTMLElement, KATEX_OPTIONS); } catch (e) {}
       }
     }
-
     const isHidden = hintsBox.classList.contains('hidden');
     hintsBox.classList.toggle('hidden', !isHidden);
-
-    const btn = card.querySelector('.ex-toggle-hints-btn');
-    if (btn) {
-      btn.classList.toggle('active', isHidden);
-    }
+    card.querySelector('.ex-toggle-hints-btn')?.classList.toggle('active', isHidden);
   }
 
   private toggleMaster(qid: string) {
@@ -1488,19 +1461,14 @@ class ExerciseCenterController {
     this.practiceRecords.set(qid, record);
 
     const card = this.bodyContainer?.querySelector(`#q-card-${qid}`);
+    card?.querySelector('[data-action="master"]')?.classList.toggle('active', record.mastered);
     const btn = card?.querySelector('[data-action="master"] span');
-    const btnEl = card?.querySelector('[data-action="master"]');
-    if (btnEl) btnEl.classList.toggle('active', record.mastered);
-    if (btn) {
-      btn.textContent = record.mastered ? '已掌握' : '标为已掌握';
-    }
-
+    if (btn) btn.textContent = record.mastered ? '已掌握' : '标为已掌握';
     this.filterAndRenderStatsOnly();
   }
 
   private filterAndRenderStatsOnly() {
-    let doneCount = 0;
-    let correctCount = 0;
+    let doneCount = 0, correctCount = 0;
     this.currentFilteredQuestions.forEach((q) => {
       const rec = this.practiceRecords.get(q.id);
       if (rec && rec.answered) {
@@ -1517,16 +1485,13 @@ class ExerciseCenterController {
     toast.className = 'ex-toast';
     toast.textContent = msg;
     this.toastBox.appendChild(toast);
-
     setTimeout(() => {
       toast.classList.add('ex-toast-fade');
       setTimeout(() => toast.remove(), 300);
     }, 2800);
   }
 
-  private esc(s: string): string {
-    return esc(s);
-  }
+  private esc(s: string): string { return esc(s); }
 }
 
 export const exerciseController = new ExerciseCenterController();

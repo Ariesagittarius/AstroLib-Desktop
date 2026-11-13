@@ -4,7 +4,8 @@
  * ============================================================================
  * AstroLib 统一入口重定向页面
  * ============================================================================
- * 彻底废除旧版首页双重逻辑：全站统一直接跳转至新版多 Fragment 主工作台 (/desktop/)。
+ * 默认直接跳转至桌面工作台 (/desktop/)，同时支持参数显式路由至阅读器 (/reader/)，
+ * 并在无脚本/降级场景提供到 /desktop/ 与 /reader/ 的直达通道。
  * ============================================================================
  */
 ---
@@ -17,12 +18,21 @@
     <link rel="canonical" href="/desktop/" />
     <title>AstroLib - 理工科学术教辅系统</title>
     <script is:inline>
-      window.location.replace('/desktop/');
+      try {
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('mode') === 'reader' || params.has('reader')) {
+          window.location.replace('/reader/' + window.location.search);
+        } else {
+          window.location.replace('/desktop/' + window.location.search);
+        }
+      } catch {
+        window.location.replace('/desktop/');
+      }
     </script>
   </head>
   <body>
     <p style="font-family: system-ui, sans-serif; padding: 2rem; text-align: center;">
-      正在进入 AstroLib 工作台... <a href="/desktop/">若未自动跳转请点击此处</a>
+      正在进入 AstroLib 工作台... <a href="/desktop/">工作台主页</a> · <a href="/reader/">阅读器</a>
     </p>
   </body>
 </html>

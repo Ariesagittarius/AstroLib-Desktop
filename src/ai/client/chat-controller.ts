@@ -84,8 +84,13 @@ import { initChatResizer } from './chat-resizer';
 import { ThreadStore, MAX_THREADS, MAX_MSGS } from './thread-store';
 import { mdToHtml, safeLink } from './chat-markdown';
 import { sideloadManager } from '../../components/sideload/sideload-manager';
-
-const DOCKED_STORAGE_KEY = 'astrolib_ai_docked';
+import {
+  DOCKED_STORAGE_KEY,
+  type ChatDockHost,
+  performChatDock,
+  performChatUndock,
+  performChatUndockInternal,
+} from './chat-dock';
 
 export type { ReferencedChapter };
 export { formatExplorationSummary };
@@ -769,51 +774,26 @@ export class AIAskElement extends HTMLElement {
     this._updateContextRow();
   }
 
-  _extractBookChapters(): Array<{ title: string; url: string }> {
-    return this._chapterPicker.extractBookChapters();
-  }
-
+  _extractBookChapters() { return this._chapterPicker.extractBookChapters(); }
   _openChapterPicker() {
     this._closeModelMenu();
     if (!this._chapterPickerPopover) return;
     this._chapterPickerPopover.style.display = 'flex';
     this._renderChapterPickerList();
-    if (this._chapterSearchInput) {
-      this._chapterSearchInput.value = '';
-      this._chapterSearchInput.focus();
-    }
+    if (this._chapterSearchInput) { this._chapterSearchInput.value = ''; this._chapterSearchInput.focus(); }
   }
-
   _closeChapterPicker() {
     if (!this._chapterPickerPopover) return;
     this._chapterPickerPopover.style.display = 'none';
-    if (this._input) {
-      this._input.value = this._input.value.replace(/@\s*$/, '');
-      this._grow();
-      this._input.focus();
-    }
+    if (this._input) { this._input.value = this._input.value.replace(/@\s*$/, ''); this._grow(); this._input.focus(); }
   }
-
   _renderChapterPickerList() {
     if (!this._chapterPickerList) return;
-    this._chapterPicker.renderPickerList(
-      this._chapterPickerList,
-      this._chapterPickerCount,
-      () => this._updateContextRow()
-    );
+    this._chapterPicker.renderPickerList(this._chapterPickerList, this._chapterPickerCount, () => this._updateContextRow());
   }
-
-  _filterChapterPicker(kw: string) {
-    this._chapterPicker.filterPicker(this._chapterPickerList, kw);
-  }
-
-  _updateChapterPickerCount() {
-    this._chapterPicker.updatePickerCount(this._chapterPickerCount);
-  }
-
-  async _prefetchChapterText(url: string): Promise<string> {
-    return this._chapterPicker.prefetchChapterText(url);
-  }
+  _filterChapterPicker(kw: string) { this._chapterPicker.filterPicker(this._chapterPickerList, kw); }
+  _updateChapterPickerCount() { this._chapterPicker.updatePickerCount(this._chapterPickerCount); }
+  async _prefetchChapterText(url: string): Promise<string> { return this._chapterPicker.prefetchChapterText(url); }
 
   _initModelMenu() {
     this._modelMenuCtrl = new ChatModelMenu({
@@ -830,17 +810,29 @@ export class AIAskElement extends HTMLElement {
     });
   }
 
-  _openModelMenu() {
-    this._closeChapterPicker();
-    this._modelMenuCtrl?.open();
-  }
+  _openModelMenu() { this._closeChapterPicker(); this._modelMenuCtrl?.open(); }
+  _closeModelMenu() { this._modelMenuCtrl?.close(); }
+  _updateModelPill() { this._modelMenuCtrl?.updateModelPill(); }
 
-  _closeModelMenu() {
-    this._modelMenuCtrl?.close();
-  }
-
-  _updateModelPill() {
-    this._modelMenuCtrl?.updateModelPill();
+  private _getDockHost(): ChatDockHost {
+    return {
+      element: this,
+      panel: this._panel,
+      fab: this._fab,
+      dockBtn: this._dockBtn,
+      dockIcon: this._dockIcon,
+      undockIcon: this._undockIcon,
+      sideloadBackBtn: this._sideloadBackBtn,
+      input: this._input,
+      history: this._history,
+      historyBtn: this._historyBtn,
+      originalParent: this._originalParent,
+      originalNextSibling: this._originalNextSibling,
+      isDocked: this._isDocked,
+      enableChapterReference: () => this._enableChapterReference(),
+      disableChapterReference: () => this._disableChapterReference(),
+      scrollThread: () => this._scrollThread(),
+    };
   }
 
   toggleDock() {
@@ -852,183 +844,27 @@ export class AIAskElement extends HTMLElement {
   }
 
   dockToSidebar(immediate = false) {
-    if (typeof window === 'undefined') return;
-    const mountEl = document.getElementById('ai-sidebar-panel');
-    if (!mountEl) {
-      console.warn('[AIAsk] 未找到右侧栏挂载点 #ai-sidebar-panel');
-      return;
-    }
-
-    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-    const performDock = () => {
-      if (!this._originalParent || this._originalParent === mountEl || this._originalParent.id === 'ai-sidebar-panel') {
-        const overlayRoot = document.getElementById('astro-overlay-root') || document.getElementById('astrolib-overlay-root') || document.body;
-        this._originalParent = this.parentElement && this.parentElement !== mountEl ? (this.parentElement as HTMLElement) : overlayRoot;
-        this._originalNextSibling = this.nextSibling;
-      }
-
-      this._isDocked = true;
-      try { localStorage.setItem(DOCKED_STORAGE_KEY, 'true'); } catch {}
-
-      // 移动整个 ai-ask 元素至右侧栏侧载面板
-      mountEl.appendChild(this);
-      mountEl.setAttribute('aria-hidden', 'false');
-      this.classList.add('is-docked');
-      if (!immediate) {
-        this.classList.add('docking-in');
-      } else {
-        this.classList.remove('docking-in');
-      }
-      if (this._panel) {
-        this._panel.classList.remove('docking-out', 'dock-settled');
-        this._panel.classList.add('is-docked');
-        this._panel.classList.add('ask-open');
-      }
-
-      // 更新按钮状态
-      if (this._dockBtn) {
-        this._dockBtn.title = '从侧边栏返回浮窗 (Alt+D)';
-        this._dockBtn.setAttribute('aria-label', '从侧边栏返回浮窗');
-      }
-      if (this._dockIcon) this._dockIcon.style.display = 'none';
-      if (this._undockIcon) this._undockIcon.style.display = '';
-      if (this._sideloadBackBtn) this._sideloadBackBtn.style.display = 'inline-flex';
-
-      // 隐藏 FAB 悬浮球 (同时设置 inline style !important 与 hidden 属性)
-      if (this._fab) {
-        this._fab.style.setProperty('display', 'none', 'important');
-        this._fab.setAttribute('hidden', '');
-      }
-
-      // 驱动侧载状态机
-      sideloadManager.open('ai');
-
-      // 若开启了“侧载默认引用本章”，自动激活引用 Chip
-      if (getAiSideloadRefChapter()) {
-        this._enableChapterReference();
-      } else {
-        this._disableChapterReference();
-      }
-
-      // 清除动画 class
-      if (!immediate) {
-        setTimeout(() => {
-          this.classList.remove('docking-in');
-        }, 280);
-      } else {
-        this.classList.remove('docking-in');
-      }
-
-      // 维持滚动与焦点
-      requestAnimationFrame(() => {
-        this._scrollThread();
-        this._input && this._input.focus({ preventScroll: true });
-      });
-    };
-
-    // 若当前浮窗处于展开可见状态且未开启减弱动效，先播放离开淡出动效
-    if (!immediate && !prefersReducedMotion && this._panel && this._panel.classList.contains('ask-open')) {
-      this._panel.classList.add('docking-out');
-      setTimeout(performDock, 130);
-    } else {
-      performDock();
-    }
+    const host = this._getDockHost();
+    performChatDock(host, immediate);
+    this._originalParent = host.originalParent;
+    this._originalNextSibling = host.originalNextSibling;
+    this._isDocked = host.isDocked;
   }
 
   undockFromSidebar(keepOpen = true) {
-    if (typeof window === 'undefined') return;
-    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-    const performUndock = () => {
-      // 1. 先恢复侧载默认视图（大纲），使 data-sideload-active 与 --sl-sideload-width 立即同步就绪
-      sideloadManager.switchToDefault();
-      // 2. 执行浮窗 DOM 挂载回退与状态恢复
-      this._undockInternal(keepOpen);
-    };
-
-    if (!prefersReducedMotion && this._panel && this._isDocked) {
-      this.classList.add('docking-out');
-      setTimeout(performUndock, 110);
-    } else {
-      performUndock();
-    }
+    const host = this._getDockHost();
+    performChatUndock(host, keepOpen);
+    this._originalParent = host.originalParent;
+    this._originalNextSibling = host.originalNextSibling;
+    this._isDocked = host.isDocked;
   }
 
   _undockInternal(keepOpen = true) {
-    if (!this._isDocked) return;
-    this._isDocked = false;
-    this._disableChapterReference();
-    try { localStorage.setItem(DOCKED_STORAGE_KEY, 'false'); } catch {}
-
-    this.classList.remove('is-docked', 'docking-out');
-    if (this._panel) {
-      this._panel.classList.remove('is-docked', 'docking-out');
-    }
-
-    const mountEl = document.getElementById('ai-sidebar-panel');
-    if (mountEl) {
-      mountEl.setAttribute('aria-hidden', 'true');
-    }
-
-    // 将整个 ai-ask 移回原始容器 (如 #astro-overlay-root)
-    let targetParent = this._originalParent;
-    if (!targetParent || (mountEl && targetParent === mountEl) || targetParent.id === 'ai-sidebar-panel' || !document.body.contains(targetParent)) {
-      targetParent = document.getElementById('astro-overlay-root') || document.getElementById('astrolib-overlay-root') || document.body;
-    }
-    if (this._originalNextSibling && this._originalNextSibling.parentElement === targetParent) {
-      targetParent.insertBefore(this, this._originalNextSibling);
-    } else {
-      targetParent.appendChild(this);
-    }
-
-    // 恢复 FAB 悬浮球显现 (仅主动退出侧载时播放微缩放恢复动效)
-    if (this._fab) {
-      this._fab.style.removeProperty('display');
-      this._fab.removeAttribute('hidden');
-      this._fab.classList.add('fab-restoring');
-      setTimeout(() => {
-        this._fab && this._fab.classList.remove('fab-restoring');
-      }, 240);
-    }
-
-    // 更新按钮状态
-    if (this._dockBtn) {
-      this._dockBtn.title = '前往侧边栏 (Alt+D)';
-      this._dockBtn.setAttribute('aria-label', '前往侧边栏');
-    }
-    if (this._dockIcon) this._dockIcon.style.display = '';
-    if (this._undockIcon) this._undockIcon.style.display = 'none';
-    if (this._sideloadBackBtn) this._sideloadBackBtn.style.display = 'none';
-
-    if (keepOpen) {
-      this._panel.classList.remove('dock-settled');
-      this._panel.classList.add('ask-open', 'docking-in');
-
-      let settled = false;
-      const settleDock = () => {
-        if (settled) return;
-        settled = true;
-        if (this._panel) {
-          this._panel.removeEventListener('animationend', settleDock);
-          this._panel.classList.remove('docking-in');
-          this._panel.classList.add('dock-settled');
-        }
-      };
-
-      this._panel.addEventListener('animationend', settleDock, { once: true });
-      // 兜底定时器：在 250ms 入场动效结束后强制切换为静止就绪态，彻底防止二次动画触发
-      setTimeout(settleDock, 260);
-
-      requestAnimationFrame(() => {
-        this._input && this._input.focus({ preventScroll: true });
-      });
-    } else {
-      this._panel.classList.remove('ask-open', 'dock-settled', 'docking-in');
-      this._history && this._history.classList.remove('open');
-      this._historyBtn && this._historyBtn.classList.remove('ask-settings-open');
-    }
-    requestAnimationFrame(() => this._scrollThread());
+    const host = this._getDockHost();
+    performChatUndockInternal(host, keepOpen);
+    this._originalParent = host.originalParent;
+    this._originalNextSibling = host.originalNextSibling;
+    this._isDocked = host.isDocked;
   }
 
   _openPanel() {

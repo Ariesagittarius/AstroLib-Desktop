@@ -87,7 +87,13 @@ class SideloadManager {
    * 初始化管理器并监听全局按键与响应式变化
    */
   public init(): void {
-    if (this.isInitialized || typeof window === 'undefined') return;
+    if (typeof window === 'undefined') return;
+    if ((window as any).__astrolib_sideload_inited || this.isInitialized) {
+      this.isInitialized = true;
+      this.syncDom();
+      return;
+    }
+    (window as any).__astrolib_sideload_inited = true;
     this.isInitialized = true;
 
     // 0. 读取右侧栏折叠持久化偏好与活动面板记忆（桌面端 >= 72rem 生效）

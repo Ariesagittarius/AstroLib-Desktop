@@ -1,0 +1,91 @@
+{
+  "gate": "P1-D UI, Controllers and CSS Convergence",
+  "generatedAt": "2026-11-14T06:45:00+08:00",
+  "status": "PASSED",
+  "criteria": {
+    "D1_Settings": {
+      "status": "PASSED",
+      "surfaces": 1,
+      "primaryComponent": "src/features/settings/ui/SettingsSurface.astro",
+      "registry": "src/features/settings/model/settings-registry.ts",
+      "duplicateDomIds": 0
+    },
+    "D2_Header": {
+      "status": "PASSED",
+      "surfaces": 1,
+      "primaryComponent": "src/components/m3/M3TopNavBar.astro",
+      "deletedDeadComponents": ["src/components/HeaderToolsMenu.astro"],
+      "deadComponentReferences": 0
+    },
+    "D3_Library": {
+      "status": "PASSED",
+      "surfaces": 1,
+      "primaryComponent": "src/features/library/ui/FragmentLibrary.astro",
+      "clientAdapter": "src/features/library/core/library-client.ts",
+      "deletedLegacyComponents": ["src/components/desktop/FragmentLibrary.astro"],
+      "unitTests": 6,
+      "unitTestFile": "tests/unit/library-client.test.ts"
+    },
+    "D4_Controllers": {
+      "status": "PASSED",
+      "controllers": [
+        {
+          "name": "chat-controller",
+          "file": "src/ai/client/chat-controller.ts",
+          "lines": 1495,
+          "target": "< 1500",
+          "stateMachine": "src/ai/client/chat-controller.state.ts",
+          "unitTests": 6,
+          "testFile": "tests/unit/chat-state.test.ts",
+          "domFree": true
+        },
+        {
+          "name": "exercise-controller",
+          "file": "src/components/exercises/exercise-controller.ts",
+          "lines": 1495,
+          "target": "< 1500",
+          "stateMachine": "src/components/exercises/exercise-controller.state.ts",
+          "unitTests": 6,
+          "testFile": "tests/unit/exercise-state.test.ts",
+          "domFree": true
+        },
+        {
+          "name": "translation-dock-controller",
+          "file": "src/services/translation/client/translation-dock-controller.ts",
+          "lines": 1485,
+          "target": "< 1500",
+          "stateMachine": "src/services/translation/client/translation-dock-controller.state.ts",
+          "unitTests": 6,
+          "testFile": "tests/unit/translation-dock-state.test.ts",
+          "domFree": true
+        }
+      ],
+      "totalNewStateUnitTests": 18,
+      "stateMachineDomReferences": 0
+    },
+    "D5_CSS": {
+      "status": "PASSED",
+      "layersDirectory": "src/styles/layers/",
+      "layers": ["tokens.css", "base.css", "components.css", "features.css", "overrides.css"],
+      "importantBaseline": 6590,
+      "importantTarget": 5200,
+      "importantCurrent": 4869,
+      "importantReduced": 1721,
+      "targetMet": true
+    },
+    "D6_RuntimeDefects": {
+      "status": "PASSED",
+      "sideloadWidthTier": "clamp(20rem, 28vw, 25.5rem) aligned with AGENTS.md §7.2",
+      "listenerIdempotency": "window.__astrolib_sideload_inited and __sideloadBound enforced",
+      "indexRouting": "default /desktop/ with ?mode=reader support and bidirectional links"
+    }
+  },
+  "verification": {
+    "typeCheck": "0 errors (astro sync && tsc --noEmit)",
+    "testFilesPassed": 75,
+    "testFilesSkipped": 2,
+    "testsPassed": 463,
+    "testsSkipped": 5,
+    "testsFailed": 0
+  }
+}

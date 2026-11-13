@@ -184,7 +184,7 @@ When designing or refining UI layouts, flows, and interactive components, agents
 - **严禁并发独立外挂**：全站所有右侧辅助阅读功能（课后习题、AI 学术问答、知识图谱速查、随堂笔记等），必须作为 `.sideload-panel-view` 挂载于该宿主内。**严禁任何功能模块在宿主外另起炉灶、自造并列的右侧抽屉或悬浮全高栏**。
 
 ### 7.2 SideloadManager as the Sole Arbiter (单例状态机唯一裁决)
-- **状态集中管控**：所有右侧面板的激活状态（`activePanelId`）、宽度阶梯（`compact: 16.5rem` / `medium: 20rem` / `wide: 24.5rem` / `full: 28rem`）以及 CSS 变量（`--sl-sideload-width`），必须统一通过 `src/components/sideload/sideload-manager.ts` 的 `sideloadManager` 单例驱动。
+- **状态集中管控**：所有右侧面板的激活状态（`activePanelId`）、宽度阶梯（`compact: 16.5rem` / `medium: 20rem` / `wide: clamp(20rem, 28vw, 25.5rem)` / `full: 28rem`）以及 CSS 变量（`--sl-sideload-width`），必须统一通过 `src/components/sideload/sideload-manager.ts` 的 `sideloadManager` 单例驱动。
 - **禁止私自侵入 DOM**：业务 Controller 严禁直接向 `<body>` 或 `<html>` 注入破坏布局的 ad-hoc 类名，严禁直接手写 JS 修改 DOM 宽度。所有正文联动与右栏收缩必须通过 `--sl-sideload-width` 平滑过渡。
 
 ### 7.3 TOC Fallback & Interaction Loop (大纲闭环与无条件退回)
