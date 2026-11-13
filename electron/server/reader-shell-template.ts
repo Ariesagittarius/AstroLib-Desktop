@@ -23,7 +23,6 @@ import path from 'node:path';
 import type { AstroBookManifest, AstroBookChapterPayload } from '../../src/types/content-package.ts';
 import { renderTitleHtml } from '../../src/utils/render-title.ts';
 import { getCatalogCollections } from '../../src/config/collections.config.ts';
-import { cleanSlug } from '../../src/utils/slug.ts';
 import { resolveAbpArtifactsDir } from '../../src/core/catalog/content-paths.ts';
 
 function escapeHtml(str?: string | null): string {

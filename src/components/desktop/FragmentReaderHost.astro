@@ -161,6 +161,21 @@ import '../../styles/desktop/reader-host.css';
       document.getElementById('dock-expand-handle')?.addEventListener('click', () => {
         this.bottomDockEl?.classList.remove('is-collapsed');
       });
+
+      // 5. 接收阅读器 iframe 内部发来的控制消息（学术 404 视窗的“返回研读书库”等）
+      //    仅接受本组件窗格内 iframe 的消息源，防止任意页面注入切换指令。
+      window.addEventListener('message', (e: MessageEvent) => {
+        const data = e.data as { type?: string; fragment?: string } | null;
+        if (!data || data.type !== 'astrolib:switch-fragment') return;
+        if (data.fragment !== 'library' && data.fragment !== 'reader') return;
+
+        const frames = this.splitGridEl?.querySelectorAll('iframe');
+        if (!frames) return;
+        const fromOwnPane = Array.from(frames).some((frame) => frame.contentWindow === e.source);
+        if (!fromOwnPane) return;
+
+        window.dispatchEvent(new CustomEvent('astrolib:switch-fragment', { detail: data.fragment }));
+      });
     }
 
     /**
