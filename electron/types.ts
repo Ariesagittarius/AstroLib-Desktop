@@ -65,6 +65,8 @@ export interface AppUpdateInfo {
   releaseNotes?: string;
   publishedAt?: string;
   downloadUrl?: string;
+  installerUrl?: string;
+  portableUrl?: string;
   htmlUrl?: string;
 }
 

@@ -64,4 +64,10 @@ describe('Electron Packaging Hygiene & Forbidden Paths Contract', () => {
     walk(raw.header, '');
     expect(violations).toEqual([]);
   });
+
+  it('package.json build 配置必须显式固定 nsis 与 portable 的无空格 artifactName', () => {
+    const pkg = JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf8'));
+    expect(pkg.build?.nsis?.artifactName).toBe('${productName}-Setup-${version}.${ext}');
+    expect(pkg.build?.portable?.artifactName).toBe('${productName}-Portable-${version}.${ext}');
+  });
 });

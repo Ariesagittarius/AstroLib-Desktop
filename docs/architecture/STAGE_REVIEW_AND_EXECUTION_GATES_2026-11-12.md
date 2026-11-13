@@ -1099,8 +1099,8 @@ STATUS: RELEASE CANDIDATE ACCEPTED FOR FORMAL P1 HANDOFF
 
 ---
 
-## 11. 第二轮独立复核结论（2026-11-12）
+## 11. 历史复核快照与最终闭合关联索引
 
-本轮独立复核已拆分为独立文档：[P0_CLOSURE_AUDIT_ROUND2_2026-11-12.md](./P0_CLOSURE_AUDIT_ROUND2_2026-11-12.md)。
-
-**结论：P0 NOT CLOSED。** 完整证据、Gate 处置与关闭顺序见该文档。
+1. **第二轮复核历史快照（2026-11-12）**：见 [P0_CLOSURE_AUDIT_ROUND2_2026-11-12.md](./P0_CLOSURE_AUDIT_ROUND2_2026-11-12.md)（该轮历史裁决为 `P0 NOT CLOSED`，指出四大阻断项 P0-B1~P0-B4）。
+2. **最后一轮复核与元数据治理（2026-11-13）**：见 [P0_FINAL_AUDIT_2026-11-13.md](./P0_FINAL_AUDIT_2026-11-13.md)（指出 `latest.yml` 命名、文档矛盾与证据跟踪三项阻断）。
+3. **最终门禁状态**：四大阻断项、`latest.yml` 资产对齐与文档证据链已全部通过闭环修复，权威最终裁决为 **`P0 CLOSED — ACCEPTED FOR P1 HANDOFF`**（详见本文 §10）。

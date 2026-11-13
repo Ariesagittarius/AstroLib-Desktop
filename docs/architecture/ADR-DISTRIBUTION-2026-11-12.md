@@ -126,7 +126,7 @@
 6. `npm test`（含 G1/G2 新增真实包与打包边界测试）
 7. `npx electron-builder --win`（仅打包精简壳体安装程序）
 8. `softprops/action-gh-release@v2` 同步上传两类 Release 资产：
-   - **应用壳体**：`release/*.exe`、`release/*.zip`、`release/*.blockmap`、`release/latest.yml`
+   - **应用壳体**：`release/*.exe`（NSIS 安装包 `AstroLib-Setup-${version}.exe` 与便携免安装版 `AstroLib-Portable-${version}.exe`）、`release/*.blockmap`、`release/latest.yml`
    - **内容资产**：`artifacts/abp-packs/catalog.json`、`artifacts/abp-packs/*.abp`
 
 ---
