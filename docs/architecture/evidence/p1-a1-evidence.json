@@ -1,11 +1,14 @@
 {
   "gate": "P1-A1",
   "baseCommit": "f6b42c05",
-  "timestamp": "2026-11-13T16:30:00.000Z",
+  "commit": "94098550",
+  "remediationCommit": "eb8c3c66",
+  "timestamp": "2026-11-13T09:15:00.000Z",
   "commands": [
     "npm run check:types",
     "npx vitest run tests/acceptance/abp-dynamic-serving.test.ts tests/contract/release-metadata.test.ts",
     "npx vitest run tests/unit/static-handler.test.ts",
+    "npm run pack:books  (clean-clone precondition: tests require artifacts/abp-packs)",
     "npm test"
   ],
   "exitCodes": {
@@ -23,6 +26,21 @@
     "fuzzyMatchLinesInStaticHandler": 0,
     "cleanSlugCallsInStaticHandler": 0
   },
+  "testSuite": {
+    "testFiles": "64 passed | 2 skipped",
+    "tests": "373 passed | 5 skipped"
+  },
+  "routabilityProbe": {
+    "method": "StaticHandler.handle() over every manifest chapter and every legacySlug of the 13 official books",
+    "canonicalHttp200": 1251,
+    "canonicalFailures": 0,
+    "legacyHttp301": 1191,
+    "legacyCaseInsensitiveHttp200": 4,
+    "legacyFailures": 0,
+    "notFoundHttp404Html": 3,
+    "multiLevelSlugChapters": 188,
+    "note": "Windows 文件系统大小写不敏感，4 个仅大小写不同的 legacy 别名直接物理命中返回 200；在大小写敏感平台上同一别名返回 301。"
+  },
   "notFoundProbe": {
     "testUrl": "/collections/math/math_senior/not_exist_slug/",
     "httpStatus": 404,
@@ -33,5 +51,9 @@
     "testUrl": "/collections/math/math_senior/07_1.1_%E5%9F%BA%E6%9C%AC%E5%85%AC%E5%BC%8F/",
     "httpStatus": 301,
     "location": "/collections/math/math_senior/07_11_%E5%9F%BA%E6%9C%AC%E5%85%AC%E5%BC%8F/"
-  }
+  },
+  "findingsClosedInRemediation": [
+    "188 个多级章节 slug（cs-algorithms: zh-wp/… 69 + zh/… 69；science-vectors_and_tensors: zh/… 50）在原路由正则下不可达并返回 text/plain 404；已改为允许多级 slug，并补齐嵌套缓存目录创建。",
+    "清洁环境依赖：static-handler 与 reader-shell-links 测试需要 artifacts/abp-packs；干净 clone 必须先执行 npm run pack:books（npm run build 不打包 ABP）。"
+  ]
 }

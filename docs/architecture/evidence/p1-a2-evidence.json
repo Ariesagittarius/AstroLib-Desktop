@@ -1,0 +1,38 @@
+{
+  "gate": "P1-A2",
+  "baseCommit": "94098550",
+  "commit": "e0c7b824",
+  "timestamp": "2026-11-13T09:20:00.000Z",
+  "scope": [
+    "reader-shell-template 左侧目录树 / 右侧大纲 / 上一章-下一章链接 100% 使用 manifest canonical slug（多级 slug 亦同）",
+    "移除 reader-shell-template 中未使用的 cleanSlug 依赖，slug 归一化只发生在编译器",
+    "FragmentReaderHost 增加 iframe -> 父窗口 astrolib:switch-fragment 消息桥接，使学术 404 视窗的“返回研读书库”可用",
+    "新增 tests/unit/reader-shell-links.test.ts 锁定上述契约"
+  ],
+  "commands": [
+    "npm run check:types",
+    "npx vitest run tests/unit/reader-shell-links.test.ts",
+    "npm test"
+  ],
+  "exitCodes": {
+    "checkTypes": 0,
+    "readerShellLinks": 0,
+    "npmTest": 0
+  },
+  "metrics": {
+    "shellLinkScopesChecked": 2,
+    "canonicalLinkMismatch": 0,
+    "legacySlugInLinks": 0,
+    "multiLevelChaptersLinked": 138,
+    "cleanSlugReferencesInShell": 0,
+    "iframeMessageBridge": true
+  },
+  "testSuite": {
+    "testFiles": "64 passed | 2 skipped",
+    "tests": "373 passed | 5 skipped"
+  },
+  "knownLimitations": [
+    "学术 404 视窗为独立 HTML，不继承应用主题（使用 prefers-color-scheme 回退）；图标使用 ⚠ 字符而非 Material Symbols，与 ADR §7.2 的图标条目存在轻微偏差。",
+    "FragmentReaderHost 仍以 HEAD 预检替换不可用章节窗格；学术 404 视窗主要用于 iframe 内部导航（侧栏跳转、外链）场景。"
+  ]
+}
