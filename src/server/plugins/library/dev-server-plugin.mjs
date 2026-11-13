@@ -15,6 +15,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import zlib from 'node:zlib';
 import { TaskManager } from '../doc-ingestion/task-manager.ts';
+import { validateInstallPayload, AbpInstallError } from '../../../services/content-provider/install-validation.ts';
 
 const LIBRARY_PATH_PREFIX = '/api/library';
 
@@ -237,44 +238,55 @@ export function devLibraryServerPlugin() {
           if (req.method === 'POST' && pathname === `${LIBRARY_PATH_PREFIX}/upload-abp`) {
             const fileBuf = await readBufferBody(req);
             if (!fileBuf || fileBuf.length === 0) {
-              return sendJson(res, 400, { error: '上传内容为空' });
+              return sendJson(res, 400, { error: '上传内容为空', code: 'INVALID_PAYLOAD' });
             }
             try {
-              const decompressed = zlib.gunzipSync(fileBuf);
-              const bundle = JSON.parse(decompressed.toString('utf8'));
+              let decompressed;
+              try {
+                decompressed = zlib.gunzipSync(fileBuf);
+              } catch (err) {
+                return sendJson(res, 400, { error: `解压 .abp 数据包失败: ${err.message}`, code: 'DECOMPRESS_FAILED' });
+              }
+
+              let rawJson;
+              try {
+                rawJson = JSON.parse(decompressed.toString('utf8'));
+              } catch (err) {
+                return sendJson(res, 400, { error: `解析 ABP JSON 失败: ${err.message}`, code: 'JSON_PARSE_FAILED' });
+              }
+
+              // 统一安装校验入口 (P1-C1)
+              let bundle;
+              try {
+                bundle = validateInstallPayload(rawJson);
+              } catch (err) {
+                const code = err instanceof AbpInstallError ? err.code : 'VALIDATION_FAILED';
+                return sendJson(res, 400, { error: err.message, code });
+              }
+
               const manifest = bundle.manifest;
-              if (!manifest || !manifest.colSlug || !manifest.slug) {
-                return sendJson(res, 400, { error: '无效的 ABP 数据包：缺少合法清单' });
-              }
               const bookKey = `${manifest.colSlug}-${manifest.slug}`;
-              if (bookKey.includes('..') || bookKey.includes('/') || bookKey.includes('\\')) {
-                return sendJson(res, 400, { error: '非法的书籍标识' });
-              }
               const targetDir = path.resolve(projectRoot, '.tmp/dev-abp-packs', bookKey);
               const chaptersDir = path.join(targetDir, 'chapters');
               fs.mkdirSync(chaptersDir, { recursive: true });
               fs.writeFileSync(path.join(targetDir, 'manifest.json'), JSON.stringify(manifest, null, 2), 'utf8');
               if (bundle.chapters && typeof bundle.chapters === 'object') {
                 for (const [cSlug, cData] of Object.entries(bundle.chapters)) {
-                  const safeRel = cSlug.replace(/\\/g, '/').replace(/^\/+/, '');
-                  if (safeRel.includes('..')) continue;
-                  const destChap = path.join(chaptersDir, `${safeRel}.json`);
+                  const destChap = path.join(chaptersDir, `${cSlug}.json`);
                   fs.mkdirSync(path.dirname(destChap), { recursive: true });
                   fs.writeFileSync(destChap, JSON.stringify(cData, null, 2), 'utf8');
                 }
               }
               if (bundle.assets && typeof bundle.assets === 'object') {
                 for (const [relPath, b64] of Object.entries(bundle.assets)) {
-                  const safeRel = relPath.replace(/\\/g, '/').replace(/^\/+/, '');
-                  if (safeRel.includes('..')) continue;
-                  const destAsset = path.join(targetDir, safeRel);
+                  const destAsset = path.join(targetDir, relPath);
                   fs.mkdirSync(path.dirname(destAsset), { recursive: true });
                   fs.writeFileSync(destAsset, Buffer.from(b64, 'base64'));
                 }
               }
               return sendJson(res, 200, { success: true, manifest });
             } catch (err) {
-              return sendJson(res, 500, { error: `安装 ABP 失败: ${err.message}` });
+              return sendJson(res, 500, { error: `安装 ABP 失败: ${err.message}`, code: 'INSTALL_FAILED' });
             }
           }
 
