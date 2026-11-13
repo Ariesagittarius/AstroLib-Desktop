@@ -12,54 +12,66 @@
  * ============================================================================
  */
 
-import { sideloadManager } from '../../../components/sideload/sideload-manager.ts';
-import { getProviderApiKey, saveProviderApiKey, AI_CONFIG_CHANGE_EVENT } from '../../../ai/ai-config.ts';
-import { ParagraphAligner } from '../paragraph-aligner.ts';
+import { sideloadManager } from '../../../components/sideload/sideload-manager';
+import { ParagraphAligner } from '../paragraph-aligner';
 import {
   TranslationStorage,
   TRANSLATION_DISPLAY_MODE_CHANGE_EVENT,
   TRANSLATION_PROVIDER_CHANGE_EVENT,
-} from '../storage/translation-storage.ts';
-import { TranslationExporter } from '../export/translation-exporter.ts';
-import { StructurePreservingMasker } from '../masker.ts';
-import type { ParagraphUnit, TranslationProviderId, TranslationExportFormat, TranslationDisplayMode } from '../types.ts';
-
-let _renderMath: any = null;
-async function renderMathInElementSafely(elem: HTMLElement) {
-  try {
-    if (!_renderMath) {
-      const mod = await import('katex/dist/contrib/auto-render.mjs');
-      _renderMath = mod.default || mod;
-    }
-    _renderMath(elem, {
-      delimiters: [
-        { left: '$$', right: '$$', display: true },
-        { left: '$', right: '$', display: false },
-        { left: '\\(', right: '\\)', display: false },
-        { left: '\\[', right: '\\]', display: true },
-      ],
-      throwOnError: false,
-    });
-  } catch (err) {
-    console.warn('[TranslationDock] KaTeX auto-render 降级:', err);
-  }
-}
+} from '../storage/translation-storage';
+import { StructurePreservingMasker } from '../masker';
+import type { ParagraphUnit, TranslationProviderId, TranslationExportFormat, TranslationDisplayMode } from '../types';
+import { TranslationDrawerView } from './translation-drawer-view';
+import { TranslationInlineView, renderMathInElementSafely } from './translation-inline-view';
+import { TranslationDockStateMachine } from './translation-dock-controller.state';
+import { AI_CONFIG_CHANGE_EVENT } from '../../../ai/ai-config';
 
 export class TranslationDockController {
   private static instance: TranslationDockController | null = null;
   private isInitialized = false;
   private currentProvider: TranslationProviderId = 'google';
   private displayMode: TranslationDisplayMode = 'sidebar';
-  private isInlineActive = false;
   private currentChapterKey: string = '';
   private paragraphs: ParagraphUnit[] = [];
   private isTranslating = false;
-  private isSettingsOpen = false;
-  private isExportOpen = false;
   private selectedExportFormat: TranslationExportFormat = 'bilingual-markdown';
   private selectedExportScope: 'all' | 'satisfied' = 'all';
   private unbindSync: (() => void) | null = null;
   private abortController: AbortController | null = null;
+
+  private stateMachine = new TranslationDockStateMachine();
+
+  private drawerView = new TranslationDrawerView({
+    getProvider: () => this.currentProvider,
+    getDisplayMode: () => this.displayMode,
+    getParagraphs: () => this.paragraphs,
+    getSelectedExportFormat: () => this.selectedExportFormat,
+    getSelectedExportScope: () => this.selectedExportScope,
+    setSelectedExportFormat: (fmt) => { this.selectedExportFormat = fmt; },
+    setSelectedExportScope: (scope) => { this.selectedExportScope = scope; },
+    syncDisplayModeChips: () => this.syncDisplayModeChips(),
+    updateCardBadges: (card, unit) => this.updateCardBadges(card, unit),
+    handleToggleSatisfied: (unit, card) => this.handleToggleSatisfied(unit, card),
+    startTranslation: (forceRefresh) => this.startTranslation(forceRefresh),
+  });
+
+  private inlineView = new TranslationInlineView({
+    getProvider: () => this.currentProvider,
+    setProvider: (p) => this.setProvider(p),
+    getDisplayMode: () => this.displayMode,
+    getParagraphs: () => this.paragraphs,
+    setParagraphs: (p) => { this.paragraphs = p; },
+    getCurrentChapterKey: () => this.currentChapterKey,
+    setCurrentChapterKey: (key) => { this.currentChapterKey = key; },
+    requestTranslation: (text, signal) => this.requestTranslation(text, signal),
+    updateSatisfiedCountBadge: () => this.drawerView.updateSatisfiedCountBadge(),
+    handleToggleSatisfied: (unit, card) => this.handleToggleSatisfied(unit, card),
+    toggleSettingsDrawer: (open) => this.drawerView.toggleSettingsDrawer(open),
+  });
+
+  public get isInlineActive(): boolean {
+    return this.inlineView.isInlineActive();
+  }
 
 
   public static getInstance(): TranslationDockController {
@@ -405,423 +417,55 @@ export class TranslationDockController {
 
 
   public toggleSettingsDrawer(open?: boolean): void {
-    const drawer = document.getElementById('trans-settings-drawer');
-    const toggleBtn = document.getElementById('trans-sidebar-settings');
-    if (!drawer) return;
-
-    this.isSettingsOpen = open !== undefined ? open : !this.isSettingsOpen;
-
-    if (this.isSettingsOpen) {
-      if (this.isExportOpen) {
-        this.toggleExportDrawer(false);
-      }
-      drawer.style.display = 'block';
-      drawer.setAttribute('aria-hidden', 'false');
-      toggleBtn?.classList.add('is-active');
-      this.syncDisplayModeChips();
-      this.syncSettingsDrawerUI();
-      const input = document.getElementById('trans-api-key-input') as HTMLInputElement | null;
-
-      if (input && !input.disabled) {
-        setTimeout(() => {
-          input.focus();
-          input.select();
-        }, 50);
-      }
-    } else {
-      drawer.style.display = 'none';
-      drawer.setAttribute('aria-hidden', 'true');
-      toggleBtn?.classList.remove('is-active');
-    }
+    this.drawerView.toggleSettingsDrawer(open);
   }
 
   public toggleExportDrawer(open?: boolean): void {
-    const drawer = document.getElementById('trans-export-drawer');
-    const toggleBtn = document.getElementById('trans-sidebar-export');
-    if (!drawer) return;
-
-    this.isExportOpen = open !== undefined ? open : !this.isExportOpen;
-
-    if (this.isExportOpen) {
-      if (this.isSettingsOpen) {
-        this.toggleSettingsDrawer(false);
-      }
-      drawer.style.display = 'block';
-      drawer.setAttribute('aria-hidden', 'false');
-      toggleBtn?.classList.add('is-active');
-      this.syncExportDrawerUI();
-    } else {
-      drawer.style.display = 'none';
-      drawer.setAttribute('aria-hidden', 'true');
-      toggleBtn?.classList.remove('is-active');
-    }
+    this.drawerView.toggleExportDrawer(open);
   }
 
   private syncExportDrawerUI(): void {
-    const drawer = document.getElementById('trans-export-drawer');
-    if (!drawer) return;
-
-    drawer.querySelectorAll<HTMLButtonElement>('[data-export-fmt]').forEach((btn) => {
-      const fmt = btn.getAttribute('data-export-fmt');
-      if (fmt === this.selectedExportFormat) {
-        btn.classList.add('is-active');
-      } else {
-        btn.classList.remove('is-active');
-      }
-    });
-
-    drawer.querySelectorAll<HTMLButtonElement>('[data-export-scope]').forEach((btn) => {
-      const scope = btn.getAttribute('data-export-scope');
-      if (scope === this.selectedExportScope) {
-        btn.classList.add('is-active');
-      } else {
-        btn.classList.remove('is-active');
-      }
-    });
-
-    this.updateSatisfiedCountBadge();
+    this.drawerView.syncExportDrawerUI();
   }
 
   private updateSatisfiedCountBadge(): void {
-    const satisfiedCount = this.paragraphs.filter((p) => Boolean(p.isSatisfied && p.translatedText && p.status === 'done')).length;
-
-    const countBadge = document.getElementById('trans-satisfied-count');
-    if (countBadge) {
-      if (satisfiedCount > 0) {
-        countBadge.style.display = 'inline-flex';
-        countBadge.textContent = `${satisfiedCount} 采纳`;
-      } else {
-        countBadge.style.display = 'none';
-      }
-    }
-
-    const exportNum = document.getElementById('trans-export-satisfied-num');
-    if (exportNum) {
-      exportNum.textContent = String(satisfiedCount);
-    }
+    this.drawerView.updateSatisfiedCountBadge();
   }
 
   private handleExportDownload(): void {
-    const downloadBtn = document.getElementById('trans-export-download');
-    const chapterTitle = document.querySelector('h1')?.textContent?.trim() || document.title || 'AstroLib-Chapter';
-
-    const result = TranslationExporter.generateExport(this.paragraphs, {
-      format: this.selectedExportFormat,
-      onlySatisfied: this.selectedExportScope === 'satisfied',
-      chapterTitle,
-    });
-
-    TranslationExporter.downloadFile(result.filename, result.content, result.mimeType);
-
-    if (downloadBtn) {
-      const textSpan = downloadBtn.querySelector('.trans-btn-text');
-      const iconSpan = downloadBtn.querySelector('.trans-btn-icon');
-      const origText = textSpan?.textContent || '立即下载文件';
-      const origIcon = iconSpan?.textContent || 'file_download';
-      if (textSpan) textSpan.textContent = '已下载';
-      if (iconSpan) iconSpan.textContent = 'check';
-
-      setTimeout(() => {
-        if (textSpan) textSpan.textContent = origText;
-        if (iconSpan) iconSpan.textContent = origIcon;
-      }, 1500);
-    }
+    this.drawerView.handleExportDownload();
   }
 
   private handleMarkAllSatisfied(): void {
-    const chapterKey = TranslationStorage.normalizeKey();
-    TranslationStorage.markAllSatisfied(chapterKey, this.paragraphs);
-
-    const dockContent = document.getElementById('trans-sidebar-content');
-    if (dockContent) {
-      for (const unit of this.paragraphs) {
-        if (unit.translatedText && unit.status === 'done') {
-          const card = dockContent.querySelector<HTMLElement>(`[data-trans-card-id="${unit.id}"]`);
-          if (card) {
-            card.classList.add('is-satisfied');
-            const satisfyBtn = card.querySelector<HTMLButtonElement>('.trans-card-satisfy-btn');
-            if (satisfyBtn) {
-              satisfyBtn.classList.add('is-satisfied');
-              satisfyBtn.title = '取消采纳';
-              const icon = satisfyBtn.querySelector('md-icon');
-              if (icon) icon.textContent = 'star';
-            }
-            this.updateCardBadges(card, unit);
-          }
-        }
-      }
-    }
-
-    this.updateSatisfiedCountBadge();
-
-    const btn = document.getElementById('trans-export-approve-all');
-    if (btn) {
-      const orig = btn.textContent;
-      btn.textContent = '已全部采纳';
-      setTimeout(() => {
-        btn.textContent = orig;
-      }, 1500);
-    }
+    this.drawerView.handleMarkAllSatisfied();
   }
 
-
   private toggleKeyVisibility(): void {
-    const input = document.getElementById('trans-api-key-input') as HTMLInputElement | null;
-    const eyeBtn = document.getElementById('trans-key-toggle-eye');
-    const eyeIcon = eyeBtn?.querySelector('md-icon');
-    if (!input || !eyeIcon) return;
-
-    if (input.type === 'password') {
-      input.type = 'text';
-      eyeIcon.textContent = 'visibility_off';
-      eyeBtn?.setAttribute('title', '隐藏密钥');
-    } else {
-      input.type = 'password';
-      eyeIcon.textContent = 'visibility';
-      eyeBtn?.setAttribute('title', '显示密钥');
-    }
+    this.drawerView.toggleKeyVisibility();
   }
 
   private syncSettingsDrawerUI(): void {
-    const drawer = document.getElementById('trans-settings-drawer');
-    if (!drawer) return;
-
-    const providerNameEl = document.getElementById('trans-settings-provider-name');
-    const keyInput = document.getElementById('trans-api-key-input') as HTMLInputElement | null;
-    const badgeEl = document.getElementById('trans-key-status-badge');
-    const tipEl = document.getElementById('trans-settings-tip');
-    const alertEl = document.getElementById('trans-settings-alert');
-    const saveBtn = document.getElementById('trans-settings-save') as HTMLButtonElement | null;
-    const clearBtn = document.getElementById('trans-settings-clear') as HTMLButtonElement | null;
-
-    if (alertEl) {
-      alertEl.style.display = 'none';
-      alertEl.textContent = '';
-      alertEl.className = 'trans-settings-alert';
-    }
-
-    if (this.currentProvider === 'google') {
-      if (providerNameEl) providerNameEl.textContent = 'Google 翻译 (公共免密钥)';
-      if (keyInput) {
-        keyInput.value = '';
-        keyInput.placeholder = 'Google 翻译无需配置 API Key';
-        keyInput.disabled = true;
-      }
-      if (badgeEl) {
-        badgeEl.textContent = '无需密钥';
-        badgeEl.className = 'trans-key-status-badge';
-      }
-      if (tipEl) {
-        tipEl.textContent = 'Google 翻译为公共免费接口，无需任何配置，即开即用。';
-      }
-      if (saveBtn) saveBtn.disabled = true;
-      if (clearBtn) clearBtn.disabled = true;
-      return;
-    }
-
-    if (saveBtn) saveBtn.disabled = false;
-    if (clearBtn) clearBtn.disabled = false;
-    if (keyInput) keyInput.disabled = false;
-
-    if (this.currentProvider === 'bupt') {
-      if (providerNameEl) providerNameEl.textContent = 'DeepSeek (北京邮电大学)';
-      const currentKey = getProviderApiKey('bupt') || (typeof localStorage !== 'undefined' ? localStorage.getItem('astrolib_ai_provider_key_bupt') || '' : '');
-      if (keyInput && document.activeElement !== keyInput) {
-        keyInput.value = currentKey;
-        keyInput.placeholder = 'sk-bupt-... 或 sk-...';
-      }
-      if (badgeEl) {
-        const hasKey = Boolean(currentKey.trim());
-        badgeEl.textContent = hasKey ? '已配置 (本地)' : '默认配置';
-        badgeEl.className = `trans-key-status-badge ${hasKey ? 'is-configured' : ''}`;
-      }
-      if (tipEl) {
-        tipEl.textContent = '北京邮电大学「人人有算力」校内模型服务网关。若留空，将自动使用服务端默认配置 (.env)。';
-      }
-      if (keyInput) {
-        this.handleKeyInput(keyInput.value);
-      }
-    } else if (this.currentProvider === 'gemini') {
-      if (providerNameEl) providerNameEl.textContent = 'Google Gemini (学术推理)';
-      const currentKey = getProviderApiKey('gemini') || (typeof localStorage !== 'undefined' ? localStorage.getItem('astrolib_ai_provider_key_gemini') || '' : '');
-      if (keyInput && document.activeElement !== keyInput) {
-        keyInput.value = currentKey;
-        keyInput.placeholder = 'AIzaSy... (留空使用默认)';
-      }
-      if (badgeEl) {
-        const hasKey = Boolean(currentKey.trim());
-        badgeEl.textContent = hasKey ? '已配置 (本地)' : '默认配置';
-        badgeEl.className = `trans-key-status-badge ${hasKey ? 'is-configured' : ''}`;
-      }
-      if (tipEl) {
-        tipEl.textContent = 'Google Gemini 官方学术与理科推理模型。若留空，将自动使用服务端默认配置 (.env)。';
-      }
-      if (keyInput) {
-        this.handleKeyInput(keyInput.value);
-      }
-    } else if (this.currentProvider === 'zhipu') {
-      if (providerNameEl) providerNameEl.textContent = '智谱开放平台 (GLM-4-Flash 免费)';
-      const currentKey = getProviderApiKey('zhipu') || (typeof localStorage !== 'undefined' ? localStorage.getItem('astrolib_ai_provider_key_zhipu') || '' : '');
-      if (keyInput && document.activeElement !== keyInput) {
-        keyInput.value = currentKey;
-        keyInput.placeholder = '请填写智谱 API Key (例如: xxxxxxxxx.yyyyyyyyy)';
-      }
-      if (badgeEl) {
-        const hasKey = Boolean(currentKey.trim());
-        badgeEl.textContent = hasKey ? '已配置 (本地)' : '未配置';
-        badgeEl.className = `trans-key-status-badge ${hasKey ? 'is-configured' : ''}`;
-      }
-      if (tipEl) {
-        tipEl.textContent = '智谱开放平台 GLM-4-Flash 为永久免费模型，请前往 open.bigmodel.cn 复制 API Key。若配置在服务端的 .env (ZHIPU_API_KEY)，此处可留空。';
-      }
-      if (keyInput) {
-        this.handleKeyInput(keyInput.value);
-      }
-    }
+    this.drawerView.syncSettingsDrawerUI();
   }
 
   private handleKeyInput(val: string): void {
-    const alertEl = document.getElementById('trans-settings-alert');
-    if (!alertEl) return;
-
-    const trimmed = val.trim();
-    if (!trimmed) {
-      alertEl.style.display = 'none';
-      alertEl.textContent = '';
-      return;
-    }
-
-    if (this.currentProvider === 'bupt') {
-      if (trimmed.startsWith('ghp_')) {
-        alertEl.style.display = 'block';
-        alertEl.className = 'trans-settings-alert';
-        alertEl.textContent = '❌ 检测到 GitHub 访问令牌 (ghp_...)！北邮网关无法使用此密钥，请填写以 sk- 开头的密钥或点击「清空密钥」恢复默认。';
-        return;
-      }
-      if (!trimmed.startsWith('sk-')) {
-        alertEl.style.display = 'block';
-        alertEl.className = 'trans-settings-alert is-warning';
-        alertEl.textContent = '⚠️ 北邮 LiteLLM 网关密钥通常以 sk- 开头，请确认密钥格式正确。';
-        return;
-      }
-    } else if (this.currentProvider === 'gemini') {
-      if (!trimmed.startsWith('AIzaSy')) {
-        alertEl.style.display = 'block';
-        alertEl.className = 'trans-settings-alert is-warning';
-        alertEl.textContent = '提示：Google Gemini 官方密钥通常以 AIzaSy 开头。';
-        return;
-      }
-    } else if (this.currentProvider === 'zhipu') {
-      if (trimmed.startsWith('ghp_')) {
-        alertEl.style.display = 'block';
-        alertEl.className = 'trans-settings-alert';
-        alertEl.textContent = '❌ 检测到 GitHub 访问令牌 (ghp_...)！智谱开放平台无法使用此密钥，请前往 open.bigmodel.cn 获取 API Key。';
-        return;
-      }
-    }
-
-    alertEl.style.display = 'none';
-    alertEl.textContent = '';
+    this.drawerView.handleKeyInput(val);
   }
 
   private handleSaveKey(): void {
-    if (this.currentProvider === 'google') return;
-    const input = document.getElementById('trans-api-key-input') as HTMLInputElement | null;
-    const saveBtn = document.getElementById('trans-settings-save');
-    const alertEl = document.getElementById('trans-settings-alert');
-    if (!input) return;
-
-    const key = input.value.trim();
-
-    // 格式阻止拦截：例如误粘了 GitHub Token
-    if ((this.currentProvider === 'bupt' || this.currentProvider === 'zhipu') && key && key.startsWith('ghp_')) {
-      if (alertEl) {
-        alertEl.style.display = 'block';
-        alertEl.className = 'trans-settings-alert';
-        alertEl.textContent = '❌ 无法保存：检测到 GitHub 令牌 (ghp_...)，请填写对应大模型服务商的有效 API Key。';
-      }
-      return;
-    }
-
-    saveProviderApiKey(this.currentProvider, key);
-
-    // 按钮反馈动效
-    if (saveBtn) {
-      const textSpan = saveBtn.querySelector('.trans-btn-text');
-      const iconSpan = saveBtn.querySelector('.trans-btn-icon');
-      const origText = textSpan?.textContent || '保存并应用';
-      const origIcon = iconSpan?.textContent || 'save';
-      if (textSpan) textSpan.textContent = '已保存';
-      if (iconSpan) iconSpan.textContent = 'check';
-
-      setTimeout(() => {
-        if (textSpan) textSpan.textContent = origText;
-        if (iconSpan) iconSpan.textContent = origIcon;
-      }, 1500);
-    }
-
-    this.syncSettingsDrawerUI();
-
-    // 立即重新触发翻译以应用新密钥
-    this.startTranslation(true);
+    this.drawerView.handleSaveKey();
   }
 
   private handleClearKey(): void {
-    if (this.currentProvider === 'google') return;
-    const input = document.getElementById('trans-api-key-input') as HTMLInputElement | null;
-    if (input) input.value = '';
-
-    saveProviderApiKey(this.currentProvider, '');
-    this.syncSettingsDrawerUI();
-
-    // 重新发起翻译测试默认配置
-    this.startTranslation(true);
+    this.drawerView.handleClearKey();
   }
 
   private openFullAiSettings(): void {
-    window.dispatchEvent(new CustomEvent('astrolib:open-settings', { detail: { tab: 'ai' } }));
+    this.drawerView.openFullAiSettings();
   }
 
   private getEffectiveApiKey(): string | undefined {
-    if (this.currentProvider === 'google') {
-      const key = (getProviderApiKey('google' as any) || (typeof localStorage !== 'undefined' ? localStorage.getItem('astrolib_ai_provider_key_google') || '' : '')).trim();
-      return key && key.startsWith('AIzaSy') ? key : undefined;
-    }
-
-    if (this.currentProvider === 'bupt') {
-      const key = (getProviderApiKey('bupt') || (typeof localStorage !== 'undefined' ? localStorage.getItem('astrolib_ai_provider_key_bupt') || '' : '')).trim();
-      // 只有以 sk- 开头才是合法可用的 BUPT key，过滤掉残余的 ghp_ 等错误 key
-      if (key && key.startsWith('sk-') && !key.startsWith('sk-bupt-...')) {
-        return key;
-      }
-      return undefined;
-    }
-
-    if (this.currentProvider === 'gemini') {
-      const key = (getProviderApiKey('gemini') || (typeof localStorage !== 'undefined' ? localStorage.getItem('astrolib_ai_provider_key_gemini') || '' : '')).trim();
-      if (key && !key.startsWith('AIzaSy...')) {
-        return key;
-      }
-      return undefined;
-    }
-
-    if (this.currentProvider === 'zhipu') {
-      const key = (getProviderApiKey('zhipu') || (typeof localStorage !== 'undefined' ? localStorage.getItem('astrolib_ai_provider_key_zhipu') || '' : '')).trim();
-      if (key && !key.startsWith('ghp_')) {
-        return key;
-      }
-      return undefined;
-    }
-
-    if (this.currentProvider === 'deepseek') {
-      const key = (getProviderApiKey('deepseek') || (typeof localStorage !== 'undefined' ? localStorage.getItem('astrolib_ai_provider_key_deepseek') || '' : '')).trim();
-      if (key && key.startsWith('sk-')) {
-        return key;
-      }
-      return undefined;
-    }
-
-    return undefined;
+    return this.drawerView.getEffectiveApiKey();
   }
 
   private onPanelActivated(): void {
@@ -1817,322 +1461,22 @@ export class TranslationDockController {
   }
 
   public toggleInlineTranslation(): void {
-    if (this.isInlineActive) {
-      this.hideInlineTranslations();
-    } else {
-      this.showInlineTranslations();
-    }
+    this.inlineView.toggleInlineTranslation();
   }
 
   public async showInlineTranslations(forceRefresh = false): Promise<void> {
-    if (this.isTranslating && !forceRefresh) return;
-    if (this.isTranslating && forceRefresh) {
-      if (this.abortController) {
-        this.abortController.abort();
-        this.abortController = null;
-      }
-      this.isTranslating = false;
-    }
-
-    const contentContainer = document.querySelector<HTMLElement>('.sl-markdown-content') || document.querySelector<HTMLElement>('article');
-    if (!contentContainer) return;
-
-    this.isInlineActive = true;
-    this.updateTriggerActiveState(true);
-
-    const chapterKey = TranslationStorage.normalizeKey();
-    const hasTransIds = Boolean(contentContainer.querySelector('[data-trans-id]'));
-
-    // 1. 扫描正文 DOM 提取段落
-    if (this.currentChapterKey !== chapterKey || !hasTransIds || this.paragraphs.length === 0 || forceRefresh) {
-      this.currentChapterKey = chapterKey;
-      this.paragraphs = ParagraphAligner.extractFromArticleDom(contentContainer);
-    }
-    if (this.paragraphs.length === 0) return;
-
-    // 2. 本地持久化缓存回填
-    const { hydratedCount } = TranslationStorage.hydrateUnits(chapterKey, this.paragraphs);
-
-    // 3. 渲染行内控制条与行内对照译文块
-    this.renderInlineToolbar(contentContainer);
-    this.renderInlineBlocks(contentContainer, this.paragraphs);
-
-    if (!forceRefresh && hydratedCount === this.paragraphs.length) {
-      return;
-    }
-
-    this.isTranslating = true;
-    this.abortController = new AbortController();
-    const signal = this.abortController.signal;
-
-    // 4. 分块请求翻译
-    const total = this.paragraphs.length;
-    const CHUNK_SIZE = 4;
-
-    for (let i = 0; i < total; i += CHUNK_SIZE) {
-      if (signal.aborted) break;
-      const chunk = this.paragraphs.slice(i, i + CHUNK_SIZE);
-      await Promise.all(
-        chunk.map(async (unit) => {
-          if (signal.aborted) return;
-
-          // 严格跳过公式块与代码块的翻译
-          if (unit.type === 'math' || unit.type === 'code') {
-            unit.status = 'done';
-            unit.translatedText = unit.sourceText;
-            return;
-          }
-
-          if (!forceRefresh && unit.status === 'done' && unit.translatedText) {
-            this.updateInlineBlockContent(contentContainer, unit);
-            return;
-          }
-
-          try {
-            const res = await this.requestTranslation(unit.sourceText, signal);
-            if (signal.aborted) return;
-
-            if (res.ok && res.translatedText) {
-              unit.translatedText = res.translatedText;
-              unit.status = 'done';
-              unit.provider = this.currentProvider;
-              unit.error = undefined;
-              TranslationStorage.saveUnit(chapterKey, unit);
-            } else {
-              unit.translatedText = unit.sourceText;
-              unit.status = 'error';
-              unit.error = res.error || '翻译失败';
-            }
-          } catch (err: any) {
-            if (signal.aborted) return;
-            unit.translatedText = unit.sourceText;
-            unit.status = 'error';
-            unit.error = err?.message || '网络连接异常';
-          }
-
-          if (signal.aborted) return;
-          this.updateInlineBlockContent(contentContainer, unit);
-        })
-      );
-    }
-
-    const chapterTitle = document.querySelector('h1')?.textContent?.trim() || document.title;
-    TranslationStorage.saveChapter(chapterKey, this.paragraphs, chapterTitle);
-    this.isTranslating = false;
+    return this.inlineView.showInlineTranslations(forceRefresh);
   }
 
   public hideInlineTranslations(): void {
-    if (this.abortController) {
-      this.abortController.abort();
-      this.abortController = null;
-    }
-    this.isTranslating = false;
-    this.isInlineActive = false;
-
-    const contentContainer = document.querySelector<HTMLElement>('.sl-markdown-content') || document.querySelector<HTMLElement>('article');
-    if (contentContainer) {
-      contentContainer.querySelectorAll<HTMLElement>('.trans-inline-block').forEach((el) => el.remove());
-      contentContainer.querySelectorAll<HTMLElement>('.has-trans-inline').forEach((el) => el.classList?.remove('has-trans-inline'));
-      const toolbar = contentContainer.querySelector<HTMLElement>('#trans-inline-toolbar');
-      if (toolbar) toolbar.remove();
-    }
-
-    this.updateTriggerActiveState(false);
+    this.inlineView.hideInlineTranslations();
   }
 
-  private renderInlineBlocks(container: HTMLElement, paragraphs: ParagraphUnit[]): void {
-    for (const unit of paragraphs) {
-      // 严格跳过公式与代码块，不注入任何行内翻译结构
-      if (unit.type === 'math' || unit.type === 'code') continue;
-
-      const srcEl = container.querySelector<HTMLElement>(`[data-trans-id="${unit.id}"]`);
-      if (!srcEl) continue;
-
-      let inlineBlock = container.querySelector<HTMLElement>(`[data-trans-inline-id="${unit.id}"]`);
-      if (!inlineBlock) {
-        inlineBlock = document.createElement('div');
-        const isCardTitle =
-          unit.type === 'card-title' ||
-          srcEl.getAttribute?.('data-trans-card-title') === 'true' ||
-          srcEl.classList?.contains('card-header');
-
-        const isTableCell =
-          unit.type === 'table-cell' ||
-          srcEl.tagName === 'TH' ||
-          srcEl.tagName === 'TD' ||
-          srcEl.getAttribute?.('data-trans-kind') === 'table-cell';
-
-        const isInsideAlgorithm = Boolean(srcEl.closest?.('.academic-algorithm, .mineru-algorithm, .algorithm-body'));
-        const isNoIndent = srcEl.classList?.contains('noindent') || isInsideAlgorithm || isTableCell;
-
-        inlineBlock.className = `trans-inline-block ${unit.type === 'heading' ? 'is-heading' : ''} ${isCardTitle ? 'is-card-title' : ''} ${isTableCell ? 'is-table-cell' : ''} ${isNoIndent ? 'is-noindent' : ''} ${isInsideAlgorithm ? 'is-algorithm-item' : ''}`.trim();
-        inlineBlock.setAttribute('data-trans-inline-id', unit.id);
-        inlineBlock.setAttribute('role', 'region');
-        inlineBlock.setAttribute(
-          'aria-label',
-          isCardTitle ? '卡片标题中文译文' : isTableCell ? '表格单元格中文译文' : '段落中文译文'
-        );
-
-        if (isCardTitle || isTableCell) {
-          srcEl.classList?.add('has-trans-inline');
-          srcEl.appendChild(inlineBlock);
-        } else {
-          srcEl.after(inlineBlock);
-          // 若在算法等预格式化块内，清理与下个元素之间多余的纯空行文本节点，避免 pre-wrap 导致巨大空白
-          if (isInsideAlgorithm) {
-            const nextNode = inlineBlock.nextSibling;
-            if (nextNode && nextNode.nodeType === 3 /* TEXT_NODE */ && /^\s+$/.test(nextNode.nodeValue || '')) {
-              nextNode.nodeValue = '';
-            }
-          }
-        }
-      }
-
-      this.updateInlineBlockContent(container, unit, inlineBlock);
-    }
-  }
-
-  private updateInlineBlockContent(container: HTMLElement, unit: ParagraphUnit, targetBlock?: HTMLElement): void {
-    const block = targetBlock || container.querySelector<HTMLElement>(`[data-trans-inline-id="${unit.id}"]`);
-    if (!block) return;
-
-    const isDone = unit.status === 'done';
-    const isError = unit.status === 'error';
-    const isSatisfied = Boolean(unit.isSatisfied);
-
-    if (isError) {
-      const isKeyError = (unit.error || '').includes('Key') || (unit.error || '').includes('密钥') || (unit.error || '').includes('401');
-      const fixKeyBtn = isKeyError ? '<button type="button" class="trans-inline-fix-key-btn">配置密钥</button>' : '';
-      block.innerHTML = `<div class="trans-inline-error"><span class="trans-inline-error-text">⚠️ 翻译未成功 (${this.escapeHtml(unit.error || '请求异常')})</span><button type="button" class="trans-inline-retry-btn">重试</button>${fixKeyBtn}</div>`;
-      block.querySelector('.trans-inline-retry-btn')?.addEventListener('click', (e) => {
-        e.stopPropagation();
-        this.retrySingleUnitInline(block, unit);
-      });
-      block.querySelector('.trans-inline-fix-key-btn')?.addEventListener('click', (e) => {
-        e.stopPropagation();
-        if (this.displayMode === 'sidebar') {
-          this.toggleSettingsDrawer(true);
-        } else {
-          sideloadManager.open('translate');
-          this.toggleSettingsDrawer(true);
-        }
-      });
-      return;
-    }
-
-    const textContent = isDone
-      ? this.escapeHtml((unit.translatedText || unit.sourceText).trim())
-      : '<div class="trans-skeleton-line"></div>';
-
-    const actionsContent = isDone
-      ? `<div class="trans-inline-actions">
-          <button
-            type="button"
-            class="trans-inline-action-btn trans-inline-satisfy-btn ${isSatisfied ? 'is-satisfied' : ''}"
-            title="${isSatisfied ? '取消采纳' : '采纳满意译文'}"
-            aria-label="采纳满意译文"
-          >
-            <md-icon class="trans-inline-icon">${isSatisfied ? 'star' : 'star_border'}</md-icon>
-          </button>
-          <button
-            type="button"
-            class="trans-inline-action-btn trans-inline-copy-btn"
-            title="复制译文"
-            aria-label="复制译文"
-          >
-            <md-icon class="trans-inline-icon">content_copy</md-icon>
-          </button>
-        </div>`
-      : '';
-
-    block.innerHTML = `<div class="trans-inline-inner"><div class="trans-inline-text ${isDone ? '' : 'trans-pulse-text'}">${textContent}</div>${actionsContent}</div>`;
-
-    if (isDone) {
-      const textEl = block.querySelector<HTMLElement>('.trans-inline-text');
-      if (textEl) {
-        renderMathInElementSafely(textEl);
-      }
-
-      const satisfyBtn = block.querySelector<HTMLButtonElement>('.trans-inline-satisfy-btn');
-      satisfyBtn?.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const nextVal = !unit.isSatisfied;
-        unit.isSatisfied = nextVal;
-        TranslationStorage.toggleSatisfied(TranslationStorage.normalizeKey(), unit.id, nextVal);
-        satisfyBtn.classList.toggle('is-satisfied', nextVal);
-        const icon = satisfyBtn.querySelector('md-icon');
-        if (icon) icon.textContent = nextVal ? 'star' : 'star_border';
-        satisfyBtn.title = nextVal ? '取消采纳' : '采纳满意译文';
-        this.updateSatisfiedCountBadge();
-
-        const dockContent = document.getElementById('trans-sidebar-content');
-        if (dockContent) {
-          const card = dockContent.querySelector<HTMLElement>(`[data-trans-card-id="${unit.id}"]`);
-          if (card) {
-            this.handleToggleSatisfied(unit, card);
-          }
-        }
-      });
-
-      const copyBtn = block.querySelector<HTMLButtonElement>('.trans-inline-copy-btn');
-      copyBtn?.addEventListener('click', (e) => {
-        e.stopPropagation();
-        navigator.clipboard.writeText(unit.translatedText || unit.sourceText).then(() => {
-          const icon = copyBtn.querySelector('md-icon');
-          if (icon) {
-            icon.textContent = 'check';
-            setTimeout(() => {
-              icon.textContent = 'content_copy';
-            }, 1500);
-          }
-        });
-      });
-    }
-  }
-
-  private async retrySingleUnitInline(block: HTMLElement, unit: ParagraphUnit): Promise<void> {
-    const textEl = block.querySelector<HTMLElement>('.trans-inline-error');
-    if (textEl) {
-      textEl.innerHTML = '<div class="trans-skeleton-line"></div>';
-    }
-    try {
-      const res = await this.requestTranslation(unit.sourceText);
-      if (res.ok && res.translatedText) {
-        unit.translatedText = res.translatedText;
-        unit.status = 'done';
-        unit.provider = this.currentProvider;
-        unit.error = undefined;
-        TranslationStorage.saveUnit(TranslationStorage.normalizeKey(), unit);
-      } else {
-        unit.status = 'error';
-        unit.error = res.error || '翻译失败';
-      }
-    } catch (err: any) {
-      unit.status = 'error';
-      unit.error = err?.message || '网络连接异常';
-    }
-
-    const container = document.querySelector<HTMLElement>('.sl-markdown-content') || document.querySelector<HTMLElement>('article');
-    if (container) {
-      this.updateInlineBlockContent(container, unit, block);
-    }
-  }
-
-  private updateTriggerActiveState(active: boolean): void {
-    document.querySelectorAll<HTMLElement>('[data-translation-trigger]').forEach((el) => {
-      el.classList.toggle('is-active', active);
-      if (el.tagName.toLowerCase() === 'md-assist-chip') {
-        if (active) {
-          el.setAttribute('selected', '');
-        } else {
-          el.removeAttribute('selected');
-        }
-      }
-    });
+  public syncInlineToolbarUI(): void {
+    this.inlineView.syncInlineToolbarUI();
   }
 
   private getTypeLabel(type: ParagraphUnit['type']): string {
-
     switch (type) {
       case 'heading':
         return '标题';
@@ -2159,56 +1503,6 @@ export class TranslationDockController {
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;');
-  }
-
-  private renderInlineToolbar(container: HTMLElement): void {
-    let toolbar = container.querySelector<HTMLElement>('#trans-inline-toolbar');
-    if (!toolbar) {
-      toolbar = document.createElement('div');
-      toolbar.id = 'trans-inline-toolbar';
-      toolbar.className = 'trans-inline-toolbar';
-      toolbar.setAttribute('role', 'toolbar');
-      toolbar.setAttribute('aria-label', '双语助读控制条');
-      container.prepend(toolbar);
-    }
-
-    const currentP = this.currentProvider;
-    toolbar.innerHTML = `
-      <div class="trans-inline-toolbar-left">
-        <span class="trans-inline-toolbar-title">
-          <svg class="trans-inline-toolbar-icon" viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
-            <path d="M12.87 15.07l-2.54-2.51.03-.03c1.74-1.94 2.98-4.17 3.71-6.53H17V4h-7V2H8v2H1v1.99h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11.76-2.04zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2l-4.5-12zm-2.62 7l1.62-4.33L19.12 17h-3.24z"/>
-          </svg>
-          <span>双语助读</span>
-        </span>
-        <span class="trans-inline-toolbar-sep">/</span>
-        <div class="trans-inline-provider-pills" role="radiogroup" aria-label="选择翻译服务商">
-          <button type="button" class="trans-inline-pill ${currentP === 'google' ? 'is-active' : ''}" data-inline-provider="google" title="Google 翻译 (免密默认)">Google 翻译</button>
-          <button type="button" class="trans-inline-pill ${currentP === 'bupt' ? 'is-active' : ''}" data-inline-provider="bupt" title="北京邮电大学「人人有算力」校内专属服务">北邮校内</button>
-          <button type="button" class="trans-inline-pill ${currentP === 'zhipu' ? 'is-active' : ''}" data-inline-provider="zhipu" title="智谱开放平台 GLM-4-Flash (免费模型)">智谱 GLM-4</button>
-          <button type="button" class="trans-inline-pill ${currentP === 'gemini' ? 'is-active' : ''}" data-inline-provider="gemini" title="Google Gemini 学术翻译">Gemini</button>
-        </div>
-      </div>
-      <div class="trans-inline-toolbar-right">
-        <button type="button" class="trans-inline-toolbar-btn" id="trans-inline-refresh-btn" title="重新翻译全文">
-          <md-icon class="trans-inline-btn-icon">refresh</md-icon>
-          <span>重新翻译</span>
-        </button>
-        <button type="button" class="trans-inline-toolbar-btn trans-inline-close-btn" id="trans-inline-exit-btn" title="退出双语助读模式">
-          <md-icon class="trans-inline-btn-icon">close</md-icon>
-          <span>退出助读</span>
-        </button>
-      </div>
-    `;
-  }
-
-  public syncInlineToolbarUI(): void {
-    const toolbar = document.getElementById('trans-inline-toolbar');
-    if (!toolbar) return;
-    toolbar.querySelectorAll<HTMLButtonElement>('[data-inline-provider]').forEach((btn) => {
-      const p = btn.getAttribute('data-inline-provider');
-      btn.classList.toggle('is-active', p === this.currentProvider);
-    });
   }
 }
 

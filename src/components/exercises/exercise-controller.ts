@@ -1,7 +1,5 @@
-import { streamChat } from '../../ai/llm.mjs';
 import renderMathInElement from 'katex/dist/contrib/auto-render.mjs';
-import { StreamThrottleScheduler } from './stream-scheduler';
-import { exerciseDb, type CommunityAiSolution, type ExerciseFeedbackPayload } from '../../utils/exercise-db/exercise-db-client';
+import { exerciseDb } from '../../utils/exercise-db/exercise-db-client';
 import type {
   SlimQuestionItem,
   ChapterData,
@@ -13,20 +11,19 @@ import type {
 } from '../../types/exercises';
 
 import { ExerciseExportPipeline } from './exercise-export-pipeline';
+import { ExerciseSubmodalsManager } from './exercise-submodals';
+import { ExerciseAiFlowManager } from './exercise-ai-flow';
 import {
-  getEffectiveAiClientConfig,
-  saveAiApiKey,
-  getActiveAiModel,
-  onAiConfigChange,
-  getAiProvider,
-  saveAiActiveProvider,
-  saveProviderApiKey,
-  type AiProviderId,
-} from '../../ai/ai-config';
-import { parseAiError } from '../../ai/error-handler';
+  renderSingleCardHtml,
+  renderSolutionBoxContent,
+  renderHintsBoxContent,
+  esc,
+} from './exercise-view-renderer';
+import { ExerciseStateMachine, type UserPracticeRecord } from './exercise-controller.state';
+import { onAiConfigChange, type AiProviderId } from '../../ai/ai-config';
 import { createM3LoadingHtml } from '../common/m3-loading-helper';
 
-function sanitizeLatexString(val: string): string {
+export function sanitizeLatexString(val: string): string {
   if (typeof val !== 'string') return '';
   let str = val;
   str = str.replace(/\x0c/g, '\\f');
@@ -44,7 +41,7 @@ function sanitizeLatexString(val: string): string {
   return str;
 }
 
-function sanitizeLatexValue(val: any): any {
+export function sanitizeLatexValue(val: any): any {
   if (typeof val === 'string') {
     return sanitizeLatexString(val);
   } else if (Array.isArray(val)) {
@@ -69,16 +66,8 @@ export type {
   QuestionOption,
   SubQuestion,
   ChapterSectionSummary,
+  UserPracticeRecord,
 };
-
-interface UserPracticeRecord {
-  answered: boolean;
-  userChoice?: string;
-  userBlank?: string;
-  isCorrect?: boolean;
-  mastered?: boolean;
-  revealedSolution?: boolean;
-}
 
 const PAGE_SIZE = 15;
 
@@ -101,9 +90,40 @@ class ExerciseCenterController {
   private modeTabs: NodeListOf<HTMLButtonElement> | null = null;
   private toastBox: HTMLElement | null = null;
 
-  private feedbackModal: HTMLElement | null = null;
-  private sourceEditorModal: HTMLElement | null = null;
-  private aiUploadModal: HTMLElement | null = null;
+  private stateMachine = new ExerciseStateMachine();
+  private aiFlow = new ExerciseAiFlowManager({
+    getBodyContainer: () => this.bodyContainer,
+    getQuestion: (qid) => this.currentFilteredQuestions.find((item) => item.id === qid),
+    showToast: (msg) => this.showToast(msg),
+    closeModal: () => this.close(),
+    esc: (s) => esc(s),
+  });
+
+  private submodalsManager = new ExerciseSubmodalsManager({
+    getQuestion: (qid) => this.currentFilteredQuestions.find((item) => item.id === qid),
+    showToast: (msg) => this.showToast(msg),
+    getAiSolution: (qid) => this.aiFlow.getAiSolution(qid),
+    onSourceSaved: (activeEditorQuestion, parsedData) => {
+      this.chapterCache.delete(activeEditorQuestion.chapter);
+      this.paperCache.delete(activeEditorQuestion.paper_id);
+      this.allQuestionsCache = [];
+      if (parsedData.content?.stem) activeEditorQuestion.stem_raw = parsedData.content.stem;
+      if (parsedData.solution?.answer) activeEditorQuestion.answer = parsedData.solution.answer;
+      if (parsedData.meta?.type) activeEditorQuestion.type = parsedData.meta.type;
+      if (this.currentMode === 'practice') {
+        this.loadChapter(this.currentChapter);
+      } else if (this.currentMode === 'paper') {
+        this.loadPaper(this.currentPaperId);
+      } else {
+        this.filterAndRender();
+      }
+    },
+    onAiSolutionUploaded: (qid, data) => {
+      this.aiFlow.addCommunitySolution(qid, data);
+    },
+    sanitizeLatexValue: (val) => sanitizeLatexValue(val),
+  });
+
   private exportPipeline = new ExerciseExportPipeline({
     getCurrentMode: () => this.currentMode,
     getCurrentChapter: () => this.currentChapter,
@@ -149,18 +169,8 @@ class ExerciseCenterController {
   private allQuestionsCache: SlimQuestionItem[] = [];
   private isLoading = false;
 
-  private communitySolutions = new Map<string, CommunityAiSolution[]>();
-  private activeSolutionVersions = new Map<string, string>();
   private practiceRecords = new Map<string, UserPracticeRecord>();
 
-  private aiSolutions = new Map<string, string>();
-  private aiControllers = new Map<string, AbortController>();
-  private aiStreamActive = new Set<string>();
-  private aiSchedulers = new Map<string, StreamThrottleScheduler>();
-
-  private activeFeedbackQuestion: SlimQuestionItem | null = null;
-  private activeEditorQuestion: SlimQuestionItem | null = null;
-  private activeUploadQuestionId: string = '';
   private scopeToggleBtn: HTMLElement | null = null;
 
   constructor() {
@@ -209,9 +219,7 @@ class ExerciseCenterController {
       this.modeTabs = this.root.querySelectorAll('.ex-mode-tab');
       this.toastBox = this.root.querySelector('#ex-toast-box');
 
-      this.feedbackModal = this.root.querySelector('#ex-feedback-modal');
-      this.sourceEditorModal = this.root.querySelector('#ex-source-editor-modal');
-      this.aiUploadModal = this.root.querySelector('#ex-ai-upload-modal');
+      this.submodalsManager.initElements(this.root);
       this.exportPipeline.initElements(this.root);
 
       this.totalStatEl = this.root.querySelector('.ex-stat-total');
@@ -239,7 +247,7 @@ class ExerciseCenterController {
           const card = badge.closest('.ex-q-card');
           const qid = card?.getAttribute('data-qid');
           if (qid) {
-            const activeVer = this.activeSolutionVersions.get(qid) || 'local';
+            const activeVer = this.aiFlow.getActiveSolutionVersion(qid);
             if (activeVer === 'local') {
               badge.textContent = cfg.label;
             }
@@ -312,18 +320,11 @@ class ExerciseCenterController {
   }
 
   private isSubmodalOpen(): boolean {
-    return (
-      (this.feedbackModal && !this.feedbackModal.classList.contains('hidden')) ||
-      (this.sourceEditorModal && !this.sourceEditorModal.classList.contains('hidden')) ||
-      (this.aiUploadModal && !this.aiUploadModal.classList.contains('hidden')) ||
-      this.exportPipeline.isModalOpen()
-    );
+    return this.submodalsManager.isSubmodalOpen() || this.exportPipeline.isModalOpen();
   }
 
   private closeAllSubmodals() {
-    this.feedbackModal?.classList.add('hidden');
-    this.sourceEditorModal?.classList.add('hidden');
-    this.aiUploadModal?.classList.add('hidden');
+    this.submodalsManager.closeAllSubmodals();
     this.exportPipeline.closeLatexModal();
   }
 
@@ -512,8 +513,6 @@ class ExerciseCenterController {
     if (this.bodyContainer) {
       this.bindBodyDelegatedInteractions(this.bodyContainer);
     }
-
-    this.bindSubmodalEvents();
   }
 
   private switchMode(mode: 'practice' | 'paper') {
@@ -717,6 +716,7 @@ class ExerciseCenterController {
     this.root.classList.remove('is-open');
     document.body.style.overflow = '';
     this.closeAllSubmodals();
+    this.aiFlow.destroy();
     this.allQuestionsCache = [];
     this.trimChapterCache(2);
     this.trimPaperCache(2);
@@ -1158,300 +1158,28 @@ class ExerciseCenterController {
 
   private renderSingleCardHtml(q: SlimQuestionItem, idx: number): string {
     const qid = q.id;
-    const qType = q.type;
-    const typeLabel = qType === 'choice' ? '单选' : qType === 'blank' ? '填空' : qType === 'proof' ? '证明' : '解答';
     const record = this.practiceRecords.get(qid) || { answered: false };
-    const secSlug = q.sec_slug || '';
-    const knowledgePoints = q.kps || [];
-    const hasLocalAiSolution = this.aiSolutions.has(qid);
-    const paperQNum = q.paper_q_num || (idx + 1);
-
-    const activeVer = this.activeSolutionVersions.get(qid) || 'local';
-    const communityList = this.communitySolutions.get(qid) || [];
+    const hasLocalAiSolution = this.aiFlow.hasAiSolution(qid);
+    const activeVer = this.aiFlow.getActiveSolutionVersion(qid);
+    const communityList = this.aiFlow.getCommunitySolutions(qid);
     let currentSolutionMd = '';
 
     if (activeVer === 'local') {
-      currentSolutionMd = this.aiSolutions.get(qid) || '';
+      currentSolutionMd = this.aiFlow.getAiSolution(qid);
     } else {
       const match = communityList.find((s) => s.id === activeVer);
       if (match) currentSolutionMd = match.solution_md;
     }
 
-    const hasAnySolution = Boolean(currentSolutionMd) || hasLocalAiSolution;
-    const aiSolutionHtml = currentSolutionMd
-      ? renderSolutionMarkdown(currentSolutionMd, false)
-      : '<div class="ex-ai-placeholder">点击下方「问 AI 题解」获取本题规范推导与考点解析...</div>';
-
-    return `
-      <div class="ex-q-card" id="q-card-${qid}" data-qid="${qid}" data-type="${qType}" data-answer="${this.esc(q.answer)}">
-        <div class="ex-q-header">
-          <div class="ex-q-meta-left">
-            <span class="ex-q-num">第 ${idx + 1} 题</span>
-            <span class="ex-q-type-label">· ${typeLabel}</span>
-            ${q.source_type === 'textbook'
-              ? `<span class="ex-q-source-badge textbook">教材 · ${q.group || 'A'}组</span>`
-              : `<span class="ex-q-source-badge exam" title="来源：《大邮数学集》（CC BY-NC-SA 4.0）">真题自测</span>`}
-          </div>
-          <div class="ex-q-meta-right">
-            <button type="button" class="ex-text-link-btn" data-action="open-feedback" data-qid="${qid}" title="向开发团队报告题干/公式/答案错误">
-              <md-icon class="ex-meta-mdicon">flag</md-icon>
-              <span>报错</span>
-            </button>
-            <button type="button" class="ex-text-link-btn" data-action="open-source-editor" data-qid="${qid}" title="查看或直接修改题目 JSON/LaTeX 源码 (Dev-Only)">
-              <md-icon class="ex-meta-mdicon">code</md-icon>
-              <span>源码</span>
-            </button>
-          </div>
-        </div>
-
-        <div class="ex-q-stem">
-          ${q.stem_html}
-        </div>
-
-        <div class="ex-interactive-wrap">
-          ${this.renderInteractiveArea(q, record)}
-        </div>
-
-        <div class="ex-q-source-row">
-          <button type="button" class="ex-source-link" data-action="jump-to-paper" data-paper-id="${q.paper_id}" data-qid="${qid}" title="点击秒切至该试卷【${this.esc(q.paper_title)}】查看整卷所有题目">
-            <span>${this.esc(q.source || `${q.paper_title} · 原卷第 ${paperQNum} 题`)}</span>
-          </button>
-          ${secSlug ? `<span class="ex-source-sec">· ${secSlug}</span>` : ''}
-        </div>
-
-        <div class="ex-card-actions">
-          <div class="ex-left-actions">
-            ${
-              qType !== 'choice' && qType !== 'blank'
-                ? `<button type="button" class="ex-action-btn ex-toggle-steps-btn ${record.revealedSolution ? 'active' : ''}" data-action="toggle-steps" data-qid="${qid}">
-                    <md-icon class="ex-btn-mdicon">${record.revealedSolution ? 'visibility_off' : 'visibility'}</md-icon>
-                    <span>${record.revealedSolution ? '收起解析' : '查看解析'}</span>
-                  </button>`
-                : ''
-            }
-            <button type="button" class="ex-action-btn ex-toggle-hints-btn" data-action="toggle-hints" data-qid="${qid}">
-              <md-icon class="ex-btn-mdicon">lightbulb</md-icon>
-              <span>思路与考点</span>
-            </button>
-          </div>
-          <div class="ex-right-actions">
-            <button type="button" class="ex-action-btn ex-ask-ai-btn" data-action="ask-ai" data-qid="${qid}" title="在此题下方生成或查看 AI 规范推导">
-              <md-icon class="ex-btn-mdicon">auto_awesome</md-icon>
-              <span>问 AI 题解</span>
-            </button>
-          </div>
-        </div>
-
-        <div class="ex-hints-box hidden" id="hints-${qid}"></div>
-
-        <div class="ex-solution-box ${record.answered || record.revealedSolution ? '' : 'hidden'}" id="sol-${qid}">
-          ${(record.answered || record.revealedSolution) ? this.renderSolutionBoxContent(q) : ''}
-        </div>
-
-        <div class="ex-ai-box ${hasAnySolution ? '' : 'hidden'}" id="ai-box-${qid}">
-          <div class="ex-ai-header">
-            <div class="ex-ai-title">
-              <span>AI 规范推导</span>
-              <span class="ex-ai-model-badge" id="ai-model-${qid}">${this.getAiModelLabel(qid, activeVer)}</span>
-              <span class="ex-ai-status" id="ai-status-${qid}">${hasAnySolution ? '推导就绪' : ''}</span>
-            </div>
-            <div class="ex-ai-tools">
-              <button type="button" class="ex-ai-tool-btn ex-ai-chat-btn" data-action="bridge-ai-chat" data-qid="${qid}" title="携带本题完整题干转入全局 AI 学术助手进行连续深度问答">
-                <md-icon class="ex-ai-tool-icon">forum</md-icon>
-                <span>转入对话</span>
-              </button>
-              <button type="button" class="ex-ai-tool-btn ex-ai-settings-btn" data-action="open-ai-settings" data-qid="${qid}" title="打开全局 AI 模型与网络设置面板">
-                <md-icon class="ex-ai-tool-icon">settings</md-icon>
-                <span>设置</span>
-              </button>
-              <button type="button" class="ex-ai-tool-btn ex-ai-copy-btn ${hasAnySolution ? '' : 'hidden'}" data-action="copy-ai" data-qid="${qid}" title="复制 LaTeX / Markdown 题解">
-                <span>复制</span>
-              </button>
-              <button type="button" class="ex-ai-tool-btn ex-ai-upload-btn" data-action="open-ai-upload" data-qid="${qid}" title="将我自己生成的 AI 题解上传到统一数据库共享给全网读者">
-                <span>分享</span>
-              </button>
-              <button type="button" class="ex-ai-tool-btn ex-ai-retry-btn ${hasAnySolution ? '' : 'hidden'}" data-action="retry-ai" data-qid="${qid}" title="重新生成规范推导">
-                <span>重算</span>
-              </button>
-              <button type="button" class="ex-ai-tool-btn ex-ai-stop-btn hidden" data-action="stop-ai" data-qid="${qid}" title="停止生成">
-                <span>停止</span>
-              </button>
-              <button type="button" class="ex-ai-tool-btn ex-ai-toggle-btn" data-action="toggle-ai-box" data-qid="${qid}" title="收起/展开">
-                <md-icon class="ex-ai-chevron">expand_less</md-icon>
-              </button>
-            </div>
-          </div>
-
-          <div class="ex-ai-versions-bar" id="ai-versions-${qid}">
-            ${this.renderAiVersionsBarHtml(qid, activeVer, communityList)}
-          </div>
-
-          <div class="ex-ai-content" id="ai-content-${qid}">
-            ${aiSolutionHtml}
-          </div>
-
-          ${this.renderAiKeyConfigCardHtml(qid)}
-        </div>
-      </div>
-    `;
-  }
-
-  private renderAiVersionsBarHtml(qid: string, activeVer: string, communityList: CommunityAiSolution[]): string {
-    let pillsHtml = `
-      <button type="button" class="ex-ai-ver-tab ${activeVer === 'local' ? 'active' : ''}" data-action="switch-ai-ver" data-qid="${qid}" data-ver="local">
-        <span>本地实时推导</span>
-      </button>
-    `;
-
-    communityList.forEach((sol) => {
-      const isActive = activeVer === sol.id;
-      const isUpvoted = exerciseDb.isUpvoted(sol.id);
-      pillsHtml += `
-        <div class="ex-ai-ver-item ${isActive ? 'active' : ''}">
-          <button type="button" class="ex-ai-ver-tab ${isActive ? 'active' : ''}" data-action="switch-ai-ver" data-qid="${qid}" data-ver="${sol.id}">
-            <span>${this.esc(sol.model_name)}</span>
-            <span class="ex-ver-author">by ${this.esc(sol.author_name)}</span>
-          </button>
-          <button type="button" class="ex-ai-upvote-btn ${isUpvoted ? 'upvoted' : ''}" data-action="upvote-sol" data-sol-id="${sol.id}" data-qid="${qid}" title="点赞支持此题解">
-            <md-icon class="ex-upvote-mdicon">thumb_up</md-icon>
-            <span class="ex-upvote-count">${sol.upvotes || 0}</span>
-          </button>
-        </div>
-      `;
+    return renderSingleCardHtml({
+      q,
+      idx,
+      record,
+      activeVer,
+      communityList,
+      currentSolutionMd,
+      hasLocalAiSolution,
     });
-
-    return pillsHtml;
-  }
-
-  private getAiModelLabel(qid: string, activeVer: string): string {
-    if (activeVer !== 'local') {
-      const list = this.communitySolutions.get(qid) || [];
-      const match = list.find((s) => s.id === activeVer);
-      if (match) return match.model_name;
-    }
-    return getActiveAiModel().label;
-  }
-
-  private renderAiKeyConfigCardHtml(qid: string): string {
-    const activeProvider = getAiProvider();
-    const providers: { id: AiProviderId; label: string }[] = [
-      { id: 'deepseek', label: 'DeepSeek (推荐·免翻)' },
-      { id: 'gemini', label: 'Google Gemini' },
-      { id: 'bupt', label: '北邮校内算力' },
-      { id: 'custom', label: '自定义/反代' },
-    ];
-
-    let placeholder = '输入 API Key (sk-...)';
-    if (activeProvider.id === 'gemini') {
-      placeholder = '输入 Gemini API Key (AIzaSy...)';
-    } else if (activeProvider.id === 'bupt') {
-      placeholder = '输入北邮校内 API Key (sk-...)';
-    }
-
-    const showGeminiNotice = activeProvider.id === 'gemini';
-
-    return `
-      <div class="ex-ai-key-config hidden" id="ai-key-config-${qid}">
-        <div class="ex-ai-key-prompt-card">
-          <div class="ex-ai-key-header">
-            <div class="ex-ai-key-title">
-              <md-icon class="ex-key-mdicon">vpn_key</md-icon>
-              <span>未配置 API Key · 请选择服务商并填写密钥</span>
-            </div>
-            <button type="button" class="ex-ai-key-settings-shortcut" data-action="open-ai-settings" title="打开全局高级模型与代理设置">
-              <md-icon class="ex-shortcut-mdicon">settings</md-icon>
-              <span>高级设置</span>
-            </button>
-          </div>
-
-          <div class="ex-provider-chips-row">
-            <span class="ex-provider-label">服务商：</span>
-            <div class="ex-provider-chips">
-              ${providers
-                .map(
-                  (p) => `
-                <button type="button" class="ex-provider-chip ${activeProvider.id === p.id ? 'active' : ''}" data-action="switch-provider-quick" data-provider="${p.id}" data-qid="${qid}">
-                  <span>${p.label}</span>
-                </button>
-              `
-                )
-                .join('')}
-            </div>
-          </div>
-
-          <div class="ex-ai-key-input-row">
-            <input type="password" class="ex-ai-key-input" placeholder="${placeholder}" autocomplete="off" />
-            <button type="button" class="ex-ai-key-save-btn" data-action="save-ai-key" data-qid="${qid}">
-              <span>保存并开始推导</span>
-            </button>
-          </div>
-
-          ${
-            showGeminiNotice
-              ? `<div class="ex-ai-net-notice">
-                  <md-icon class="ex-notice-mdicon">info</md-icon>
-                  <span>Google Gemini 官方端点在大陆网络直连可能因防火墙拦截导致超时。若无可用网络代理，建议上方快速切换为 <strong>DeepSeek</strong> 或 <strong>北邮算力</strong>。</span>
-                </div>`
-              : ''
-          }
-
-          <div class="ex-ai-key-footnote">
-            <span>密钥仅保存在本机浏览器本地（localStorage），不会上传至任何第三方服务器。</span>
-          </div>
-        </div>
-      </div>
-    `;
-  }
-
-  private renderInteractiveArea(q: SlimQuestionItem, record: UserPracticeRecord): string {
-    const qid = q.id;
-    const qType = q.type;
-
-    if (qType === 'choice' && q.options && q.options.length > 0) {
-      return `
-        <div class="ex-options-grid" data-qid="${qid}">
-          ${q.options
-            .map((opt) => {
-              const optKey = opt.key;
-              const isSelected = record.userChoice === optKey;
-              let stateClass = '';
-              if (record.answered) {
-                if (optKey === q.answer) {
-                  stateClass = 'is-correct';
-                } else if (isSelected) {
-                  stateClass = 'is-wrong';
-                }
-              }
-              return `
-                <button type="button" class="ex-option-btn ${stateClass} ${isSelected ? 'is-selected' : ''}" data-action="select-option" data-qid="${qid}" data-key="${optKey}">
-                  <span class="ex-option-key">${optKey}</span>
-                  <span class="ex-option-text">${opt.text_html || opt.text_raw}</span>
-                </button>
-              `;
-            })
-            .join('')}
-        </div>
-      `;
-    }
-
-    if (qType === 'blank') {
-      const userVal = record.userBlank || '';
-      const isAnswered = record.answered;
-      let stateClass = '';
-      if (isAnswered) {
-        stateClass = record.isCorrect ? 'is-correct' : 'is-wrong';
-      }
-      return `
-        <div class="ex-blank-wrap ${stateClass}" data-qid="${qid}">
-          <input type="text" class="ex-blank-input" placeholder="输入填空计算结果 (支持 LaTeX 公式)..." value="${this.esc(userVal)}" ${isAnswered ? 'readonly' : ''} />
-          <button type="button" class="ex-blank-check-btn" data-action="check-blank" data-qid="${qid}">
-            ${isAnswered ? (record.isCorrect ? '正确' : '重做') : '核对答案'}
-          </button>
-        </div>
-      `;
-    }
-
-    return '';
   }
 
   private bindBodyDelegatedInteractions(body: HTMLElement) {
@@ -1471,29 +1199,29 @@ class ExerciseCenterController {
         }
 
         if (action === 'open-feedback') {
-          this.openFeedbackModal(qid);
+          this.submodalsManager.openFeedbackModal(qid);
           return;
         }
 
         if (action === 'open-source-editor') {
-          this.openSourceEditorModal(qid);
+          this.submodalsManager.openSourceEditorModal(qid);
           return;
         }
 
         if (action === 'open-ai-upload') {
-          this.openAiUploadModal(qid);
+          this.submodalsManager.openAiUploadModal(qid);
           return;
         }
 
         if (action === 'switch-ai-ver') {
           const ver = btn.getAttribute('data-ver') || 'local';
-          this.switchAiVersion(qid, ver);
+          this.aiFlow.switchAiVersion(qid, ver);
           return;
         }
 
         if (action === 'upvote-sol') {
           const solId = btn.getAttribute('data-sol-id') || '';
-          this.upvoteSolution(qid, solId);
+          this.aiFlow.upvoteSolution(qid, solId);
           return;
         }
 
@@ -1524,61 +1252,50 @@ class ExerciseCenterController {
         }
 
         if (action === 'ask-ai') {
-          this.handleAskAi(qid);
+          this.aiFlow.handleAskAi(qid);
           return;
         }
 
         if (action === 'retry-ai') {
-          this.handleAskAi(qid, true);
+          this.aiFlow.handleAskAi(qid, true);
           return;
         }
 
         if (action === 'stop-ai') {
-          this.stopAiStream(qid);
+          this.aiFlow.stopAiStream(qid);
           return;
         }
 
         if (action === 'copy-ai') {
-          this.copyAiSolution(qid);
+          this.aiFlow.copyAiSolution(qid);
           return;
         }
 
         if (action === 'toggle-ai-box') {
-          this.toggleAiBox(qid);
+          this.aiFlow.toggleAiBox(qid);
           return;
         }
 
         if (action === 'open-ai-settings') {
-          this.openAiSettings();
+          this.aiFlow.openAiSettings();
           return;
         }
 
         if (action === 'bridge-ai-chat') {
-          this.bridgeToAiChat(qid);
+          this.aiFlow.bridgeToAiChat(qid);
           return;
         }
 
         if (action === 'switch-provider-quick') {
           const provider = btn.getAttribute('data-provider') as AiProviderId;
           if (provider) {
-            saveAiActiveProvider(provider);
-            const card = this.bodyContainer?.querySelector(`#q-card-${qid}`);
-            const keyConfig = card?.querySelector(`#ai-key-config-${qid}`);
-            if (keyConfig) {
-              keyConfig.outerHTML = this.renderAiKeyConfigCardHtml(qid);
-              const newKeyConfig = card?.querySelector(`#ai-key-config-${qid}`);
-              newKeyConfig?.classList.remove('hidden');
-            }
-            const modelBadge = card?.querySelector(`#ai-model-${qid}`);
-            if (modelBadge) {
-              modelBadge.textContent = this.getAiModelLabel(qid, 'local');
-            }
+            this.aiFlow.switchProviderQuick(qid, provider);
           }
           return;
         }
 
         if (action === 'save-ai-key') {
-          this.saveAiKey(qid);
+          this.aiFlow.saveAiKey(qid);
           return;
         }
 
@@ -1608,60 +1325,8 @@ class ExerciseCenterController {
    * 构造参考答案、推导步骤与考点提示 HTML (按需执行，避免全量 KaTeX DOM 挂载)
    */
   private renderSolutionBoxContent(q: SlimQuestionItem): string {
-    const qid = q.id;
-    const qType = q.type;
-    const record = this.practiceRecords.get(qid) || { answered: false };
-    const knowledgePoints = q.kps || [];
-
-    const hasSteps = Boolean(q.steps_html && q.steps_html.trim());
-    const rawAnswer = (q.answer || '').trim();
-    const hasMeaningfulAnswer = Boolean(
-      (q.answer_html && q.answer_html.trim() && !q.answer_html.includes('详见解析') && !q.answer_html.includes('略')) ||
-      (rawAnswer && rawAnswer !== '详见解析' && rawAnswer !== '略')
-    );
-
-    let bodyContent = '';
-    if (!hasSteps && !hasMeaningfulAnswer) {
-      bodyContent = `
-        <div class="ex-solution-empty-prompt">
-          <div class="ex-empty-prompt-text">
-            <md-icon class="ex-empty-icon">menu_book</md-icon>
-            <span>教材原书暂未收录官方纯文本逐行演算。您可直接点击下方「AI 规范推导」，由学术大模型提供完整分步推导！</span>
-          </div>
-          <button type="button" class="ex-action-btn ex-btn-inline-ai" data-action="ask-ai" data-qid="${qid}">
-            <md-icon class="ex-btn-mdicon">auto_awesome</md-icon>
-            <span>立即生成 AI 规范推导</span>
-          </button>
-        </div>
-      `;
-    } else {
-      bodyContent = `
-        ${hasSteps ? `<div class="ex-solution-steps">${q.steps_html}</div>` : ''}
-        ${q.hints_html ? `<div class="ex-solution-steps"><strong>【思路提示】</strong>${q.hints_html}</div>` : ''}
-      `;
-    }
-
-    return `
-      <div class="ex-solution-title">
-        <span>【参考答案】${q.answer_html || '详见下方步骤推导'}</span>
-      </div>
-      ${bodyContent}
-      <div class="ex-solution-footer">
-        <div class="ex-knowledge-tags">
-          <span class="ex-k-label">考察考点：</span>
-          ${knowledgePoints.map((kp) => `<span class="ex-k-tag">${this.esc(kp)}</span>`).join('')}
-        </div>
-        ${
-          qType !== 'choice' && qType !== 'blank'
-            ? `<div class="ex-mastery-btns">
-                <button type="button" class="ex-action-btn ${record.mastered ? 'active' : ''}" data-action="master" data-qid="${qid}">
-                  <span>${record.mastered ? '已掌握' : '标为已掌握'}</span>
-                </button>
-              </div>`
-            : ''
-        }
-      </div>
-    `;
+    const record = this.practiceRecords.get(q.id) || { answered: false };
+    return renderSolutionBoxContent(q, record);
   }
 
   private ensureSolutionBoxRendered(qid: string, solBox: Element) {
@@ -1677,60 +1342,7 @@ class ExerciseCenterController {
   }
 
   private renderHintsBoxContent(q: SlimQuestionItem): string {
-    const qid = q.id;
-    const knowledgePoints = q.kps || [];
-    const hasOfficialHint = Boolean(q.hints_html && q.hints_html.trim());
-
-    return `
-      <div class="ex-hints-header">
-        <div class="ex-hints-title">
-          <md-icon class="ex-hints-mdicon">lightbulb</md-icon>
-          <span>思路导引与考点剖析</span>
-        </div>
-        ${
-          knowledgePoints.length > 0
-            ? `<div class="ex-knowledge-tags">
-                <span class="ex-k-label">考察考点：</span>
-                ${knowledgePoints.map((kp) => `<span class="ex-k-tag">${this.esc(kp)}</span>`).join('')}
-              </div>`
-            : ''
-        }
-      </div>
-      <div class="ex-hints-body">
-        ${
-          hasOfficialHint
-            ? `<div class="ex-hints-text">${q.hints_html}</div>`
-            : `<div class="ex-hints-heuristic">${this.generateHeuristicHint(q)}</div>`
-        }
-      </div>
-      <div class="ex-hints-action-row">
-        <button type="button" class="ex-action-btn ex-btn-inline-ai" data-action="ask-ai" data-qid="${qid}">
-          <md-icon class="ex-btn-mdicon">auto_awesome</md-icon>
-          <span>需要更详尽演算？点击生成 AI 规范推导</span>
-        </button>
-      </div>
-    `;
-  }
-
-  private generateHeuristicHint(q: SlimQuestionItem): string {
-    const qType = q.type;
-    let strategy = '';
-    if (qType === 'calc') {
-      strategy = '本题为计算求解题。求解核心在于厘清题设条件与运算目标，选用恰当的代数恒等变形、微积分求导/积分法则或矩阵变换方法，注意运算符号与边界约束。';
-    } else if (qType === 'proof') {
-      strategy = '本题为严格证明题。建议从已知条件与相关定理的充要关系切入，可采用直接推导、构造反例反证法、或构造辅助函数/向量空间进行严密论证。';
-    } else if (qType === 'choice') {
-      strategy = '本题为单项选择题。解题时除常规严谨推演外，可灵活运用代入特殊值法、排除极端条件、反例验证或量纲检验等技巧快速突破。';
-    } else if (qType === 'blank') {
-      strategy = '本题为精准填空题。计算时需格外注重符号、定义域、区间开闭以及分母不为零等细节，保证最终解析表达式或数值的最简形式。';
-    } else {
-      strategy = '本题重点考查基础概念的综合运用与逻辑分析能力。请回顾教材相关章节的核心定理定义与典型例题解法。';
-    }
-
-    const kpsStr = q.kps && q.kps.length > 0 ? `本题关联考点：<strong>${q.kps.map((k) => this.esc(k)).join('、')}</strong>。` : '';
-    const secStr = q.sec_title || q.sec ? `建议对照复习章节 <em>${this.esc(q.sec_title || q.sec || '')}</em> 的核心定理与推论。` : '';
-
-    return `<p>${strategy}</p>${kpsStr || secStr ? `<p class="ex-hint-sub">${kpsStr} ${secStr}</p>` : ''}`;
+    return renderHintsBoxContent(q);
   }
 
   private handleOptionSelect(qid: string, userKey: string) {
@@ -1899,626 +1511,6 @@ class ExerciseCenterController {
     this.updateStats(this.currentFilteredQuestions.length, doneCount, correctCount);
   }
 
-  private async handleAskAi(qid: string, forceRetry = false) {
-    const card = this.bodyContainer?.querySelector(`#q-card-${qid}`);
-    if (!card) return;
-
-    const aiBox = card.querySelector(`#ai-box-${qid}`);
-    if (aiBox) aiBox.classList.remove('hidden');
-
-    this.loadCommunitySolutions(qid);
-
-    if (this.aiSolutions.has(qid) && !forceRetry) {
-      this.switchAiVersion(qid, 'local');
-      return;
-    }
-
-    const q = this.currentFilteredQuestions.find((item) => item.id === qid);
-    if (!q) return;
-
-    const config = getEffectiveAiClientConfig();
-    const configBox = card.querySelector(`#ai-key-config-${qid}`);
-    if (!config.apiKey) {
-      configBox?.classList.remove('hidden');
-      return;
-    }
-    configBox?.classList.add('hidden');
-
-    const contentEl = card.querySelector(`#ai-content-${qid}`) as HTMLElement;
-    const statusEl = card.querySelector(`#ai-status-${qid}`);
-    const stopBtn = card.querySelector('.ex-ai-stop-btn');
-    const copyBtn = card.querySelector('.ex-ai-copy-btn');
-    const retryBtn = card.querySelector('.ex-ai-retry-btn');
-
-    if (stopBtn) stopBtn.classList.remove('hidden');
-    if (copyBtn) copyBtn.classList.add('hidden');
-    if (retryBtn) retryBtn.classList.add('hidden');
-    if (statusEl) statusEl.textContent = '正在推导...';
-
-    const prompt = `请对以下题目给出极为规范、详尽的推导过程与标准解法。
-【输出排版强制要求】：
-1. 严格使用标准 Markdown 与 KaTeX 规范：行内公式一律用 $...$，独立居中公式一律用 $$...$$；
-2. 绝对严禁输出任何 \\[、\\]、\\(、\\) 界定符！
-3. 给出规范分步推导演算过程与最终标准答案，步骤严谨无跳步。
-
-【题目信息】
-来源：${q.source || `${q.paper_title}（原卷第 ${q.paper_q_num} 题）`}
-小节：${q.sec_title || q.sec}
-题型：${q.type}
-题干：
-${q.stem_raw}
-
-${q.options && q.options.length ? `选项：\n${q.options.map((o) => `${o.key}. ${o.text_raw}`).join('\n')}` : ''}
-${q.answer ? `参考结果：${q.answer}` : ''}`;
-
-    const controller = new AbortController();
-    this.aiControllers.set(qid, controller);
-    this.aiStreamActive.add(qid);
-
-    let accumulatedMd = '';
-    let accumulatedReasoning = '';
-    this.activeSolutionVersions.set(qid, 'local');
-
-    // 初始化流式批处理节流调度器（100ms 窗口）
-    const scheduler = new StreamThrottleScheduler(() => {
-      this.aiSolutions.set(qid, accumulatedMd);
-      if (contentEl) {
-        if (!accumulatedMd && accumulatedReasoning) {
-          contentEl.innerHTML = '<div class="ex-ai-placeholder">正在深度梳理推导演算与思考过程...</div>';
-        } else if (accumulatedMd) {
-          contentEl.innerHTML = renderSolutionMarkdown(accumulatedMd, true);
-          try {
-            renderMathInElement(contentEl, KATEX_OPTIONS);
-          } catch (e) {}
-        }
-      }
-    }, 100);
-    this.aiSchedulers.set(qid, scheduler);
-
-    const systemPrompt = `你是专注理科高精数学与物理推导的学术导师，以严谨细致、无跳步分步推导著称。
-【严格数学排版规范——必须100%遵从】：
-1. 绝对严禁使用任何 LaTeX 原生界定符 \\[ ... \\] 或 \\( ... \\)，绝不允许输出类似 "\\[" 或 "\\]" 单独成行的标记！
-2. 行内数学公式：必须且只能使用单个美元符号包裹，例如 $f(x) = 2x^2 + 3y^2$、$P_0(x_0, y_0, z_0)$。
-3. 独立块级居中公式：必须且只能使用双美元符号包裹，前后换行单独成段，例如：
-$$
-z_0 = 2x_0^2 + 3y_0^2
-$$
-4. 凡是多行推导或方程组，必须在同一个 $$ ... $$ 块内使用 \\begin{aligned} ... \\end{aligned} 组织，绝不可拆分成多个单独的公式块或输出 \\[！
-5. 所有数学符号、变量、几何点（如 $P_0$、\\lambda）、方程均须使用 KaTeX 公式渲染，不得作为裸露文本输出。`;
-    const messages = [
-      { role: 'system', content: systemPrompt },
-      { role: 'user', content: prompt },
-    ];
-
-    try {
-      await streamChat({
-        endpoint: config.endpoint,
-        apiKey: config.apiKey,
-        model: config.model,
-        maxTokens: config.maxTokens,
-        messages,
-        signal: controller.signal,
-        onReasoningDelta: (chunk: string) => {
-          accumulatedReasoning += chunk;
-          scheduler.schedule();
-        },
-        onDelta: (chunk: string) => {
-          accumulatedMd += chunk;
-          scheduler.schedule();
-        },
-      });
-
-      scheduler.flush(true);
-      scheduler.stop();
-      this.aiSchedulers.delete(qid);
-      this.aiStreamActive.delete(qid);
-
-      const hasContent = Boolean(accumulatedMd && accumulatedMd.trim());
-      const hasReasoning = Boolean(accumulatedReasoning && accumulatedReasoning.trim());
-
-      if (!hasContent && !hasReasoning) {
-        if (statusEl) statusEl.textContent = '推导中断';
-        if (contentEl) {
-          contentEl.innerHTML = '<div class="ex-ai-error">模型未返回有效推导内容，请检查服务状态并重试</div>';
-        }
-        if (stopBtn) stopBtn.classList.add('hidden');
-        if (retryBtn) retryBtn.classList.remove('hidden');
-        return;
-      }
-
-      if (!hasContent && hasReasoning) {
-        if (statusEl) statusEl.textContent = '推导中断（正文未返回）';
-        if (contentEl) {
-          contentEl.innerHTML = '<div class="ex-ai-error">模型已完成思路推演，但未输出正文推导（可能因服务端连接中断或生成异常）。请点击重新生成。</div>';
-        }
-        if (stopBtn) stopBtn.classList.add('hidden');
-        if (retryBtn) retryBtn.classList.remove('hidden');
-        return;
-      }
-
-      this.aiSolutions.set(qid, accumulatedMd);
-      if (contentEl) {
-        contentEl.innerHTML = renderSolutionMarkdown(accumulatedMd, false);
-        try {
-          renderMathInElement(contentEl, KATEX_OPTIONS);
-        } catch (e) {}
-      }
-
-      if (statusEl) statusEl.textContent = '推导完成';
-      if (stopBtn) stopBtn.classList.add('hidden');
-      if (copyBtn) copyBtn.classList.remove('hidden');
-      if (retryBtn) retryBtn.classList.remove('hidden');
-      this.updateAiVersionsBar(qid);
-    } catch (err: any) {
-      const sch = this.aiSchedulers.get(qid);
-      if (sch) {
-        sch.stop();
-        this.aiSchedulers.delete(qid);
-      }
-      this.aiStreamActive.delete(qid);
-      if (err.name === 'AbortError') {
-        if (statusEl) statusEl.textContent = '已停止生成';
-      } else {
-        const errInfo = parseAiError(err);
-        if (statusEl) statusEl.textContent = `推导中断: ${errInfo.title}`;
-        if (contentEl && !accumulatedMd) {
-          contentEl.innerHTML = `
-            <div class="ex-ai-error-box">
-              <div class="ex-ai-error-header">
-                <md-icon class="ex-ai-error-icon">error_outline</md-icon>
-                <div class="ex-ai-error-meta">
-                  <strong>${this.esc(errInfo.title)}</strong>
-                  <p class="ex-ai-error-desc">${this.esc(errInfo.message)}</p>
-                </div>
-              </div>
-              <div class="ex-ai-error-actions">
-                <button type="button" class="ex-action-btn" data-action="open-ai-settings" data-qid="${qid}">
-                  <md-icon class="ex-btn-mdicon">settings</md-icon>
-                  <span>检查模型与网络设置</span>
-                </button>
-                <button type="button" class="ex-action-btn" data-action="bridge-ai-chat" data-qid="${qid}">
-                  <md-icon class="ex-btn-mdicon">forum</md-icon>
-                  <span>转入全局 AI 对话问答</span>
-                </button>
-                <button type="button" class="ex-action-btn" data-action="retry-ai" data-qid="${qid}">
-                  <md-icon class="ex-btn-mdicon">refresh</md-icon>
-                  <span>重试推导</span>
-                </button>
-              </div>
-            </div>
-          `;
-        }
-      }
-      if (stopBtn) stopBtn.classList.add('hidden');
-      if (retryBtn) retryBtn.classList.remove('hidden');
-    }
-  }
-
-  private stopAiStream(qid: string) {
-    const scheduler = this.aiSchedulers.get(qid);
-    if (scheduler) {
-      scheduler.stop();
-      this.aiSchedulers.delete(qid);
-    }
-    const ctrl = this.aiControllers.get(qid);
-    if (ctrl) {
-      ctrl.abort();
-      this.aiControllers.delete(qid);
-    }
-  }
-
-  private async loadCommunitySolutions(qid: string) {
-    try {
-      const list = await exerciseDb.fetchCommunitySolutions(qid);
-      this.communitySolutions.set(qid, list);
-      this.updateAiVersionsBar(qid);
-    } catch (err) {
-      console.warn('[ExerciseController] 加载社区题解失败:', err);
-    }
-  }
-
-  private updateAiVersionsBar(qid: string) {
-    const card = this.bodyContainer?.querySelector(`#q-card-${qid}`);
-    if (!card) return;
-    const verBar = card.querySelector(`#ai-versions-${qid}`);
-    if (!verBar) return;
-
-    const activeVer = this.activeSolutionVersions.get(qid) || 'local';
-    const list = this.communitySolutions.get(qid) || [];
-    verBar.innerHTML = this.renderAiVersionsBarHtml(qid, activeVer, list);
-  }
-
-  private switchAiVersion(qid: string, verId: string) {
-    this.activeSolutionVersions.set(qid, verId);
-    const card = this.bodyContainer?.querySelector(`#q-card-${qid}`);
-    if (!card) return;
-
-    this.updateAiVersionsBar(qid);
-
-    const contentEl = card.querySelector(`#ai-content-${qid}`) as HTMLElement;
-    const modelBadge = card.querySelector(`#ai-model-${qid}`);
-    const statusEl = card.querySelector(`#ai-status-${qid}`);
-
-    let md = '';
-    if (verId === 'local') {
-      md = this.aiSolutions.get(qid) || '';
-      if (modelBadge) modelBadge.textContent = this.getAiModelLabel(qid, 'local');
-      if (statusEl) statusEl.textContent = md ? '推导完成' : '';
-    } else {
-      const list = this.communitySolutions.get(qid) || [];
-      const match = list.find((s) => s.id === verId);
-      if (match) {
-        md = match.solution_md;
-        if (modelBadge) modelBadge.textContent = match.model_name;
-        if (statusEl) statusEl.textContent = `社区贡献 (by ${match.author_name})`;
-      }
-    }
-
-    if (contentEl) {
-      contentEl.innerHTML = md
-        ? renderSolutionMarkdown(md, false)
-        : '<div class="ex-ai-placeholder">暂未生成推导内容</div>';
-      try {
-        renderMathInElement(contentEl, KATEX_OPTIONS);
-      } catch (e) {}
-    }
-  }
-
-  private async upvoteSolution(qid: string, solId: string) {
-    if (exerciseDb.isUpvoted(solId)) {
-      this.showToast('您已经点赞过该题解');
-      return;
-    }
-
-    const res = await exerciseDb.upvoteSolution(solId);
-    if (res.success) {
-      const list = this.communitySolutions.get(qid) || [];
-      const match = list.find((s) => s.id === solId);
-      if (match) match.upvotes = res.newUpvotes;
-      this.updateAiVersionsBar(qid);
-      this.showToast('点赞成功，感谢您的认可！');
-    }
-  }
-
-  private copyAiSolution(qid: string) {
-    const activeVer = this.activeSolutionVersions.get(qid) || 'local';
-    let md = '';
-    if (activeVer === 'local') {
-      md = this.aiSolutions.get(qid) || '';
-    } else {
-      const list = this.communitySolutions.get(qid) || [];
-      const match = list.find((s) => s.id === activeVer);
-      if (match) md = match.solution_md;
-    }
-
-    if (!md) return;
-    navigator.clipboard.writeText(md).then(() => {
-      this.showToast('AI 规范推导 LaTeX/Markdown 源码已复制至剪贴板');
-    });
-  }
-
-  private toggleAiBox(qid: string) {
-    const card = this.bodyContainer?.querySelector(`#q-card-${qid}`);
-    const content = card?.querySelector(`#ai-content-${qid}`);
-    const chevron = card?.querySelector('.ex-ai-chevron');
-    if (content) {
-      content.classList.toggle('hidden');
-      if (chevron) {
-        chevron.classList.toggle('rotated', content.classList.contains('hidden'));
-      }
-    }
-  }
-
-  private saveAiKey(qid: string) {
-    const card = this.bodyContainer?.querySelector(`#q-card-${qid}`);
-    const input = card?.querySelector('.ex-ai-key-input') as HTMLInputElement;
-    if (input && input.value.trim()) {
-      const activeProvider = getAiProvider();
-      saveProviderApiKey(activeProvider.id, input.value.trim());
-      card?.querySelector(`#ai-key-config-${qid}`)?.classList.add('hidden');
-      this.showToast('API Key 保存成功');
-      this.handleAskAi(qid, true);
-    } else {
-      this.showToast('请输入有效的 API Key');
-    }
-  }
-
-  private openAiSettings() {
-    this.close();
-    window.dispatchEvent(
-      new CustomEvent('astrolib:open-settings', {
-        detail: {
-          section: 'ai',
-        },
-      })
-    );
-  }
-
-  private bridgeToAiChat(qid: string) {
-    const q = this.currentFilteredQuestions.find((item) => item.id === qid);
-    if (!q) return;
-
-    const prompt = `请对以下题目给出极为规范、详尽的推导过程与标准解法：\n\n【来源】：${q.source || `${q.paper_title || ''}（第 ${q.paper_q_num || ''} 题）`}\n【题目】：\n${q.stem_raw}\n${q.options && q.options.length ? `\n选项：\n${q.options.map((o) => `${o.key}. ${o.text_raw}`).join('\n')}` : ''}${q.answer ? `\n参考结果：${q.answer}` : ''}`;
-
-    this.close();
-    window.dispatchEvent(
-      new CustomEvent('aiask:query', {
-        detail: {
-          prompt,
-          autoSubmit: true,
-        },
-      })
-    );
-  }
-
-  private bindSubmodalEvents() {
-    if (!this.root) return;
-
-    this.root.querySelectorAll('[data-action="close-feedback-modal"]').forEach((btn) => {
-      btn.addEventListener('click', () => this.feedbackModal?.classList.add('hidden'));
-    });
-
-    const fbSubmitBtn = this.root.querySelector('#ex-fb-submit-btn');
-    if (fbSubmitBtn) {
-      fbSubmitBtn.addEventListener('click', () => this.submitFeedback());
-    }
-
-    this.root.querySelectorAll('[data-action="close-source-modal"]').forEach((btn) => {
-      btn.addEventListener('click', () => this.sourceEditorModal?.classList.add('hidden'));
-    });
-
-    const srcCopyBtn = this.root.querySelector('#ex-src-copy-btn');
-    if (srcCopyBtn) {
-      srcCopyBtn.addEventListener('click', () => {
-        const textarea = this.root?.querySelector('#ex-src-editor-textarea') as HTMLTextAreaElement;
-        if (textarea && textarea.value) {
-          navigator.clipboard.writeText(textarea.value).then(() => {
-            this.showToast('题目完整 JSON 源码已复制');
-          });
-        }
-      });
-    }
-
-    const srcSaveBtn = this.root.querySelector('#ex-src-save-btn');
-    if (srcSaveBtn) {
-      srcSaveBtn.addEventListener('click', () => this.saveSourceChanges());
-    }
-
-    this.root.querySelectorAll('[data-action="close-upload-modal"]').forEach((btn) => {
-      btn.addEventListener('click', () => this.aiUploadModal?.classList.add('hidden'));
-    });
-
-    const aiUploadSubmitBtn = this.root.querySelector('#ex-ai-upload-submit-btn');
-    if (aiUploadSubmitBtn) {
-      aiUploadSubmitBtn.addEventListener('click', () => this.submitAiSolutionUpload());
-    }
-
-    // LaTeX 导出模态框交互与云端编译事件由 this.exportPipeline 统一驱动管理
-  }
-
-  private openFeedbackModal(qid: string) {
-    const q = this.currentFilteredQuestions.find((item) => item.id === qid);
-    if (!q || !this.feedbackModal) return;
-    this.activeFeedbackQuestion = q;
-
-    const qidBadge = this.feedbackModal.querySelector('#ex-fb-qid-badge');
-    const sourceHint = this.feedbackModal.querySelector('#ex-fb-source-hint');
-    if (qidBadge) qidBadge.textContent = q.id;
-    if (sourceHint) sourceHint.textContent = `${q.paper_title} · 原卷第 ${q.paper_q_num} 题 (${q.type})`;
-
-    const descInput = this.feedbackModal.querySelector('#ex-fb-desc-input') as HTMLTextAreaElement;
-    const suggInput = this.feedbackModal.querySelector('#ex-fb-sugg-input') as HTMLTextAreaElement;
-    if (descInput) descInput.value = '';
-    if (suggInput) suggInput.value = '';
-
-    this.feedbackModal.classList.remove('hidden');
-  }
-
-  private async submitFeedback() {
-    if (!this.activeFeedbackQuestion || !this.feedbackModal) return;
-
-    const descInput = this.feedbackModal.querySelector('#ex-fb-desc-input') as HTMLTextAreaElement;
-    const suggInput = this.feedbackModal.querySelector('#ex-fb-sugg-input') as HTMLTextAreaElement;
-    const reporterInput = this.feedbackModal.querySelector('#ex-fb-reporter-input') as HTMLInputElement;
-
-    const desc = descInput?.value.trim();
-    if (!desc) {
-      this.showToast('请填写问题详情描述');
-      return;
-    }
-
-    const checkboxes = this.feedbackModal.querySelectorAll('input[name="fb-err"]:checked');
-    const errorTypes: string[] = [];
-    checkboxes.forEach((cb: any) => errorTypes.push(cb.value));
-
-    const payload: ExerciseFeedbackPayload = {
-      question_id: this.activeFeedbackQuestion.id,
-      paper_title: this.activeFeedbackQuestion.paper_title,
-      order_in_paper: this.activeFeedbackQuestion.paper_q_num,
-      chapter: this.activeFeedbackQuestion.chapter,
-      section: this.activeFeedbackQuestion.sec,
-      question_type: this.activeFeedbackQuestion.type,
-      error_types: errorTypes,
-      description: desc,
-      suggestion: suggInput?.value.trim() || '',
-      reporter_name: reporterInput?.value.trim() || '热心读者',
-    };
-
-    const submitBtn = this.feedbackModal.querySelector('#ex-fb-submit-btn') as HTMLButtonElement;
-    if (submitBtn) submitBtn.disabled = true;
-
-    const res = await exerciseDb.submitFeedback(payload);
-    if (submitBtn) submitBtn.disabled = false;
-
-    this.feedbackModal.classList.add('hidden');
-    this.showToast(res.message || '勘误反馈已成功提交，感谢您的支持！');
-  }
-
-  private openSourceEditorModal(qid: string) {
-    const q = this.currentFilteredQuestions.find((item) => item.id === qid);
-    if (!q || !this.sourceEditorModal) return;
-    this.activeEditorQuestion = q;
-
-    const textarea = this.sourceEditorModal.querySelector('#ex-src-editor-textarea') as HTMLTextAreaElement;
-    const statusMsg = this.sourceEditorModal.querySelector('#ex-src-status-msg');
-    if (statusMsg) statusMsg.textContent = '';
-
-    const editorPayload = {
-      id: q.id,
-      meta: {
-        type: q.type,
-        score: q.score,
-        order_in_paper: q.order_in_paper,
-        section_type: q.section_type,
-      },
-      content: {
-        stem: q.stem_raw,
-        options: q.options ? q.options.map((o) => ({ key: o.key, text: o.text_raw })) : [],
-      },
-      solution: {
-        answer: q.answer,
-        hints: '',
-        steps: '',
-      },
-      source: {
-        paper_id: q.paper_id,
-        raw_title: q.paper_raw_title || q.paper_title,
-        academic_year: q.academic_year,
-        category: q.paper_category,
-      },
-      mapping: {
-        engineering_analysis: {
-          chapter: q.chapter,
-          chapter_title: q.chapter_title,
-          section: q.sec,
-          section_title: q.sec_title,
-          section_slug: q.sec_slug,
-          knowledge_points: q.kps,
-        },
-      },
-    };
-
-    if (textarea) {
-      textarea.value = JSON.stringify(editorPayload, null, 2);
-    }
-
-    this.sourceEditorModal.classList.remove('hidden');
-  }
-
-  private async saveSourceChanges() {
-    if (!this.activeEditorQuestion || !this.sourceEditorModal) return;
-    const textarea = this.sourceEditorModal.querySelector('#ex-src-editor-textarea') as HTMLTextAreaElement;
-    const statusMsg = this.sourceEditorModal.querySelector('#ex-src-status-msg');
-    const saveBtn = this.sourceEditorModal.querySelector('#ex-src-save-btn') as HTMLButtonElement;
-
-    let parsedData: any = null;
-    try {
-      parsedData = sanitizeLatexValue(JSON.parse(textarea.value));
-    } catch (e: any) {
-      if (statusMsg) statusMsg.textContent = `JSON 语法错误: ${e.message}`;
-      return;
-    }
-
-    if (saveBtn) saveBtn.disabled = true;
-    if (statusMsg) statusMsg.textContent = '正在向本地 Dev Server 写入并重载...';
-
-    const res = await exerciseDb.saveQuestionSource({
-      question_id: this.activeEditorQuestion.id,
-      chapter: this.activeEditorQuestion.chapter,
-      question_data: parsedData,
-    });
-
-    if (saveBtn) saveBtn.disabled = false;
-
-    if (res.success) {
-      this.sourceEditorModal.classList.add('hidden');
-      this.showToast(res.message || '源码修改已成功保存并完成热重载！');
-
-      // 清理缓存以保证下次加载最新编译产物
-      this.chapterCache.delete(this.activeEditorQuestion.chapter);
-      this.paperCache.delete(this.activeEditorQuestion.paper_id);
-      this.allQuestionsCache = [];
-
-      if (parsedData.content?.stem) this.activeEditorQuestion.stem_raw = parsedData.content.stem;
-      if (parsedData.solution?.answer) this.activeEditorQuestion.answer = parsedData.solution.answer;
-      if (parsedData.meta?.type) this.activeEditorQuestion.type = parsedData.meta.type;
-
-      // 重新拉取当前章节
-      if (this.currentMode === 'practice') {
-        this.loadChapter(this.currentChapter);
-      } else if (this.currentMode === 'paper') {
-        this.loadPaper(this.currentPaperId);
-      } else {
-        this.filterAndRender();
-      }
-    } else {
-      if (statusMsg) statusMsg.textContent = res.message || '保存失败';
-    }
-  }
-
-  private openAiUploadModal(qid: string) {
-    if (!this.aiUploadModal) return;
-    this.activeUploadQuestionId = qid;
-
-    const qidEl = this.aiUploadModal.querySelector('#ex-ai-upload-qid');
-    if (qidEl) qidEl.textContent = qid;
-
-    const solTextarea = this.aiUploadModal.querySelector('#ex-ai-solution-textarea') as HTMLTextAreaElement;
-    const existingMd = this.aiSolutions.get(qid) || '';
-    if (solTextarea) solTextarea.value = existingMd;
-
-    this.aiUploadModal.classList.remove('hidden');
-  }
-
-  private async submitAiSolutionUpload() {
-    if (!this.activeUploadQuestionId || !this.aiUploadModal) return;
-
-    const modelInput = this.aiUploadModal.querySelector('#ex-ai-model-input') as HTMLInputElement;
-    const authorInput = this.aiUploadModal.querySelector('#ex-ai-author-input') as HTMLInputElement;
-    const solTextarea = this.aiUploadModal.querySelector('#ex-ai-solution-textarea') as HTMLTextAreaElement;
-    const remarksInput = this.aiUploadModal.querySelector('#ex-ai-remarks-input') as HTMLInputElement;
-
-    const solutionMd = solTextarea?.value.trim();
-    if (!solutionMd) {
-      this.showToast('请填入 AI 题解推导 Markdown 内容');
-      return;
-    }
-
-    const modelName = modelInput?.value.trim() || 'AI 推导模型';
-    const authorName = authorInput?.value.trim() || '热心读者';
-    const remarks = remarksInput?.value.trim() || '';
-
-    const submitBtn = this.aiUploadModal.querySelector('#ex-ai-upload-submit-btn') as HTMLButtonElement;
-    if (submitBtn) submitBtn.disabled = true;
-
-    const res = await exerciseDb.uploadCommunitySolution({
-      question_id: this.activeUploadQuestionId,
-      model_name: modelName,
-      author_name: authorName,
-      solution_md: solutionMd,
-      remarks,
-    });
-
-    if (submitBtn) submitBtn.disabled = false;
-
-    if (res.success && res.data) {
-      this.aiUploadModal.classList.add('hidden');
-      this.showToast('AI 题解已成功上传至统一题解库！');
-
-      const list = this.communitySolutions.get(this.activeUploadQuestionId) || [];
-      list.unshift(res.data);
-      this.communitySolutions.set(this.activeUploadQuestionId, list);
-      this.switchAiVersion(this.activeUploadQuestionId, res.data.id);
-    } else {
-      this.showToast('上传失败，请重试');
-    }
-  }
-
-  // =========================================================================
-  // LaTeX / Typst 导出与云端/本地编译流水线已解耦至 ExerciseExportPipeline
-  // (参见 src/components/exercises/exercise-export-pipeline.ts)
-  // =========================================================================
-
   private showToast(msg: string) {
     if (!this.toastBox) return;
     const toast = document.createElement('div');
@@ -2533,11 +1525,7 @@ $$
   }
 
   private esc(s: string): string {
-    return String(s || '')
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;');
+    return esc(s);
   }
 }
 
