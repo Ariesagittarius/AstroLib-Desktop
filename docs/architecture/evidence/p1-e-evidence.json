@@ -1,7 +1,7 @@
 {
   "gate": "P1-E Architecture Governance, Dependency Inversion, Types and CI Verification",
   "generatedAt": "2026-11-14T11:22:00+08:00",
-  "remediatedAt": "2026-11-14T12:35:00+08:00",
+  "remediatedAt": "2026-11-14T14:35:00+08:00",
   "status": "PASSED",
   "criteria": {
     "E1_DependencyInversion": {
@@ -51,9 +51,10 @@
       "status": "PASSED",
       "cleanCloneCiArtifactsPacked": true,
       "astroCheckErrors": 0,
-      "astroCheckBaselineErrors": 31,
+      "astroCheckBaselineErrors": 0,
       "astroCheckWarnings": 0,
-      "astroHints": 262,
+      "astroHints": 259,
+      "astroFilesChecked": 498,
       "deliberateAstroScriptFailureBlocked": true,
       "routeSmokeTestSuite": "tests/contract/reader-routability.test.ts",
       "fullRoutabilitySuite": "tests/contract/reader-full-routability.test.ts",
@@ -80,18 +81,19 @@
     "importantDelta": -2038,
     "importantPercent": -30.9,
     "anyColonBase": 316,
-    "anyColonHead": 345,
+    "anyColonHead": 310,
     "anyAsBase": 183,
-    "anyAsHead": 195,
-    "astroHints": 262,
+    "anyAsHead": 176,
+    "astroHints": 259,
     "astroErrors": 0,
     "astroWarnings": 0,
+    "astroFiles": 498,
     "fullRoutability": {
       "status": "PASSED",
       "command": "npm run test:full-routability",
       "chapters": 1251,
       "passed": 1251,
-      "durationMs": 10800
+      "durationMs": 42075
     },
     "typeCheckErrors": 0,
     "testFilesPassed": 78,

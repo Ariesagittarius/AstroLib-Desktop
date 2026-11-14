@@ -44,7 +44,7 @@
         {
           "name": "exercise-controller",
           "file": "src/components/exercises/exercise-controller.ts",
-          "lines": 1481,
+          "lines": 1488,
           "target": "< 1500",
           "stateMachine": "src/components/exercises/exercise-controller.state.ts",
           "unitTests": 7,
@@ -54,7 +54,7 @@
         {
           "name": "translation-dock-controller",
           "file": "src/services/translation/client/translation-dock-controller.ts",
-          "lines": 1413,
+          "lines": 1417,
           "target": "< 1500",
           "stateMachine": "src/services/translation/client/translation-dock-controller.state.ts",
           "unitTests": 7,
