@@ -65,16 +65,18 @@ Each controller is decomposed into a three-layer model:
    - Error recovery state
    - Concurrency & idempotency
 
-### 2.5 CSS Layering & `!important` Reduction (`D5`)
-- Enforce strict cascade layers:
-  1. `tokens` (`src/styles/tokens/`, M3 color and typography design tokens)
-  2. `base` (resets, typography defaults, viewport rules)
-  3. `components` (M3 and Starlight component styling)
-  4. `features` (isolated feature styles)
-  5. `overrides` (targeted integration patches)
+### 2.5 CSS Architecture & `!important` Reduction (`D5`)
+- CSS Module Organization (`src/styles/layers/`):
+  1. `tokens.css` (M3 color and typography design tokens)
+  2. `base.css` (resets, typography defaults, viewport rules)
+  3. `components.css` (M3 and Starlight component styling)
+  4. `features.css` (isolated feature styles)
+  5. `overrides.css` (targeted integration patches)
+  > [!NOTE]
+  > Architectural Disclosure: The current `src/styles/layers/` structure provides modular `@import` organization and clean dependency ordering. It does NOT yet declare native CSS Cascade Layers (`@layer`). True `@layer` adoption is scheduled for P2 governance and is not claimed as completed in P1.
 - Eliminate duplicate `@import` statements between `astro.config.mjs` and `src/styles/custom.css`.
 - Impose a hard ceiling on `!important`:
-  - Baseline: 6,190
+  - Baseline: 6,590 (historical sample: 6,190)
   - P1-D Ceiling: <= 5,200
   - Net additions: 0
 
