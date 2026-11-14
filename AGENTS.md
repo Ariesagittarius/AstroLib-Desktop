@@ -50,7 +50,7 @@ Manage the server using dedicated commands (or via `node node_modules/astro/bin/
 - **Single Sources of Truth**: `src/config/collections.config.ts` (books/collections) and `src/config/features.config.ts` (Feature Registry). ⚠️ `src/config/books.config.mjs` is obsolete.
 - **Routing & Clean Slugs**: Every generated link pointing to a book chapter MUST use `cleanSlug()` from `src/utils/sidebar.ts`. Never hardcode raw filenames into URL strings.
 - **Testing & Quality Gates**: Prior to committing changes, always run `npm run check:types` (100% strict TypeScript 0 errors) and `npm test` (Unit, Contract & Acceptance test suites). Full verification: `npm run check:all`.
-- **MDX Syntax Validation**: Run `node scripts/scan-mdx.mjs src/content/docs/collections/<collection>/<book>` before committing.
+- **MDX Syntax Validation**: Run `node scripts/scan-mdx.mjs content-sources/collections/<collection>/<book>` before committing.
 - **Sidebar & Performance**: Left sidebar renders only current book (`SidebarOverride.astro`). KaTeX uses `output: 'html'`.
 
 ## 3. Project Skills & Documentation
@@ -209,10 +209,11 @@ When designing or refining UI layouts, flows, and interactive components, agents
   ```
   产物自动生成至 `artifacts/abp-packs/`（含 `.abp` 单文件包、展开目录与 `catalog.json`），严禁将生成物放回 `public/` 或提交入库。严禁修改或破坏 `src/types/content-package.ts` 中的主清单与章节有效负载核心契约。
 
-### 8.2 Universal Reader Shell Synthesis Invariant (Master Shell 页面合成铁律)
-- **无损合成原则**：桌面端章节阅读基于 `dist/reader-shell/index.html`（预编译 Starlight Master Shell），在 `electron/server/reader-shell-template.ts` 中动态装配 HTML。
-- **严禁 UI 降级**：
-  1. **左侧导航**：必须渲染支持全学科合集（`cs`, `math`, `science`, `telecom`）、全书目展开/折叠、章节精确高亮的树状目录，与 Web 版体验保持绝对一致；
+### 8.2 Universal Reader Architecture & Shell Decoupling (现代阅读器架构与 Master Shell 解耦)
+- **现代阅读器主路径**：全站正文阅读统一由 `/reader/` 与 Canonical 路由 `/collections/<collection>/<book>/<slug>/` 承载，彻底告别 Astro 构建期静态预编译。
+- **Master Shell 离线合成桥接定位**：`electron/server/reader-shell-template.ts` 已退出正文主编译路径，其当前职责严格限定为 Electron 桌面端离线打包发布与本地缓存物料装配桥接（基于 `dist/reader-shell/index.html`）。计划在 P2 阶段全面迁移至原生客户端组件水合（Web Components Hydration），完成模板字符串拼接的终极替代。
+- **严禁 UI 降级与呈现漂移**：
+  1. **左侧导航**：必须渲染支持全学科合集（`cs`, `math`, `science`, `telecom`）、全书目展开/折叠、章节精确高亮的树状目录，Web 端与桌面端保持绝对一致；
   2. **右侧大纲**：必须调用 `buildStructuredTocHtml()` 深度提取 `h2/h3` 标题与 `.toc-chunk` 学术卡片，带上模块 Chip（`[引]`, `[习]`, `[定]`, `[理]`, `[例]`）与 M3 折叠按钮（`.toc-collapse-btn`）；
   3. **学术折叠与数字资源**：`<Solution>` 必须编译为标准 `<details class="solution-details">` 并保留学术墓碑符 `∎`；数字资源必须渲染为标准 `.academic-digital-resource` 流式卡片；
   4. **标题 Slug 净化**：生成标题与锚点时必须剔除 TeX 占位符，严禁生成含引号转义错位的坏 ID。

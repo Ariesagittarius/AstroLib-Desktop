@@ -42,7 +42,7 @@ npm run check:types
 npm test
 
 # 3. 针对特定章节或书籍执行 MDX 语法与公式扫描
-node scripts/scan-mdx.mjs src/content/docs/collections/cs/algorithms
+node scripts/scan-mdx.mjs content-sources/collections/cs/algorithms
 ```
 
 在提交代码前，建议直接运行 `npm run check:all` 执行合并门禁校验。不要把 API Key 写入 `.env`、MDX 或 Git。当前问答设置由浏览器本地存储保存，详见[配置 AI 问答 API Key](/dev/appendix/ai-api-key/)。

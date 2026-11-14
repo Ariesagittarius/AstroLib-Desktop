@@ -25,7 +25,7 @@ npm install
 npm run check:types
 npm test
 npm run build
-node scripts/scan-mdx.mjs src/content/docs/collections/<collection>/<book>
+node scripts/scan-mdx.mjs content-sources/collections/<collection>/<book>
 ```
 
 代码提交前必须执行全站质量门禁 `npm run check:all`，确保 TypeScript 严格类型 0 错误且 Vitest 自动化测试套件全量通过。如果只修改文档页面，至少运行 `npm run build`，确认 Starlight 侧栏和 MDX 均可编译。

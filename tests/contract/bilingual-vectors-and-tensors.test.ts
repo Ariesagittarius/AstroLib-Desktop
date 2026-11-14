@@ -32,8 +32,7 @@ describe('Bilingual Vectors and Tensors Book Contract', () => {
     expect(keys.length).toBe(50);
 
     const sourcesDir = path.resolve(process.cwd(), 'content-sources/collections/science/vectors_and_tensors');
-    const legacyDir = path.resolve(process.cwd(), 'src/content/docs/collections/science/vectors_and_tensors');
-    const baseDir = fs.existsSync(sourcesDir) ? sourcesDir : legacyDir;
+    const baseDir = sourcesDir;
 
     for (const [enKey, zhVal] of Object.entries(mapping)) {
       const enFile = path.join(baseDir, `${enKey}.mdx`);

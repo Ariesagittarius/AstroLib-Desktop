@@ -52,8 +52,8 @@ jobs:
           if [ -d "src/publishing/latex/templates" ]; then
             cp src/publishing/latex/templates/*.sty workspace/ 2>/dev/null || true
           fi
-          if [ -d "src/content/docs/collections" ]; then
-            find src/content/docs/collections -type f \( -name "*.png" -o -name "*.jpg" -o -name "*.jpeg" -o -name "*.svg" \) -exec cp {} workspace/assets/ \; 2>/dev/null || true
+          if [ -d "content-sources/collections" ]; then
+            find content-sources/collections -type f \( -name "*.png" -o -name "*.jpg" -o -name "*.jpeg" -o -name "*.svg" \) -exec cp {} workspace/assets/ \; 2>/dev/null || true
           fi
           if [ -d "public" ]; then
             cp -r public/* workspace/assets/ 2>/dev/null || true

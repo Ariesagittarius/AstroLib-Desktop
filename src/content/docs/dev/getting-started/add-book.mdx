@@ -5,7 +5,7 @@ description: 把一本新书接入 AstroLib 的目录、正文、索引和导出
 
 ## 1. 准备内容目录
 
-在 `src/content/docs/collections/<collection-slug>/<book-slug>/` 放置章节文件和可选的 `images/`。章节使用 `.mdx` 或 `.md`，文件名建议以章节序号开头（例如 `001_intro.mdx`），便于 EPUB 与侧边栏的自然排序。
+在 `content-sources/collections/<collection-slug>/<book-slug>/` 放置章节文件和可选的 `images/`。章节使用 `.mdx` 或 `.md`，文件名建议以章节序号开头（例如 `001_intro.mdx`），便于 EPUB 与侧边栏的自然排序。
 
 先用 `scripts/scan-mdx.mjs` 检查转换结果。图片路径应相对于章节或书籍目录实际存在，不能只在本机引用绝对路径。
 
@@ -47,7 +47,7 @@ description: 把一本新书接入 AstroLib 的目录、正文、索引和导出
 ## 3. 运行构建链与质量校验
 
 ```powershell
-node scripts/scan-mdx.mjs src/content/docs/collections/<collection-slug>/<book-slug>
+node scripts/scan-mdx.mjs content-sources/collections/<collection-slug>/<book-slug>
 npm run check:types
 npm test
 npm run build

@@ -3,7 +3,7 @@ name: Build and Release EPUBs
 on:
   push:
     paths:
-      - 'src/content/docs/collections/**'
+      - 'content-sources/collections/**'
       - 'src/config/**'
       - 'scripts/epub/**'
       - 'scripts/generate-epub.mjs'

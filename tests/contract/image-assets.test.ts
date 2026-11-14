@@ -22,9 +22,7 @@ function walk(dir: string, list: string[] = []): string[] {
 }
 
 describe('Image Asset Packaging & Integrity Contract (图片资产完整性与打包契约)', () => {
-  const sourcesCommDir = path.resolve('content-sources/collections/telecom/communication_principles');
-  const legacyCommDir = path.resolve('src/content/docs/collections/telecom/communication_principles');
-  const commDir = fs.existsSync(sourcesCommDir) ? sourcesCommDir : legacyCommDir;
+  const commDir = path.resolve('content-sources/collections/telecom/communication_principles');
   const allCommFiles = walk(commDir);
   const allDocsFiles = walk(path.resolve('src/content/docs'));
 

@@ -38,8 +38,7 @@ describe('Bilingual Algorithms Book Contract', () => {
     expect(keys.length).toBe(69);
 
     const sourcesDir = path.resolve(process.cwd(), 'content-sources/collections/cs/algorithms');
-    const legacyDir = path.resolve(process.cwd(), 'src/content/docs/collections/cs/algorithms');
-    const baseDir = fs.existsSync(sourcesDir) ? sourcesDir : legacyDir;
+    const baseDir = sourcesDir;
 
     for (const [enKey, zhVal] of Object.entries(mapping)) {
       const enFile = path.join(baseDir, `${enKey}.mdx`);
@@ -62,8 +61,7 @@ describe('Bilingual Algorithms Book Contract', () => {
   });
 
   it('performs accurate multilingual paragraph alignment on Chapter 00.1', () => {
-    const sourcesDir = path.resolve(process.cwd(), 'content-sources/collections/cs/algorithms');
-    const baseDir = fs.existsSync(sourcesDir) ? sourcesDir : path.resolve(process.cwd(), 'src/content/docs/collections/cs/algorithms');
+    const baseDir = path.resolve(process.cwd(), 'content-sources/collections/cs/algorithms');
     const enFile = path.join(baseDir, '00.1_books-and-algorithms.mdx');
     const zhFile = path.join(baseDir, 'zh/00.1_books-and-algorithms.mdx');
     if (!fs.existsSync(enFile) || !fs.existsSync(zhFile)) return;
