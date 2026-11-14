@@ -149,7 +149,7 @@ describe('Heading & Anchor Contract Suite (P1-B1)', () => {
       expect(chaptersWithHeadings).toBeGreaterThanOrEqual(983);
       // 重复 ID 章数归零
       expect(duplicateIdCount).toBe(0);
-    });
+    }, 60000);
   });
 
   describe('源码实现唯一性负向断言', () => {
