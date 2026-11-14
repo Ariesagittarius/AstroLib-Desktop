@@ -6,6 +6,7 @@
  */
 import { translationService } from './service.ts';
 import { dictionaryService } from '../dictionary/dictionary-service.ts';
+import type { WordDefinitionResult, WordContextExplanationResult } from '../dictionary/types.ts';
 import type { TranslationProviderId, TranslateOptions } from './types.ts';
 
 export const CORS_HEADERS: Record<string, string> = {
@@ -23,8 +24,8 @@ export const DEFAULT_PROVIDERS = [
   { id: 'bupt', label: '北京邮电大学 (校内专属)', desc: '北京邮电大学「人人有算力」校内专属服务，免翻直连' },
 ];
 
-export async function dispatchTranslate(body: any): Promise<{ status: number; data: any }> {
-  const { text, provider = 'google', apiKey, endpoint, model } = body || {};
+export async function dispatchTranslate(body: Record<string, unknown> | null | undefined): Promise<{ status: number; data: Record<string, unknown> }> {
+  const { text, provider = 'google', apiKey, endpoint, model } = (body || {}) as Record<string, unknown>;
   if (!text || typeof text !== 'string' || !text.trim()) {
     return { status: 400, data: { ok: false, error: '缺少有效待翻译文本 (text)' } };
   }
@@ -32,9 +33,9 @@ export async function dispatchTranslate(body: any): Promise<{ status: number; da
   try {
     const opts: TranslateOptions = {
       provider: provider as TranslationProviderId,
-      apiKey,
-      endpoint,
-      model,
+      apiKey: typeof apiKey === 'string' ? apiKey : undefined,
+      endpoint: typeof endpoint === 'string' ? endpoint : undefined,
+      model: typeof model === 'string' ? model : undefined,
     };
     const result = await translationService.translate(text, opts);
     return {
@@ -43,22 +44,23 @@ export async function dispatchTranslate(body: any): Promise<{ status: number; da
         ok: true,
         translatedText: result.translatedText,
         provider: result.provider,
-        cached: (result as any).cached || false,
+        cached: Boolean((result as unknown as { cached?: boolean }).cached),
       },
     };
-  } catch (err: any) {
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : String(err || '翻译失败');
     return {
       status: 500,
       data: {
         ok: false,
-        error: err?.message || '翻译失败',
+        error: errorMsg,
       },
     };
   }
 }
 
-export async function dispatchBatchTranslate(body: any): Promise<{ status: number; data: any }> {
-  const { paragraphs, provider = 'google', apiKey, endpoint, model } = body || {};
+export async function dispatchBatchTranslate(body: Record<string, unknown> | null | undefined): Promise<{ status: number; data: Record<string, unknown> }> {
+  const { paragraphs, provider = 'google', apiKey, endpoint, model } = (body || {}) as Record<string, unknown>;
   if (!Array.isArray(paragraphs)) {
     return { status: 400, data: { ok: false, error: '缺少 paragraphs 数组参数' } };
   }
@@ -66,9 +68,9 @@ export async function dispatchBatchTranslate(body: any): Promise<{ status: numbe
   try {
     const opts: TranslateOptions = {
       provider: provider as TranslationProviderId,
-      apiKey,
-      endpoint,
-      model,
+      apiKey: typeof apiKey === 'string' ? apiKey : undefined,
+      endpoint: typeof endpoint === 'string' ? endpoint : undefined,
+      model: typeof model === 'string' ? model : undefined,
     };
     const results = await translationService.translateParagraphs(paragraphs, opts);
     return {
@@ -78,18 +80,19 @@ export async function dispatchBatchTranslate(body: any): Promise<{ status: numbe
         paragraphs: results,
       },
     };
-  } catch (err: any) {
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : String(err || '批量翻译失败');
     return {
       status: 500,
       data: {
         ok: false,
-        error: err?.message || '批量翻译失败',
+        error: errorMsg,
       },
     };
   }
 }
 
-export async function dispatchDictLookup(word: string, provider = 'auto'): Promise<{ status: number; data: any }> {
+export async function dispatchDictLookup(word: string, provider = 'auto'): Promise<{ status: number; data: WordDefinitionResult | { ok: false; error: string } }> {
   if (!word || typeof word !== 'string' || !word.trim()) {
     return { status: 400, data: { ok: false, error: '缺少 word 参数' } };
   }
@@ -101,15 +104,15 @@ export async function dispatchDictLookup(word: string, provider = 'auto'): Promi
   };
 }
 
-export async function dispatchDictContext(body: any): Promise<{ status: number; data: any }> {
-  const { word, sentence, context } = body || {};
-  if (!word) {
+export async function dispatchDictContext(body: Record<string, unknown> | null | undefined): Promise<{ status: number; data: WordContextExplanationResult | { ok: false; error: string } }> {
+  const { word, sentence, context } = (body || {}) as Record<string, unknown>;
+  if (!word || typeof word !== 'string') {
     return { status: 400, data: { ok: false, error: '缺少 word 参数' } };
   }
 
   const result = await dictionaryService.explainInContext({
     word,
-    sentence: sentence || context || '',
+    sentence: typeof sentence === 'string' ? sentence : typeof context === 'string' ? context : '',
   });
   return {
     status: result.ok ? 200 : 400,

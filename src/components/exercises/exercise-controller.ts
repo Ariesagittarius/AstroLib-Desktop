@@ -38,6 +38,13 @@ export type {
 
 const PAGE_SIZE = 15;
 
+type DialogCompatibleElement = HTMLElement & {
+  show?: () => void;
+  close?: () => void;
+  open?: boolean;
+  quick?: boolean;
+};
+
 class ExerciseCenterController {
   private root: HTMLElement | null = null;
   private dialogEl: HTMLElement | null = null;
@@ -257,12 +264,12 @@ class ExerciseCenterController {
       this.boundRoot = null;
     });
 
-    const win = window as any;
+    const win = window as unknown as Window & { __exerciseGlobalBound?: boolean };
     if (!win.__exerciseGlobalBound) {
       win.__exerciseGlobalBound = true;
 
-      window.addEventListener('exercises:open', (e: any) => {
-        const detail = e.detail || {};
+      window.addEventListener('exercises:open', (e: Event) => {
+        const detail = (e as CustomEvent<{ mode?: string; paperId?: number; targetQid?: string; book?: string; chapter?: number; section?: string }>).detail || {};
         if (detail.mode === 'paper') {
           this.openPaper(detail.paperId || 1, detail.targetQid, detail.book);
         } else {
@@ -463,7 +470,7 @@ class ExerciseCenterController {
         if (!pill) return;
         this.sourcePillsContainer?.querySelectorAll('.ex-nav-item').forEach((p) => p.classList.remove('active'));
         pill.classList.add('active');
-        const src = (pill.getAttribute('data-source') || 'all') as any;
+        const src = (pill.getAttribute('data-source') || 'all') as 'all' | 'textbook' | 'exam';
         this.currentSource = src;
         if (this.currentSource === 'textbook') {
           this.groupPillsContainer?.classList.remove('hidden');
@@ -485,7 +492,7 @@ class ExerciseCenterController {
         if (!pill) return;
         this.groupPillsContainer?.querySelectorAll('.ex-nav-item').forEach((p) => p.classList.remove('active'));
         pill.classList.add('active');
-        this.currentGroup = (pill.getAttribute('data-group') || 'all') as any;
+        this.currentGroup = (pill.getAttribute('data-group') || 'all') as ('all' | 'A' | 'B');
         this.displayedLimit = PAGE_SIZE;
         this.filterAndRender();
       });
@@ -531,7 +538,7 @@ class ExerciseCenterController {
 
   private ensureDialogCentered(targetModal: HTMLElement) {
     targetModal.setAttribute('quick', '');
-    (targetModal as any).quick = true;
+    (targetModal as DialogCompatibleElement).quick = true;
     const shadow = targetModal.shadowRoot;
     if (!shadow) return;
     const nativeDialog = shadow.querySelector('dialog');
@@ -629,7 +636,7 @@ class ExerciseCenterController {
 
     if (this.dialogEl) {
       this.ensureDialogCentered(this.dialogEl);
-      const dlg = this.dialogEl as any;
+      const dlg = this.dialogEl as DialogCompatibleElement;
       if (typeof dlg.show === 'function') {
         dlg.show();
       } else {
@@ -673,7 +680,7 @@ class ExerciseCenterController {
 
     if (this.dialogEl) {
       this.ensureDialogCentered(this.dialogEl);
-      const dlg = this.dialogEl as any;
+      const dlg = this.dialogEl as DialogCompatibleElement;
       if (typeof dlg.show === 'function') {
         dlg.show();
       } else {
@@ -707,7 +714,7 @@ class ExerciseCenterController {
     this.trimPaperCache(2);
 
     if (this.dialogEl) {
-      const dlg = this.dialogEl as any;
+      const dlg = this.dialogEl as DialogCompatibleElement;
       if (typeof dlg.close === 'function') {
         dlg.close();
       } else {

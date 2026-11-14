@@ -303,24 +303,24 @@ export class TranslationDockController {
     });
 
     // 监听全局译文呈现方式变更事件
-    window.addEventListener(TRANSLATION_DISPLAY_MODE_CHANGE_EVENT, (e: any) => {
+    window.addEventListener(TRANSLATION_DISPLAY_MODE_CHANGE_EVENT, ((e: CustomEvent<{ mode?: string; forceTrigger?: boolean }>) => {
       const mode = e?.detail?.mode;
       const forceTrigger = Boolean(e?.detail?.forceTrigger);
       if (mode && (mode === 'sidebar' || mode === 'inline')) {
         this.setDisplayMode(mode, false, forceTrigger);
       }
-    });
+    }) as EventListener);
 
     // 监听全局翻译服务商变更事件
-    window.addEventListener(TRANSLATION_PROVIDER_CHANGE_EVENT, (e: any) => {
-      const p = e?.detail?.provider as TranslationProviderId | undefined;
+    window.addEventListener(TRANSLATION_PROVIDER_CHANGE_EVENT, ((e: CustomEvent<{ provider?: TranslationProviderId }>) => {
+      const p = e?.detail?.provider;
       if (p && p !== this.currentProvider) {
         this.setProvider(p);
       }
-    });
+    }) as EventListener);
 
     // 监听 SideloadManager 侧载状态事件
-    window.addEventListener('astrolib:sideload-change', (e: any) => {
+    window.addEventListener('astrolib:sideload-change', ((e: CustomEvent<{ activePanelId?: string }>) => {
       const activeId = e?.detail?.activePanelId;
       if (activeId === 'translate') {
         if (this.displayMode === 'inline') {
@@ -330,7 +330,7 @@ export class TranslationDockController {
         }
         this.onPanelActivated();
       }
-    });
+    }) as EventListener);
 
     // 页面切页路由跳转时重置段落状态与联动
     document.addEventListener('astro:page-load', () => {
@@ -645,14 +645,14 @@ export class TranslationDockController {
               unit.error = res.error || '翻译失败';
               this.stateMachine.setError(unit.error);
             }
-          } catch (err: any) {
+          } catch (err: unknown) {
             if (signal.aborted) {
               this.stateMachine.abortTranslation();
               return;
             }
             unit.translatedText = unit.sourceText;
             unit.status = 'error';
-            unit.error = err?.message || '网络连接异常';
+            unit.error = err instanceof Error ? err.message : String(err || '网络连接异常');
             this.stateMachine.setError(unit.error);
           }
 
@@ -706,9 +706,9 @@ export class TranslationDockController {
         unit.error = res.error || '翻译失败';
         this.stateMachine.setError(unit.error);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       unit.status = 'error';
-      unit.error = err?.message || '网络连接异常';
+      unit.error = err instanceof Error ? err.message : String(err || '网络连接异常');
       this.stateMachine.setError(unit.error);
     }
 
@@ -861,9 +861,10 @@ export class TranslationDockController {
         }
 
         return { ok: true, translatedText: content };
-      } catch (err: any) {
+      } catch (err: unknown) {
         if (signal?.aborted) throw err;
-        return { ok: false, error: err?.message || '智谱直连翻译失败' };
+        const msg = err instanceof Error ? err.message : String(err || '智谱直连翻译失败');
+        return { ok: false, error: msg };
       }
     }
 
@@ -931,9 +932,10 @@ export class TranslationDockController {
         }
 
         return { ok: true, translatedText: content };
-      } catch (err: any) {
+      } catch (err: unknown) {
         if (signal?.aborted) throw err;
-        return { ok: false, error: err?.message || 'Gemini 直连翻译失败' };
+        const msg = err instanceof Error ? err.message : String(err || 'Gemini 直连翻译失败');
+        return { ok: false, error: msg };
       }
     }
 
@@ -998,9 +1000,10 @@ export class TranslationDockController {
         }
 
         return { ok: true, translatedText: content };
-      } catch (err: any) {
+      } catch (err: unknown) {
         if (signal?.aborted) throw err;
-        return { ok: false, error: err?.message || '北邮校内网关直连失败' };
+        const msg = err instanceof Error ? err.message : String(err || '北邮校内网关直连失败');
+        return { ok: false, error: msg };
       }
     }
 
@@ -1058,9 +1061,10 @@ export class TranslationDockController {
         }
 
         return { ok: true, translatedText: content };
-      } catch (err: any) {
+      } catch (err: unknown) {
         if (signal?.aborted) throw err;
-        return { ok: false, error: err?.message || 'DeepSeek 直连翻译失败' };
+        const msg = err instanceof Error ? err.message : String(err || 'DeepSeek 直连翻译失败');
+        return { ok: false, error: msg };
       }
     }
 
@@ -1112,7 +1116,7 @@ export class TranslationDockController {
           if (Array.isArray(data) && typeof data[0] === 'string') {
             trans = data.join('');
           } else if (Array.isArray(data) && Array.isArray(data[0])) {
-            trans = data[0].filter((p: any) => typeof p === 'string').join('');
+            trans = data[0].filter((p: unknown): p is string => typeof p === 'string').join('');
           }
           if (trans) {
             if (maskResult.tokens.size > 0) {
@@ -1121,7 +1125,7 @@ export class TranslationDockController {
             return { ok: true, translatedText: trans };
           }
         }
-      } catch (clientErr: any) {
+      } catch (clientErr: unknown) {
         if (signal?.aborted) throw clientErr;
       }
 
@@ -1132,7 +1136,7 @@ export class TranslationDockController {
         const gtxRes = await fetch(gtxUrl, { signal });
         if (gtxRes.ok) {
           const gtxData = await gtxRes.json();
-          let trans = (gtxData?.[0] || []).map((p: any) => p?.[0] || '').join('');
+          let trans = (gtxData?.[0] || []).map((p: unknown) => (Array.isArray(p) ? String(p[0] || '') : '')).join('');
           if (trans) {
             if (maskResult.tokens.size > 0) {
               trans = StructurePreservingMasker.unmask(trans, maskResult.tokens).restoredText;
@@ -1140,7 +1144,7 @@ export class TranslationDockController {
             return { ok: true, translatedText: trans };
           }
         }
-      } catch (gtxErr: any) {
+      } catch (gtxErr: unknown) {
         if (signal?.aborted) throw gtxErr;
       }
 

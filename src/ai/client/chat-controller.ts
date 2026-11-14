@@ -1,13 +1,13 @@
-let _renderMath: any = null;
-async function getMathRenderer() {
+type RenderMathFn = (el: HTMLElement, opts?: import('katex/dist/contrib/auto-render.mjs').RenderMathInElementOptions) => void;
+let _renderMath: RenderMathFn | null = null;
+async function getMathRenderer(): Promise<RenderMathFn | null> {
   if (!_renderMath) {
     const mod = await import('katex/dist/contrib/auto-render.mjs');
-    _renderMath = mod.default || mod;
+    _renderMath = (mod.default || mod) as RenderMathFn;
   }
   return _renderMath;
 }
-
-let _aiCoreModules: any = null;
+let _aiCoreModules: Record<string, Function> | null = null;
 async function getAiCoreModules() {
   if (!_aiCoreModules) {
     const [retrieverMod, llmMod, toolsMod] = await Promise.all([
@@ -263,7 +263,7 @@ export class AIAskElement extends CustomElementBase {
     window.addEventListener('keydown', this._onKeyDownEsc);
 
     // 订阅侧载管理器状态变更：若非 AI 面板激活（如 Esc 或切回大纲），自动将 DOM 归位并关闭浮窗；若为 AI 面板则停靠
-    this._unsubSideload = sideloadManager.subscribe((state: any) => {
+    this._unsubSideload = sideloadManager.subscribe((state) => {
       if (state.activePanelId !== 'ai' && this._isDocked) {
         this._undockInternal(false);
       } else if (state.activePanelId === 'ai' && !this._isDocked) {
@@ -1082,10 +1082,10 @@ export class AIAskElement extends CustomElementBase {
     this._ask();
   }
 
-  _appendToThread(q: string, text: string, sources: any[], tools: any[], segments: any[], chapterTitle?: string) {
+  _appendToThread(q: string, text: string, sources: unknown[], tools: unknown[], segments: unknown[] = [], chapterTitle?: string) {
     const t = this._ensureActiveThread();
     t.messages.push({ role: 'user', text: q, chapterTitle });
-    if (text) t.messages.push({ role: 'assistant', text, sources, tools, segments: segments || undefined });
+    if (text) t.messages.push({ role: 'assistant', text, sources, tools, segments: segments.length ? segments : undefined });
     if (!t.title || t.title === '新会话') t.title = (q || '').slice(0, 20) || '新会话';
     t.updatedAt = Date.now();
     this._saveActiveThread();
@@ -1151,7 +1151,7 @@ export class AIAskElement extends CustomElementBase {
     return idx;
   }
 
-  _selectedModel(): any {
+  _selectedModel(): Record<string, any> {
     const id = getActiveAiModelId();
     const found = getAllAiModels().find((m) => m.id === id);
     const provider = getAiProvider();
@@ -1162,7 +1162,7 @@ export class AIAskElement extends CustomElementBase {
     return getAiApiKey(getActiveAiModelId());
   }
 
-  _params(): any {
+  _params(): Record<string, any> {
     return getAiParams();
   }
 
@@ -1253,8 +1253,8 @@ export class AIAskElement extends CustomElementBase {
     this._submit.disabled = this._busy || !val;
   }
 
-  _renderSources(el: HTMLElement, hits: any[]) {
-    renderSourcesHtml(el, hits, this._sourceOpenNew());
+  _renderSources(el: HTMLElement, hits: unknown[]) {
+    renderSourcesHtml(el, hits as any[], this._sourceOpenNew());
     this._typeMath(el);
   }
 
@@ -1278,12 +1278,12 @@ export class AIAskElement extends CustomElementBase {
   _typeMath(el: HTMLElement) {
     if (!el) return;
     getMathRenderer().then((renderer) => {
-      try { renderer(el, this._katexConfig); }
+      try { if (renderer) renderer(el, this._katexConfig); }
       catch (e) {}
     }).catch(() => {});
   }
 
-  _jsonHtml(v: any, cap = 1400): string {
+  _jsonHtml(v: unknown, cap = 1400): string {
     return jsonHtml(v, cap);
   }
 
@@ -1308,11 +1308,11 @@ export class AIAskElement extends CustomElementBase {
     updateCollapseBtnState(this._collapseBtn, this._isPrecedingCollapsed);
   }
 
-  _toolBlocksHtml(toolLog: any[], isOpen = false): string {
+  _toolBlocksHtml(toolLog: unknown[], isOpen = false): string {
     return renderToolBlocksHtml(toolLog, isOpen);
   }
 
-  _toolsGroupHtml(tools: any[], isOpen = false): string {
+  _toolsGroupHtml(tools: unknown[], isOpen = false): string {
     return renderToolsGroupHtml(tools, isOpen);
   }
 
@@ -1382,7 +1382,7 @@ export class AIAskElement extends CustomElementBase {
     const params = this._params();
     try {
       let idx = null;
-      let hits: any[] = [];
+      let hits: unknown[] = [];
       const ai = await getAiCoreModules();
       if (!discussion) {
         idx = await this._getIndex();
@@ -1414,14 +1414,14 @@ export class AIAskElement extends CustomElementBase {
           chapterRefs,
         });
         const text = res.text || '';
-        const sources = discussion ? [] : hits.map((h: any) => ({
+        const sources = discussion ? [] : (hits as any[]).map((h) => ({
           type: h.chunk.type, title: h.chunk.title, url: h.chunk.url, text: h.chunk.text,
         }));
-        const tools = (res.tools || []).map((t: any) => ({
+        const tools = ((res.tools || []) as any[]).map((t) => ({
           name: t.name, args: t.args, summary: t.summary, resultText: t.resultText,
         }));
         if (!discussion && hits.length) this._renderSources(sourcesEl, hits);
-        this._appendToThread(q, text, sources, tools, res.segments, chapterRefDisplay);
+        this._appendToThread(q, text, sources, tools, res.segments || [], chapterRefDisplay);
         status.textContent = '完成。';
       } else {
         const placeholder = blocksEl.querySelector('.ask-msg-thinking-placeholder');
@@ -1432,7 +1432,7 @@ export class AIAskElement extends CustomElementBase {
         if (!discussion && hits.length) this._renderSources(sourcesEl, hits);
         status.textContent = '';
       }
-    } catch (e: any) {
+    } catch (e: unknown) {
       const placeholder = blocksEl.querySelector('.ask-msg-thinking-placeholder');
       if (placeholder) placeholder.remove();
       const provider = getAiProvider();
@@ -1458,7 +1458,7 @@ export class AIAskElement extends CustomElementBase {
     }
   }
 
-  async _generateAnswer(blocksEl: HTMLElement, opts: any): Promise<any> {
+  async _generateAnswer(blocksEl: HTMLElement, opts: unknown): Promise<{ text?: string; tools?: unknown[]; segments?: unknown[] }> {
     if (this._abort) this._abort.abort();
     this._abort = new AbortController();
     const cfg = getConfig(this);

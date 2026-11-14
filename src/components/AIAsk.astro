@@ -70,6 +70,14 @@ const bookTitle = currentBook ? currentBook.title : '';
     loadAiAsk();
   }
 
+  interface AIAskElementTarget extends HTMLElement {
+    _openPanel?: () => void;
+    _openWithQuestion?: (prompt: string, autoSubmit: boolean) => void;
+  }
+  interface HandledCustomEvent extends CustomEvent {
+    __handled?: boolean;
+  }
+
   // 点击右下角 AI 悬浮球 (ask-fab) 时按需加载控制器
   document.addEventListener('click', (e) => {
     if (typeof localStorage !== 'undefined' && localStorage.getItem('astrolib_lite_mode') === 'true') return;
@@ -78,7 +86,7 @@ const bookTitle = currentBook ? currentBook.title : '';
       fab.setAttribute('aria-busy', 'true');
       loadAiAsk().then(() => {
         fab.removeAttribute('aria-busy');
-        const el = document.querySelector('ai-ask') as any;
+        const el = document.querySelector('ai-ask') as AIAskElementTarget | null;
         if (el && typeof el._openPanel === 'function') el._openPanel();
       }).catch(() => {
         fab.removeAttribute('aria-busy');
@@ -88,22 +96,22 @@ const bookTitle = currentBook ? currentBook.title : '';
 
   // 监听外部查询事件：若尚未加载控制器，等待加载后执行外部问答
   window.addEventListener('aiask:query', (e: Event) => {
-    const ce = e as CustomEvent;
+    const ce = e as HandledCustomEvent;
     const detail = ce.detail;
-    if ((ce as any).__handled) return;
+    if (ce.__handled) return;
 
     // 若已经定义并挂载了 ai-ask 控制器，优先直接调用，避免重新触发 ensureMounted
-    const el = document.querySelector('ai-ask') as any;
+    const el = document.querySelector('ai-ask') as AIAskElementTarget | null;
     if (el && typeof el._openWithQuestion === 'function' && detail?.prompt) {
-      (ce as any).__handled = true;
+      ce.__handled = true;
       el._openWithQuestion(detail.prompt, detail.autoSubmit ?? true);
       return;
     }
 
     loadAiAsk().then(() => {
-      if ((ce as any).__handled) return;
-      (ce as any).__handled = true;
-      const elReady = document.querySelector('ai-ask') as any;
+      if (ce.__handled) return;
+      ce.__handled = true;
+      const elReady = document.querySelector('ai-ask') as AIAskElementTarget | null;
       if (elReady && typeof elReady._openWithQuestion === 'function' && detail?.prompt) {
         elReady._openWithQuestion(detail.prompt, detail.autoSubmit ?? true);
       }

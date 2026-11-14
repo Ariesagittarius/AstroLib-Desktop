@@ -44,21 +44,33 @@ export interface ISidebarLayoutController {
   subscribe(listener: (state: any) => void): () => void;
 }
 
+interface SideloadGlobalWindow {
+  __sideloadManager?: ISideloadManager;
+  sideloadManager?: ISideloadManager;
+  __sidebarLayoutController?: ISidebarLayoutController;
+}
+
+function getGlobalWindow(): SideloadGlobalWindow | undefined {
+  return typeof window !== 'undefined' ? (window as unknown as SideloadGlobalWindow) : undefined;
+}
+
 let _sideloadManager: ISideloadManager | null = null;
 let _sidebarLayoutController: ISidebarLayoutController | null = null;
 
 export function registerSideloadManager(manager: ISideloadManager): void {
   _sideloadManager = manager;
-  if (typeof window !== 'undefined') {
-    (window as any).__sideloadManager = manager;
-    (window as any).sideloadManager = manager;
+  const win = getGlobalWindow();
+  if (win) {
+    win.__sideloadManager = manager;
+    win.sideloadManager = manager;
   }
 }
 
 export function getSideloadManager(): ISideloadManager {
   if (_sideloadManager) return _sideloadManager;
-  if (typeof window !== 'undefined' && (window as any).sideloadManager) {
-    return (window as any).sideloadManager;
+  const win = getGlobalWindow();
+  if (win?.sideloadManager) {
+    return win.sideloadManager;
   }
   return {
     init: () => {},
@@ -95,15 +107,17 @@ export const sideloadManagerContract: ISideloadManager = {
 
 export function registerSidebarLayoutController(ctrl: ISidebarLayoutController): void {
   _sidebarLayoutController = ctrl;
-  if (typeof window !== 'undefined') {
-    (window as any).__sidebarLayoutController = ctrl;
+  const win = getGlobalWindow();
+  if (win) {
+    win.__sidebarLayoutController = ctrl;
   }
 }
 
 export function getSidebarLayoutController(): ISidebarLayoutController {
   if (_sidebarLayoutController) return _sidebarLayoutController;
-  if (typeof window !== 'undefined' && (window as any).__sidebarLayoutController) {
-    return (window as any).__sidebarLayoutController;
+  const win = getGlobalWindow();
+  if (win?.__sidebarLayoutController) {
+    return win.__sidebarLayoutController;
   }
   return {
     init: () => {},
