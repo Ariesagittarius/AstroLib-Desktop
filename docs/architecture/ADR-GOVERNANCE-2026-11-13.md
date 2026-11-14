@@ -62,14 +62,14 @@ The codebase is organized into strict layers with unidirectional top-down depend
 - To eliminate `services → components/sideload` dependency inversion, UI sidebar/sideload states are abstracted into a shared contract: `src/features/sideload/contract.ts`.
 - `services` interact only with this pure contract or state-machine interface, eliminating concrete DOM controller imports.
 
-### 2.3 Strict Type Narrowing (Branded Unions)
-- Any extensible union type must NOT use raw `| string`, which dissolves autocomplete and exhaustiveness checks.
-- If backward-compatible or dynamic strings must be accepted, use TypeScript's branded literal union idiom:
-  ```typescript
-  export type KnownKey = 'key-a' | 'key-b';
-  export type ExtensibleKey = KnownKey | (string & {});
-  ```
-- Core schema-bound identifiers (`CollectionId`, `QuestionType`) are strictly closed unions (`'math' | 'cs' | 'science' | 'telecom'`).
+### 2.3 Strict Type Narrowing & Value Union Governance
+- Any extensible union type must NOT use raw `| string` widening against string literals, which dissolves autocomplete and exhaustiveness checks.
+- Core schema-bound identifiers (`CollectionId`, `QuestionType`, `SlimQuestionItem.group`) are strictly closed unions (e.g. `group: 'A' | 'B' | 'C'`).
+- The pseudo-brand hack `(string & {})` is strictly eliminated from `src/types/` as it weakens compile-time guarantees without providing actual domain branding.
+
+#### 2.3.1 Valid Value Union Exceptions (合法值联合例外)
+- **`Book.tocMapping` (`Record<string, string | string[]>`)**:
+  This represents an intentional, domain-valid value union where a chapter source slug maps to either a single target slug (`string`) or multiple alias slugs (`string[]`). This is a standard scalar-or-array polymorphic property, NOT a literal widening anti-pattern (`'literal' | string`). The architectural gate explicitly registers `string | string[]` as an approved exception while enforcing 0 occurrences of `'literal' | string` and `(string & {})` across `src/types/`.
 
 ### 2.4 Removal of Re-Export Shims
 - All 10 one-line `.mjs` shims in `src/config/` and `src/utils/` are deleted.

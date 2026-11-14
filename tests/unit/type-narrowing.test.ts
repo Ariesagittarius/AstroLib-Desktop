@@ -45,6 +45,17 @@ describe('Type Narrowing Contracts (E3)', () => {
       group: 'B',
     };
     expect(itemB.group).toBe('B');
+
+    const itemC: Partial<SlimQuestionItem> = {
+      group: 'C',
+    };
+    expect(itemC.group).toBe('C');
+
+    const invalidGroup: Partial<SlimQuestionItem> = {
+      // @ts-expect-error group must be A/B/C
+      group: 'D',
+    };
+    expect(invalidGroup.group).toBe('D');
   });
 
   it('Book.tocMapping 契约结构测试', () => {
@@ -56,5 +67,6 @@ describe('Type Narrowing Contracts (E3)', () => {
     };
     expect(bookWithMapping.tocMapping).toBeDefined();
     expect(bookWithMapping.tocMapping?.['00_preface']).toBe('zh/00_preface');
+    expect(Array.isArray(bookWithMapping.tocMapping?.['01_intro'])).toBe(true);
   });
 });
