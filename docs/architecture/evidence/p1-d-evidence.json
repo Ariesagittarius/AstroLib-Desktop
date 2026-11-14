@@ -1,8 +1,8 @@
 {
   "gate": "P1-D UI, Controllers and CSS Convergence",
   "generatedAt": "2026-11-14T06:45:00+08:00",
-  "remediatedAt": "2026-11-14T12:35:00+08:00",
-  "status": "PASSED",
+  "remediatedAt": "2026-11-14T14:15:00+08:00",
+  "status": "CONDITIONAL",
   "criteria": {
     "D1_Settings": {
       "status": "PASSED",
@@ -34,39 +34,39 @@
         {
           "name": "chat-controller",
           "file": "src/ai/client/chat-controller.ts",
-          "lines": 1495,
+          "lines": 1492,
           "target": "< 1500",
           "stateMachine": "src/ai/client/chat-controller.state.ts",
           "unitTests": 7,
           "testFile": "tests/unit/chat-state.test.ts",
-          "consumedBoundary": "_busy, _stateMachine, status transitions"
+          "consumedBoundary": "_busy, _stateMachine, status transitions (busy/streaming/error/abort)"
         },
         {
           "name": "exercise-controller",
           "file": "src/components/exercises/exercise-controller.ts",
-          "lines": 1495,
+          "lines": 1481,
           "target": "< 1500",
           "stateMachine": "src/components/exercises/exercise-controller.state.ts",
           "unitTests": 7,
           "testFile": "tests/unit/exercise-state.test.ts",
-          "consumedBoundary": "currentMode, currentGroup, isFilterCollapsed, open/close, fullscreen"
+          "consumedBoundary": "currentMode, currentGroup, isFilterCollapsed, open/close, fullscreen, openPaper"
         },
         {
           "name": "translation-dock-controller",
           "file": "src/services/translation/client/translation-dock-controller.ts",
-          "lines": 1485,
+          "lines": 1413,
           "target": "< 1500",
           "stateMachine": "src/services/translation/client/translation-dock-controller.state.ts",
           "unitTests": 7,
           "testFile": "tests/unit/translation-dock-state.test.ts",
-          "consumedBoundary": "currentProvider, displayMode, isTranslating, selectedExportFormat/Scope"
+          "consumedBoundary": "currentProvider, displayMode, isTranslating, selectedExportFormat/Scope, error/abort"
         }
       ],
       "totalNewStateUnitTests": 21,
       "stateMachineDomReferences": 0
     },
     "D5_CSS": {
-      "status": "PASSED",
+      "status": "CONDITIONAL",
       "layersDirectory": "src/styles/layers/",
       "layers": ["tokens.css", "base.css", "components.css", "features.css", "overrides.css"],
       "importantBaseline": 6590,
@@ -76,6 +76,7 @@
       "importantFinal": 4552,
       "importantReduced": 2038,
       "visualSmokeDocument": "docs/architecture/evidence/p1-d-visual-smoke.md",
+      "visualSmokeMethod": "manual-spot-check",
       "targetMet": true
     },
     "D6_RuntimeDefects": {
