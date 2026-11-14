@@ -35,7 +35,8 @@
     "test:system": "vitest run tests/system",
     "test:all": "vitest run",
     "check:types": "astro sync && tsc --noEmit",
-    "check:all": "npm run check:types && npm test",
+    "check:astro": "astro check",
+    "check:all": "npm run check:types && npm run check:astro && npm test",
     "astro": "astro"
   },
   "dependencies": {

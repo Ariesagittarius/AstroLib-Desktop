@@ -7,7 +7,7 @@ import M3TopNavBar from './m3/M3TopNavBar.astro';
  * Render the `Search` component if Pagefind is enabled or default search is overridden.
  */
 const shouldRenderSearch =
-	config.pagefind || config.components.Search !== '@astrojs/starlight/components/Search.astro';
+	Boolean(config.pagefind || config.components.Search !== '@astrojs/starlight/components/Search.astro');
 ---
 
 <script is:inline>

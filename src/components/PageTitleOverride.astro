@@ -9,7 +9,7 @@ const entry = Astro.locals.starlightRoute.entry;
 const rawTitle = entry.data.title;
 const titleHtml = renderTitleHtml(rawTitle);
 const entryId = entry.id || '';
-const entrySlug = entry.slug || '';
+const entrySlug = (entry as any).slug || entry.id || '';
 
 // 深度匹配当前路由所属图书及合集
 let currentBook = null;

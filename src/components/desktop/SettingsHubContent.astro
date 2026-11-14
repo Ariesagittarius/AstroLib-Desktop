@@ -207,14 +207,14 @@ const metaJson = JSON.stringify(featureMeta);
                               type="button"
                               class="ft-palette-swatch"
                               data-color-id={preset.id}
-                              data-seed-hex={preset.seedHex}
-                              title={`主题色：${preset.name}`}
-                              aria-label={`选择${preset.name}主题色`}
+                              data-seed-hex={preset.seed}
+                              title={`主题色：${preset.label}`}
+                              aria-label={`选择${preset.label}主题色`}
                             >
-                              <span class="ft-swatch-ring" style={`--swatch-accent: ${preset.seedHex}`}>
-                                <span class="ft-swatch-inner" style={`background: ${preset.seedHex}`}></span>
+                              <span class="ft-swatch-ring" style={`--swatch-accent: ${preset.seed}`}>
+                                <span class="ft-swatch-inner" style={`background: ${preset.seed}`}></span>
                               </span>
-                              <span class="ft-swatch-name">{preset.name}</span>
+                              <span class="ft-swatch-name">{preset.label}</span>
                             </button>
                           ))}
                         </div>
@@ -268,7 +268,7 @@ const metaJson = JSON.stringify(featureMeta);
                           {LATIN_PRESETS.map((p) => (
                             <md-filter-chip
                               class="ft-font-chip"
-                              label={p.name}
+                              label={p.label}
                               data-font-type="latin"
                               data-font-val={p.value}
                               selected={p.value === DEFAULT_PREF.latin}
@@ -284,7 +284,7 @@ const metaJson = JSON.stringify(featureMeta);
                           {CJK_PRESETS.map((p) => (
                             <md-filter-chip
                               class="ft-font-chip"
-                              label={p.name}
+                              label={p.label}
                               data-font-type="cjk"
                               data-font-val={p.value}
                               selected={p.value === DEFAULT_PREF.cjk}

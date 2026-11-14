@@ -254,12 +254,12 @@ import { features } from '../config/features.config.ts';
   customElements.define('starlight-theme-select', VpThemeSwitch);
 
   // 系统配色变化时，auto 用户跟随切换（全局只注册一次）
-  if (!window.__vpThemeSysListener) {
-    window.__vpThemeSysListener = true;
+  if (!(window as any).__vpThemeSysListener) {
+    (window as any).__vpThemeSysListener = true;
     matchMedia('(prefers-color-scheme: light)').addEventListener('change', () => {
       if (loadTheme() === 'auto') {
         applyTheme('auto');
-        document.querySelectorAll('starlight-theme-select').forEach((el) => el.syncIcon());
+        document.querySelectorAll('starlight-theme-select').forEach((el) => (el as any).syncIcon());
       }
     });
   }

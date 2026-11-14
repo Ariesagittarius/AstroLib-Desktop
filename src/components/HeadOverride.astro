@@ -29,7 +29,7 @@ const cleanTitle = String(rawTitle)
   .trim();
 
 const entryId = entry?.id || '';
-const entrySlug = entry?.slug || '';
+const entrySlug = (entry as any)?.slug || entry?.id || '';
 
 // 深度匹配当前路由所属图书及合集
 let currentBook = null;
@@ -101,7 +101,7 @@ const schemaGraph = [];
 
 if (currentBook && currentCol) {
   // (1) 面包屑导航 BreadcrumbList
-  const bookReadUrl = `${siteUrl}/collections/${currentCol.slug}/${currentBook.slug}/${cleanSlug(currentBook.entryPoint)}/`;
+  const bookReadUrl = `${siteUrl}/collections/${currentCol.slug}/${currentBook.slug}/${cleanSlug(currentBook.entryPoint || '')}/`;
   schemaGraph.push({
     '@type': 'BreadcrumbList',
     itemListElement: [

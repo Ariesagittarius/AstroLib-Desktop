@@ -18,6 +18,7 @@ interface Props {
   grade?: number;
   opticalSize?: number;
   class?: string;
+  id?: string;
   style?: string;
   ariaHidden?: boolean | 'true' | 'false';
   ariaLabel?: string;
@@ -31,6 +32,7 @@ const {
   grade = 0,
   opticalSize = 20,
   class: className = '',
+  id,
   style: userStyle = '',
   ariaHidden = true,
   ariaLabel,
@@ -41,6 +43,7 @@ const fontVariationSettings = `'FILL' ${fill ? 1 : 0}, 'wght' ${weight}, 'GRAD' 
 ---
 
 <span
+  id={id}
   class:list={['material-symbols-outlined', 'm3-icon', className]}
   style={`font-size: ${pixelSize}; font-variation-settings: ${fontVariationSettings}; ${userStyle}`}
   aria-hidden={ariaLabel ? undefined : (ariaHidden ? 'true' : undefined)}

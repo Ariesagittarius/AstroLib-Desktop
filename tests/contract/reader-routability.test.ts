@@ -229,4 +229,28 @@ describe('Reader Routability Contract Suite (P1-A4 / ADR-READER-CONTRACT)', () =
     expect(normalizedTargetMatches).toBe(0);
     expect(targetNormMatches).toBe(0);
   });
+
+  it('6. 核心路由 Smoke: /desktop/, /reader/, 以及代表性 Canonical 章节必须全部可达 (200 text/html)', async () => {
+    const desktopRes = await simulateGet(handler, '/desktop/');
+    expect(desktopRes.handled, 'Route /desktop/ 必须被 StaticHandler 处理').toBe(true);
+    expect(desktopRes.statusCode).toBe(200);
+    expect(desktopRes.headers['Content-Type']).toContain('text/html');
+
+    const readerRes = await simulateGet(handler, '/reader/');
+    expect(readerRes.handled, 'Route /reader/ 必须被 StaticHandler 处理').toBe(true);
+    expect(readerRes.statusCode).toBe(200);
+    expect(readerRes.headers['Content-Type']).toContain('text/html');
+
+    // 抽样代表性 Canonical 章节
+    const canonicalSamples = [
+      '/collections/math/math_senior/06_第1章-三角函数/',
+      '/collections/cs/algorithms/00_preface/',
+    ];
+    for (const url of canonicalSamples) {
+      const res = await simulateGet(handler, url);
+      expect(res.handled, `Route [${url}] 必须被 StaticHandler 处理`).toBe(true);
+      expect(res.statusCode, `Route [${url}] 必须返回 200`).toBe(200);
+      expect(res.headers['Content-Type']).toContain('text/html');
+    }
+  });
 });

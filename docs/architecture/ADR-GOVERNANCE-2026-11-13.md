@@ -86,6 +86,16 @@ The codebase is organized into strict layers with unidirectional top-down depend
   - One-line shims count in `src/` must equal 0.
   - `check:types` runs with strict typechecking across all TypeScript and Astro files.
 
+### 2.7 Registration of Dual Retrieval Paths (AI Context vs. UI Search)
+Per P1-E4 evaluation, two retrieval subsystems are intentionally maintained with distinct scopes and lifecycles:
+1. **`src/ai/retriever.mjs` (MCP & Server RAG)**:
+   - **Purpose**: Backend MCP tool / LLM agent context retrieval (chunk-based cosine similarity & BM25 over textbook markdown chunks for AI prompt injection).
+   - **Execution Environment**: Server-side / Node.js MCP server runtime.
+2. **`src/features/search-rec/` (Client Search & Recommendation)**:
+   - **Purpose**: Front-end interactive search bar, fuzzy textbook title/section lookup, and book recommendation widgets.
+   - **Execution Environment**: Browser / Client-side DOM.
+   - **Future Unification Plan (P2)**: When local offline vector indices are unified into SQLite / vector-wasm in P2, a common WASM query abstraction will be shared. For P1, separation of server RAG and client UI search is retained and registered.
+
 ---
 
 ## 3. Reader Shell Decoupling & AGENTS.md §8.2 Amendment
