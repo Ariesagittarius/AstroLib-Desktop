@@ -7,8 +7,6 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
-import https from 'node:https';
-import http from 'node:http';
 import { EnvDetector } from './env-detector.ts';
 import type { ModelInfoPayload, ModelDownloadProgress, ModelInstallStatus } from '../types.ts';
 

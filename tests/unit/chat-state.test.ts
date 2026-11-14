@@ -7,6 +7,7 @@
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import { ChatControllerStateMachine } from '../../src/ai/client/chat-controller.state';
+import { AIAskElement } from '../../src/ai/client/chat-controller';
 
 describe('ChatControllerStateMachine', () => {
   let sm: ChatControllerStateMachine;
@@ -103,5 +104,20 @@ describe('ChatControllerStateMachine', () => {
     sm.startGenerating();
     expect(sm.abortGenerating()).toBe(true);
     expect(sm.abortGenerating()).toBe(false); // Already idle
+  });
+
+  it('7. Controller Integration: AIAskElement delegates state to ChatControllerStateMachine', () => {
+    const el = Object.create(AIAskElement.prototype) as AIAskElement;
+    el._stateMachine = new ChatControllerStateMachine();
+    expect(el.getStateMachine().getStatus()).toBe('idle');
+    expect(el._busy).toBe(false);
+
+    el._busy = true;
+    expect(el.getStateMachine().getStatus()).toBe('busy');
+    expect(el._busy).toBe(true);
+
+    el._busy = false;
+    expect(el.getStateMachine().getStatus()).toBe('idle');
+    expect(el._busy).toBe(false);
   });
 });

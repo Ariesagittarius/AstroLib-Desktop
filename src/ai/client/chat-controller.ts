@@ -40,29 +40,18 @@ import {
   getAiPanelDimensions,
   getAiAutoCollapsePreceding,
   getAiCollapseToolsSummary,
-  saveAiCollapseToolsSummary,
   formatExplorationSummary,
   getAiSideloadRefChapter,
-  saveAiActiveModel,
-  getAiExtendedThinking,
-  saveAiExtendedThinking,
-  getShortModelLabel,
   onAiConfigChange,
 } from '../ai-config';
 
 import {
   ChatControllerStateMachine,
   type ReferencedChapter,
-  type ChatExecutionStatus,
 } from './chat-controller.state';
 import {
   esc,
-  cleanSingleLine,
-  capSnippet,
-  jsonHighlight,
-  capJsonText,
   decorateFootnotes,
-  toolSummary,
 } from './chat-formatter';
 import { ChatChapterPicker } from './chat-chapter-picker';
 import { ChatModelMenu } from './chat-model-menu';
@@ -79,10 +68,9 @@ import {
 } from './chat-tools-view';
 import { parseAiError, renderErrorCardHtml } from '../error-handler';
 import { createM3LoadingHtml } from '../../components/common/m3-loading-helper';
-import { renderTitleHtml } from '../../utils/render-title.ts';
 import { initChatResizer } from './chat-resizer';
 import { ThreadStore, MAX_THREADS, MAX_MSGS } from './thread-store';
-import { mdToHtml, safeLink } from './chat-markdown';
+import { mdToHtml } from './chat-markdown';
 import { sideloadManager } from '../../components/sideload/sideload-manager';
 import {
   DOCKED_STORAGE_KEY,
@@ -105,7 +93,9 @@ function getConfig(el: Element): any {
   try { return JSON.parse(el.getAttribute('data-config') || '{}'); } catch { return {}; }
 }
 
-export class AIAskElement extends HTMLElement {
+const CustomElementBase = typeof HTMLElement !== 'undefined' ? HTMLElement : (class {} as unknown as typeof HTMLElement);
+
+export class AIAskElement extends CustomElementBase {
   _stateMachine = new ChatControllerStateMachine();
   _chapterPicker!: ChatChapterPicker;
   _modelMenuCtrl!: ChatModelMenu;
@@ -113,7 +103,22 @@ export class AIAskElement extends HTMLElement {
   _indexCache = new Map<string, any>();
   _inited = false;
   _abort: AbortController | null = null;
-  _busy = false;
+  get _busy(): boolean {
+    const s = this._stateMachine.getStatus();
+    return s === 'busy' || s === 'streaming';
+  }
+  set _busy(b: boolean) {
+    if (b) {
+      this._stateMachine.startGenerating();
+    } else {
+      this._stateMachine.abortGenerating();
+    }
+  }
+
+  getStateMachine(): ChatControllerStateMachine {
+    return this._stateMachine;
+  }
+
   _streaming = false;
   _threadStore: ThreadStore = new ThreadStore('');
   _threads: any[] | null = null;
@@ -1111,7 +1116,7 @@ export class AIAskElement extends HTMLElement {
     return this._threadStore.historyFromThread(t);
   }
 
-  _fallbackSummary(toolLog: any[]): string {
+  _fallbackSummary(_toolLog: any[]): string {
     return [
       '**【AI 本轮未能输出最终回答】**',
       '',
@@ -1499,6 +1504,6 @@ export class AIAskElement extends HTMLElement {
   }
 }
 
-if (!customElements.get('ai-ask')) {
+if (typeof customElements !== 'undefined' && !customElements.get('ai-ask')) {
   customElements.define('ai-ask', AIAskElement);
 }

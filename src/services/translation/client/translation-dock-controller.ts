@@ -29,17 +29,57 @@ import { AI_CONFIG_CHANGE_EVENT } from '../../../ai/ai-config';
 export class TranslationDockController {
   private static instance: TranslationDockController | null = null;
   private isInitialized = false;
-  private currentProvider: TranslationProviderId = 'google';
-  private displayMode: TranslationDisplayMode = 'sidebar';
-  private currentChapterKey: string = '';
-  private paragraphs: ParagraphUnit[] = [];
-  private isTranslating = false;
-  private selectedExportFormat: TranslationExportFormat = 'bilingual-markdown';
-  private selectedExportScope: 'all' | 'satisfied' = 'all';
-  private unbindSync: (() => void) | null = null;
-  private abortController: AbortController | null = null;
 
   private stateMachine = new TranslationDockStateMachine();
+
+  public get currentProvider(): TranslationProviderId {
+    return this.stateMachine.getProvider();
+  }
+  public set currentProvider(p: TranslationProviderId) {
+    this.stateMachine.setProvider(p);
+  }
+
+  public get displayMode(): TranslationDisplayMode {
+    return this.stateMachine.getDisplayMode();
+  }
+  public set displayMode(m: TranslationDisplayMode) {
+    this.stateMachine.setDisplayMode(m);
+  }
+
+  private currentChapterKey: string = '';
+  private paragraphs: ParagraphUnit[] = [];
+
+  private get isTranslating(): boolean {
+    return this.stateMachine.getStatus() === 'translating';
+  }
+  private set isTranslating(val: boolean) {
+    if (val) {
+      this.stateMachine.startTranslation();
+    } else {
+      this.stateMachine.finishTranslation();
+    }
+  }
+
+  private get selectedExportFormat(): TranslationExportFormat {
+    return this.stateMachine.getSelectedExportFormat();
+  }
+  private set selectedExportFormat(fmt: TranslationExportFormat) {
+    this.stateMachine.setExportFormat(fmt);
+  }
+
+  private get selectedExportScope(): 'all' | 'satisfied' {
+    return this.stateMachine.getSelectedExportScope();
+  }
+  private set selectedExportScope(scope: 'all' | 'satisfied') {
+    this.stateMachine.setExportScope(scope);
+  }
+
+  public getStateMachine(): TranslationDockStateMachine {
+    return this.stateMachine;
+  }
+
+  private unbindSync: (() => void) | null = null;
+  private abortController: AbortController | null = null;
 
   private drawerView = new TranslationDrawerView({
     getProvider: () => this.currentProvider,

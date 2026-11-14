@@ -7,6 +7,7 @@
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import { TranslationDockStateMachine } from '../../src/services/translation/client/translation-dock-controller.state';
+import { TranslationDockController } from '../../src/services/translation/client/translation-dock-controller';
 import type { ParagraphUnit } from '../../src/services/translation/types';
 
 describe('TranslationDockStateMachine', () => {
@@ -100,5 +101,19 @@ describe('TranslationDockStateMachine', () => {
     expect(newSm.getIsInlineActive()).toBe(true);
     expect(newSm.getSelectedExportFormat()).toBe('chinese-markdown');
     expect(newSm.getCurrentChapterKey()).toBe('math-ch1');
+  });
+
+  it('7. Controller Integration: TranslationDockController delegates state to TranslationDockStateMachine', () => {
+    const instance = TranslationDockController.getInstance();
+    const stateMachine = instance.getStateMachine();
+    expect(stateMachine).toBeInstanceOf(TranslationDockStateMachine);
+    expect(instance.currentProvider).toBe('google');
+    expect(instance.displayMode).toBe('sidebar');
+
+    instance.currentProvider = 'zhipu';
+    expect(stateMachine.getProvider()).toBe('zhipu');
+
+    instance.displayMode = 'inline';
+    expect(stateMachine.getDisplayMode()).toBe('inline');
   });
 });
