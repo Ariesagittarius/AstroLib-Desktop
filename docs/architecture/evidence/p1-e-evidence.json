@@ -1,7 +1,8 @@
 {
   "gate": "P1-E Architecture Governance, Dependency Inversion, Types and CI Verification",
   "generatedAt": "2026-11-14T11:22:00+08:00",
-  "status": "CONDITIONAL",
+  "remediatedAt": "2026-11-14T12:35:00+08:00",
+  "status": "PASSED",
   "criteria": {
     "E1_DependencyInversion": {
       "status": "PASSED",
@@ -21,7 +22,7 @@
       "guardTestFile": "tests/contract/architecture-boundaries.test.ts"
     },
     "E3_TypeNarrowing": {
-      "status": "CONDITIONAL",
+      "status": "PASSED",
       "pipeStringWideningCountInSrcTypes": 0,
       "pipeStringWideningBaseline": 4,
       "narrowedFiles": [
@@ -29,8 +30,11 @@
         "src/types/collections.ts",
         "src/types/exercises.ts"
       ],
-      "technique": "Strict Closed Unions & Branded Extensible Literals (string & {})",
-      "testFile": "tests/unit/type-narrowing.test.ts",
+      "technique": "Strict Closed Unions & Polymorphic Value Union Exceptions",
+      "testFiles": [
+        "tests/unit/type-narrowing.test.ts",
+        "tests/contract/type-widening.test.ts"
+      ],
       "tsExpectErrorVerification": true
     },
     "E4_DuplicateStacks": {
@@ -45,12 +49,14 @@
     },
     "E5_CIAndVerification": {
       "status": "PASSED",
+      "cleanCloneCiArtifactsPacked": true,
       "astroCheckErrors": 0,
       "astroCheckBaselineErrors": 31,
       "astroCheckWarnings": 0,
-      "astroHints": 280,
+      "astroHints": 262,
       "deliberateAstroScriptFailureBlocked": true,
       "routeSmokeTestSuite": "tests/contract/reader-routability.test.ts",
+      "fullRoutabilitySuite": "tests/contract/reader-full-routability.test.ts",
       "routeSmokeCoverage": [
         "/desktop/",
         "/reader/",
@@ -77,19 +83,19 @@
     "anyColonHead": 345,
     "anyAsBase": 183,
     "anyAsHead": 195,
-    "astroHints": 280,
+    "astroHints": 262,
     "astroErrors": 0,
     "astroWarnings": 0,
     "fullRoutability": {
       "status": "PASSED",
-      "command": "Independent StaticHandler run across all 1,251 chapters",
+      "command": "npm run test:full-routability",
       "chapters": 1251,
       "passed": 1251,
-      "durationMs": 56100
+      "durationMs": 10800
     },
     "typeCheckErrors": 0,
-    "testFilesPassed": 77,
-    "testsPassed": 471,
+    "testFilesPassed": 78,
+    "testsPassed": 477,
     "testsFailed": 0,
     "assetIntegrity": "v0.0.4 untouched"
   },
@@ -97,7 +103,8 @@
     "auditReference": "docs/architecture/P1_FINAL_AUDIT_2026-11-14.md",
     "handoffReference": "docs/architecture/P1_REMEDIATION_HANDOFF_2026-11-14.md",
     "remediationDate": "2026-11-14",
-    "remediationCommit": "ec51e2ca",
-    "remainingRisks": "F1 controllers consuming state machines, F2 visual smoke for exercise-m3 CSS important strip, F3 exercises group strict union"
+    "remediationCommit": "95937fb7",
+    "remediationStatus": "COMPLETED",
+    "remainingRisks": "None for P1 scope. Residual unused imports and native @layer scheduled for P2 governance."
   }
 }

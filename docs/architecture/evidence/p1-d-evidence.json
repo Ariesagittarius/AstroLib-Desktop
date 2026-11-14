@@ -1,7 +1,8 @@
 {
   "gate": "P1-D UI, Controllers and CSS Convergence",
   "generatedAt": "2026-11-14T06:45:00+08:00",
-  "status": "CONDITIONAL",
+  "remediatedAt": "2026-11-14T12:35:00+08:00",
+  "status": "PASSED",
   "criteria": {
     "D1_Settings": {
       "status": "PASSED",
@@ -27,8 +28,8 @@
       "unitTestFile": "tests/unit/library-client.test.ts"
     },
     "D4_Controllers": {
-      "status": "CONDITIONAL",
-      "stateMachineConsumed": "partial",
+      "status": "PASSED",
+      "stateMachineConsumed": true,
       "controllers": [
         {
           "name": "chat-controller",
@@ -36,9 +37,9 @@
           "lines": 1495,
           "target": "< 1500",
           "stateMachine": "src/ai/client/chat-controller.state.ts",
-          "unitTests": 6,
+          "unitTests": 7,
           "testFile": "tests/unit/chat-state.test.ts",
-          "domFree": true
+          "consumedBoundary": "_busy, _stateMachine, status transitions"
         },
         {
           "name": "exercise-controller",
@@ -46,9 +47,9 @@
           "lines": 1495,
           "target": "< 1500",
           "stateMachine": "src/components/exercises/exercise-controller.state.ts",
-          "unitTests": 6,
+          "unitTests": 7,
           "testFile": "tests/unit/exercise-state.test.ts",
-          "domFree": true
+          "consumedBoundary": "currentMode, currentGroup, isFilterCollapsed, open/close, fullscreen"
         },
         {
           "name": "translation-dock-controller",
@@ -56,16 +57,16 @@
           "lines": 1485,
           "target": "< 1500",
           "stateMachine": "src/services/translation/client/translation-dock-controller.state.ts",
-          "unitTests": 6,
+          "unitTests": 7,
           "testFile": "tests/unit/translation-dock-state.test.ts",
-          "domFree": true
+          "consumedBoundary": "currentProvider, displayMode, isTranslating, selectedExportFormat/Scope"
         }
       ],
-      "totalNewStateUnitTests": 18,
+      "totalNewStateUnitTests": 21,
       "stateMachineDomReferences": 0
     },
     "D5_CSS": {
-      "status": "CONDITIONAL",
+      "status": "PASSED",
       "layersDirectory": "src/styles/layers/",
       "layers": ["tokens.css", "base.css", "components.css", "features.css", "overrides.css"],
       "importantBaseline": 6590,
@@ -74,6 +75,7 @@
       "importantCurrent": 4552,
       "importantFinal": 4552,
       "importantReduced": 2038,
+      "visualSmokeDocument": "docs/architecture/evidence/p1-d-visual-smoke.md",
       "targetMet": true
     },
     "D6_RuntimeDefects": {
@@ -85,9 +87,9 @@
   },
   "verification": {
     "typeCheck": "0 errors (astro sync && tsc --noEmit)",
-    "testFilesPassed": 77,
+    "testFilesPassed": 78,
     "testFilesSkipped": 2,
-    "testsPassed": 471,
+    "testsPassed": 477,
     "testsSkipped": 5,
     "testsFailed": 0
   }
