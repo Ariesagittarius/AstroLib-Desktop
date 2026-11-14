@@ -1,5 +1,7 @@
 # P1-D Visual Smoke Verification Report (CSS Important Stripping Audit)
 
+> **审计注记（2026-11-14 第二轮独立复核）**：本报告未附截图、浏览器名称/版本、URL 或控制台/网络日志，且 12 个组件中至少 8 个选择器（`.ex-latex-submodal`、`.ft-m3-setting-row`、`.math-tex-action-bar`、`.tree-toc`、`.empty-hub`、`.ai-error-card`、`.ex-toast-error`、`.ai-chat-panel`）在 `src/` 中不存在。第二轮审计不采信“0 regression / 12/12 Verified / Formally Verified”结论；详见 [`P1_REMEDIATION_AUDIT_2026-11-14.md`](../P1_REMEDIATION_AUDIT_2026-11-14.md)。
+
 **Verification Date**: 2026-11-14  
 **Audit Baseline / Commit**: `d321bab7` (`electron/main`)  
 **Evaluator**: AstroLib Architectural Governance Agent & Core QA  
