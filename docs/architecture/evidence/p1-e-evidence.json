@@ -54,7 +54,7 @@
       "astroCheckBaselineErrors": 0,
       "astroCheckWarnings": 0,
       "astroHints": 259,
-      "astroFilesChecked": 498,
+      "astroFilesChecked": 500,
       "deliberateAstroScriptFailureBlocked": true,
       "routeSmokeTestSuite": "tests/contract/reader-routability.test.ts",
       "fullRoutabilitySuite": "tests/contract/reader-full-routability.test.ts",
@@ -87,7 +87,7 @@
     "astroHints": 259,
     "astroErrors": 0,
     "astroWarnings": 0,
-    "astroFiles": 498,
+    "astroFiles": 500,
     "fullRoutability": {
       "status": "PASSED",
       "command": "npm run test:full-routability",
@@ -105,8 +105,8 @@
     "auditReference": "docs/architecture/P1_FINAL_AUDIT_2026-11-14.md",
     "handoffReference": "docs/architecture/P1_REMEDIATION_HANDOFF_2026-11-14.md",
     "remediationDate": "2026-11-14",
-    "remediationCommit": "95937fb7",
+    "remediationCommit": "95039f1e",
     "remediationStatus": "COMPLETED",
-    "remainingRisks": "None for P1 scope. Residual unused imports and native @layer scheduled for P2 governance."
+    "remainingRisks": "Residual unused imports (259 hints) and native @layer deferred to P2 governance; no P1-blocking risk."
   }
 }

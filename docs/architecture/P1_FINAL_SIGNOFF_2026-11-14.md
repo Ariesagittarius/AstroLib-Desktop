@@ -1,9 +1,11 @@
 # AstroLib P1 重构终态审计与闭环签署报告 (Final Signoff - Rev.3)
 
+> **第三轮复核状态（2026-11-14）**：B1（控制器行数）与 B3（any 净增量）已闭环；B2 的 D5 仍为 CONDITIONAL，且 3 处选择器与 3 处 evidence 字段在本轮被校正。本签署仅在“D5 自动化视觉回归延期至 P2”的条件下成立，严格口径为 **P1 CONDITIONAL CLOSED**，不是无条件 CLOSED。详见 [`P1_REV3_AUDIT_2026-11-14.md`](./P1_REV3_AUDIT_2026-11-14.md)。
+
 > **修订历史**：
 > - **Rev.1 (2026-11-14 11:22)**：P1-A～P1-E 初次汇总签署；第一轮独立审计裁决 CONDITIONAL PASS，退回 F1–F5 5 项阻断项。
 > - **Rev.2 (2026-11-14 12:35)**：第一轮整改签署；第二轮独立审计撤销 Rev.2 CLOSED 裁决，提出 B1（行数门禁超标）、B2（视觉 smoke 不可复核且含不存在选择器）、B3（any 增量与零新增冲突）、B4（证据自洽性）4 项硬阻断。
-> - **Rev.3 (2026-11-14 14:40)**：第二轮整改完成版。全量落实 R1（三大控制器降至 <1,500 行并补全状态转换断言）、R2（视觉 smoke 结论纠正为 manual spot check，D5 保持 CONDITIONAL）、R3（any 全量压降至历史基线以下：`: any` 310 ≤ 316, `as any` 176 ≤ 183）、R4（evidence 字段与实测数据 100% 自洽）、R5（全量门禁实测重跑全绿）。
+> - **Rev.3 (2026-11-14 14:40)**：第二轮整改完成版。全量落实 R1（三大控制器降至 <1,500 行并补全状态转换断言）、R2（视觉 smoke 结论纠正为 manual spot check，D5 保持 CONDITIONAL）、R3（any 全量压降至历史基线以下：`: any` 310 ≤ 316, `as any` 176 ≤ 183）、R4（evidence 字段主要修正；第三轮复核再校正 `500 files`、`37.56s` 与 `remediationCommit`）、R5（全量门禁实测重跑全绿）。
 
 **签署版本**：Rev.3 (第二轮整改复核闭环通过版)  
 **签发日期**：2026-11-14  
@@ -79,7 +81,7 @@
 ### B4: 证据自洽性修正
 - **整改措施**：
   - `p1-e-evidence.json` 中 `astroCheckBaselineErrors` 修正为 `0`（对齐 `5498542a` 实测基线）；
-  - `astroHints` 修正为当前实测 `259`；`astroFiles` 修正为 `498`；
+  - `astroHints` 修正为当前实测 `259`；`astroFiles` 修正为 `500`（新增两个 helper 文件后 `astro check` 的实测文件数）；
   - `fullRoutability.durationMs` 修正为实测值 `42075`（42.1s）；
   - `docs/README.md` 索引同步更新为 Rev.3。
 
@@ -141,8 +143,8 @@
 - **对账结果**：**100% 达成 (PASS)**
 - **实测命令与结果**：
   - `npm run check:types`：**0 errors**；
-  - `npm run check:astro` (`astro check`)：498 文件 **0 errors / 0 warnings / 259 hints**；
-  - `npm test`：**78 test files passed, 477 tests passed, 5 skipped, 0 failed** (耗时 ~2.84s)；
+  - `npm run check:astro` (`astro check`)：500 文件 **0 errors / 0 warnings / 259 hints**；
+  - `npm test`：**78 test files passed, 477 tests passed, 5 skipped, 0 failed** (本机实测 37.56s；其中 `reader-routability` 36.09s)；
   - `npm run test:full-routability`：全量 1,251 章节 Canonical 路径 100% 返回 200 `text/html` (耗时 42.1s)；
   - `npm run build`：**23 pages built successfully**；
   - CI 干净环境支持：`.github/workflows/ci.yml` 已接入 `npm run pack:books` 前置步骤，且 `reader-routability.test.ts` 加入了缺少物料时的显式友好报错。
@@ -185,14 +187,14 @@
 经对账 `P0_FINAL_AUDIT_2026-11-13.md` §6.6 八条 Definition of Done 与 `P1_REMEDIATION_AUDIT_2026-11-14.md` 四项阻断项（B1–B4）：
 
 1. **B1 控制器行数与断言**：三大控制器行数分别为 1,492 / 1,488 / 1,417，全部压降至 <1,500 行；新增 21 项状态机单元测试并补齐控制器生命周期方法真实断言，D4 正式达标；
-2. **B2 视觉 smoke 证据校准**：对账并修正 8 个真实选择器，将验证方式准确界定为 manual spot check，诚实披露未上自动化截图 Diff 检验，D5 正式登记为 **CONDITIONAL**；
+2. **B2 视觉 smoke 证据校准**：修正原 8 个及第三轮复核发现的 3 个残留选择器，将验证方式准确界定为 manual spot check，诚实披露未上自动化截图 Diff 检验，D5 正式登记为 **CONDITIONAL**；
 3. **B3 any 净增量清零**：在不破坏类型健全性前提下，全仓 `: any` 降至 310（基线 316）、`as any` 降至 176（基线 183），彻底消除正向增量；
-4. **B4 证据与事实完全自洽**：纠正 `p1-e-evidence.json` 的基线报错数、hints 计数、测试耗时与全量路由实测数据；
+4. **B4 证据与事实对齐**：纠正 `p1-e-evidence.json` 的基线报错数、hints 计数、测试耗时、文件数与全量路由实测数据；第三轮复核再校正 `500 files`、`37.56s` 与 `remediationCommit`，不再宣称“100% 自洽”；
 5. **门禁全量复核**：`npm run check:types` 0 errors、`astro check` 0 errors / 0 warnings / 259 hints、`npm test` 78 files / 477 passed / 0 failed、`test:full-routability` 1,251 / 1,251 章节 200、`npm run build` 23 pages 完全通过。
 
-> **裁决结论**：**P1 阻断项全部闭环，门禁指标全量实测达标。正式签发：P1 CLOSED (Rev.3，D5 自动化视觉回归套件延期至 P2 实施)！**  
+> **裁决结论**：**B1/B3/B4 已闭环；B2 的 D5 按条件性延期处理。正式签发：P1 CONDITIONAL CLOSED (Rev.3，D5 自动化视觉回归套件延期至 P2 实施；非无条件 CLOSED)。**
 > **红线守则**：代码基线已符合架构契约与发布要求，工作树干净。遵循指示，不发 v0.0.5，不启动 P2。
 
 **签署代表**：Antigravity Agent (AstroLib System Architecture & Governance)  
 **签署时间**：2026-11-14 14:40 (UTC+8)  
-**版本标记**：Rev.3 (CLOSED - Conditional on D5 visual test automation in P2)
+**版本标记**：Rev.3 (CONDITIONAL CLOSED - D5 visual test automation deferred to P2)

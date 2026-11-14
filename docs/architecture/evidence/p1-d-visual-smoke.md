@@ -3,7 +3,7 @@
 > **审计核定与口径降级（2026-11-14 第二轮独立审计裁决）**：
 > 本报告系开发态人工 Spot Check（抽样点检）记录，未配置基于 Headless 浏览器（Playwright / Puppeteer）的自动化截图捕获比对流水线，未在仓库内生成物理截图物料与像素哈希。
 > 依据 `P1_REMEDIATION_AUDIT_2026-11-14.md` 裁决，**D5 样式削减门禁维持 CONDITIONAL**，不得宣称“0 regression”或“Formally Verified”。
-> 本报告更正了此前版本中 8 处与源码不一致的选择器，记录人工核对过的真实类名与特异性状态。
+> **本报告更正了此前版本中与源码不一致的选择器；2026-11-14 第三轮复核再次校正 3 处残留（`.ask-panel-container` → `.ask-panel`、`.hub-empty-state` → `.ex-empty-state`、`.loading-mask` → `.m3-loading-overlay-host`）。**
 
 **Verification Date**: 2026-11-14  
 **Audit Baseline**: `5498542a` → HEAD (`f8651613`)  
@@ -58,14 +58,14 @@ Because each selector carries specificity `[0, 2, 0]` (attribute + class) or hig
 | 2 | **习题弹窗主体** | `.ex-modal-dialog`, `.ex-modal-window` | Standard HTML dialog backdrop and elevation | Spot-Checked |
 | 3 | **组别筛选 Chip** | `.ex-group-pills .ex-nav-item` | Active state `.active` pill highlight and ripple | Spot-Checked |
 | 4 | **导出对话框** | `#ex-latex-modal`, `.ex-submodal-box` | Form input alignments and font selector dropdowns | Spot-Checked |
-| 5 | **AI 问答面板** | `ai-ask`, `.ask-panel-container` | Docked tier clamp `clamp(20rem, 28vw, 25.5rem)` | Spot-Checked |
+| 5 | **AI 问答面板** | `ai-ask`, `.ask-panel` | Docked tier clamp `clamp(20rem, 28vw, 25.5rem)` | Spot-Checked |
 | 6 | **侧载底座** | `.astrolib-sideload-dock`, `.sideload-panel-view` | CSS variable `--sl-sideload-width` smooth transitions | Spot-Checked |
 | 7 | **设置行组件** | `.hub-ft-host`, `.ft-item-row`, `md-switch` | Material You ripple and primary color mapping | Spot-Checked |
 | 8 | **习题操作栏** | `.ex-card-actions`, `.ex-toggle-steps-btn` | Compact button alignment and tooltips | Spot-Checked |
 | 9 | **目录大纲树** | `.toc-heading-row`, `.toc-collapse-btn`, `.toc-list` | Expand/collapse arrow animation, indentation | Spot-Checked |
-| 10 | **空状态占位** | `.ex-empty-state`, `.hub-empty-state` | M3 expressive illustration centering and muted text | Spot-Checked |
+| 10 | **空状态占位** | `.ex-empty-state` | M3 expressive illustration centering and muted text | Spot-Checked |
 | 11 | **错误反馈** | `.ask-error-container`, `.ex-toast` | Error container container-color and contrast | Spot-Checked |
-| 12 | **骨架与加载态** | `m3-loading-indicator`, `.loading-mask` | M3 circular progress centering and backdrop blur | Spot-Checked |
+| 12 | **骨架与加载态** | `m3-loading-indicator`, `.m3-loading-overlay-host` | M3 circular progress centering and backdrop blur | Spot-Checked |
 
 ---
 
