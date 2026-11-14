@@ -32,16 +32,16 @@
   1. `docs/architecture/evidence/p1-a-evidence.json` (1,251 Canonical 200, 1,191 Legacy 301)
   2. `docs/architecture/evidence/p1-b-evidence.json` (Headings 覆盖提升至 983, 0 Duplicate IDs)
   3. `docs/architecture/evidence/p1-c-evidence.json` (四类安装测试 34 项全绿, 0 目录逃逸)
-  4. `docs/architecture/evidence/p1-d-evidence.json` (UI 1 生产实现, 3 个控制器 < 1,500 行, `!important` 4,869)
-  5. `docs/architecture/evidence/p1-e-evidence.json` (依赖倒置 0, 垫片 0, `| string` 0, CI `astro check` 0 错误)
+  4. `docs/architecture/evidence/p1-d-evidence.json` (UI 1 生产实现, 3 个控制器 < 1,500 行, `!important` 4,552)
+  5. `docs/architecture/evidence/p1-e-evidence.json` (依赖倒置 0, 垫片 0, `| string` 0, CI `astro check` 0 错误 / 280 hints)
 
 ### DoD 2: 官方 13 本书的阅读路径与 slug 契约唯一、可验证
 - **对账结果**：**100% 达成 (PASS)**
 - **实测指标**：
-  - 13 本书全量 1,251 章节 Canonical 路径真实 HTTP 请求 100% 返回 200 与 `text/html`；
+  - 13 本书全量 1,251 章节 Canonical 路径真实 HTTP 请求 100% 返回 200 与 `text/html`（独立全量复跑 56.1s）；
   - 1,191 个 Legacy Slug 经查表返回 301 永久重定向（Windows 大小写折叠 4 例直接命中 200）；
   - `cleanSlug` 模糊降级逻辑从 `static-handler.ts` 中彻底删除（命中数严格为 0）；
-  - 测试守卫：`tests/contract/reader-routability.test.ts` 6 项测试全绿。
+  - 默认测试守卫：`tests/contract/reader-routability.test.ts` 6 项测试全绿（抽样请求 + 全量物理 JSON 校验）。
 
 ### DoD 3: 内容转换只保留一个生产 IR，旧入口退出生产路径
 - **对账结果**：**100% 达成 (PASS)**
@@ -60,7 +60,7 @@
 ### DoD 5: Settings / Header / Library 各只有一个生产实现
 - **对账结果**：**100% 达成 (PASS)**
 - **实测指标**：
-  - **Settings**：`SettingsHubContent.astro` 成为全站唯一设置呈现面，`settings-registry.ts` 单一注册表驱动，`FeatureToggles.astro` 降级为转发代理；全站 `data-feature-id` 重复数为 0；
+  - **Settings**：`SettingsHubContent.astro` 成为全站唯一设置呈现面，`settings-registry.ts` 单一注册表驱动，`FeatureToggles.astro` 已删除，设置入口仅保留 `SettingsHubContent`；全站 `data-feature-id` 重复数为 0；
   - **Header**：`M3TopNavBar.astro` 统一承载应用壳与文档页，删除死组件 `VpNav.astro` 与 `HeaderToolsMenu.astro`，共用统一 CustomEvent 契约；
   - **Library**：`FragmentLibrary.astro` 迁入 `src/features/library/ui/`，单例 `libraryClient` 统一调度。
 
@@ -77,7 +77,7 @@
 - **对账结果**：**100% 达成 (PASS)**
 - **实测命令与结果**：
   - `npm run check:types`：0 errors；
-  - `npm run check:astro` (`astro check`)：496 文件 0 errors / 0 warnings；
+  - `npm run check:astro` (`astro check`)：496 文件 0 errors / 0 warnings / 280 hints（hints 为未使用声明等静态提示，不作为 CI 阻断条件）；
   - `npm test`：77 test files passed, 471 tests passed, 0 failed；
   - 核心路由 smoke 测试覆盖 `/desktop/`、`/reader/` 与 Canonical 章节，全部返回 200 `text/html`。
 
@@ -86,7 +86,7 @@
 - **实测状态**：
   - `content-sources/**` 原始教材源文件 100% 冻结无改动；
   - `src/types/content-package.ts` 核心 Schema 1.0.0 契约 100% 冻结；
-  - `artifacts/abp-packs/` 既有打包产物哈希与目录结构 100% 保持一致；
+  - `v0.0.4` Release 资产与 Tag 未改写；本地 `artifacts/abp-packs/` 于 P1-B 按授权重打包，哈希变化已登记，不与 Release 资产混同；
   - Git 未跟踪 `public/abp-packs/`，发布资产目录完好无损。
 
 ---
@@ -104,8 +104,8 @@
 | **`exercise-controller.ts` 行数**| 2,532 行 | < 1,500 行 | **1,495 行** (状态机分离) | **完全达标** |
 | **`translation-dock-controller.ts`**| 2,189 行 | < 1,500 行 | **1,485 行** (状态机分离) | **完全达标** |
 | **`api/translate.ts` 行数** | 540 行 | < 150 行 | **142 行** (内核抽取) | **完全达标** |
-| **`astro check` 诊断报错** | 31 处错误 | 0 处 | **0 处错误 / 0 处警告** | **完全达标** |
-| **Canonical 章节路由** | 0 个 Web 路由 | 1,251 章节 200 | **1,251 / 1,251 章节 200** | **完全达标** |
+| **`astro check` 诊断报错** | 31 处错误 | 0 处 | **0 处错误 / 0 处警告 / 280 处 hints** | **完全达标** |
+| **Canonical 章节路由** | 0 个 Web 路由 | 1,251 章节 200 | **1,251 / 1,251 章节 200** (独立全量 56.1s) | **完全达标** |
 | **Legacy Slug 查表重定向** | 模糊正则匹配 | 显式查表 301 | **1,191 / 1,191 显式 301** | **完全达标** |
 | **Vitest 自动化测试套件** | 20 套 / 72 用例 | 100% 绿灯 | **77 套 / 471 用例 100% 绿灯** | **超额达标** |
 

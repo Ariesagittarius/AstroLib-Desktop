@@ -1,13 +1,13 @@
 {
   "gate": "P1-D UI, Controllers and CSS Convergence",
   "generatedAt": "2026-11-14T06:45:00+08:00",
-  "status": "PASSED",
+  "status": "CONDITIONAL",
   "criteria": {
     "D1_Settings": {
       "status": "PASSED",
       "surfaces": 1,
-      "primaryComponent": "src/features/settings/ui/SettingsSurface.astro",
-      "registry": "src/features/settings/model/settings-registry.ts",
+      "primaryComponent": "src/components/desktop/SettingsHubContent.astro",
+      "registry": "src/features/settings/settings-registry.ts",
       "duplicateDomIds": 0
     },
     "D2_Header": {
@@ -27,7 +27,8 @@
       "unitTestFile": "tests/unit/library-client.test.ts"
     },
     "D4_Controllers": {
-      "status": "PASSED",
+      "status": "CONDITIONAL",
+      "stateMachineConsumed": "partial",
       "controllers": [
         {
           "name": "chat-controller",
@@ -64,13 +65,15 @@
       "stateMachineDomReferences": 0
     },
     "D5_CSS": {
-      "status": "PASSED",
+      "status": "CONDITIONAL",
       "layersDirectory": "src/styles/layers/",
       "layers": ["tokens.css", "base.css", "components.css", "features.css", "overrides.css"],
       "importantBaseline": 6590,
       "importantTarget": 5200,
-      "importantCurrent": 4869,
-      "importantReduced": 1721,
+      "importantStageSnapshot": 4869,
+      "importantCurrent": 4552,
+      "importantFinal": 4552,
+      "importantReduced": 2038,
       "targetMet": true
     },
     "D6_RuntimeDefects": {
@@ -82,9 +85,9 @@
   },
   "verification": {
     "typeCheck": "0 errors (astro sync && tsc --noEmit)",
-    "testFilesPassed": 75,
+    "testFilesPassed": 77,
     "testFilesSkipped": 2,
-    "testsPassed": 463,
+    "testsPassed": 471,
     "testsSkipped": 5,
     "testsFailed": 0
   }
