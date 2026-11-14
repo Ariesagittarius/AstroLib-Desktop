@@ -767,6 +767,18 @@ export async function packBook({
       console.warn(`   ⚠️ [DEPRECATED] 正在回退读取旧路径 ${path.relative(ROOT, legacyExDir)}，请改用 npm run build:exercises 生成 artifacts/exercises/`);
       exSrcDir = legacyExDir;
     }
+    if (!exSrcDir && SUPPORTED_EXERCISE_SLUGS.has(manifest.slug)) {
+      console.log(`   ℹ️ 题库切片缺失，正在自动构建: node scripts/build-exercise-data.mjs...`);
+      try {
+        const { execSync } = await import('node:child_process');
+        execSync(`node "${path.join(ROOT, 'scripts', 'build-exercise-data.mjs')}"`, { stdio: 'inherit' });
+        if (fs.existsSync(primaryExDir)) {
+          exSrcDir = primaryExDir;
+        }
+      } catch (err) {
+        console.warn(`   ⚠️ 自动编译题库失败: ${err.message}`);
+      }
+    }
 
     if (exSrcDir) {
       const exMap = {};

@@ -9,7 +9,7 @@
     "start": "astro dev",
     "build": "node --max-old-space-size=4096 node_modules/astro/bin/astro.mjs build && node -e \"const fs=require('fs');fs.mkdirSync('dist/data/exercises',{recursive:true});fs.copyFileSync('src/data/exercises/community_ai_solutions.json','dist/data/exercises/community_ai_solutions.json');\"",
     "pack:book": "node scripts/pack-book-abp.mjs",
-    "pack:books": "node scripts/pack-book-abp.mjs --all",
+    "pack:books": "node scripts/build-exercise-data.mjs && node scripts/pack-book-abp.mjs --all",
     "build:exercises": "node scripts/build-exercise-data.mjs",
     "build:all": "npm run build:exercises && npm run build && node scripts/pack-book-abp.mjs --all",
     "preview": "astro preview",
