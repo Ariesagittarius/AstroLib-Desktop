@@ -230,18 +230,7 @@ const featureDefs: Record<string, FeatureManifest<any>> = {
       defaultProvider: 'gemini',
       defaultModel: 'gemini-3.8-flash',
       endpoint: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',
-      models: [
-        { id: 'gemini-3.8-flash', label: 'Gemini 3.8 Flash', provider: 'gemini', endpoint: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions' },
-        { id: 'gemini-3.7-flash', label: 'Gemini 3.7 Flash', provider: 'gemini', endpoint: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions' },
-        { id: 'gemini-3.6-flash', label: 'Gemini 3.6 Flash', provider: 'gemini', endpoint: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions' },
-        { id: 'gemini-3.5-flash', label: 'Gemini 3.5 Flash', provider: 'gemini', endpoint: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions' },
-        { id: 'gemini-3.5-flash-lite', label: 'Gemini 3.5 Flash Lite', provider: 'gemini', endpoint: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions' },
-        { id: 'gemini-3-flash', label: 'Gemini 3 Flash', provider: 'gemini', endpoint: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions' },
-        { id: 'gemini-3.1-flash-lite', label: 'Gemini 3.1 Flash Lite', provider: 'gemini', endpoint: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions' },
-        { id: 'deepseek-flash', label: 'DeepSeek V4.1 Flash', provider: 'deepseek', endpoint: 'https://api.deepseek.com/v1/chat/completions' },
-        { id: 'deepseek-v4-flash', label: 'DeepSeek V4 Flash', provider: 'deepseek', endpoint: 'https://api.deepseek.com/v1/chat/completions' },
-        { id: 'deepseek-v4-pro', label: 'DeepSeek V4 Pro', provider: 'deepseek', endpoint: 'https://api.deepseek.com/v1/chat/completions' },
-      ],
+      // AI 模型目录统一由 src/ai/ai-config.ts 权威管理，此处不再硬编码重复清单
     },
   }),
 
