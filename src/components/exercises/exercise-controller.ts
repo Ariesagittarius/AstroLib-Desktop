@@ -140,21 +140,58 @@ class ExerciseCenterController {
 
   private toolbarEl: HTMLElement | null = null;
   private toolbarToggleBtn: HTMLButtonElement | null = null;
-  private isFilterCollapsed = false;
+  private get isFilterCollapsed(): boolean {
+    return this.stateMachine.getFilters().isFilterCollapsed;
+  }
+  private set isFilterCollapsed(collapsed: boolean) {
+    if (this.stateMachine.getFilters().isFilterCollapsed !== collapsed) {
+      this.stateMachine.toggleFilterCollapsed();
+    }
+  }
 
   private totalStatEl: HTMLElement | null = null;
   private doneStatEl: HTMLElement | null = null;
   private accStatEl: HTMLElement | null = null;
 
   private boundRoot: HTMLElement | null = null;
-  private isOpen = false;
-  private isFullscreen = false;
+  private get isOpen(): boolean {
+    return this.stateMachine.getFilters().isOpen;
+  }
+  private set isOpen(val: boolean) {
+    if (val) this.stateMachine.open();
+    else this.stateMachine.close();
+  }
+
+  private get isFullscreen(): boolean {
+    return this.stateMachine.getFilters().isFullscreen;
+  }
+  private set isFullscreen(val: boolean) {
+    if (this.stateMachine.getFilters().isFullscreen !== val) {
+      this.stateMachine.toggleFullscreen();
+    }
+  }
+
   private isGlobalSearch = false;
-  private currentMode: 'practice' | 'paper' = 'practice';
+  private get currentMode(): 'practice' | 'paper' {
+    return this.stateMachine.getFilters().mode;
+  }
+  private set currentMode(mode: 'practice' | 'paper') {
+    this.stateMachine.setMode(mode);
+  }
+
   private currentChapter = 1;
   private currentPaperId = 1;
   private currentSource: 'all' | 'textbook' | 'exam' = 'all';
-  private currentGroup: 'all' | 'A' | 'B' = 'all';
+  private get currentGroup(): 'all' | 'A' | 'B' {
+    return this.stateMachine.getFilters().group as ('all' | 'A' | 'B');
+  }
+  private set currentGroup(group: 'all' | 'A' | 'B') {
+    this.stateMachine.setGroup(group);
+  }
+
+  public getStateMachine(): ExerciseStateMachine {
+    return this.stateMachine;
+  }
   private currentSection = 'all';
   private currentPaperSection = 'all';
   private currentType = 'all';
@@ -1495,3 +1532,4 @@ class ExerciseCenterController {
 }
 
 export const exerciseController = new ExerciseCenterController();
+export { ExerciseCenterController };

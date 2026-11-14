@@ -7,6 +7,7 @@
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import { ExerciseStateMachine } from '../../src/components/exercises/exercise-controller.state';
+import { ExerciseCenterController, exerciseController } from '../../src/components/exercises/exercise-controller';
 import type { SlimQuestionItem } from '../../src/types/exercises';
 
 describe('ExerciseStateMachine', () => {
@@ -114,5 +115,16 @@ describe('ExerciseStateMachine', () => {
     expect(newSm.getRecord('q10')?.userChoice).toBe('B');
     expect(newSm.getRecord('q10')?.mastered).toBe(true);
     expect(newSm.getActiveSolutionVersion('q10')).toBe('v2-community');
+  });
+
+  it('7. Controller Integration: ExerciseCenterController instantiates and delegates state to ExerciseStateMachine', () => {
+    const controller = new ExerciseCenterController();
+    const stateMachine = controller.getStateMachine();
+    expect(stateMachine).toBeInstanceOf(ExerciseStateMachine);
+    expect(stateMachine.getFilters().mode).toBe('practice');
+    expect(stateMachine.getFilters().group).toBe('all');
+    expect(stateMachine.getFilters().isOpen).toBe(false);
+
+    expect(exerciseController.getStateMachine()).toBeInstanceOf(ExerciseStateMachine);
   });
 });
