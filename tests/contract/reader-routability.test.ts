@@ -69,6 +69,12 @@ describe('Reader Routability Contract Suite (P1-A4 / ADR-READER-CONTRACT)', () =
   beforeAll(() => {
     handler = new StaticHandler(distDir, undefined, ROOT);
 
+    if (!fs.existsSync(abpBaseDir)) {
+      throw new Error(
+        `ABP artifacts missing at ${abpBaseDir}. Run "npm run pack:books" before tests.`
+      );
+    }
+
     // 载入全部 13 本书 manifest
     const dirs = fs.readdirSync(abpBaseDir)
       .filter((d) => fs.statSync(path.join(abpBaseDir, d)).isDirectory());

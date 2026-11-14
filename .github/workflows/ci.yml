@@ -66,6 +66,9 @@ jobs:
           npm run build
           node scripts/build-electron.mjs
 
+      - name: Pack ABP test artifacts
+        run: npm run pack:books
+
       - name: Run Test Pyramid Suites
         run: npm test
 
