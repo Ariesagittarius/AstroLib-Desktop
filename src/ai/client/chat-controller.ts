@@ -50,8 +50,9 @@ import {
   type ReferencedChapter,
 } from './chat-controller.state';
 import {
-  esc,
   decorateFootnotes,
+  CHAT_DEFAULT_SUGGESTIONS as SUGGESTIONS,
+  getElementDataConfig as getConfig,
 } from './chat-formatter';
 import { ChatChapterPicker } from './chat-chapter-picker';
 import { ChatModelMenu } from './chat-model-menu';
@@ -82,16 +83,6 @@ import {
 
 export type { ReferencedChapter };
 export { formatExplorationSummary };
-
-const SUGGESTIONS = [
-  '夹逼定理是什么意思？',
-  '什么情况下用麦克劳林展开？',
-  '这道例题的解题步骤是什么？',
-];
-
-function getConfig(el: Element): any {
-  try { return JSON.parse(el.getAttribute('data-config') || '{}'); } catch { return {}; }
-}
 
 const CustomElementBase = typeof HTMLElement !== 'undefined' ? HTMLElement : (class {} as unknown as typeof HTMLElement);
 
@@ -1453,6 +1444,7 @@ export class AIAskElement extends CustomElementBase {
         modelLabel: modelDef.label || modelDef.id,
         endpoint: modelDef.endpoint,
       });
+      this._stateMachine.setError(errInfo.title);
       status.textContent = `出错了：${errInfo.title}`;
       const d = document.createElement('div');
       d.className = 'ask-error-container';

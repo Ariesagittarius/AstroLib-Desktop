@@ -88,3 +88,14 @@ export function toolSummary(name: string, out: any = {}): string {
   }
   return summary;
 }
+
+export const CHAT_DEFAULT_SUGGESTIONS = [
+  '夹逼定理是什么意思？',
+  '什么情况下用麦克劳林展开？',
+  '这道例题的解题步骤是什么？',
+];
+
+export function getElementDataConfig(el: Element): any {
+  try { return JSON.parse(el.getAttribute('data-config') || '{}'); } catch { return {}; }
+}
+

@@ -25,6 +25,7 @@ import { TranslationDrawerView } from './translation-drawer-view';
 import { TranslationInlineView, renderMathInElementSafely } from './translation-inline-view';
 import { TranslationDockStateMachine } from './translation-dock-controller.state';
 import { AI_CONFIG_CHANGE_EVENT } from '../../../ai/ai-config';
+import { getTypeLabel, escapeHtml, handleStartInlineEdit } from './translation-card-helpers';
 
 export class TranslationDockController {
   private static instance: TranslationDockController | null = null;
@@ -32,51 +33,28 @@ export class TranslationDockController {
 
   private stateMachine = new TranslationDockStateMachine();
 
-  public get currentProvider(): TranslationProviderId {
-    return this.stateMachine.getProvider();
-  }
-  public set currentProvider(p: TranslationProviderId) {
-    this.stateMachine.setProvider(p);
-  }
+  public get currentProvider(): TranslationProviderId { return this.stateMachine.getProvider(); }
+  public set currentProvider(p: TranslationProviderId) { this.stateMachine.setProvider(p); }
 
-  public get displayMode(): TranslationDisplayMode {
-    return this.stateMachine.getDisplayMode();
-  }
-  public set displayMode(m: TranslationDisplayMode) {
-    this.stateMachine.setDisplayMode(m);
-  }
+  public get displayMode(): TranslationDisplayMode { return this.stateMachine.getDisplayMode(); }
+  public set displayMode(m: TranslationDisplayMode) { this.stateMachine.setDisplayMode(m); }
 
   private currentChapterKey: string = '';
   private paragraphs: ParagraphUnit[] = [];
 
-  private get isTranslating(): boolean {
-    return this.stateMachine.getStatus() === 'translating';
-  }
+  private get isTranslating(): boolean { return this.stateMachine.getStatus() === 'translating'; }
   private set isTranslating(val: boolean) {
-    if (val) {
-      this.stateMachine.startTranslation();
-    } else {
-      this.stateMachine.finishTranslation();
-    }
+    if (val) this.stateMachine.startTranslation();
+    else this.stateMachine.finishTranslation();
   }
 
-  private get selectedExportFormat(): TranslationExportFormat {
-    return this.stateMachine.getSelectedExportFormat();
-  }
-  private set selectedExportFormat(fmt: TranslationExportFormat) {
-    this.stateMachine.setExportFormat(fmt);
-  }
+  private get selectedExportFormat(): TranslationExportFormat { return this.stateMachine.getSelectedExportFormat(); }
+  private set selectedExportFormat(fmt: TranslationExportFormat) { this.stateMachine.setExportFormat(fmt); }
 
-  private get selectedExportScope(): 'all' | 'satisfied' {
-    return this.stateMachine.getSelectedExportScope();
-  }
-  private set selectedExportScope(scope: 'all' | 'satisfied') {
-    this.stateMachine.setExportScope(scope);
-  }
+  private get selectedExportScope(): 'all' | 'satisfied' { return this.stateMachine.getSelectedExportScope(); }
+  private set selectedExportScope(scope: 'all' | 'satisfied') { this.stateMachine.setExportScope(scope); }
 
-  public getStateMachine(): TranslationDockStateMachine {
-    return this.stateMachine;
-  }
+  public getStateMachine(): TranslationDockStateMachine { return this.stateMachine; }
 
   private unbindSync: (() => void) | null = null;
   private abortController: AbortController | null = null;
@@ -572,6 +550,7 @@ export class TranslationDockController {
       if (this.abortController) {
         this.abortController.abort();
         this.abortController = null;
+        this.stateMachine.abortTranslation();
       }
       this.isTranslating = false;
     }
@@ -664,12 +643,17 @@ export class TranslationDockController {
               unit.translatedText = unit.sourceText;
               unit.status = 'error';
               unit.error = res.error || '翻译失败';
+              this.stateMachine.setError(unit.error);
             }
           } catch (err: any) {
-            if (signal.aborted) return;
+            if (signal.aborted) {
+              this.stateMachine.abortTranslation();
+              return;
+            }
             unit.translatedText = unit.sourceText;
             unit.status = 'error';
             unit.error = err?.message || '网络连接异常';
+            this.stateMachine.setError(unit.error);
           }
 
           if (signal.aborted) return;
@@ -714,15 +698,18 @@ export class TranslationDockController {
         unit.status = 'done';
         unit.provider = this.currentProvider;
         unit.error = undefined;
+        this.stateMachine.resetError();
         TranslationStorage.saveUnit(TranslationStorage.normalizeKey(), unit);
         this.updateSatisfiedCountBadge();
       } else {
         unit.status = 'error';
         unit.error = res.error || '翻译失败';
+        this.stateMachine.setError(unit.error);
       }
     } catch (err: any) {
       unit.status = 'error';
       unit.error = err?.message || '网络连接异常';
+      this.stateMachine.setError(unit.error);
     }
 
     const dockContent = document.getElementById('trans-sidebar-content');
@@ -1207,7 +1194,7 @@ export class TranslationDockController {
 
     container.innerHTML = paragraphs
       .map((unit) => {
-        const typeLabel = this.getTypeLabel(unit.type);
+        const typeLabel = getTypeLabel(unit.type);
         const isDone = unit.status === 'done';
         const isSatisfied = Boolean(unit.isSatisfied);
         const isCustom = Boolean(unit.isCustomEdited);
@@ -1253,10 +1240,10 @@ export class TranslationDockController {
               </div>
             </div>
             <div class="trans-card-body">
-              <div class="trans-source-snippet">${this.escapeHtml(unit.sourceText.slice(0, 140))}${unit.sourceText.length > 140 ? '...' : ''}</div>
+              <div class="trans-source-snippet">${escapeHtml(unit.sourceText.slice(0, 140))}${unit.sourceText.length > 140 ? '...' : ''}</div>
               <div class="trans-target-text ${isDone ? '' : 'trans-pulse-text'}">
                 ${isDone
-                  ? this.escapeHtml(unit.translatedText || unit.sourceText)
+                  ? escapeHtml(unit.translatedText || unit.sourceText)
                   : '<div class="trans-skeleton-line"></div><div class="trans-skeleton-line short"></div>'}
               </div>
             </div>
@@ -1293,8 +1280,8 @@ export class TranslationDockController {
     if (unit.status === 'error') {
       card.classList.add('trans-card-error');
       targetElem.innerHTML = `
-        <span class="trans-error-msg" title="${this.escapeHtml(unit.error || '')}">
-          ⚠️ 翻译未成功 (${this.escapeHtml(unit.error || '请求异常')}) · <button type="button" class="trans-retry-btn">重试</button><button type="button" class="trans-fix-key-btn">配置密钥</button>
+        <span class="trans-error-msg" title="${escapeHtml(unit.error || '')}">
+          ⚠️ 翻译未成功 (${escapeHtml(unit.error || '请求异常')}) · <button type="button" class="trans-retry-btn">重试</button><button type="button" class="trans-fix-key-btn">配置密钥</button>
         </span>
       `;
       const retryBtn = card.querySelector('.trans-retry-btn');
@@ -1422,81 +1409,11 @@ export class TranslationDockController {
   }
 
   private handleStartEdit(unit: ParagraphUnit, card: HTMLElement): void {
-    const body = card.querySelector<HTMLElement>('.trans-card-body');
-    const targetElem = card.querySelector<HTMLElement>('.trans-target-text');
-    if (!body || !targetElem) return;
-
-    if (card.querySelector('.trans-card-editor-box')) return;
-
-    targetElem.style.display = 'none';
-
-    const editorBox = document.createElement('div');
-    editorBox.className = 'trans-card-editor-box';
-    editorBox.innerHTML = `
-      <textarea class="trans-card-textarea" rows="3" placeholder="在此编辑或精修译文...">${this.escapeHtml(unit.translatedText || unit.sourceText)}</textarea>
-      <div class="trans-card-editor-actions">
-        <button type="button" class="trans-editor-save-btn">保存微调</button>
-        <button type="button" class="trans-editor-cancel-btn">取消</button>
-      </div>
-    `;
-
-    body.appendChild(editorBox);
-
-    const textarea = editorBox.querySelector<HTMLTextAreaElement>('.trans-card-textarea');
-    const saveBtn = editorBox.querySelector<HTMLButtonElement>('.trans-editor-save-btn');
-    const cancelBtn = editorBox.querySelector<HTMLButtonElement>('.trans-editor-cancel-btn');
-
-    const closeEditor = () => {
-      editorBox.remove();
-      targetElem.style.display = '';
-    };
-
-    const saveAction = () => {
-      const val = textarea?.value.trim() ?? '';
-      if (val) {
-        unit.translatedText = val;
-        unit.isCustomEdited = true;
-        unit.isSatisfied = true;
-        unit.status = 'done';
-        TranslationStorage.updateCustomTranslation(TranslationStorage.normalizeKey(), unit.id, val);
-
-        card.classList.add('is-satisfied');
-        const satisfyBtn = card.querySelector<HTMLButtonElement>('.trans-card-satisfy-btn');
-        if (satisfyBtn) {
-          satisfyBtn.classList.add('is-satisfied');
-          satisfyBtn.title = '取消采纳';
-          const icon = satisfyBtn.querySelector('md-icon');
-          if (icon) icon.textContent = 'star';
-        }
-
-        this.updateCardBadges(card, unit);
-        this.updateSatisfiedCountBadge();
-
-        targetElem.textContent = val;
-        renderMathInElementSafely(targetElem);
-      }
-      closeEditor();
-    };
-
-    if (textarea) {
-      textarea.focus();
-      textarea.addEventListener('click', (e) => e.stopPropagation());
-      textarea.addEventListener('keydown', (e) => {
-        e.stopPropagation();
-        if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-          saveAction();
-        }
-      });
-    }
-
-    saveBtn?.addEventListener('click', (e) => {
-      e.stopPropagation();
-      saveAction();
-    });
-
-    cancelBtn?.addEventListener('click', (e) => {
-      e.stopPropagation();
-      closeEditor();
+    handleStartInlineEdit({
+      card,
+      unit,
+      updateCardBadges: (c, u) => this.updateCardBadges(c, u),
+      updateSatisfiedCountBadge: () => this.updateSatisfiedCountBadge(),
     });
   }
 
@@ -1514,35 +1431,6 @@ export class TranslationDockController {
 
   public syncInlineToolbarUI(): void {
     this.inlineView.syncInlineToolbarUI();
-  }
-
-  private getTypeLabel(type: ParagraphUnit['type']): string {
-    switch (type) {
-      case 'heading':
-        return '标题';
-      case 'card-title':
-        return '卡片标题';
-      case 'table-cell':
-        return '表格';
-      case 'math':
-        return '公式';
-      case 'code':
-        return '算法';
-      case 'quote':
-        return '引言';
-      case 'card':
-        return '专栏';
-      default:
-        return '段落';
-    }
-  }
-
-  private escapeHtml(str: string): string {
-    return str
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;');
   }
 }
 

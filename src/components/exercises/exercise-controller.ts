@@ -1,5 +1,4 @@
 import renderMathInElement from 'katex/dist/contrib/auto-render.mjs';
-import { exerciseDb } from '../../utils/exercise-db/exercise-db-client';
 import type {
   SlimQuestionItem,
   ChapterData,
@@ -22,41 +21,9 @@ import {
 import { ExerciseStateMachine, type UserPracticeRecord } from './exercise-controller.state';
 import { onAiConfigChange, type AiProviderId } from '../../ai/ai-config';
 import { createM3LoadingHtml } from '../common/m3-loading-helper';
-
-export function sanitizeLatexString(val: string): string {
-  if (typeof val !== 'string') return '';
-  let str = val;
-  str = str.replace(/\x0c/g, '\\f');
-  str = str.replace(/\x08/g, '\\b');
-  str = str.replace(/\x0b/g, '\\v');
-  str = str.replace(/\r(?!\n)/g, '\\r');
-  str = str.replace(/\t([a-zA-Z])/g, '\\t$1');
-  str = str.replace(/(\$\$[\s\S]+?\$\$|\$[^\$\n]+?\$)/g, (m) => m.replace(/\t/g, ' '));
-  str = str.replace(/(\$\$[\s\S]+?\$\$|\$[^\$\n]+?\$)/g, (m) =>
-    m.replace(/\n(u|eq|ne|not|nabla|notin|nrightarrow|natural|nearrow|nwarrow|neg|normalsize)\b/g, '\\n$1')
-  );
-  str = str.replace(/\\iiiint_{\\Omega}/g, '\\iiint_{\\Omega}');
-  str = str.replace(/\\overparen\{([^}]+)\}/g, '\\stackrel{\\frown}{$1}');
-  str = str.replace(/\\wideparen\{([^}]+)\}/g, '\\stackrel{\\frown}{$1}');
-  return str;
-}
-
-export function sanitizeLatexValue(val: any): any {
-  if (typeof val === 'string') {
-    return sanitizeLatexString(val);
-  } else if (Array.isArray(val)) {
-    return val.map(sanitizeLatexValue);
-  } else if (val && typeof val === 'object') {
-    const res: any = {};
-    for (const [k, v] of Object.entries(val)) {
-      res[k] = sanitizeLatexValue(v);
-    }
-    return res;
-  }
-  return val;
-}
-
-import { renderAcademicSolutionMarkdown as renderSolutionMarkdown, EXERCISE_KATEX_OPTIONS as KATEX_OPTIONS } from './exercise-markdown';
+import { sanitizeLatexString, sanitizeLatexValue } from './exercise-sanitizer';
+export { sanitizeLatexString, sanitizeLatexValue };
+import { EXERCISE_KATEX_OPTIONS as KATEX_OPTIONS } from './exercise-markdown';
 
 export type {
   SlimQuestionItem,
@@ -140,13 +107,9 @@ class ExerciseCenterController {
 
   private toolbarEl: HTMLElement | null = null;
   private toolbarToggleBtn: HTMLButtonElement | null = null;
-  private get isFilterCollapsed(): boolean {
-    return this.stateMachine.getFilters().isFilterCollapsed;
-  }
-  private set isFilterCollapsed(collapsed: boolean) {
-    if (this.stateMachine.getFilters().isFilterCollapsed !== collapsed) {
-      this.stateMachine.toggleFilterCollapsed();
-    }
+  public get isFilterCollapsed(): boolean { return this.stateMachine.getFilters().isFilterCollapsed; }
+  public set isFilterCollapsed(collapsed: boolean) {
+    if (this.stateMachine.getFilters().isFilterCollapsed !== collapsed) this.stateMachine.toggleFilterCollapsed();
   }
 
   private totalStatEl: HTMLElement | null = null;
@@ -154,44 +117,25 @@ class ExerciseCenterController {
   private accStatEl: HTMLElement | null = null;
 
   private boundRoot: HTMLElement | null = null;
-  private get isOpen(): boolean {
-    return this.stateMachine.getFilters().isOpen;
-  }
-  private set isOpen(val: boolean) {
-    if (val) this.stateMachine.open();
-    else this.stateMachine.close();
-  }
+  public get isOpen(): boolean { return this.stateMachine.getFilters().isOpen; }
+  public set isOpen(val: boolean) { if (val) this.stateMachine.open(); else this.stateMachine.close(); }
 
-  private get isFullscreen(): boolean {
-    return this.stateMachine.getFilters().isFullscreen;
-  }
-  private set isFullscreen(val: boolean) {
-    if (this.stateMachine.getFilters().isFullscreen !== val) {
-      this.stateMachine.toggleFullscreen();
-    }
+  public get isFullscreen(): boolean { return this.stateMachine.getFilters().isFullscreen; }
+  public set isFullscreen(val: boolean) {
+    if (this.stateMachine.getFilters().isFullscreen !== val) this.stateMachine.toggleFullscreen();
   }
 
   private isGlobalSearch = false;
-  private get currentMode(): 'practice' | 'paper' {
-    return this.stateMachine.getFilters().mode;
-  }
-  private set currentMode(mode: 'practice' | 'paper') {
-    this.stateMachine.setMode(mode);
-  }
+  public get currentMode(): 'practice' | 'paper' { return this.stateMachine.getFilters().mode; }
+  public set currentMode(mode: 'practice' | 'paper') { this.stateMachine.setMode(mode); }
 
   private currentChapter = 1;
   private currentPaperId = 1;
   private currentSource: 'all' | 'textbook' | 'exam' = 'all';
-  private get currentGroup(): 'all' | 'A' | 'B' {
-    return this.stateMachine.getFilters().group as ('all' | 'A' | 'B');
-  }
-  private set currentGroup(group: 'all' | 'A' | 'B') {
-    this.stateMachine.setGroup(group);
-  }
+  public get currentGroup(): 'all' | 'A' | 'B' { return this.stateMachine.getFilters().group as ('all' | 'A' | 'B'); }
+  public set currentGroup(group: 'all' | 'A' | 'B') { this.stateMachine.setGroup(group); }
 
-  public getStateMachine(): ExerciseStateMachine {
-    return this.stateMachine;
-  }
+  public getStateMachine(): ExerciseStateMachine { return this.stateMachine; }
   private currentSection = 'all';
   private currentPaperSection = 'all';
   private currentType = 'all';
@@ -664,7 +608,8 @@ class ExerciseCenterController {
   }
 
   public open(chapter = 1, section = 'all', book?: string) {
-    if (!this.root) this.root = document.getElementById('exercise-modal-root');
+    this.isOpen = true;
+    if (!this.root && typeof document !== 'undefined') this.root = document.getElementById('exercise-modal-root');
     if (!this.root) return;
 
     if (book && book !== this.currentBook) {
@@ -679,7 +624,6 @@ class ExerciseCenterController {
       document.body.appendChild(this.root);
     }
 
-    this.isOpen = true;
     this.root.classList.add('is-open');
     document.body.style.overflow = 'hidden';
 
@@ -705,8 +649,12 @@ class ExerciseCenterController {
   }
 
   public openPaper(paperId = 1, targetQid?: string, book?: string) {
-    if (!this.root) this.root = document.getElementById('exercise-modal-root');
-    if (!this.root) return;
+    this.isOpen = true;
+    if (!this.root && typeof document !== 'undefined') this.root = document.getElementById('exercise-modal-root');
+    if (!this.root) {
+      this.switchMode('paper');
+      return;
+    }
 
     if (book && book !== this.currentBook) {
       this.currentBook = book;
@@ -720,7 +668,6 @@ class ExerciseCenterController {
       document.body.appendChild(this.root);
     }
 
-    this.isOpen = true;
     this.root.classList.add('is-open');
     document.body.style.overflow = 'hidden';
 
@@ -748,8 +695,9 @@ class ExerciseCenterController {
   }
 
   public close() {
-    if (!this.root) return;
     this.isOpen = false;
+    if (!this.root && typeof document !== 'undefined') this.root = document.getElementById('exercise-modal-root');
+    if (!this.root) return;
     this.root.classList.remove('is-open');
     document.body.style.overflow = '';
     this.closeAllSubmodals();
@@ -872,7 +820,7 @@ class ExerciseCenterController {
   }
 
   private async ensurePaperListLoaded() {
-    if (this.paperListSummary.length > 0) return;
+    if (typeof window === 'undefined' || this.paperListSummary.length > 0) return;
 
     try {
       const resp = await fetch(`/data/exercises/${this.currentBook}/papers.json`);
