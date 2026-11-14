@@ -24,7 +24,7 @@ export interface SubQuestion {
 export interface SlimQuestionItem {
   id: string;
   source_type?: 'exam' | 'textbook';
-  group?: 'A' | 'B' | string;
+  group?: 'A' | 'B' | 'C' | (string & {});
   type: 'choice' | 'blank' | 'calc' | 'proof';
   score: number;
   sec: string;

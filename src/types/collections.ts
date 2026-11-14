@@ -52,7 +52,7 @@ export interface Book {
   trackClasses?: string[];
   modules?: Record<string, ModuleItemConfig>;
   languages?: BookLanguageConfig[];
-  tocMapping?: Record<string, string | string[]>;
+  tocMapping?: Record<string, string[] | (string & {})>;
 }
 
 export interface Collection {

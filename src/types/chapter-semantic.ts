@@ -138,13 +138,13 @@ export interface ChapterLatexConfig {
   documentclass: 'ctexbook' | 'ctexart';
   paperSize: 'a4' | 'b5';
   fontSize: 10 | 10.5 | 11 | 12;
-  typography?: 'scholarly' | 'classic' | 'mathematical' | 'lecture' | string;
+  typography?: 'scholarly' | 'classic' | 'mathematical' | 'lecture';
   resolutionMode?: 'deterministic' | 'adaptive';
   fontFamily?: 'serif' | 'sans';
   /** @deprecated 请改用 typography 预设 */
   mathFont?: 'typst' | 'modern' | 'times' | 'pagella';
   /** @deprecated 请改用 typography 预设 */
-  cjkFont?: 'default' | 'sourcehan' | 'song' | 'kai' | string;
+  cjkFont?: 'default' | 'sourcehan' | 'song' | 'kai';
   numberingDepth: number; // 编号深入层级
   showToc: boolean; // 是否在章首输出微型本章目录
   author?: string;
