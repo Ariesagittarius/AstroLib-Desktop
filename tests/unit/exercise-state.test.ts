@@ -117,12 +117,41 @@ describe('ExerciseStateMachine', () => {
     expect(newSm.getActiveSolutionVersion('q10')).toBe('v2-community');
   });
 
-  it('7. Controller Integration: ExerciseCenterController instantiates and delegates state to ExerciseStateMachine', () => {
+  it('7. Controller Integration: ExerciseCenterController instantiates and delegates state transitions to ExerciseStateMachine', () => {
     const controller = new ExerciseCenterController();
     const stateMachine = controller.getStateMachine();
     expect(stateMachine).toBeInstanceOf(ExerciseStateMachine);
     expect(stateMachine.getFilters().mode).toBe('practice');
     expect(stateMachine.getFilters().group).toBe('all');
+    expect(stateMachine.getFilters().isOpen).toBe(false);
+
+    // 真实状态转换与公开入口联动断言
+    controller.open();
+    expect(stateMachine.getFilters().isOpen).toBe(true);
+    expect(controller.isOpen).toBe(true);
+
+    controller.close();
+    expect(stateMachine.getFilters().isOpen).toBe(false);
+    expect(controller.isOpen).toBe(false);
+
+    controller.openPaper(3);
+    expect(stateMachine.getFilters().isOpen).toBe(true);
+    expect(stateMachine.getFilters().mode).toBe('paper');
+    expect(controller.currentMode).toBe('paper');
+
+    controller.currentMode = 'practice';
+    expect(stateMachine.getFilters().mode).toBe('practice');
+    expect(controller.currentMode).toBe('practice');
+
+    controller.currentGroup = 'A';
+    expect(stateMachine.getFilters().group).toBe('A');
+    expect(controller.currentGroup).toBe('A');
+
+    controller.currentGroup = 'B';
+    expect(stateMachine.getFilters().group).toBe('B');
+    expect(controller.currentGroup).toBe('B');
+
+    controller.close();
     expect(stateMachine.getFilters().isOpen).toBe(false);
 
     expect(exerciseController.getStateMachine()).toBeInstanceOf(ExerciseStateMachine);

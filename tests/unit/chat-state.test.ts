@@ -119,5 +119,24 @@ describe('ChatControllerStateMachine', () => {
     el._busy = false;
     expect(el.getStateMachine().getStatus()).toBe('idle');
     expect(el._busy).toBe(false);
+
+    // 状态机流式生成、错误处理与终止断言
+    el._busy = true;
+    el.getStateMachine().enterStreaming();
+    expect(el.getStateMachine().getStatus()).toBe('streaming');
+    expect(el._busy).toBe(true);
+
+    el.getStateMachine().setError('Model quota exceeded');
+    expect(el.getStateMachine().getStatus()).toBe('error');
+    expect(el.getStateMachine().getErrorMessage()).toBe('Model quota exceeded');
+
+    el.getStateMachine().resetError();
+    expect(el.getStateMachine().getStatus()).toBe('idle');
+    expect(el._busy).toBe(false);
+
+    el._busy = true;
+    el.getStateMachine().abortGenerating();
+    expect(el.getStateMachine().getStatus()).toBe('idle');
+    expect(el._busy).toBe(false);
   });
 });

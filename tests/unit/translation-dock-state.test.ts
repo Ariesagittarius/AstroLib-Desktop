@@ -103,7 +103,7 @@ describe('TranslationDockStateMachine', () => {
     expect(newSm.getCurrentChapterKey()).toBe('math-ch1');
   });
 
-  it('7. Controller Integration: TranslationDockController delegates state to TranslationDockStateMachine', () => {
+  it('7. Controller Integration: TranslationDockController delegates state and lifecycle to TranslationDockStateMachine', () => {
     const instance = TranslationDockController.getInstance();
     const stateMachine = instance.getStateMachine();
     expect(stateMachine).toBeInstanceOf(TranslationDockStateMachine);
@@ -115,5 +115,22 @@ describe('TranslationDockStateMachine', () => {
 
     instance.displayMode = 'inline';
     expect(stateMachine.getDisplayMode()).toBe('inline');
+
+    // 翻译生命周期状态与异常断言
+    stateMachine.startTranslation();
+    expect(stateMachine.getStatus()).toBe('translating');
+
+    stateMachine.setError('网络连接异常');
+    expect(stateMachine.getStatus()).toBe('error');
+    expect(stateMachine.getErrorMessage()).toBe('网络连接异常');
+
+    stateMachine.resetError();
+    expect(stateMachine.getStatus()).toBe('idle');
+    expect(stateMachine.getErrorMessage()).toBeNull();
+
+    stateMachine.startTranslation();
+    expect(stateMachine.getStatus()).toBe('translating');
+    stateMachine.abortTranslation();
+    expect(stateMachine.getStatus()).toBe('idle');
   });
 });
