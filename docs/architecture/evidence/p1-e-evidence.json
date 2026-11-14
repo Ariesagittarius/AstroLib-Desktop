@@ -1,0 +1,80 @@
+{
+  "gate": "P1-E Architecture Governance, Dependency Inversion, Types and CI Verification",
+  "generatedAt": "2026-11-14T11:22:00+08:00",
+  "status": "PASSED",
+  "criteria": {
+    "E1_DependencyInversion": {
+      "status": "PASSED",
+      "adrDocument": "docs/architecture/ADR-GOVERNANCE-2026-11-13.md",
+      "sharedContract": "src/features/sideload/contract.ts",
+      "servicesToComponentsCount": 0,
+      "servicesToComponentsBaseline": 3,
+      "utilsToServerCount": 0,
+      "utilsToServerBaseline": 1,
+      "guardTestFile": "tests/contract/architecture-boundaries.test.ts"
+    },
+    "E2_ShimsRemoval": {
+      "status": "PASSED",
+      "deletedOneLineMjsShims": 10,
+      "deletedTsShims": 2,
+      "remainingOneLineMjsShimsInSrc": 0,
+      "guardTestFile": "tests/contract/architecture-boundaries.test.ts"
+    },
+    "E3_TypeNarrowing": {
+      "status": "PASSED",
+      "pipeStringWideningCountInSrcTypes": 0,
+      "pipeStringWideningBaseline": 4,
+      "narrowedFiles": [
+        "src/types/chapter-semantic.ts",
+        "src/types/collections.ts",
+        "src/types/exercises.ts"
+      ],
+      "technique": "Strict Closed Unions & Branded Extensible Literals (string & {})",
+      "testFile": "tests/unit/type-narrowing.test.ts",
+      "tsExpectErrorVerification": true
+    },
+    "E4_DuplicateStacks": {
+      "status": "PASSED",
+      "translationCore": "src/services/translation/translation-core.ts",
+      "apiTranslateLines": 142,
+      "apiTranslateBaselineLines": 540,
+      "apiTranslateTarget": "< 150",
+      "aiModelCatalogConsolidated": "src/ai/ai-config.ts",
+      "retrievalDualPathsRegistered": true,
+      "retrievalDualPathsRationale": "ADR-GOVERNANCE-2026-11-13 §2.7: MCP/Server RAG vs Client-side Search-Rec"
+    },
+    "E5_CIAndVerification": {
+      "status": "PASSED",
+      "astroCheckErrors": 0,
+      "astroCheckBaselineErrors": 31,
+      "astroCheckWarnings": 0,
+      "deliberateAstroScriptFailureBlocked": true,
+      "routeSmokeTestSuite": "tests/contract/reader-routability.test.ts",
+      "routeSmokeCoverage": [
+        "/desktop/",
+        "/reader/",
+        "/collections/math/math_senior/06_第1章-三角函数/",
+        "/collections/cs/algorithms/00_preface/"
+      ],
+      "checkAllCommand": "npm run check:types && npm run check:astro && npm test"
+    },
+    "E6_LegacyPathsAndSpec": {
+      "status": "PASSED",
+      "legacyPathReferencesInSrc": 0,
+      "agentsSpecAmended": "AGENTS.md §8.2 updated to decouple Reader Shell from static compilation",
+      "docsCatalogUpdated": "docs/README.md indexed all ADRs and Evidence artifacts"
+    }
+  },
+  "metrics": {
+    "importantCount": 4552,
+    "importantBaseline": 6190,
+    "importantTarget": "<= 5200",
+    "importantDelta": -1638,
+    "typeCheckErrors": 0,
+    "astroCheckErrors": 0,
+    "testFilesPassed": 77,
+    "testsPassed": 471,
+    "testsFailed": 0,
+    "assetIntegrity": "v0.0.4 untouched"
+  }
+}
