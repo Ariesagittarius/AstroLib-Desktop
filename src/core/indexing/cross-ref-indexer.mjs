@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { cleanSlug } from '../../utils/slug.mjs';
+import { cleanSlug } from '../../utils/slug.ts';
 import { resolveBookSourceDir, toCollectionRelativeSlug } from '../catalog/content-paths.ts';
 
 function walkDir(dir, fileList = []) {

@@ -5,7 +5,7 @@
 // 异常拆分审查与一键跳转定位能力，辅助图书开发者高效纠偏。
 // 挂载：由 FooterOverride.astro 引入，开发时渲染，生产构建零输出。
 // -----------------------------------------------------------------------------
-import { features } from '../../../config/features.config.mjs';
+import { features } from '../../../config/features.config.ts';
 import M3Loading from '../../../components/common/M3Loading.astro';
 const isDev = import.meta.env.DEV;
 import '../styles/module-inspector.css';

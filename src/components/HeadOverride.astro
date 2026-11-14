@@ -11,9 +11,9 @@
  * 6. 构建期完全静态渲染，客户端运行时 0 KB JS 开销。
  * ============================================================================
  */
-import { collections } from '../config/collections.config.mjs';
-import { features } from '../config/features.config.mjs';
-import { cleanSlug } from '../utils/slug.mjs';
+import { collections } from '../config/collections.config.ts';
+import { features } from '../config/features.config.ts';
+import { cleanSlug } from '../utils/slug.ts';
 
 const route = Astro.locals.starlightRoute;
 const { head = [], entry } = route || {};

@@ -6,7 +6,7 @@
  * 仅在 dev 模式（isEffective('relationGraph')）下挂载，生产构建零污染。
  */
 
-import { generateBookRelationGraph } from '../../../utils/relation-graph/generator.mjs';
+import { generateBookRelationGraph } from '../../../features/relation-graph/core/generator.mjs';
 
 function sendJson(res, status, data) {
   const body = JSON.stringify(data);

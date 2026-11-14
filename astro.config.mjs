@@ -5,10 +5,10 @@ import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 
 // 导入多合集配置和我们的自然排序侧边栏生成器
-import { collections } from './src/config/collections.config.mjs';
+import { collections } from './src/config/collections.config.ts';
 import { generateStarlightBookSidebar } from './src/server/adapters/starlight-sidebar.mjs';
 
-import { features, isEffective, crossRefRefs, IS_DEV } from './src/config/features.config.mjs';
+import { features, isEffective, crossRefRefs, IS_DEV } from './src/config/features.config.ts';
 
 // 公式源码回填插件：让每个 KaTeX 公式携带 data-latex 原始源码（供前端一键复制）
 import { rehypeKatexAnnotate, rehypeKatexPromote } from './src/plugins/rehype/rehype-katex-source.mjs';

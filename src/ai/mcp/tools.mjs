@@ -6,7 +6,7 @@
  * 设计目标（对应用户约束）：
  *   · 成本：一切工具都只返回“薄切片”（片段/行/少数 chunk），绝不一次把整本书
  *     或超长原文塞进模型上下文；默认带 limit / topK / 文本上限。
- *   · 复用现成轮子：图书目录来自 collections.config.mjs、TOC 复用
+ *   · 复用现成轮子：图书目录来自 collections.config.ts、TOC 复用
  *     buildBookCatalog、切片复用 indexer/chunker、打分复用 retriever、
  *     slug 复用 cleanSlug —— 不另造向量库或解析器。
  *
@@ -17,7 +17,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
-import { getCatalogCollections } from '../../config/collections.config.mjs';
+import { getCatalogCollections } from '../../config/collections.config.ts';
 import { buildBookCatalog } from '../../core/catalog/book-catalog.mjs';
 import { resolveBookSourceDir } from '../../core/catalog/content-paths.ts';
 import { buildBookIndex, walkDir } from '../indexer.mjs';

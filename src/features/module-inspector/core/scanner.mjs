@@ -1,9 +1,9 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import katex from 'katex';
-import { cleanSlug } from '../../../utils/slug.mjs';
-import { naturalSort } from '../../../utils/natural-sort.mjs';
-import { getCatalogCollections } from '../../../config/collections.config.mjs';
+import { cleanSlug } from '../../../utils/slug.ts';
+import { naturalSort } from '../../../utils/natural-sort.ts';
+import { getCatalogCollections } from '../../../config/collections.config.ts';
 import { resolveBookSourceDir, toCollectionRelativeSlug } from '../../../core/catalog/content-paths.ts';
 
 /**

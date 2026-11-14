@@ -7,7 +7,7 @@
  * 3. LocalStorage 离线降级与点赞记录去重
  */
 
-import { features } from '../../config/features.config.mjs';
+import { features } from '../../config/features.config.ts';
 
 export interface CommunityAiSolution {
   id: string;

@@ -1,8 +1,8 @@
 // src/core/catalog/book-catalog.mjs
 import fs from 'node:fs';
 import path from 'node:path';
-import { naturalSort } from '../../utils/natural-sort.mjs';
-import { cleanSlug } from '../../utils/slug.mjs';
+import { naturalSort } from '../../utils/natural-sort.ts';
+import { cleanSlug } from '../../utils/slug.ts';
 import { toCollectionRelativeSlug } from './content-paths.ts';
 
 /**

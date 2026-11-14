@@ -25,7 +25,7 @@ description: 注册题库、准备源数据并把习题册挂接到对应书籍�
 ## 推荐流程
 
 1. 将原始题目整理为项目已有 JSON 结构，放到 `src/data/exercises/`；先参考同目录的题库文件，不要直接编辑 `public/data/exercises/`。
-2. 在 `EXERCISE_BANKS` 注册题库，并把 `applicableBooks` 填成 `collections.config.mjs` 中的 `book.slug`。
+2. 在 `EXERCISE_BANKS` 注册题库，并把 `applicableBooks` 填成 `collections.config.ts` 中的 `book.slug`。
 3. 如果题目来自 PDF，可使用 `scripts/extract_textbook_exercises.py` 或 `scripts/process_bupt_math_archive.py` 生成初稿，再人工校对公式、题号、答案和来源。
 4. 运行：
 

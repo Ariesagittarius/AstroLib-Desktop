@@ -53,4 +53,22 @@ describe('Architecture Boundary Contract Tests', () => {
 
     expect(violations).toEqual([]);
   });
+
+  it('src/config/ 与 src/utils/ 严禁存在一行 export * from 垫片文件', () => {
+    const targetDirs = [path.resolve('src/config'), path.resolve('src/utils')];
+    const shims: string[] = [];
+
+    for (const dir of targetDirs) {
+      const files = getFilesRecursively(dir);
+      for (const file of files) {
+        const content = fs.readFileSync(file, 'utf-8').trim();
+        const lines = content.split('\n').filter((l) => l.trim().length > 0 && !l.trim().startsWith('//') && !l.trim().startsWith('/*') && !l.trim().startsWith('*'));
+        if (lines.length === 1 && lines[0].startsWith('export * from')) {
+          shims.push(path.relative(process.cwd(), file));
+        }
+      }
+    }
+
+    expect(shims).toEqual([]);
+  });
 });

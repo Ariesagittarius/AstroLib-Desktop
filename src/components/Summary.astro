@@ -1,5 +1,5 @@
 ---
-import { renderTitleHtml } from '../utils/render-title.mjs';
+import { renderTitleHtml } from '../utils/render-title.ts';
 import { srcAttrs } from '../utils/src-attrs.mjs';
 const { title } = Astro.props;
 const cleanId = title ? title.trim().replace(/\s+/g, '-') : undefined;

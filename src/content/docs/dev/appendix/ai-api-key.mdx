@@ -35,7 +35,7 @@ https://api.example.com/v1/chat/completions
 
 ## 安全与排错
 
-- 不把 Key 放进 `src/config/features.config.mjs`、`.env`、截图、Issue 或提交历史。
+- 不把 Key 放进 `src/config/features.config.ts`、`.env`、截图、Issue 或提交历史。
 - 看到 401/403，检查 Key 和账户权限；看到 404，检查模型 ID；看到超额或频率错误，检查配额。
 - Gemini 连接失败时先检查代理和开发代理地址；DeepSeek 或自定义端点失败时检查 CORS 和协议兼容性。
 - 仅在可信的本地浏览器中使用个人 Key；公共电脑使用后清除站点数据。

@@ -32,7 +32,7 @@ const EMOJI_RE = /[\u{1F300}-\u{1F6FF}\u{1F900}-\u{1F9FF}\u{2600}-\u{26FF}\u{270
 
 /**
  * 与 parseTitleFromConfig 一致的标题分词：返回 { type: 模块key, number: 编号 }。
- * modules 为某本书的 modules 配置（collections.config.mjs 里 book.modules）。
+ * modules 为某本书的 modules 配置（collections.config.ts 里 book.modules）。
  */
 export function detectType(title, modules) {
   const t = (title || '').trim().replace(EMOJI_RE, '').trim();

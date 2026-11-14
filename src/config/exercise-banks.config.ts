@@ -30,7 +30,7 @@ export interface ExerciseBank {
   title: string;
   /** 题目来源分类 */
   sourceType: 'exam' | 'textbook';
-  /** 该题库可生效的书籍 slug 列表（对应 collections.config.mjs 中的 book.slug） */
+  /** 该题库可生效的书籍 slug 列表（对应 collections.config.ts 中的 book.slug） */
   applicableBooks: string[];
   /** 开源许可证元数据（若具有开源许可） */
   license?: ExerciseBankLicense;

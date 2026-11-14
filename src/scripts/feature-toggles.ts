@@ -36,7 +36,7 @@ import {
   type SiteThemeId,
 } from './site-themes';
 
-import { DEFAULT_SITE_THEME } from '../config/themes.config.mjs';
+import { DEFAULT_SITE_THEME } from '../config/themes.config.ts';
 import {
   applyThemeColor,
   loadThemeColor,

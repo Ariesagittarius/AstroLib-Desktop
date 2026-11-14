@@ -29,7 +29,7 @@ describe('SideNote AI Assistant Integration (Contract & Unit Tests)', () => {
     const content = fs.readFileSync(sideNotePath, 'utf-8');
 
     // 1. 验证引入 features 特性配置与 AI 开关判断
-    expect(content).toContain("import { features } from '../config/features.config.mjs';");
+    expect(content).toContain("import { features } from '../config/features.config.ts';");
     expect(content).toContain('const isAiEnabled = Boolean(features.aiAsk?.enabled)');
 
     // 2. 验证包含 Google Material Symbols 官方 auto_awesome 矢量

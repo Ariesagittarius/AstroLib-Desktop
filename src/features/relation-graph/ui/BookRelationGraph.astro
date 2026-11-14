@@ -2,11 +2,11 @@
 // src/components/BookRelationGraph.astro
 // 全书各章节内联关系与知识图谱可视化模态窗（基于 Apache ECharts 5）
 // -----------------------------------------------------------------------------
-// 模块化特性：由 features.config.mjs 中的 relationGraph 控制，
+// 模块化特性：由 features.config.ts 中的 relationGraph 控制，
 // 开启时在 FooterOverride.astro 挂载，关闭时零打包、零 DOM 渲染。
 // -----------------------------------------------------------------------------
-import { features } from '../../../config/features.config.mjs';
-import { collections } from '../../../config/collections.config.mjs';
+import { features } from '../../../config/features.config.ts';
+import { collections } from '../../../config/collections.config.ts';
 import M3Loading from '../../../components/common/M3Loading.astro';
 
 const pathname = Astro.url.pathname;

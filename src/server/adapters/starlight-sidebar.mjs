@@ -1,4 +1,4 @@
-// src/server/adapters/starlight-sidebar.mjs
+// src/server/adapters/starlight-sidebar.ts
 import { buildBookCatalog } from '../../core/catalog/book-catalog.mjs';
 
 /**

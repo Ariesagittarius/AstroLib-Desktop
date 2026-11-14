@@ -14,7 +14,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import katex from 'katex';
-import { features } from '../src/config/features.config.mjs';
+import { features } from '../src/config/features.config.ts';
 import { getCatalogBooks } from '../src/config/collections.config.ts';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));

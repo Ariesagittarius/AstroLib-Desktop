@@ -7,7 +7,7 @@
  * ==========================================================================
  */
 
-import { siteThemes, DEFAULT_SITE_THEME, isValidSiteTheme } from '../config/themes.config.mjs';
+import { siteThemes, DEFAULT_SITE_THEME, isValidSiteTheme } from '../config/themes.config.ts';
 
 export const SITE_THEME_KEY = 'starlight-site-theme';
 

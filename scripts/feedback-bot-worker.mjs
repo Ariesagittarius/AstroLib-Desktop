@@ -8,7 +8,7 @@
  *   1. Paste this script into Cloudflare Workers dashboard.
  *   2. Set environment secret: GITHUB_TOKEN (Personal Access Token with `issues:write` or `public_repo` permission).
  *   3. Optional secret: ALLOWED_ORIGIN (e.g. "https://astrolib.site" or "*" for dev).
- *   4. Paste the worker URL into `src/config/features.config.mjs` -> `features.feedback.config.botEndpoint`.
+ *   4. Paste the worker URL into `src/config/features.config.ts` -> `features.feedback.config.botEndpoint`.
  */
 
 export default {

@@ -2,8 +2,8 @@
 import SidebarPersister from '@astrojs/starlight/components/SidebarPersister.astro';
 import SidebarSublist from './sidebar/CustomSidebarSublist.astro';
 import fs from 'node:fs';
-import { features } from '../config/features.config.mjs';
-import { collections } from '../config/collections.config.mjs';
+import { features } from '../config/features.config.ts';
+import { collections } from '../config/collections.config.ts';
 import { buildTwoTierSidebar } from '../utils/sidebar/sidebar-tree';
 
 const { sidebar } = Astro.locals.starlightRoute;

@@ -2,7 +2,7 @@
 // 构建期：为所有图书生成“全书卡片模块索引与速查数据”，输出到 public/inspector-data/<col>-<book>.json
 // （astro build 会把 public/ 原样拷到 dist/，供客户端在生产环境下零运行时开销懒加载）。
 //
-// 开关：src/config/features.config.mjs 里 features.inspector.enabled —— 关闭则跳过生成。
+// 开关：src/config/features.config.ts 里 features.inspector.enabled —— 关闭则跳过生成。
 // 用法：
 //   node scripts/build-inspector-data.mjs                  # 生成全部图书
 //   node scripts/build-inspector-data.mjs --only engineering_analysis   # 只生成指定 slug
@@ -10,7 +10,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { features } from '../src/config/features.config.mjs';
+import { features } from '../src/config/features.config.ts';
 import { getCatalogCollections } from '../src/config/collections.config.ts';
 import { scanBookModules, listAllBooks } from '../src/features/module-inspector/core/scanner.mjs';
 

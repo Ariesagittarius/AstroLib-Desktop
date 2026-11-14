@@ -7,7 +7,7 @@
  */
 
 
-import { scanBookModules, listAllBooks } from '../../../utils/module-inspector/scanner.mjs';
+import { scanBookModules, listAllBooks } from '../../../features/module-inspector/core/scanner.mjs';
 
 function sendJson(res, status, data) {
   const body = JSON.stringify(data);

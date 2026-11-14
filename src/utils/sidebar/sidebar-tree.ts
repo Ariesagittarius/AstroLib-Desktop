@@ -1,4 +1,4 @@
-import { cleanSlug } from '../sidebar.mjs';
+import { cleanSlug } from '../sidebar.ts';
 
 export interface SidebarLinkItem {
   type: 'link';

@@ -20,8 +20,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { execSync } from 'node:child_process';
-import { cleanSlug } from '../../../utils/slug.mjs';
-import { collections } from '../../../config/collections.config.mjs';
+import { cleanSlug } from '../../../utils/slug.ts';
+import { collections } from '../../../config/collections.config.ts';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '../../../..');

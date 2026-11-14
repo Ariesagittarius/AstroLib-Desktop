@@ -11,7 +11,7 @@
 
 import { mountToOverlayRoot } from '../../utils/overlay/overlay-root';
 import { setSiteTheme, type SiteThemeId } from '../../scripts/site-themes';
-import { siteThemes } from '../../config/themes.config.mjs';
+import { siteThemes } from '../../config/themes.config.ts';
 
 import '@material/web/switch/switch.js';
 import '@material/web/button/filled-button.js';

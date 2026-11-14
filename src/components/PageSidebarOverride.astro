@@ -1,8 +1,8 @@
 ---
 // 自定义右侧侧边栏组件 - 替代 Starlight 的 PageSidebar.astro
 // 模块化架构：逻辑解耦至 src/components/sidebar/ 与 src/core/indexing/cross-ref-indexer.mjs
-import { collections } from '../config/collections.config.mjs';
-import { features, crossRefRefs } from '../config/features.config.mjs';
+import { collections } from '../config/collections.config.ts';
+import { features, crossRefRefs } from '../config/features.config.ts';
 import '../styles/components/page-sidebar.css';
 import '../styles/components/translation-dock.css';
 import '../styles/components/info-highlight.css';

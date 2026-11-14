@@ -5,7 +5,7 @@
  * 供 scripts/build-ai-index.mjs 写入 public/ai-index/<col>-<book>.json。
  *
  * 复用现有轮子：
- *   · cleanSlug（src/utils/sidebar.mjs）：与 Astro 内容集合一致的 slug 归一化，
+ *   · cleanSlug（src/utils/sidebar.ts）：与 Astro 内容集合一致的 slug 归一化，
  *     保证片段 url 与全站真实路由一致（杜绝手写 slug 404）；
  *   · chunkMdx（./chunker.mjs）：卡片/标题语义切分 + 卡片识别。
  *
@@ -16,7 +16,7 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
-import { cleanSlug } from '../utils/slug.mjs';
+import { cleanSlug } from '../utils/slug.ts';
 import { chunkMdx } from './chunker.mjs';
 
 /** 递归收集目录下的 .mdx/.md 文件（复用首页/侧边栏同一套遍历） */

@@ -2,7 +2,7 @@
 // 读者勘误反馈系统 · 服务端组件 (FeedbackMode)
 // 挂载点：由 FooterOverride.astro 在全站底部引入，SPA 导航下仅执行一次。
 // 样式完全遵循 VitePress 视觉语言（Indigo 蓝紫重音、精细灰阶边框与软阴影）。
-import { features } from '../config/features.config.mjs';
+import { features } from '../config/features.config.ts';
 
 const feedbackFeature = features.feedback || {};
 if (!feedbackFeature.enabled) return;

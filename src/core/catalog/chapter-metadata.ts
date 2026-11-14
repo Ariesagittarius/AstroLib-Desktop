@@ -4,7 +4,7 @@
  *
  * 架构规范：
  * - 归属于 Core / Catalog 领域层 (Layer 1/2)
- * - 纯领域逻辑，负责结合 collections.config.mjs、题库映射与文件 Frontmatter，
+ * - 纯领域逻辑，负责结合 collections.config.ts、题库映射与文件 Frontmatter，
  *   为章节生成绝对权威的章号、大章名称、节号与动态计数器前缀。
  * - 严格遵循 Rule 1 (UI is not a domain model) & Rule 2 (Publishing is independent):
  *   Publishing 仅作为该元数据的消费者，绝不负责反向推断章节语义。
@@ -12,7 +12,7 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
-import { getCatalogCollections } from '../../config/collections.config.mjs';
+import { getCatalogCollections } from '../../config/collections.config.ts';
 import type { ChapterCanonicalMetadata } from '../../types/chapter-semantic';
 
 // 内存缓存：避免重复读取磁盘与题库 JSON

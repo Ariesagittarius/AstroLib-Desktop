@@ -19,13 +19,13 @@ AstroLib 内置了声明式的全站提示框架（**Notice Framework**），支
 │     src/content/docs/**/*.mdx                               │
 ├─────────────────────────────────────────────────────────────┤
 │  2. 图书级 Book Notices (整本书生效)                        │
-│     src/config/collections.config.mjs -> book.notices       │
+│     src/config/collections.config.ts -> book.notices       │
 ├─────────────────────────────────────────────────────────────┤
 │  3. 合集级 Collection Notices (整个学科合集生效)            │
-│     src/config/collections.config.mjs -> col.notices        │
+│     src/config/collections.config.ts -> col.notices        │
 ├─────────────────────────────────────────────────────────────┤
 │  4. 路由级 Route Notices (路径前缀或正则匹配批量生效)         │
-│     src/config/notices.config.mjs -> ROUTE_NOTICES          │
+│     src/config/notices.config.ts -> ROUTE_NOTICES          │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -104,14 +104,14 @@ notices:
 
 ## 场景二：创建您自己的 Wiki 提示模板
 
-当需要新增一类全站通用的提示（例如“学术翻译”、“同行审阅”、“课程讲义”、“勘误说明”），可直接在 `src/config/notices.config.mjs` 的 `NOTICE_TEMPLATES` 中声明。
+当需要新增一类全站通用的提示（例如“学术翻译”、“同行审阅”、“课程讲义”、“勘误说明”），可直接在 `src/config/notices.config.ts` 的 `NOTICE_TEMPLATES` 中声明。
 
 ### 1. 声明新模板
 
 在模板对象的 `message`、`tags` 和 `items` 中，可自由使用任意 `{fieldName}` 占位符，并在 `defaults` 中指定回退默认值：
 
 ```javascript
-// src/config/notices.config.mjs
+// src/config/notices.config.ts
 export const NOTICE_TEMPLATES = {
   // 自定义模板示例：学术翻译提示
   translation: {
@@ -174,11 +174,11 @@ notices:
 
 ### 1. 整本书统一生效（Book 级别）
 
-编辑 `src/config/collections.config.mjs`，在目标图书下通过 `createNotice` 或声明式对象配置：
+编辑 `src/config/collections.config.ts`，在目标图书下通过 `createNotice` 或声明式对象配置：
 
 ```javascript
-// src/config/collections.config.mjs
-import { createNotice, NOTICE_PRESETS } from './notices.config.mjs';
+// src/config/collections.config.ts
+import { createNotice, NOTICE_PRESETS } from './notices.config.ts';
 
 {
   id: 'math_analysis',
@@ -200,10 +200,10 @@ import { createNotice, NOTICE_PRESETS } from './notices.config.mjs';
 
 ### 2. 路由或目录规则批量生效（Route 级别）
 
-编辑 `src/config/notices.config.mjs` 中的 `ROUTE_NOTICES`：
+编辑 `src/config/notices.config.ts` 中的 `ROUTE_NOTICES`：
 
 ```javascript
-// src/config/notices.config.mjs
+// src/config/notices.config.ts
 export const ROUTE_NOTICES = [
   {
     // 针对所有开发文档路由

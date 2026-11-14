@@ -146,7 +146,7 @@ export async function submitToBotProxy(
   config: FeedbackConfig
 ): Promise<{ ok: boolean; issueUrl?: string; issueNumber?: number; message?: string }> {
   if (!endpoint) {
-    return { ok: false, message: 'Serverless Bot endpoint is not configured in features.config.mjs.' };
+    return { ok: false, message: 'Serverless Bot endpoint is not configured in features.config.ts.' };
   }
 
   const title = formatIssueTitle(data);
