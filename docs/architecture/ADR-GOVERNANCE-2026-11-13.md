@@ -1,138 +1,95 @@
-# ADR: Architectural Governance, Inverted Dependency Remediation & Release Gates (P1-E)
+# Architecture Decision Record: P1-E Dependency, Type & Governance Architecture
 
-**Status**: Accepted  
-**Date**: 2026-11-13  
-**Authors**: Architecture Committee & Execution Agent  
-**Context**: `PROJECT_ARCHITECTURE_AUDIT_2026-11-12.md` §5 (P1-06, P1-09, P1-11, P1-12) & `P1_D_E_HANDOFF_2026-11-13.md` §3  
-
----
-
-## 1. Context & Objectives
-
-P1-E targets long-term system hygiene, strict dependency layering, and CI enforcement:
-1. **Dependency Inversions**:
-   - `src/services/` directly importing from `src/components/` (3 instances). Services must be headless and never import visual UI components.
-   - `src/utils/` importing from `src/server/` (1 instance in `src/utils/sidebar.ts`). Utilities must be pure and free of server/filesystem dependencies.
-2. **One-Line `.mjs` Shim Debt**:
-   - 10 legacy files containing only `export * from './*.ts'` creating confusion for bundlers and TypeScript resolution.
-3. **Type Widening Decay**:
-   - Unconstrained `| string` union pollutions in `src/types/` weakening static analysis.
-4. **Redundant Stack Proliferation**:
-   - 535 lines of self-contained translation code in `api/translate.ts` duplicated with internal services.
-   - Dual AI model catalogs in `src/ai/ai-config.ts` vs `src/config/features.config.ts`.
-5. **CI Quality Gate Gaps**:
-   - CI missing `astro check` on `.astro` script tags, allowing client script errors to escape.
-   - CI missing route smoke checks.
-6. **Documentation & Spec Synchronization**:
-   - Outdated Starlight coupling references in `AGENTS.md` §8.2.
+- **Status**: Accepted / Active
+- **Date**: 2026-11-13 (Implemented 2026-11-14)
+- **Scope**: Entire AstroLib Codebase (Core, Services, Features, Utils, Types, CI)
+- **Supervising Standards**: `AGENTS.md` 10 Central Architectural Tenets, `PROJECT_ARCHITECTURE_AUDIT_2026-11-12.md`
 
 ---
 
-## 2. Dependency Layering Matrix
+## 1. Context & Motivation
 
-The project strictly follows a unidirectional dependency hierarchy:
+During the initial growth of AstroLib, several architectural boundary inversions emerged:
+1. **Dependency Direction Inversions**:
+   - `src/services/` imported UI controllers and DOM classes from `src/components/` (`sideload-manager`, `sidebar`).
+   - `src/utils/` imported build-time server adapters from `src/server/adapters/`.
+2. **One-Line Legacy Shims**:
+   - 10 `.mjs` files in `src/config/` and `src/utils/` served purely as re-export shims (`export * from './*.ts'`), creating confusion between TypeScript sources and ES modules.
+3. **Weakened Type Contracts**:
+   - Critical domain types in `src/types/` (`CollectionId`, `BookKey`, `QuestionType`, `SemanticLayer`) used `| string` widening, degrading TypeScript compile-time safety.
+4. **Duplicated Stacks**:
+   - `api/translate.ts` maintained a 535-line self-contained implementation duplicating the server translation plugins and providers.
+   - AI model configurations were duplicated across `ai-config.ts` and `features.config.ts`.
+5. **CI Gaps**:
+   - CI ran tests and typechecks, but lacked strict architectural linting against dependency inversions, `.astro` `<script>` type checks, and route availability.
+
+---
+
+## 2. Decision & Architectural Layering Matrix
+
+### 2.1 Layer Hierarchy & Allowed Dependency Directions
+
+The codebase is organized into strict layers with unidirectional top-down dependencies:
 
 ```text
-               ┌────────────────────────────────────────────────────────┐
-               │                        electron                        │
-               └───────────┬────────────────────────────────┬───────────┘
-                           │                                │
-                           ▼                                ▼
-               ┌───────────────────────┐        ┌───────────────────────┐
-               │       features        │        │      publishing       │
-               └───────────┬───────────┘        └───────────┬───────────┘
-                           │                                │
-                           ▼                                ▼
-               ┌────────────────────────────────────────────────────────┐
-               │                        services                        │
-               └───────────┬────────────────────────────────┬───────────┘
-                           │                                │
-                           ▼                                ▼
-               ┌───────────────────────┐        ┌───────────────────────┐
-               │        content        │        │        kernel         │
-               └───────────┬───────────┘        └───────────┬───────────┘
-                           │                                │
-                           ▼                                ▼
-               ┌────────────────────────────────────────────────────────┐
-               │                         utils                          │
-               └────────────────────────────────────────────────────────┘
+  [Electron / Main / Shell]  -->  [Pages / UI Presentation (src/pages, src/components)]
+                                            │
+                                            ▼
+                               [Features (src/features/*)]
+                                            │
+                                            ▼
+                               [Services (src/services/*)]
+                                            │
+                                            ▼
+                        [Kernel / Domain Core (src/types, src/config)]
+                                            │
+                                            ▼
+                           [Pure Utils (src/utils/* - Stateless)]
 ```
 
-### Layer Dependency Rules:
-| Layer | May Depend On | Strictly Forbidden To Depend On |
-|---|---|---|
-| `utils` | *(None / Pure standard library)* | `components`, `server`, `services`, `features`, `electron`, `publishing` |
-| `kernel` / `content` | `utils` | `components`, `services`, `features`, `electron`, `publishing` |
-| `services` | `kernel`, `content`, `utils` | `components`, `electron`, `features` (must consume contracts from `core/` or `types/`) |
-| `features` | `services`, `kernel`, `content`, `utils`, `components/m3` | Internal private files of other features (must use feature public API) |
-| `publishing` | `kernel`, `content`, `utils` | `components`, `features`, `electron` (publishing is 100% headless) |
-| `electron` | `services`, `kernel`, `content`, `utils` | `src/server/plugins` (dev plugins must not be bundled into desktop runtime) |
+#### Layer Dependency Rules:
+| Layer | Location | Allowed to Depend On | Strictly Forbidden to Depend On |
+| :--- | :--- | :--- | :--- |
+| **Pure Utils** | `src/utils/` | External pure utilities, KaTeX types | `src/server/`, `src/components/`, `src/features/`, `src/services/`, DOM/browser globals |
+| **Types / Domain** | `src/types/` | Pure type definitions | Any runtime logic, components, server, services |
+| **Config** | `src/config/` | `src/types/`, `src/utils/` | `src/components/`, `src/features/`, `src/services/`, `src/server/` |
+| **Services** | `src/services/` | `src/types/`, `src/config/`, `src/utils/`, shared UI state contracts (`src/features/sideload/contract`) | `src/components/` (No direct UI component imports!) |
+| **Features** | `src/features/` | `src/services/`, `src/types/`, `src/config/`, `src/utils/` | Sibling feature internals (only via public feature contracts) |
+| **Components & UI**| `src/components/` | `src/features/`, `src/services/`, `src/types/`, `src/utils/` | `src/server/` (runtime build plugins) |
+| **Server Plugins** | `src/server/` | `src/services/`, `src/types/`, `src/config/`, `src/utils/` | `src/components/` |
+
+### 2.2 Sideload State Contract Extraction
+- To eliminate `services → components/sideload` dependency inversion, UI sidebar/sideload states are abstracted into a shared contract: `src/features/sideload/contract.ts`.
+- `services` interact only with this pure contract or state-machine interface, eliminating concrete DOM controller imports.
+
+### 2.3 Strict Type Narrowing (Branded Unions)
+- Any extensible union type must NOT use raw `| string`, which dissolves autocomplete and exhaustiveness checks.
+- If backward-compatible or dynamic strings must be accepted, use TypeScript's branded literal union idiom:
+  ```typescript
+  export type KnownKey = 'key-a' | 'key-b';
+  export type ExtensibleKey = KnownKey | (string & {});
+  ```
+- Core schema-bound identifiers (`CollectionId`, `QuestionType`) are strictly closed unions (`'math' | 'cs' | 'science' | 'telecom'`).
+
+### 2.4 Removal of Re-Export Shims
+- All 10 one-line `.mjs` shims in `src/config/` and `src/utils/` are deleted.
+- Consumers must import directly from explicit TypeScript modules or canonical configs.
+
+### 2.5 Translation Core Extraction
+- Common translation logic (prompt generation, formula masking/unmasking, provider routing, error wrapping) is extracted into `src/services/translation/core/`.
+- Both `api/translate.ts` (Vercel serverless function) and `src/server/plugins/translation/` (Vite dev server plugin) consume the unified core, keeping handler implementations thin (< 150 lines).
+
+### 2.6 CI Architecture Gates
+- Add automated architectural guard tests:
+  - `rg "from '.*components/" src/services` must equal 0.
+  - `rg "from '.*server/" src/utils` must equal 0.
+  - One-line shims count in `src/` must equal 0.
+  - `check:types` runs with strict typechecking across all TypeScript and Astro files.
 
 ---
 
-## 3. Inverted Dependency Remediation Plan (`E1`)
+## 3. Reader Shell Decoupling & AGENTS.md §8.2 Amendment
 
-1. **Sideload & Sidebar Layout Contracts**:
-   - Create `src/core/contracts/sideload-contract.ts` and `src/core/contracts/layout-contract.ts`.
-   - `in-page-compare-controller.ts` and `translation-dock-controller.ts` will depend on these headless interfaces rather than concrete UI component controllers in `src/components/`.
-2. **Decouple Starlight Sidebar from `src/utils/sidebar.ts`**:
-   - Move `generateStarlightBookSidebar` out of `src/utils/` to `src/build/starlight-sidebar-adapter.ts`.
-   - `src/utils/sidebar.ts` retains only pure URL formatting, sorting, and tree traversal functions.
-
----
-
-## 4. Legacy Shim Elimination (`E2`)
-
-Migrate all consumers of the 10 legacy `.mjs` re-export shims to import directly from `.ts`, and delete the shims:
-1. `src/config/collections.config.mjs`
-2. `src/config/features.config.mjs`
-3. `src/config/notices.config.mjs`
-4. `src/config/themes.config.mjs`
-5. `src/utils/module-inspector/scanner.mjs`
-6. `src/utils/relation-graph/generator.mjs`
-7. `src/utils/natural-sort.mjs`
-8. `src/utils/render-title.mjs`
-9. `src/utils/sidebar.mjs`
-10. `src/utils/slug.mjs`
-
----
-
-## 5. Type Narrowing Strategy (`E3`)
-
-Replace arbitrary `| string` escape hatches with branded types (`(string & {})` for open autocompletion unions) or strict closed unions:
-- `src/types/chapter-semantic.ts`:
-  - `typography?: 'scholarly' | 'classic' | 'mathematical' | 'lecture' | (string & {});`
-  - `cjkFont?: 'default' | 'sourcehan' | 'song' | 'kai' | (string & {});`
-- `src/types/collections.ts`:
-  - `tocMapping?: Record<string, string | string[]>;` (explicitly document semantic scope)
-- `src/types/exercises.ts`:
-  - `group?: 'A' | 'B' | (string & {});`
-
----
-
-## 6. Redundant Stack Consolidation (`E4`)
-
-1. **Translation Kernel**:
-   - Extract `src/services/translation/core/engine.ts` containing the headless translation provider execution, payload framing, and error normalization.
-   - Refactor `api/translate.ts` to be a lightweight serverless handler (< 150 lines) importing the core engine.
-2. **AI Model Catalog**:
-   - Unify AI model definitions in `src/config/ai-models.config.ts`, referenced by both `src/ai/ai-config.ts` and `src/config/features.config.ts`.
-
----
-
-## 7. CI Pipeline Enhancements (`E5`)
-
-Update `.github/workflows/ci.yml` and project scripts:
-1. Include `astro check` in verification to inspect `<script>` tags in `.astro` files.
-2. Add route smoke test suite validating that canonical desktop, reader, and collection routes resolve with status 200.
-3. Validate that dependency inversion assertions run automatically during typecheck / test phases.
-
----
-
-## 8. Specification & Agent Rules Alignment (`E6` & `E7`)
-
-1. **Update `AGENTS.md` §8.2**:
-   - Clarify that Reader Shell synthesis is detached from Starlight documentation compilation, operating via canonical `/reader/` and headless ABP hydration.
-2. **Legacy Path Policy**:
-   - Production code must have 0 references to legacy `src/content/docs/collections` or `public/abp-packs`.
-   - Historical documentation files referencing legacy paths are marked with archival notices.
+The reader pipeline is fully modernized:
+- All canonical reading routes are served by `/reader/` and dynamic collection routing (`/collections/...`).
+- `reader-shell-template.ts` serves solely as the offline Master Shell synthesis bridge for Electron desktop release packaging and local offline caching. It is completely decoupled from Astro's runtime page compilation.

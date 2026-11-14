@@ -12,6 +12,8 @@
  * ============================================================================
  */
 
+import { registerSideloadManager, type ISideloadManager } from '../../features/sideload/contract';
+
 export type SideloadWidthTier = 'compact' | 'medium' | 'wide' | 'full' | 'none';
 
 export interface SideloadPanelConfig {
@@ -406,6 +408,7 @@ class SideloadManager {
 
 // 导出全局单例
 export const sideloadManager = new SideloadManager();
+registerSideloadManager(sideloadManager);
 
 if (typeof window !== 'undefined') {
   (window as any).__sideloadManager = sideloadManager;

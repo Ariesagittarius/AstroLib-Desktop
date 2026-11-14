@@ -13,8 +13,10 @@
  */
 
 import { BilingualReaderController } from './bilingual-reader-controller.ts';
-import { sidebarLayoutController } from '../../components/sidebar/sidebar-layout-controller.ts';
-import { sideloadManager } from '../../components/sideload/sideload-manager.ts';
+import {
+  sidebarLayoutContract as sidebarLayoutController,
+  sideloadManagerContract as sideloadManager,
+} from '../../features/sideload/contract.ts';
 
 export interface TargetVersionOption {
   id: string;

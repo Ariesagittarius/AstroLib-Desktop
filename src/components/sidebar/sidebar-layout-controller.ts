@@ -12,6 +12,8 @@
  * ============================================================================
  */
 
+import { registerSidebarLayoutController } from '../../features/sideload/contract';
+
 export const SIDEBAR_LEFT_STORAGE_KEY = 'astrolib_sidebar_left_collapsed';
 
 export interface SidebarLeftState {
@@ -196,6 +198,7 @@ class SidebarLayoutController {
 }
 
 export const sidebarLayoutController = new SidebarLayoutController();
+registerSidebarLayoutController(sidebarLayoutController);
 
 if (typeof window !== 'undefined') {
   (window as any).__sidebarLayoutController = sidebarLayoutController;

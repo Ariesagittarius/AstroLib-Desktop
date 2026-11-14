@@ -1,0 +1,56 @@
+import { describe, it, expect } from 'vitest';
+import fs from 'node:fs';
+import path from 'node:path';
+
+function getFilesRecursively(dir: string, ext = '.ts'): string[] {
+  if (!fs.existsSync(dir)) return [];
+  const entries = fs.readdirSync(dir, { withFileTypes: true });
+  const files: string[] = [];
+  for (const entry of entries) {
+    const fullPath = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      files.push(...getFilesRecursively(fullPath, ext));
+    } else if (entry.isFile() && (entry.name.endsWith(ext) || entry.name.endsWith('.mjs'))) {
+      files.push(fullPath);
+    }
+  }
+  return files;
+}
+
+describe('Architecture Boundary Contract Tests', () => {
+  it('src/services/ 严禁反向依赖 UI 层 src/components/', () => {
+    const servicesDir = path.resolve('src/services');
+    const serviceFiles = getFilesRecursively(servicesDir);
+
+    const violations: string[] = [];
+    for (const file of serviceFiles) {
+      const content = fs.readFileSync(file, 'utf-8');
+      const lines = content.split('\n');
+      lines.forEach((line, idx) => {
+        if (/from\s+['"].*components\//.test(line)) {
+          violations.push(`${path.relative(process.cwd(), file)}:${idx + 1} -> ${line.trim()}`);
+        }
+      });
+    }
+
+    expect(violations).toEqual([]);
+  });
+
+  it('src/utils/ 纯函数层严禁依赖构建适配器 src/server/', () => {
+    const utilsDir = path.resolve('src/utils');
+    const utilFiles = getFilesRecursively(utilsDir);
+
+    const violations: string[] = [];
+    for (const file of utilFiles) {
+      const content = fs.readFileSync(file, 'utf-8');
+      const lines = content.split('\n');
+      lines.forEach((line, idx) => {
+        if (/from\s+['"].*server\//.test(line)) {
+          violations.push(`${path.relative(process.cwd(), file)}:${idx + 1} -> ${line.trim()}`);
+        }
+      });
+    }
+
+    expect(violations).toEqual([]);
+  });
+});

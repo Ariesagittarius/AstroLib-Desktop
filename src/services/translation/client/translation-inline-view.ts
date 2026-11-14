@@ -8,7 +8,7 @@
 import type { ParagraphUnit, TranslationProviderId, TranslationDisplayMode } from '../types';
 import { TranslationStorage } from '../storage/translation-storage';
 import { ParagraphAligner } from '../paragraph-aligner';
-import { sideloadManager } from '../../../components/sideload/sideload-manager';
+import { sideloadManagerContract as sideloadManager } from '../../../features/sideload/contract';
 
 let _renderMath: any = null;
 export async function renderMathInElementSafely(elem: HTMLElement): Promise<void> {

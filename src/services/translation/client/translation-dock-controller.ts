@@ -12,7 +12,7 @@
  * ============================================================================
  */
 
-import { sideloadManager } from '../../../components/sideload/sideload-manager';
+import { sideloadManagerContract as sideloadManager } from '../../../features/sideload/contract';
 import { ParagraphAligner } from '../paragraph-aligner';
 import {
   TranslationStorage,
