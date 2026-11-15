@@ -34,31 +34,46 @@ export function tokenizeText(text: string): string[] {
 }
 
 export class FuzzyRetriever {
-  private chunks: AcademicChunk[];
-  private docs: Array<{ chunk: AcademicChunk; tf: Map<string, number>; len: number }>;
+  private chunks: AcademicChunk[] = [];
+  private docs: Array<{ chunk: AcademicChunk; tf: Map<string, number>; len: number }> = [];
   private df: Map<string, number> = new Map();
-  private avgLen = 0;
+  private avgLen = 1;
+  private totalLen = 0;
 
-  constructor(chunks: AcademicChunk[]) {
-    this.chunks = chunks;
-    let totalLen = 0;
-    this.docs = chunks.map((chunk) => {
+  constructor(chunks: AcademicChunk[] = []) {
+    this.chunks = [];
+    this.docs = [];
+    this.df = new Map();
+    this.avgLen = 1;
+    this.totalLen = 0;
+    if (chunks && chunks.length > 0) {
+      this.addChunks(chunks);
+    }
+  }
+
+  get size(): number {
+    return this.chunks.length;
+  }
+
+  addChunks(chunks: AcademicChunk[]): void {
+    if (!chunks || chunks.length === 0) return;
+
+    for (const chunk of chunks) {
+      this.chunks.push(chunk);
       const tokens = tokenizeText(`${chunk.title} ${chunk.text}`);
       const tf = new Map<string, number>();
       for (const t of tokens) {
         tf.set(t, (tf.get(t) || 0) + 1);
       }
-      totalLen += tokens.length;
-      return { chunk, tf, len: tokens.length };
-    });
+      this.totalLen += tokens.length;
+      this.docs.push({ chunk, tf, len: tokens.length });
 
-    this.avgLen = this.docs.length > 0 ? totalLen / this.docs.length : 1;
-
-    for (const d of this.docs) {
-      for (const t of d.tf.keys()) {
+      for (const t of tf.keys()) {
         this.df.set(t, (this.df.get(t) || 0) + 1);
       }
     }
+
+    this.avgLen = this.docs.length > 0 ? this.totalLen / this.docs.length : 1;
   }
 
   search(query: string, limit = 50): CandidateItem[] {

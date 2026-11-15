@@ -28,38 +28,37 @@ export class SearchRecEngine {
     chunks: [],
     int8Vectors: [],
   };
+  private finalized = false;
 
   /**
-   * 注册图书切片、向量与图谱数据
+   * 注册图书切片、向量与图谱数据 (只累积与去重，不执行高开销全量重建)
    */
   registerBook(
     bookChunks: AcademicChunk[],
     embeddingsBinary?: ArrayBuffer,
     graphData?: RelationGraphData,
   ): void {
+    const freshChunks: AcademicChunk[] = [];
     for (const c of bookChunks) {
       if (!this.chunkMap.has(c.id)) {
         this.chunkMap.set(c.id, c);
         this.chunks.push(c);
+        freshChunks.push(c);
       }
     }
 
-    // 重建模糊检索器
-    this.fuzzyRetriever = new FuzzyRetriever(this.chunks);
-
-    // 载入或追加向量
-    if (embeddingsBinary) {
+    // 载入或追加向量 (仅限 fresh 未注册切片，避免重复重试路径错位)
+    if (embeddingsBinary && freshChunks.length > 0) {
       try {
         const parsed = parseEmbeddingsBinary(embeddingsBinary);
         this.denseIndex.dim = parsed.dim;
         this.denseIndex.format = parsed.format;
-        this.denseIndex.chunks.push(...bookChunks);
+        this.denseIndex.chunks.push(...freshChunks);
         if (parsed.format === 'int8' && parsed.int8Vectors) {
           this.denseIndex.int8Vectors = (this.denseIndex.int8Vectors || []).concat(parsed.int8Vectors);
         } else if (parsed.float32Vectors) {
           this.denseIndex.float32Vectors = (this.denseIndex.float32Vectors || []).concat(parsed.float32Vectors);
         }
-        this.denseRetriever = new DenseRetriever(this.denseIndex);
       } catch (e) {
         console.warn('[search-rec] 向量解析异常:', e);
       }
@@ -71,6 +70,28 @@ export class SearchRecEngine {
     } else if (graphData) {
       this.graphRetriever.setGraph(graphData);
     }
+
+    this.finalized = false;
+  }
+
+  /**
+   * 提交索引构建 (幂等增量 finalize：补齐 fuzzy + 构建 dense)
+   */
+  finalize(): void {
+    if (this.finalized) return;
+    if (!this.fuzzyRetriever) {
+      this.fuzzyRetriever = new FuzzyRetriever(this.chunks);
+    } else if (this.fuzzyRetriever.size < this.chunks.length) {
+      this.fuzzyRetriever.addChunks(this.chunks.slice(this.fuzzyRetriever.size));
+    }
+    this.denseRetriever = this.denseIndex.chunks.length ? new DenseRetriever(this.denseIndex) : null;
+    this.finalized = true;
+  }
+
+  private ensureFinalized(): void {
+    if (!this.finalized) {
+      this.finalize();
+    }
   }
 
   /**
@@ -78,6 +99,7 @@ export class SearchRecEngine {
    * 以读者当前阅读的章节/书目为锚点，召回跨学科前置、推导与配套习题
    */
   getContextDiscoveryStream(context: UserLearningContext, limit = 10): CandidateItem[] {
+    this.ensureFinalized();
     const { currentBookSlug, currentChapterSlug } = context;
     if (!currentBookSlug && this.chunks.length > 0) {
       // 若无上下文，展现核心定理与典型例题
@@ -127,6 +149,7 @@ export class SearchRecEngine {
     query: SearchQuery,
     queryEmbedding?: Float32Array | number[],
   ): Promise<SearchResult> {
+    this.ensureFinalized();
     const tStart = Date.now();
     const raw = query.raw.trim();
     const mode = query.mode;
