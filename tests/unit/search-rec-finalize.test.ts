@@ -296,4 +296,26 @@ describe('SearchRecEngine & FuzzyRetriever Finalize & Incremental Registration',
       expect(denseIndex.chunks[i].id).toBe(rawChunks[rawIdx].id);
     }
   });
+
+  it('T7 (异步分片): finalizeAsync 与同步 finalize 检索结果深度一致', async () => {
+    const allChunks = [...book1Chunks, ...book2Chunks, ...book3Chunks];
+
+    const engineSync = new SearchRecEngine();
+    engineSync.registerBook(allChunks);
+    engineSync.finalize();
+
+    const engineAsync = new SearchRecEngine();
+    engineAsync.registerBook(allChunks);
+    await engineAsync.finalizeAsync(2); // 以 batchSize=2 分批执行
+
+    const q = '中值定理';
+    const resSync = await engineSync.search({ raw: q, mode: 'fuzzy' });
+    const resAsync = await engineAsync.search({ raw: q, mode: 'fuzzy' });
+
+    expect(resAsync.items.length).toBe(resSync.items.length);
+    for (let i = 0; i < resSync.items.length; i++) {
+      expect(resAsync.items[i].chunk.id).toBe(resSync.items[i].chunk.id);
+      expect(resAsync.items[i].channelScore).toBe(resSync.items[i].channelScore);
+    }
+  });
 });

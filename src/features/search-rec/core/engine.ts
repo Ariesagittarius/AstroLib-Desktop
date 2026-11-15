@@ -94,6 +94,32 @@ export class SearchRecEngine {
     this.finalized = true;
   }
 
+  /**
+   * 异步分片提交索引构建 (分批让出浏览器主线程事件循环，防止长任务冻结 UI)
+   */
+  async finalizeAsync(batchSize = 2000): Promise<void> {
+    if (this.finalized) return;
+    if (!this.fuzzyRetriever) {
+      this.fuzzyRetriever = new FuzzyRetriever();
+    }
+    const currentSize = this.fuzzyRetriever.size;
+    const remainingChunks = this.chunks.slice(currentSize);
+    for (let i = 0; i < remainingChunks.length; i += batchSize) {
+      const slice = remainingChunks.slice(i, i + batchSize);
+      this.fuzzyRetriever.addChunks(slice);
+      if (typeof window !== 'undefined') {
+        const yieldFn = (window as any).scheduler?.yield;
+        if (typeof yieldFn === 'function') {
+          await yieldFn.call((window as any).scheduler);
+        } else {
+          await new Promise((resolve) => setTimeout(resolve, 0));
+        }
+      }
+    }
+    this.denseRetriever = this.denseIndex.chunks.length ? new DenseRetriever(this.denseIndex) : null;
+    this.finalized = true;
+  }
+
   private ensureFinalized(): void {
     if (!this.finalized) {
       this.finalize();

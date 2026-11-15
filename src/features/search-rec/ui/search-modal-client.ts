@@ -229,7 +229,7 @@ export function initSearchModalClient(): void {
         flush();
       });
 
-      engine.finalize();
+      await engine.finalizeAsync();
       isPacksLoaded = true;
     } catch (err) {
       loadFallbackChunksFromCatalog();
