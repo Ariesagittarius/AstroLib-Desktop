@@ -221,4 +221,79 @@ describe('SearchRecEngine & FuzzyRetriever Finalize & Incremental Registration',
     });
     expect(stream).toEqual([]);
   });
+
+  it('T6 (对齐性): 书内含同名重复 id 时，dense 向量与去重 chunks 下标保持严格对齐', () => {
+    const rawChunks: AcademicChunk[] = [
+      {
+        id: 'dup-chunk-0',
+        bookId: 'math-senior',
+        colSlug: 'math',
+        bookSlug: 'math-senior',
+        bookTitle: '高中数学',
+        chapterSlug: 'ch1',
+        chapterTitle: '第一章 集合与函数',
+        kind: 'card',
+        type: '定理',
+        title: '31_22_边角互化-证明',
+        number: '1.1',
+        text: '正弦定理与余弦定理的边角互化第一次出现。',
+        url: '/math/math-senior/ch1/#1.1',
+      },
+      {
+        id: 'dup-chunk-0', // 重复 ID（模拟同一章节同一卡片被打包器写进 meta 两次）
+        bookId: 'math-senior',
+        colSlug: 'math',
+        bookSlug: 'math-senior',
+        bookTitle: '高中数学',
+        chapterSlug: 'ch1',
+        chapterTitle: '第一章 集合与函数',
+        kind: 'card',
+        type: '定理',
+        title: '31_22_边角互化-证明-冗余副本',
+        number: '1.1-dup',
+        text: '正弦定理与余弦定理的边角互化第二次出现（重复记录）。',
+        url: '/math/math-senior/ch1/#1.1-dup',
+      },
+      {
+        id: 'unique-chunk-2',
+        bookId: 'math-senior',
+        colSlug: 'math',
+        bookSlug: 'math-senior',
+        bookTitle: '高中数学',
+        chapterSlug: 'ch1',
+        chapterTitle: '第一章 集合与函数',
+        kind: 'card',
+        type: '例题',
+        title: '边角互化典型例题',
+        number: '1.2',
+        text: '已知三角形三边求各内角的综合求解例题。',
+        url: '/math/math-senior/ch1/#1.2',
+      },
+    ];
+
+    // 向量首分量编码原始在 rawChunks 中的下标 0, 1, 2，第二分量为 127 确保 scale=1.0
+    const v0 = new Float32Array([0, 127]);
+    const v1 = new Float32Array([1, 127]);
+    const v2 = new Float32Array([2, 127]);
+    const { buffer } = serializeEmbeddingsBinary([v0, v1, v2], 'int8');
+
+    const engine = new SearchRecEngine();
+    engine.registerBook(rawChunks, buffer as ArrayBuffer);
+    engine.finalize();
+
+    const denseIndex = (engine as any).denseIndex;
+    const expectedRawIndexes = [0, 2]; // 下标 1 的重复 chunk 应被跳过
+
+    // 断言 1: denseIndex.chunks 长度与 int8Vectors 长度严格相等
+    expect(denseIndex.chunks.length).toBe(expectedRawIndexes.length);
+    expect((denseIndex.int8Vectors || []).length).toBe(expectedRawIndexes.length);
+
+    // 断言 2: 对每个 i，denseIndex.int8Vectors[i] 编码的下标 === denseIndex.chunks[i] 在原始包内的下标
+    for (let i = 0; i < denseIndex.chunks.length; i++) {
+      const rawIdx = expectedRawIndexes[i];
+      const encodedIdx = denseIndex.int8Vectors[i].data[0];
+      expect(encodedIdx).toBe(rawIdx);
+      expect(denseIndex.chunks[i].id).toBe(rawChunks[rawIdx].id);
+    }
+  });
 });

@@ -39,25 +39,29 @@ export class SearchRecEngine {
     graphData?: RelationGraphData,
   ): void {
     const freshChunks: AcademicChunk[] = [];
-    for (const c of bookChunks) {
+    const freshIndexes: number[] = [];
+    bookChunks.forEach((c, i) => {
       if (!this.chunkMap.has(c.id)) {
         this.chunkMap.set(c.id, c);
         this.chunks.push(c);
         freshChunks.push(c);
+        freshIndexes.push(i);
       }
-    }
+    });
 
-    // 载入或追加向量 (仅限 fresh 未注册切片，避免重复重试路径错位)
-    if (embeddingsBinary && freshChunks.length > 0) {
+    // 载入或追加向量 (仅限 fresh 未注册切片，保持向量与去重切片下标对齐)
+    if (embeddingsBinary && freshIndexes.length > 0) {
       try {
         const parsed = parseEmbeddingsBinary(embeddingsBinary);
         this.denseIndex.dim = parsed.dim;
         this.denseIndex.format = parsed.format;
         this.denseIndex.chunks.push(...freshChunks);
         if (parsed.format === 'int8' && parsed.int8Vectors) {
-          this.denseIndex.int8Vectors = (this.denseIndex.int8Vectors || []).concat(parsed.int8Vectors);
+          const picked = freshIndexes.map((i) => parsed.int8Vectors![i]);
+          this.denseIndex.int8Vectors = (this.denseIndex.int8Vectors || []).concat(picked);
         } else if (parsed.float32Vectors) {
-          this.denseIndex.float32Vectors = (this.denseIndex.float32Vectors || []).concat(parsed.float32Vectors);
+          const picked = freshIndexes.map((i) => parsed.float32Vectors![i]);
+          this.denseIndex.float32Vectors = (this.denseIndex.float32Vectors || []).concat(picked);
         }
       } catch (e) {
         console.warn('[search-rec] 向量解析异常:', e);
@@ -71,7 +75,9 @@ export class SearchRecEngine {
       this.graphRetriever.setGraph(graphData);
     }
 
-    this.finalized = false;
+    if (freshChunks.length > 0 || graphData) {
+      this.finalized = false;
+    }
   }
 
   /**
