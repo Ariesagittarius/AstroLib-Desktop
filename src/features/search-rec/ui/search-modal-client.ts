@@ -163,6 +163,9 @@ export function initSearchModalClient(): void {
       isPacksLoaded = true;
       return Promise.resolve();
     }
+    if (isPacksLoaded) {
+      return Promise.resolve();
+    }
     if (!packsPromise) {
       packsPromise = loadAllPacks().catch((e) => {
         console.warn('[search-rec] 索引加载失败，允许重试:', e);
@@ -173,32 +176,73 @@ export function initSearchModalClient(): void {
     return packsPromise;
   }
 
+  interface BookPackPayload {
+    chunks: AcademicChunk[];
+    binBuffer?: ArrayBuffer;
+  }
+
+  async function runWithConcurrency<T, R>(
+    items: T[],
+    concurrency: number,
+    fn: (item: T, index: number) => Promise<R>,
+  ): Promise<R[]> {
+    const results = new Array<R>(items.length);
+    let cur = 0;
+    const workers = Array.from({ length: Math.min(concurrency, items.length) }, async () => {
+      while (cur < items.length) {
+        const idx = cur++;
+        results[idx] = await fn(items[idx], idx);
+      }
+    });
+    await Promise.all(workers);
+    return results;
+  }
+
   async function loadAllPacks() {
     try {
       const catRes = await fetch('/abp-packs/catalog.json');
-      if (catRes.ok) {
-        const cat = await catRes.json();
-        fillBookSelect(cat.books || []);
-
-        // 并行加载各书切片元数据与量化向量
-        await Promise.all(
-          (cat.books || []).map((b: any) => loadSingleBookPack(b.colSlug, b.slug, b.title))
-        );
-        if (typeof (engine as any).finalize === 'function') {
-          (engine as any).finalize();
-        }
-        isPacksLoaded = true;
-      } else {
+      if (!catRes.ok) {
         throw new Error(`catalog response: ${catRes.status}`);
       }
+
+      const cat = await catRes.json();
+      const books: Array<{ colSlug: string; slug: string; title?: string }> = cat.books || [];
+      fillBookSelect(books);
+
+      const slots = new Array<BookPackPayload | null>(books.length);
+      let next = 0;
+
+      function flush() {
+        while (next < books.length && slots[next] !== undefined) {
+          const pack = slots[next];
+          if (pack && pack.chunks.length > 0) {
+            engine.registerBook(pack.chunks, pack.binBuffer);
+          }
+          slots[next] = null; // 及时释放已注册包引用，避免常驻推高加载期峰值
+          next++;
+        }
+      }
+
+      // 抓取并行度 4，完成后写入 slots[i] 并按 catalog 顺序流式注册
+      await runWithConcurrency(books, 4, async (b, i) => {
+        slots[i] = await fetchBookPack(b.colSlug, b.slug, b.title);
+        flush();
+      });
+
+      engine.finalize();
+      isPacksLoaded = true;
     } catch (err) {
       loadFallbackChunksFromCatalog();
-      isPacksLoaded = true;
+      // 不在此处置位 isPacksLoaded，保留错误重试入口与正确错误态
       throw err;
     }
   }
 
-  async function loadSingleBookPack(colSlug: string, bookSlug: string, bookTitle?: string) {
+  async function fetchBookPack(
+    colSlug: string,
+    bookSlug: string,
+    bookTitle?: string,
+  ): Promise<BookPackPayload | null> {
     try {
       const metaRes = await fetch(`/abp-packs/${colSlug}-${bookSlug}/embeddings.meta.json`);
       if (metaRes.ok) {
@@ -223,8 +267,7 @@ export function initSearchModalClient(): void {
           url: `/collections/${colSlug}/${bookSlug}/${c.chapterSlug}/#${encodeURIComponent(c.anchor || '')}`,
         }));
 
-        engine.registerBook(chunks, binBuffer);
-        return;
+        return { chunks, binBuffer };
       }
     } catch {}
 
@@ -255,10 +298,12 @@ export function initSearchModalClient(): void {
           }
         }
         if (fallbackChunks.length > 0) {
-          engine.registerBook(fallbackChunks);
+          return { chunks: fallbackChunks };
         }
       }
     } catch {}
+
+    return null;
   }
 
   // 兜底：若网络受限或离线，从全局章节目录构建基础知识单元
