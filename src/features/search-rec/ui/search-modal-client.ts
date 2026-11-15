@@ -99,35 +99,102 @@ export function initSearchModalClient(): void {
     }
   }
 
-  // 异步预加载全书库切片索引与向量
-  async function ensurePacksLoaded() {
-    if (window.__astrolibSearchLoaded) return;
-    window.__astrolibSearchLoaded = true;
+  let packsPromise: Promise<void> | null = null;
+  let isPacksLoaded = false;
 
+  // 动态填充图书下拉选择框
+  function fillBookSelect(books: any[]) {
+    if (bookSelect && bookSelect.options.length <= 1) {
+      for (const b of books || []) {
+        const opt = document.createElement('option');
+        opt.value = b.slug;
+        opt.textContent = b.title || b.slug;
+        bookSelect.appendChild(opt);
+      }
+    }
+  }
+
+  // 渲染首次搜索索引准备骨架态 (严格学术极简，无装饰动效)
+  function renderLoadingState() {
+    resBox.innerHTML = `
+      <div class="astrolib-search-loading-hint" style="padding: 2.5rem 1rem; text-align: center; color: var(--sl-color-gray-3, #888); font-size: 0.875rem;">
+        <div style="font-weight: 500; color: var(--sl-color-text, #222); margin-bottom: 0.5rem;">正在准备全库索引</div>
+        <div style="font-size: 0.75rem; opacity: 0.8;">首次加载约需数秒，完成后将自动呈现结果</div>
+      </div>
+    `;
+    if (matchCountEl) {
+      matchCountEl.textContent = '索引准备中...';
+    }
+  }
+
+  // 渲染索引加载异常态并提供重试交互
+  function renderErrorState() {
+    resBox.innerHTML = `
+      <div class="astrolib-search-error-hint" style="padding: 2.5rem 1rem; text-align: center; color: var(--sl-color-gray-3, #888); font-size: 0.875rem;">
+        <div style="font-weight: 500; color: var(--sl-color-text, #222); margin-bottom: 0.5rem;">索引加载失败</div>
+        <div style="font-size: 0.75rem; opacity: 0.8; margin-bottom: 1rem;">请检查本地数据包或网络服务完整性</div>
+        <button type="button" id="astrolib-search-retry-btn" class="astrolib-scope-chip is-active" style="cursor: pointer; padding: 0.35rem 1rem; border-radius: 9999px;">重试加载</button>
+      </div>
+    `;
+    if (matchCountEl) {
+      matchCountEl.textContent = '加载失败';
+    }
+    const retryBtn = resBox.querySelector('#astrolib-search-retry-btn');
+    retryBtn?.addEventListener('click', async (e) => {
+      e.preventDefault();
+      packsPromise = null;
+      renderLoadingState();
+      try {
+        await ensurePacksLoaded();
+        if (!inp.value.trim()) {
+          renderContextStream();
+        } else {
+          executeSearch();
+        }
+      } catch {
+        renderErrorState();
+      }
+    });
+  }
+
+  // 异步按需加载全书库切片索引与向量 (Promise 单例管理)
+  function ensurePacksLoaded(): Promise<void> {
+    if (window.__astrolibSearchLoaded) {
+      isPacksLoaded = true;
+      return Promise.resolve();
+    }
+    if (!packsPromise) {
+      packsPromise = loadAllPacks().catch((e) => {
+        console.warn('[search-rec] 索引加载失败，允许重试:', e);
+        packsPromise = null;
+        throw e;
+      });
+    }
+    return packsPromise;
+  }
+
+  async function loadAllPacks() {
     try {
       const catRes = await fetch('/abp-packs/catalog.json');
       if (catRes.ok) {
         const cat = await catRes.json();
-        // 动态填充图书下拉选择框
-        if (bookSelect && bookSelect.options.length <= 1) {
-          for (const b of cat.books || []) {
-            const opt = document.createElement('option');
-            opt.value = b.slug;
-            opt.textContent = b.title || b.slug;
-            bookSelect.appendChild(opt);
-          }
-        }
-
-        // 先预载目录中基础章节，保证首屏立即可搜
-        loadFallbackChunksFromCatalog();
+        fillBookSelect(cat.books || []);
 
         // 并行加载各书切片元数据与量化向量
-        for (const b of cat.books || []) {
-          loadSingleBookPack(b.colSlug, b.slug, b.title);
+        await Promise.all(
+          (cat.books || []).map((b: any) => loadSingleBookPack(b.colSlug, b.slug, b.title))
+        );
+        if (typeof (engine as any).finalize === 'function') {
+          (engine as any).finalize();
         }
+        isPacksLoaded = true;
+      } else {
+        throw new Error(`catalog response: ${catRes.status}`);
       }
-    } catch {
+    } catch (err) {
       loadFallbackChunksFromCatalog();
+      isPacksLoaded = true;
+      throw err;
     }
   }
 
@@ -157,15 +224,6 @@ export function initSearchModalClient(): void {
         }));
 
         engine.registerBook(chunks, binBuffer);
-
-        // 若模态框处于开启状态，即时刷新结果或上下文流
-        if (dlg.open) {
-          if (!inp.value.trim()) {
-            renderContextStream();
-          } else {
-            executeSearch();
-          }
-        }
         return;
       }
     } catch {}
@@ -198,13 +256,6 @@ export function initSearchModalClient(): void {
         }
         if (fallbackChunks.length > 0) {
           engine.registerBook(fallbackChunks);
-          if (dlg.open) {
-            if (!inp.value.trim()) {
-              renderContextStream();
-            } else {
-              executeSearch();
-            }
-          }
         }
       }
     } catch {}
@@ -330,6 +381,11 @@ export function initSearchModalClient(): void {
       clearBtn.style.display = q ? 'flex' : 'none';
     }
 
+    if (!isPacksLoaded && !window.__astrolibSearchLoaded) {
+      // 索引包仍在后台按需加载中，不执行空检索，避免覆盖骨架加载态
+      return;
+    }
+
     if (!q) {
       renderContextStream();
       return;
@@ -362,7 +418,7 @@ export function initSearchModalClient(): void {
     }
   }
 
-  function openModal() {
+  async function openModal() {
     syncCurrentBookBadge();
     try {
       dlg.showModal();
@@ -371,7 +427,17 @@ export function initSearchModalClient(): void {
     }
     inp.focus();
     inp.select();
-    ensurePacksLoaded();
+
+    if (!isPacksLoaded && !window.__astrolibSearchLoaded) {
+      renderLoadingState();
+      try {
+        await ensurePacksLoaded();
+      } catch {
+        renderErrorState();
+        return;
+      }
+    }
+
     if (!inp.value.trim()) {
       renderContextStream();
     } else {
@@ -518,6 +584,9 @@ export function initSearchModalClient(): void {
     }
   });
 
-  // 预热加载索引包
-  ensurePacksLoaded();
+  // 运行模式灰度开关：'lazy' (默认，按需打开模态框时加载) | 'eager' (回滚用：初始化即预载全站索引)
+  const searchIndexMode = (typeof window !== 'undefined' && (window as any).__astrolibSearchIndexMode) || 'lazy';
+  if (searchIndexMode === 'eager') {
+    ensurePacksLoaded().catch(() => {});
+  }
 }
