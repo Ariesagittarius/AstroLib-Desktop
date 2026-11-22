@@ -1,0 +1,265 @@
+---
+/**
+ * src/components/harness/HarnessStage.astro
+ * ============================================================================
+ * AstroLib Agent Harness 首屏主舞台 (Main Stage & Multi-View Host)
+ * ============================================================================
+ * 规范：
+ * 1. 严格对齐 Material Design 3 Expressive 规范与 820px 正文栏居中排版；
+ * 2. 地铁式线性导览图分离思考过程与确定性工具调用，支持实时打断与权限三档控制；
+ * 3. 右侧多态分屏收敛为「书目导览 / 成果物 / Terminal」三栏，成果物升级为多态历史仓。
+ * ============================================================================
+ */
+
+import '../../styles/harness/tokens.css';
+import '../../styles/harness/harness.css';
+import '../../styles/harness/metro-timeline.css';
+import '../../styles/harness/astro-blocks.css';
+import 'katex/dist/katex.min.css';
+
+import HarnessTopBar from './HarnessTopBar.astro';
+import HarnessSidebar from './HarnessSidebar.astro';
+---
+
+<div class="harness-root" id="harness-root">
+  <!-- 1. 顶栏导航 -->
+  <HarnessTopBar />
+
+  <!-- 2. 工作区主体 -->
+  <div class="harness-workspace-body">
+    <!-- 2.1 左侧历史与项目管理边栏 -->
+    <HarnessSidebar />
+
+    <div
+      class="harness-pane-resizer is-left"
+      id="harness-resizer-left"
+      title="拖拽调整左侧边栏宽度（双击恢复默认）"
+      aria-label="调整左侧边栏宽度"
+    ></div>
+
+    <!-- 2.2 中间主对话与任务流 -->
+    <main class="harness-chat-stage" id="harness-chat-stage">
+      <div class="harness-messages-container" id="harness-messages-container"></div>
+
+      <button
+        type="button"
+        class="harness-scroll-latest-pill"
+        id="harness-scroll-latest-pill"
+        hidden
+        aria-label="回到底部最新消息"
+      >
+        <span class="material-symbols-outlined" style="font-size: 16px;" aria-hidden="true">arrow_downward</span>
+        <span>回到最新</span>
+      </button>
+
+      <div id="harness-btw-sidecar-host"></div>
+
+      <!-- 底部自适应输入控制栏 -->
+      <div class="harness-input-dock" id="harness-input-dock">
+        <!-- @ 提及实体浮层菜单 -->
+        <div class="harness-popover harness-mention-dropdown" id="harness-mention-dropdown" role="listbox" aria-label="引用知识库实体">
+          <div class="harness-popover__head">
+            <span>引用教材、章节或习题</span>
+            <span class="harness-popover__hint">↑↓ 选择 · Enter 确认 · Esc 关闭</span>
+          </div>
+          <div class="harness-popover__list" id="harness-mention-list">
+            <div class="harness-mention-item" data-entity="@linear_algebra_geometry">
+              <span class="harness-mention-tag">教材</span>
+              <span>《线性代数与几何（第2版）》</span>
+            </div>
+            <div class="harness-mention-item" data-entity="@math_analysis">
+              <span class="harness-mention-tag">教材</span>
+              <span>《数学分析（第五版）》</span>
+            </div>
+            <div class="harness-mention-item" data-entity="@11_二三阶行列式">
+              <span class="harness-mention-tag">章节</span>
+              <span>1.1 二、三阶行列式 (AST与卡片)</span>
+            </div>
+            <div class="harness-mention-item" data-entity="@LAG-TB-CH01-Q01">
+              <span class="harness-mention-tag">习题</span>
+              <span>对角线法则计算三阶行列式习题</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- / 斜杠指令浮层菜单 (支持动效、键盘导航、Esc 与失焦关闭) -->
+        <div class="harness-popover harness-slash-dropdown" id="harness-slash-dropdown" role="listbox" aria-label="快捷指令菜单">
+          <div class="harness-popover__head">
+            <span>快捷工具指令</span>
+            <span class="harness-popover__hint">↑↓ 选择 · Tab/Enter 填充 · Esc 关闭</span>
+          </div>
+          <div class="harness-popover__list" id="harness-slash-list"></div>
+        </div>
+
+        <!-- 权限模式选择浮层 -->
+        <div class="harness-popover harness-permission-dropdown" id="harness-permission-dropdown" role="menu" aria-label="Agent 权限模式">
+          <div class="harness-popover__head">
+            <span>Agent 工具权限边界</span>
+            <span class="harness-popover__hint">Esc 关闭</span>
+          </div>
+          <div class="harness-popover__list">
+            <button type="button" class="harness-perm-option" data-perm-mode="read-only" role="menuitemradio">
+              <span class="material-symbols-outlined" aria-hidden="true">visibility</span>
+              <div class="harness-perm-option__text">
+                <div class="harness-perm-option__title">仅查看 (只读)</div>
+                <div class="harness-perm-option__desc">仅允许检索教材、批注、画布展示；禁用写入与脚本执行</div>
+              </div>
+            </button>
+            <button type="button" class="harness-perm-option" data-perm-mode="workspace" role="menuitemradio">
+              <span class="material-symbols-outlined" aria-hidden="true">verified_user</span>
+              <div class="harness-perm-option__text">
+                <div class="harness-perm-option__title">工作区内修改 (推荐)</div>
+                <div class="harness-perm-option__desc">沙箱 Python 计算与工作区文件自动放行；访问外部本机路径需确认</div>
+              </div>
+            </button>
+            <button type="button" class="harness-perm-option" data-perm-mode="full" role="menuitemradio">
+              <span class="material-symbols-outlined" aria-hidden="true">bolt</span>
+              <div class="harness-perm-option__text">
+                <div class="harness-perm-option__title">完全权限</div>
+                <div class="harness-perm-option__desc">静默放行本地只读、PDF 渲染与隔离沙箱运算，无打断连续执行</div>
+              </div>
+            </button>
+          </div>
+        </div>
+
+        <!-- 底座模型选择浮层菜单 -->
+        <div class="harness-popover harness-model-dropdown" id="harness-model-dropdown"></div>
+
+        <!-- 阻塞流追问队列 (Follow-up Queue) -->
+        <div class="harness-followup-queue" id="harness-followup-queue" hidden></div>
+
+        <!-- 引用片段与图片附件架 -->
+        <div class="harness-attachments-shelf" id="harness-attachments-shelf" hidden></div>
+
+        <input type="file" id="harness-image-file-input" accept="image/*" multiple hidden />
+
+        <div class="harness-input-box">
+          <textarea
+            class="harness-input-textarea"
+            id="harness-input-textarea"
+            placeholder="提问、推导或输入 / 呼出指令、@ 引用教材..."
+            rows="1"
+          ></textarea>
+
+          <div class="harness-input-toolbar">
+            <div class="harness-input-toolbar__left">
+              <button
+                type="button"
+                class="harness-icon-btn"
+                id="harness-btn-attach-context"
+                title="新建 PDF 转 ABP 任务 (/pdf2abp)"
+                style="width: 28px; height: 28px;"
+              >
+                <span class="material-symbols-outlined" style="font-size: 18px;" aria-hidden="true">add</span>
+              </button>
+
+              <button
+                type="button"
+                class="harness-icon-btn"
+                id="harness-btn-attach-image"
+                title="上传或粘贴图片进行多模态理解"
+                style="width: 28px; height: 28px;"
+              >
+                <span class="material-symbols-outlined" style="font-size: 17px;" aria-hidden="true">image</span>
+              </button>
+
+              <button
+                type="button"
+                class="harness-model-selector-pill"
+                id="harness-model-selector"
+                title="切换底座模型与服务商"
+              >
+                <span class="material-symbols-outlined" style="font-size: 15px;" aria-hidden="true">auto_awesome</span>
+                <span id="harness-current-model-label">YoulabberLocal Flash High</span>
+                <span class="material-symbols-outlined" style="font-size: 14px;" aria-hidden="true">expand_more</span>
+              </button>
+
+              <button
+                type="button"
+                class="harness-model-selector-pill harness-perm-pill"
+                id="harness-permission-selector"
+                title="切换 Agent 工具执行权限模式"
+              >
+                <span class="material-symbols-outlined" id="harness-perm-pill-icon" style="font-size: 15px;" aria-hidden="true">verified_user</span>
+                <span id="harness-perm-pill-label">工作区内修改</span>
+                <span class="material-symbols-outlined" style="font-size: 14px;" aria-hidden="true">expand_more</span>
+              </button>
+            </div>
+
+            <div class="harness-input-toolbar__right">
+              <div class="harness-mode-pill" title="推理参数">
+                <span class="material-symbols-outlined" style="font-size: 14px;" aria-hidden="true">bolt</span>
+                <span>Turbo</span>
+                <span class="material-symbols-outlined" style="font-size: 13px;" aria-hidden="true">expand_more</span>
+              </div>
+
+              <button
+                type="button"
+                class="harness-send-btn"
+                id="harness-btn-send"
+                title="发送指令 (Enter)"
+                aria-label="发送指令"
+              >
+                <span class="material-symbols-outlined" id="harness-send-btn-icon" style="font-size: 18px;" aria-hidden="true">arrow_upward</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <div
+      class="harness-pane-resizer is-right"
+      id="harness-resizer-right"
+      title="拖拽调整右侧检视面板宽度（双击恢复默认）"
+      aria-label="调整右侧检视面板宽度"
+    ></div>
+
+    <!-- 2.3 右侧多态分屏视窗 (Split Inspector Stage: 书目导览 / 成果物 / Terminal) -->
+    <aside class="harness-inspector-stage" id="harness-inspector-stage">
+      <div class="harness-inspector-header">
+        <div class="harness-tab-group">
+          <div class="harness-tab-item active" data-tab="catalog">书目导览</div>
+          <div class="harness-tab-item" data-tab="artifacts">成果物</div>
+          <div class="harness-tab-item" data-tab="terminal">Terminal</div>
+        </div>
+
+        <div style="display: flex; gap: 4px;">
+          <button type="button" class="harness-icon-btn" id="harness-btn-close-inspector" title="关闭分屏">
+            <span class="material-symbols-outlined" style="font-size: 17px;" aria-hidden="true">close</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="harness-inspector-body">
+        <!-- 书目与章节导览视图 -->
+        <div class="harness-catalog-container" id="harness-pane-catalog">
+          <div class="harness-catalog-header">
+            <div class="harness-catalog-search-wrap">
+              <span class="material-symbols-outlined" style="font-size: 16px; color: var(--harness-text-tertiary);" aria-hidden="true">search</span>
+              <input type="text" id="harness-catalog-search" placeholder="搜索教材或章节..." />
+            </div>
+          </div>
+          <div class="harness-catalog-tip">
+            点击章节或“写入”直接将 <code>astrolib://</code> 定位写入对话框
+          </div>
+          <div class="harness-catalog-tree" id="harness-catalog-tree">
+            <div class="harness-catalog-loading">正在载入教材库全量目录...</div>
+          </div>
+        </div>
+
+        <!-- 多态成果物历史仓视图 (PDF2ABP / 画布 / AST / Python / Diff) -->
+        <div class="harness-artifact-container" id="harness-pane-artifacts" style="display: none;"></div>
+
+        <!-- 交互终端视图 -->
+        <div class="harness-terminal-container" id="harness-pane-terminal" style="display: none;">
+          <div id="harness-xterm-root" style="width: 100%; height: 100%;"></div>
+        </div>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<script>
+  import './harness-controller.ts';
+</script>

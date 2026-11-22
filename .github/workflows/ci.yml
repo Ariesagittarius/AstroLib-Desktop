@@ -1,4 +1,4 @@
-name: AstroLib Automated CI & Quality Gate
+name: AstroLib Automated CI and Quality Gate
 
 on:
   push:
@@ -6,31 +6,106 @@ on:
       - main
       - master
       - electron/main
-    paths-ignore:
-      - '**.md'
-      - 'docs/**'
   pull_request:
     branches:
       - main
       - master
       - electron/main
-    paths-ignore:
-      - '**.md'
-      - 'docs/**'
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
+  detect-changes:
+    name: Detect Changed Areas
+    runs-on: ubuntu-latest
+    outputs:
+      run_code: ${{ steps.filter.outputs.run_code }}
+      run_docs: ${{ steps.filter.outputs.run_docs }}
+      run_corpus: ${{ steps.filter.outputs.run_corpus }}
+      run_artifacts: ${{ steps.filter.outputs.run_artifacts }}
+      run_system: ${{ steps.filter.outputs.run_system }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Classify Changed Paths
+        id: filter
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "run_code=true" >> "$GITHUB_OUTPUT"
+            echo "run_docs=true" >> "$GITHUB_OUTPUT"
+            echo "run_corpus=true" >> "$GITHUB_OUTPUT"
+            echo "run_artifacts=true" >> "$GITHUB_OUTPUT"
+            echo "run_system=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          BASE_SHA="${{ github.event.pull_request.base.sha || github.event.before }}"
+          if [ -z "$BASE_SHA" ] || [ "$BASE_SHA" = "0000000000000000000000000000000000000000" ] || ! git cat-file -e "$BASE_SHA^{commit}" 2>/dev/null; then
+            CHANGED=$(git diff-tree --no-commit-id --name-only -r HEAD || true)
+          else
+            CHANGED=$(git diff --name-only "$BASE_SHA" HEAD || true)
+          fi
+
+          run_code=false
+          run_docs=false
+          run_corpus=false
+          run_artifacts=false
+          run_system=false
+
+          while IFS= read -r f; do
+            [ -z "$f" ] && continue
+            case "$f" in
+              docs/*|README.md|AGENTS.md|SECURITY.md|tests/TESTING.md|tests/contract/docs-hygiene.test.ts)
+                run_docs=true
+                ;;
+              content-sources/*)
+                run_corpus=true
+                run_artifacts=true
+                ;;
+              src/publishing/*|scripts/pack-book-abp.mjs|scripts/build-exercise-data.mjs|electron/*|tests/acceptance/*)
+                run_code=true
+                run_artifacts=true
+                ;;
+              src/styles/*|tests/system/*)
+                run_code=true
+                run_system=true
+                ;;
+              .github/workflows/ci.yml|package.json|vitest.config.ts|astro.config.mjs)
+                run_code=true
+                run_docs=true
+                run_corpus=true
+                run_artifacts=true
+                run_system=true
+                ;;
+              *)
+                run_code=true
+                ;;
+            esac
+          done <<< "$CHANGED"
+
+          echo "run_code=$run_code" >> "$GITHUB_OUTPUT"
+          echo "run_docs=$run_docs" >> "$GITHUB_OUTPUT"
+          echo "run_corpus=$run_corpus" >> "$GITHUB_OUTPUT"
+          echo "run_artifacts=$run_artifacts" >> "$GITHUB_OUTPUT"
+          echo "run_system=$run_system" >> "$GITHUB_OUTPUT"
+
   static-analysis:
-    name: 🛡️ TypeScript Strict Typecheck
+    name: TypeScript and Astro Checks
+    needs: detect-changes
+    if: needs.detect-changes.outputs.run_code == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Setup Node.js Runtime
+      - name: Setup Node.js 22
         uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -39,20 +114,22 @@ jobs:
       - name: Install Dependencies
         run: npm ci
 
-      - name: Execute Strict Type Checking (100% Coverage)
+      - name: Run Strict Typecheck
         run: npm run check:types
 
-      - name: Execute Astro Component & Script Diagnostics
+      - name: Run Astro Diagnostics
         run: npm run check:astro
 
-  automated-tests:
-    name: 🧪 Automated Test Suite (Unit, Contract, Acceptance)
+  docs-hygiene:
+    name: Documentation Hygiene Check
+    needs: detect-changes
+    if: needs.detect-changes.outputs.run_docs == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Setup Node.js Runtime
+      - name: Setup Node.js 22
         uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -61,26 +138,77 @@ jobs:
       - name: Install Dependencies
         run: npm ci
 
-      - name: Build Desktop App Shell & Electron Bundle
+      - name: Run Docs Hygiene Contract
+        run: npx vitest run --project contract-static tests/contract/docs-hygiene.test.ts
+
+  smoke-and-integration:
+    name: Unit, Contract-Static, and Integration Tests
+    needs: detect-changes
+    if: needs.detect-changes.outputs.run_code == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Build Electron Main and Preload Scripts
+        run: node scripts/build-electron.mjs
+
+      - name: Run Unit, Contract-Static, and Integration Projects
+        run: npm test
+
+  corpus-and-artifacts:
+    name: Corpus and ABP Artifacts Verification
+    needs: [detect-changes, static-analysis]
+    if: always() && (needs.detect-changes.outputs.run_corpus == 'true' || needs.detect-changes.outputs.run_artifacts == 'true') && (needs.static-analysis.result == 'success' || needs.static-analysis.result == 'skipped')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Build Desktop Web Shell and Electron Bundle
         run: |
           npm run build
           node scripts/build-electron.mjs
 
-      - name: Pack ABP test artifacts
+      - name: Pack ABP Artifacts
         run: npm run pack:books
 
-      - name: Run Test Pyramid Suites
-        run: npm test
+      - name: Run Corpus Contract Suite
+        if: needs.detect-changes.outputs.run_corpus == 'true'
+        run: npm run test:corpus
+
+      - name: Run Artifacts Acceptance Suite
+        if: needs.detect-changes.outputs.run_artifacts == 'true'
+        run: npm run test:artifacts
 
   system-integration:
-    name: ⚙️ System & PDF Engine Integration Tests
+    name: System and Typst Rendering Tests
+    needs: [detect-changes, smoke-and-integration]
+    if: always() && needs.detect-changes.outputs.run_system == 'true' && (needs.smoke-and-integration.result == 'success' || needs.smoke-and-integration.result == 'skipped')
     runs-on: ubuntu-latest
-    needs: [static-analysis, automated-tests]
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Setup Node.js Runtime
+      - name: Setup Node.js 22
         uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -89,5 +217,5 @@ jobs:
       - name: Install Dependencies
         run: npm ci
 
-      - name: Run Typst Full Generation & In-Memory Compiler
+      - name: Run System Test Project
         run: npm run test:system

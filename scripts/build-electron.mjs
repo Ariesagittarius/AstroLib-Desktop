@@ -36,6 +36,7 @@ async function build() {
       '@huggingface/transformers',
       'onnxruntime-node',
       'sharp',
+      'mupdf',
     ],
   });
 
@@ -52,9 +53,44 @@ async function build() {
   });
 
   // 3. 复制 Python 常驻推理脚本到 dist-electron
-  const pyRunnerSrc = path.join(ROOT, 'src/services/info-highlight/qwen-highlight-runner.py');
-  if (fs.existsSync(pyRunnerSrc)) {
-    fs.copyFileSync(pyRunnerSrc, path.join(OUT_DIR, 'qwen-highlight-runner.py'));
+  for (const pySrc of [
+    'src/services/info-highlight/qwen-highlight-runner.py',
+    'src/server/plugins/bilingual-aligner/qwen-runner.py',
+  ]) {
+    const absSrc = path.join(ROOT, pySrc);
+    if (fs.existsSync(absSrc)) {
+      fs.copyFileSync(absSrc, path.join(OUT_DIR, path.basename(pySrc)));
+    }
+  }
+
+  // 4. 复制 KaTeX CSS、核心 JS、contrib 扩展 (auto-render / mhchem) 与字体资产到 dist-electron/katex，确保独立画布工作台离线打包后零缺字、公式全渲染
+  const katexDistSrc = path.join(ROOT, 'node_modules/katex/dist');
+  const katexCssSrc = path.join(katexDistSrc, 'katex.min.css');
+  if (fs.existsSync(katexCssSrc)) {
+    const katexOutDir = path.join(OUT_DIR, 'katex');
+    const fontsOutDir = path.join(katexOutDir, 'fonts');
+    fs.mkdirSync(fontsOutDir, { recursive: true });
+    fs.copyFileSync(katexCssSrc, path.join(katexOutDir, 'katex.min.css'));
+
+    const jsCopies = [
+      [path.join(katexDistSrc, 'katex.min.js'), 'katex.min.js'],
+      [path.join(katexDistSrc, 'contrib', 'auto-render.min.js'), 'katex-auto-render.min.js'],
+      [path.join(katexDistSrc, 'contrib', 'mhchem.min.js'), 'katex-mhchem.min.js'],
+    ];
+    for (const [srcFile, targetName] of jsCopies) {
+      if (fs.existsSync(srcFile)) {
+        fs.copyFileSync(srcFile, path.join(katexOutDir, targetName));
+      }
+    }
+
+    const fontsSrc = path.join(katexDistSrc, 'fonts');
+    if (fs.existsSync(fontsSrc)) {
+      for (const f of fs.readdirSync(fontsSrc)) {
+        if (f.endsWith('.woff2')) {
+          fs.copyFileSync(path.join(fontsSrc, f), path.join(fontsOutDir, f));
+        }
+      }
+    }
   }
 
   console.log(`✅ Electron 脚本编译成功！耗时: ${Date.now() - startTime}ms -> dist-electron/`);

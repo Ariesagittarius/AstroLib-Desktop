@@ -17,7 +17,7 @@ concurrency:
 
 jobs:
   build-desktop:
-    name: 🖥️ Build & Package Windows Desktop (NSIS & Portable)
+    name: Build and Package Windows Desktop (NSIS & Portable)
     runs-on: windows-latest
     permissions:
       contents: write

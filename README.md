@@ -1,204 +1,51 @@
-<div align="center">
+# AstroLib Desktop
 
-# AstroLib
+An offline-first Electron reading, annotation, research, and academic publishing environment for university mathematics, physics, computer science, and engineering textbooks.
 
-**面向大学理工科教材与学术资料的数字化阅读与自测系统**
+## Core Design Principles
 
-A modern, quiet, and typographic reading system for university mathematics and science textbooks.
+- **The Content is the Interface**: Mathematical typography, KaTeX rendering, structured theorem/definition hierarchy, and quiet negative space take precedence over decorative UI chrome.
+- **Framework-Content Decoupling**: Compiled chapters live in portable AstroLib Book Packages (`.abp` Schema 1.0.0) generated from `content-sources/collections/` into `artifacts/abp-packs/`, keeping the Astro + Electron application shell lightweight and instant-booting.
+- **Offline-First & Zero-Trust Local Security**: Self-hosted web fonts, Material Symbols glyphs, local MuPDF PDF previews, loopback `X-AstroLib-Token` authentication, renderer sandboxing, AST HTML sanitization, and Electron `safeStorage` credential protection.
+- **Agent-Native Workspace**: Unified `ContentApiService`, CLI (`bin/astrolib-cli.mjs`), MCP stdio server (`bin/astrolib-mcp.mjs`), embedded AI Harness, and PDF2ABP multi-agent textbook digitization pipeline.
 
-<p align="center">
-  <a href="https://astro.build"><img src="https://img.shields.io/badge/Astro-v7.0-bc52ee?style=flat-square&logo=astro&logoColor=white" alt="Astro" /></a>
-  <a href="https://starlight.astro.build"><img src="https://img.shields.io/badge/Starlight-v0.41-purple?style=flat-square" alt="Starlight" /></a>
-  <a href="https://nodejs.org"><img src="https://img.shields.io/badge/Node-%3E%3D20.0-339933?style=flat-square&logo=node.js&logoColor=white" alt="Node" /></a>
-  <a href="https://katex.org"><img src="https://img.shields.io/badge/KaTeX-Fast_Math-00d084?style=flat-square&logo=latex&logoColor=white" alt="KaTeX" /></a>
-  <a href="LICENSE"><img src="https://img.shields.io/badge/Code_License-GPL--3.0-blue?style=flat-square&logo=gnu" alt="GPL-3.0 License" /></a>
-  <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/"><img src="https://img.shields.io/badge/Dataset_License-CC_BY--NC--SA_4.0-blue?style=flat-square" alt="CC License" /></a>
-  <a href="https://github.com/Ariesagittarius/AstroLib/releases"><img src="https://img.shields.io/badge/EPUB3-Offline_Export-orange?style=flat-square" alt="EPUB" /></a>
-</p>
+## Key Capabilities
 
-<p align="center">
-  <a href="#about">关于项目</a> •
-  <a href="#features">核心特性</a> •
-  <a href="#textbooks">收录教材</a> •
-  <a href="#quickstart">快速开始</a> •
-  <a href="docs/README.md">开发与贡献文档</a> •
-  <a href="#copyright">版权说明</a>
-</p>
+- **Desktop Reader Shell (`/collections/<col>/<book>/<slug>/`)**: Unified `StaticHandler` + `reader-shell-template.ts` runtime supporting Material Design 3 surfaces, left collection/book tree navigation, right Sideload Dock (`toc`, `exercises`, `aiAsk`, `translation`, `bilingualComparison`, `infoHighlight`, `annotations`), and collapsible solution blocks.
+- **Academic Annotations & Infinite Canvas (`/workspace/canvas/`)**: Portable AstroNote Packages (`.anp`), AST-anchored highlights and sidenotes, and pen/highlighter infinite canvas synced with `AnnotationStorageService`.
+- **Agent Harness (`/desktop/` Sidecar) & PDF2ABP (`/workspace/ingest/`)**: Streamlined multi-provider AI assistant, read-only & sandboxed workspace plugin tools, MinerU document ingestion, and multi-agent PDF-to-ABP authoring.
+- **Publishing & Export**: Chapter LaTeX/ZIP/PDF export (`Jinwen-XU/homework` macro compatibility, `-no-shell-escape`), Typst programmatic PDF compilation, and EPUB3 packaging (`scripts/generate-epub.mjs` and EPUB import adapter).
 
-</div>
-
----
-
-<!-- TODO: Add screenshots -->
-<!--
-建议捕获并放置 1-2 张无外框、高精度的界面实景图：
-1. 桌面端阅读界面（包含侧边栏、长公式与定理卡片）
-2. 习题弹窗界面（即时答题、公式推导折叠与 LaTeX 导出预览）
--->
-
-<a id="about"></a>
-## 📖 关于项目
-
-做 AstroLib 的初衷非常简单：
-
-纸质理工科教材在数字化时常常面临两难。扫描版 PDF 在小屏或移动设备上难以阅读；而通用的知识库或博客系统又缺乏对教材级排版的严肃支持——公式缩放掉帧、长篇定理缺乏清晰层级、跨章节交叉引用频繁导致读者迷失，课后习题也往往与理论脱节。
-
-AstroLib 尝试在**经典纸质书的严谨排版**与**现代 Web 的流畅交互**之间寻找平衡。我们信奉 **“内容即界面（The Content is the Interface）”**：
-
-- **无多余噪声**：摒弃积分打卡、营销徽章、繁杂嵌套边框等干扰思考的设计。
-- **排版至上**：通过精心调优的思源宋黑字体、自适应行距与公式基线对齐，还原沉稳、克制的纸书质感。
-- **性能下沉**：将复杂的符号提取、定理引用联动和索引分块全部前置到编译期，让前端页面始终轻盈迅捷。
-
----
-
-<a id="features"></a>
-## ✨ 核心特性
-
-AstroLib 深度集成 KaTeX 排版引擎与原子化 MDX 语义卡片体系（涵盖定理、定义、引理、例题、方法与可折叠推导细节），通过编译期静态计算下沉实现零客户端开销的跨章节交叉引用与公式源码一键复制；内置由北京邮电大学开源团队整理的《大邮数学集》173 套名校历年真题（CC BY-NC-SA 4.0 协议，2900+ 题）与交互式双模式自测面板，支持即时判题与推导折叠；集成基于 `Jinwen-XU/homework` 宏包的印刷级 LaTeX 讲义导出与 GitHub Actions 云端直出 PDF 工作流，并提供全书离线 EPUB3 打包管线与端侧隐私优先的知识检索辅助。
-
----
-
-<a id="textbooks"></a>
-## 📚 已收录教材与题库
-
-| 领域 | 书目 / 资料名称 | 版次 / 主编 | 状态 |
-| :--- | :--- | :--- | :---: |
-| **数学** | 《工科数学分析基础》 | 第三版 · 王绵森、马知恩 / 高等教育出版社 | 全章上线 · 配套自测 |
-| **数学** | 《数学分析》 | 第五版 · 华东师范大学数学系 / 高等教育出版社 | 全章上线 |
-| **数学** | 《线性代数及其应用》 | 原书第 5 版 · David C. Lay / 机械工业出版社 | 全章上线 |
-| **数学** | 《概率论与数理统计教程》 | 第三版 · 茆诗松、程依明、濮晓龙 / 高等教育出版社 | 全章上线 |
-| **数学** | 《新高考数学你真的掌握了吗》 | 第二版 · 清华大学出版社教研团队 | 全章上线 |
-| **物理** | 《大学物理学》 | 第七版 · 赵近芳、王登龙 / 北京邮电大学出版社 | 全章上线 · 配套习题 |
-| **题库** | **《大邮数学集》真题库** | 173 套名校历年真题（CC BY-NC-SA 4.0） | 2915 题全量结构化 |
-
----
-
-<a id="quickstart"></a>
-## 🚀 快速开始
-
-### 1. 环境准备
-- **Node.js**：`>= 20.0.0`
-- **包管理器**：`npm`（推荐，与仓库 lockfile 保持一致）
-- **Python**（可选）：`>= 3.9`（仅在维护 OCR 抽取流水线时需要）
-
-### 2. 本地运行
+## Quick Start
 
 ```bash
-# 克隆仓库
-git clone https://github.com/Ariesagittarius/AstroLib.git
-cd AstroLib
-
-# 安装依赖
 npm install
-
-# 启动本地开发服务
-npm run dev
-```
-
-启动完成后，打开浏览器访问 `http://localhost:4321` 即可体验。
-
-> [!TIP]
-> 你也可以使用后台守护模式运行开发服务器，避免占用终端：
-> ```bash
-> npx astro dev --background  # 启动后台守护
-> npx astro dev status        # 查询运行状态
-> npx astro dev stop          # 安全退出
-> ```
-
-### 3. 生产构建与桌面打包（模式 A：零内置书 Shell）
-
-```bash
-# 1. 构建桌面端应用壳体静态资源（产物输出至 dist/，不含内置书籍）
 npm run build
-
-# 2. 编译支持书单的习题切片（输出至 artifacts/exercises/）
-npm run build:exercises
-
-# 3. 打包全量 13 本官方教材为自包含 ABP 包（输出至 artifacts/abp-packs/）
+node scripts/build-electron.mjs
 npm run pack:books
-
-# 4. 打包 Windows 桌面端免安装目录（输出至 release/win-unpacked/）
-npm run electron:pack
+npm run electron:dev
 ```
 
-### 4. 辅助工具与导出命令
+## Verification & Testing
 
 ```bash
-# 一键生成全书离线 EPUB3 电子书（输出至 artifacts/epub/）
-npm run epub
-
-# 检查全站公式的 KaTeX 规范性
-npm run check:katex
-
-# 快速验证指定书籍目录下的 MDX 语法
-node scripts/scan-mdx.mjs content-sources/collections/math/math_analysis
+npm run check:types        # Astro sync + strict tsc --noEmit
+npm run check:astro        # Astro component & script diagnostics
+npm run test:smoke         # Fast Unit + Static Contracts (~3s)
+npm test                   # Unit + Static Contracts + Integration (~10s)
+npm run test:corpus        # Corpus integrity (headings, Mermaid, images, 1,251 routes)
+npm run test:affected      # Git-diff targeted Vitest runner
 ```
 
----
+See [tests/TESTING.md](tests/TESTING.md) for the complete 6-project test pyramid.
 
-## ⚙️ 环境变量说明
+## Documentation Map
 
-AstroLib 作为纯静态架构（SSG），**日常浏览、学习与生产打包均无需配置任何环境变量**，即开即用。
+- [Documentation Hub](docs/README.md) — Central index of architecture docs, ADRs, guides, and format specifications.
+- [Agent Workspace Rules](AGENTS.md) — Architectural Ten Tenets, feature registry constraints, commit format, and dual-repo push rules.
+- [Security Policy](SECURITY.md) — Trust model, loopback authentication, sanitization, and vulnerability reporting.
 
-如需执行特殊离线数据处理或维护可选的独立微服务，可按需配置：
+## Licenses
 
-| 环境变量 | 是否必需 | 说明 |
-| :--- | :---: | :--- |
-| `AI_PYTHON` | 否 | 执行本地 MCP 工具时的 Python 解释器路径（默认 `python`） |
-| `GEMINI_API_KEY` | 否 | 运行离线多模态修复脚本时调用的 Gemini API 密钥 |
-| `GITHUB_TOKEN` | 否 | 部署 Serverless 读者勘误代发 Worker 时的鉴权 Token |
-
----
-
-## 🗂️ 项目结构一览
-
-```text
-.
-├── astro.config.mjs               # Astro / Starlight 主配置与插件挂载
-├── AGENTS.md                      # 工程规范与学术 Commit 约束说明
-├── content-sources/collections/   # 数字化教材 MDX 章节唯一源码目录（4 合集 / 13 本书）
-├── artifacts/                     # 编译产物目录（abp-packs / exercises / 索引，不入库）
-├── electron/                      # Electron 主进程、Preload、本地服务与 reader-shell 合成器
-├── docs/                          # 核心架构设计与阶段复核/门禁文档
-├── scripts/                       # 构建管线、ABP 编译、题库编译与校验脚本
-│   ├── build-exercise-data.mjs    # 题库公式预编译与瘦身脚本（-> artifacts/exercises/）
-│   ├── pack-book-abp.mjs          # 官方 ABP 1.0.0 内容包编译器（-> artifacts/abp-packs/）
-│   ├── generate-epub.mjs          # EPUB3 自动化打包流水线
-│   └── lib/math_archive/          # 真题题库解析与清洗算法库
-├── src/
-│   ├── config/
-│   │   ├── collections.config.ts  # 中央书库配置（sourceCollections 为 13 本教材 SSOT）
-│   │   ├── features.config.ts     # 全站功能注册表（构建装配与开关控制）
-│   │   └── release.config.ts      # 桌面端 GitHub Releases 资产坐标配置
-│   ├── content/docs/dev/          # 内置开发者手册与设计指南
-│   ├── components/                # 语义卡片、M3 组件、桌面 Fragment 与覆盖层
-│   │   └── exercises/             # 习题系统交互核心与 LaTeX 导出前端
-│   ├── publishing/                # Headless LaTeX / Typst / EPUB 编译引擎
-│   └── data/exercises/            # 标准化真题与教材课后习题源数据
-└── public/                        # 静态图标、封面与 Lottie 等纯浏览器静态资产
-```
-
----
-
-<a id="copyright"></a>
-## ⚖️ 内容与版权声明
-
-本项目严格区分**系统源代码**与**数字化教材/真题数据**的权利归属：
-
-1. **教材正文与原书习题**：
-   - 仓库内收录的高校教材章节与插图，版权归原作者及对应出版社（高等教育出版社、清华大学出版社、机械工业出版社、北京邮电大学出版社等）所有。
-   - 内容仅供个人学习交流与排版技术研究，不具任何商业属性。若需系统研读，请务必支持正版纸质出版物。
-2. **历年真题题库**：
-   - 试卷数据库提取自北京邮电大学开源团队维护的《大邮数学集》。
-   - 真题数据遵循 **[CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh-hans)** 协议。任何衍生使用均需注明出处、保持非商业用途并以相同方式共享。
-3. **开源字体**：
-   - 思源黑体、思源宋体与 Plus Jakarta Sans 均遵循 [SIL Open Font License 1.1](https://openfontlicense.org/) 协议。
-
----
-
-## 📜 License
-
-本项目采用双重开源授权架构：
-
-- **系统源代码与工程基础设施**：遵循 **[GNU General Public License v3.0 (GPL-3.0)](LICENSE)** 协议，任何分发、修改或集成该技术框架的衍生项目均须在 GPL-3.0 协议下开源。
-- **教材、学术文档与真题数据**：遵循 **[CC BY-NC-SA 4.0](LICENSE-CONTENT)**（知识共享署名-非商业性使用-相同方式共享 4.0 国际许可）协议，严格禁止商业化盈利，且衍生内容须以相同方式共享。教材原文版权归原作者及原出版社所有。
+- Codebase: [GNU General Public License v3.0 or later](LICENSE)
+- Bundled textbook & exercise datasets: [CC BY-NC-SA 4.0](LICENSE-CONTENT)

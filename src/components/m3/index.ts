@@ -11,14 +11,4 @@
  */
 
 export { default as M3Icon } from './M3Icon.astro';
-export { default as M3Button } from './M3Button.astro';
-export { default as M3IconButton } from './M3IconButton.astro';
-export { default as M3Card } from './M3Card.astro';
-export { default as M3Chip } from './M3Chip.astro';
-export { default as M3ChipSet } from './M3ChipSet.astro';
-export { default as M3Switch } from './M3Switch.astro';
-export { default as M3Divider } from './M3Divider.astro';
-export { default as M3Dialog } from './M3Dialog.astro';
-export { default as M3TextField } from './M3TextField.astro';
 export { default as M3TopNavBar } from './M3TopNavBar.astro';
-export { default as M3Lottie } from './M3Lottie.astro';

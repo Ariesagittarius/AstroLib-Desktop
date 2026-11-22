@@ -114,10 +114,10 @@ describe('Reader Shell canonical link contract (P1-A2)', () => {
   });
 
   it('4. FragmentReaderHost 必须桥接 iframe 的 astrolib:switch-fragment 消息', () => {
-    const source = fs.readFileSync(
-      path.join(ROOT, 'src', 'components', 'desktop', 'FragmentReaderHost.astro'),
-      'utf8'
-    );
+    const source = [
+      fs.readFileSync(path.join(ROOT, 'src', 'components', 'desktop', 'FragmentReaderHost.astro'), 'utf8'),
+      fs.readFileSync(path.join(ROOT, 'src', 'features', 'reader-host', 'reader-host-controller.ts'), 'utf8'),
+    ].join('\n');
     expect(source).toMatch(/addEventListener\(\s*['"]message['"]/);
     expect(source).toMatch(/astrolib:switch-fragment/);
     expect(source).toMatch(/contentWindow\s*===\s*e\.source/);

@@ -1,0 +1,292 @@
+---
+/**
+ * src/components/desktop/SettingsAgentPanel.astro
+ * ============================================================================
+ * 全局设置中心面板：Agent 与工具中心 (替代旧版 HarnessSettingsModal)
+ * ============================================================================
+ * 集成三大核心视图：
+ * 1. 工具与权限：三档权限模式、导览折叠策略、全部注册工具检查器（图标/描述自定义、
+ *    JSON Schema 接口表、源文件定位、只读源代码查看器）；
+ * 2. 模型与服务商：邮百工网关 / Antigravity CLI / DeepSeek / Gemini / 自定义网关管理；
+ * 3. 系统预设：默认推理强度、Token 窗口上限、自定义系统提示词。
+ * ============================================================================
+ */
+---
+
+<section id="panel-agent" class="hub-panel" data-panel-title="Agent 与工具">
+  <div class="panel-section-title">
+    <div>
+      <div>Agent 与工具中心</div>
+      <div class="panel-section-subtitle">
+        统一管理首屏智能体权限边界、工具注册表与源码检查器、模型服务商及系统提示词
+      </div>
+    </div>
+  </div>
+
+  <!-- 顶部 M3 分段子导航 -->
+  <div class="agent-subtabs-bar">
+    <md-chip-set id="agent-hub-subtabs" aria-label="Agent 设置子分类">
+      <md-filter-chip label="工具与权限" data-agent-subtab="tools" selected></md-filter-chip>
+      <md-filter-chip label="模型与服务商" data-agent-subtab="models"></md-filter-chip>
+      <md-filter-chip label="系统预设" data-agent-subtab="presets"></md-filter-chip>
+    </md-chip-set>
+  </div>
+
+  <!-- 子页 1: 工具与权限 -->
+  <div class="agent-subpane active" id="agent-subpane-tools">
+    <div class="hub-card">
+      <div class="ft-section hub-ft-section">
+        <div class="ft-section-title">安全权限边界与过程展示</div>
+        <div class="ft-stack">
+          <div class="ft-segment-wrapper">
+            <div class="ft-sub-label">工具执行权限模式</div>
+            <md-chip-set id="agent-perm-mode-chips" aria-label="工具权限模式">
+              <md-filter-chip label="仅查看 (只读)" data-perm-val="read-only"></md-filter-chip>
+              <md-filter-chip label="工作区内修改 (推荐)" data-perm-val="workspace" selected></md-filter-chip>
+              <md-filter-chip label="完全权限" data-perm-val="full"></md-filter-chip>
+            </md-chip-set>
+            <div class="ft-settings-hint-text" id="agent-perm-mode-hint">
+              工作区模式下自动放行书库检索、隔离沙箱 Python 计算与画布生成；访问外部本地目录或 PDF 时会弹出确认卡片。
+            </div>
+          </div>
+
+          <div class="ft-item-row">
+            <div class="ft-row-info">
+              <span class="ft-row-name">回复完成后自动折叠导览图</span>
+              <span class="ft-row-desc" style="font-size:0.76rem;color:var(--hub-on-surface-variant);">
+                生成过程中实时展开地铁线性导览图；正文输出完毕后收敛为单行用时摘要条，点击随时展开。
+              </span>
+            </div>
+            <md-switch id="agent-auto-collapse-switch" aria-label="自动折叠导览图" selected></md-switch>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 工具检查器与自定义卡片 -->
+    <div class="hub-card">
+      <div class="ft-section hub-ft-section">
+        <div class="agent-tools-toolbar">
+          <div>
+            <div class="ft-section-title" style="margin-bottom:2px;">已注册工具目录与源码检查器</div>
+            <div class="ft-settings-hint-text" id="agent-tools-count-hint">正在读取插件注册表...</div>
+          </div>
+          <md-outlined-text-field
+            id="agent-tools-search"
+            label="筛选工具名、描述或来源文件"
+            class="agent-tools-search-input"
+          ></md-outlined-text-field>
+        </div>
+
+        <md-chip-set id="agent-tools-cat-chips" class="agent-tools-cat-chips" aria-label="按工具分类筛选"></md-chip-set>
+
+        <div class="agent-tools-grid" id="agent-tools-grid"></div>
+
+        <!-- 选中工具的开发者检视抽屉 -->
+        <div class="agent-tool-inspector" id="agent-tool-inspector" hidden></div>
+      </div>
+    </div>
+
+    <!-- 独立 Python 科学计算沙箱 (.venv-agent) 管理卡 -->
+    <div class="hub-card" style="margin-top:16px;">
+      <div class="ft-section hub-ft-section">
+        <div class="agent-models-header">
+          <div>
+            <div class="ft-section-title" style="margin-bottom:2px;">Agent 独立 Python 科学计算沙箱</div>
+            <div class="ft-settings-hint-text" id="agent-py-env-status">正在探测 .venv-agent 运行时环境...</div>
+          </div>
+          <md-outlined-button id="agent-py-refresh-btn" type="button">刷新环境</md-outlined-button>
+        </div>
+
+        <div class="ft-stack" style="margin-top:12px;">
+          <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;">
+            <md-outlined-text-field
+              id="agent-py-custom-path"
+              label="自定义解释器路径（留空则优先使用隔离 .venv-agent）"
+              style="flex:1 1 320px;"
+            ></md-outlined-text-field>
+            <md-outlined-button id="agent-py-save-path-btn" type="button">应用路径</md-outlined-button>
+          </div>
+
+          <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;">
+            <md-outlined-text-field
+              id="agent-py-install-input"
+              label="安装预编译 wheel 科学库（逗号/空格分隔，仅 --only-binary=:all:）"
+              placeholder="例如: scikit-learn statsmodels"
+              style="flex:1 1 320px;"
+            ></md-outlined-text-field>
+            <md-filled-tonal-button id="agent-py-install-btn" type="button">安装 Wheel 包</md-filled-tonal-button>
+          </div>
+
+          <div>
+            <div class="ft-sub-label">已安装发行包（实时同步至 run_python 工具描述）</div>
+            <div id="agent-py-packages-list" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 可选联网搜索服务商配置卡 -->
+    <div class="hub-card" style="margin-top:16px;">
+      <div class="ft-section hub-ft-section">
+        <div class="agent-models-header">
+          <div>
+            <div class="ft-section-title" style="margin-bottom:2px;">可选联网搜索接入 (Web Search)</div>
+            <div class="ft-settings-hint-text">默认关闭；仅在开启并填写有效接口后向模型开放 <code>web_search</code> 工具。</div>
+          </div>
+          <md-switch id="agent-websearch-enable-switch" aria-label="启用联网搜索工具"></md-switch>
+        </div>
+
+        <div class="ft-stack" style="margin-top:12px;">
+          <div class="ft-segment-wrapper">
+            <div class="ft-sub-label">搜索服务商适配器</div>
+            <md-chip-set id="agent-websearch-provider-chips">
+              <md-filter-chip label="不启用" data-ws-prov="none" selected></md-filter-chip>
+              <md-filter-chip label="Tavily API" data-ws-prov="tavily"></md-filter-chip>
+              <md-filter-chip label="博查 Bocha" data-ws-prov="bocha"></md-filter-chip>
+              <md-filter-chip label="自建 SearXNG" data-ws-prov="searxng"></md-filter-chip>
+              <md-filter-chip label="自定义 REST JSON" data-ws-prov="custom"></md-filter-chip>
+            </md-chip-set>
+          </div>
+
+          <div class="agent-form-grid">
+            <md-outlined-text-field
+              id="agent-websearch-apikey"
+              type="password"
+              label="API Key（Tavily / Bocha 必填）"
+            ></md-outlined-text-field>
+            <md-outlined-text-field
+              id="agent-websearch-baseurl"
+              label="接口 URL（SearXNG / Custom 必填，可覆盖代理）"
+              placeholder="http://127.0.0.1:8080"
+            ></md-outlined-text-field>
+          </div>
+
+          <div class="agent-form-actions" style="justify-content:space-between;align-items:center;">
+            <span class="ft-settings-hint-text" id="agent-websearch-test-status"></span>
+            <div style="display:flex;gap:8px;">
+              <md-outlined-button id="agent-websearch-test-btn" type="button">测试连通性</md-outlined-button>
+              <md-filled-button id="agent-websearch-save-btn" type="button">保存搜索配置</md-filled-button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 子页 2: 模型与服务商 -->
+  <div class="agent-subpane" id="agent-subpane-models" hidden>
+    <div class="hub-card">
+      <div class="ft-section hub-ft-section">
+        <div class="agent-models-header">
+          <div>
+            <div class="ft-section-title" style="margin-bottom:2px;">模型服务商与本地智能体</div>
+            <div class="ft-settings-hint-text">配置并热切换各模型网关 API 密钥与参数；变更实时同步至首屏对话框。</div>
+          </div>
+          <md-outlined-button id="agent-btn-view-config" type="button">查看 JSON 配置</md-outlined-button>
+        </div>
+
+        <div class="agent-providers-list" id="agent-providers-list"></div>
+
+        <div class="agent-add-provider-wrap">
+          <md-outlined-button id="agent-btn-toggle-add-provider" type="button">
+            添加自定义模型提供商
+          </md-outlined-button>
+
+          <div class="agent-add-provider-form" id="agent-add-provider-form" hidden>
+            <div class="agent-form-grid">
+              <md-outlined-text-field id="agent-new-prov-name" label="显示名称（如 Ollama / SiliconFlow）"></md-outlined-text-field>
+              <md-outlined-text-field id="agent-new-prov-id" label="英文标识 ID（如 my-ollama）"></md-outlined-text-field>
+              <md-outlined-text-field id="agent-new-prov-url" label="Base URL（含 /v1）" value="https://api.openai.com/v1"></md-outlined-text-field>
+              <md-outlined-text-field id="agent-new-prov-key" type="password" label="API 密钥（本地网关可留空）"></md-outlined-text-field>
+            </div>
+            <md-outlined-text-field
+              id="agent-new-prov-models"
+              label="模型 ID 列表（逗号分隔）"
+              value="gpt-4o-mini"
+              style="width:100%;"
+            ></md-outlined-text-field>
+            <div class="agent-form-actions">
+              <md-text-button id="agent-cancel-add-prov" type="button">取消</md-text-button>
+              <md-filled-button id="agent-confirm-add-prov" type="button">确认添加</md-filled-button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 子页 3: 系统预设 -->
+  <div class="agent-subpane" id="agent-subpane-presets" hidden>
+    <div class="hub-card">
+      <div class="ft-section hub-ft-section">
+        <div class="ft-section-title">推理策略与系统提示词 (System Prompt)</div>
+        <div class="ft-stack">
+          <div class="ft-segment-wrapper">
+            <div class="ft-sub-label">默认推理深度</div>
+            <md-chip-set id="agent-reasoning-default-chips">
+              <md-filter-chip label="High（深度思考 · 推荐理科）" data-r-val="high" selected></md-filter-chip>
+              <md-filter-chip label="Low（低延迟）" data-r-val="low"></md-filter-chip>
+              <md-filter-chip label="Off（直接输出）" data-r-val="off"></md-filter-chip>
+            </md-chip-set>
+          </div>
+
+          <div style="display:flex;flex-wrap:wrap;gap:12px;">
+            <md-outlined-text-field
+              id="agent-token-window-input"
+              type="number"
+              min="2048"
+              step="1024"
+              label="Token 压缩滑动窗口上限"
+              value="16384"
+              style="flex:1 1 220px;max-width:260px;"
+            ></md-outlined-text-field>
+
+            <md-outlined-text-field
+              id="agent-max-rounds-input"
+              type="number"
+              min="5"
+              max="60"
+              step="1"
+              label="单轮自主工具探索上限 (5~60，默认 30)"
+              value="30"
+              style="flex:1 1 240px;max-width:280px;"
+            ></md-outlined-text-field>
+          </div>
+
+          <md-outlined-text-field
+            id="agent-system-prompt-input"
+            type="textarea"
+            rows="6"
+            label="默认系统提示词（工具手册与排版规范会自动追加其后）"
+            style="width:100%;"
+          ></md-outlined-text-field>
+
+          <div class="agent-form-actions">
+            <md-text-button id="agent-reset-presets-btn" type="button">恢复默认提示词</md-text-button>
+            <md-filled-button id="agent-save-presets-btn" type="button">保存预设</md-filled-button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 只读源代码 / JSON 配置预览浮层 -->
+  <div class="agent-code-modal" id="agent-code-modal" hidden role="dialog" aria-modal="true">
+    <div class="agent-code-modal__dialog">
+      <div class="agent-code-modal__head">
+        <div>
+          <div class="agent-code-modal__title" id="agent-code-modal-title">源文件预览</div>
+          <div class="agent-code-modal__sub" id="agent-code-modal-sub"></div>
+        </div>
+        <div class="agent-code-modal__actions">
+          <md-outlined-button id="agent-code-modal-copy" type="button">复制内容</md-outlined-button>
+          <md-text-button id="agent-code-modal-close" type="button">关闭</md-text-button>
+        </div>
+      </div>
+      <div class="agent-code-modal__body">
+        <pre><code id="agent-code-modal-pre"></code></pre>
+      </div>
+    </div>
+  </div>
+</section>

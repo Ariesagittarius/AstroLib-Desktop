@@ -165,7 +165,7 @@
 
 /* 顶栏工具行：背景无色，仅留底部 1px 细线分割 */
 .library-toolbar {
-  height: 64px;
+  height: 52px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -308,7 +308,7 @@
 .library-chips-row {
   display: flex;
   align-items: center;
-  padding: 0.65rem 1.5rem;
+  padding: 0.45rem 1.5rem;
   overflow-x: auto;
   border-bottom: 1px solid var(--md-sys-color-outline-variant, #edf1ec);
   background-color: transparent;
@@ -443,28 +443,30 @@ md-filter-chip.lib-filter-chip {
   cursor: pointer;
   transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1);
   position: relative;
+  contain: layout style;
 }
 
 .library-card:hover {
   transform: translateY(-2px);
 }
 
-/* 书封框：仅有浅色 outline 勾边，彻底移除阴影 (box-shadow: none !important) */
+/* 书封框：统一由外框承担 1px 圆角勾边，严格 box-sizing: border-box 避免溢出右边框 */
 .card-cover-box {
   position: relative;
   width: 100%;
   aspect-ratio: 3 / 4;
+  box-sizing: border-box;
   border-radius: 8px;
   overflow: hidden;
   background-color: var(--md-sys-color-surface, #ffffff);
-  border: 1px solid var(--md-sys-color-outline-variant, #e0e2ec);
-  box-shadow: none !important;
+  border: 1px solid var(--md-sys-color-outline-variant, #e8eaed);
+  box-shadow: none;
   transition: border-color 0.2s cubic-bezier(0.2, 0, 0, 1);
 }
 
 .library-card:hover .card-cover-box {
   border-color: var(--md-sys-color-outline, #72777d);
-  box-shadow: none !important;
+  box-shadow: none;
 }
 
 .card-cover-img {
@@ -474,7 +476,7 @@ md-filter-chip.lib-filter-chip {
   display: block;
 }
 
-/* 论文自适应极简封面：浅色勾边，与研读视窗卡片风格一致 */
+/* 论文自适应极简封面：直接复用外层 .card-cover-box 圆角边框，避免内层叠加无圆角边框 */
 .paper-cover-fallback {
   width: 100%;
   height: 100%;
@@ -483,7 +485,6 @@ md-filter-chip.lib-filter-chip {
   align-items: center;
   justify-content: center;
   background-color: var(--md-sys-color-surface, #ffffff);
-  border: 1px solid var(--md-sys-color-outline-variant, #e0e2ec);
   color: var(--md-sys-color-primary);
   gap: 0.5rem;
   box-sizing: border-box;
@@ -507,13 +508,12 @@ md-filter-chip.lib-filter-chip {
   position: absolute;
   bottom: 8px;
   left: 8px;
-  background: rgba(0, 0, 0, 0.68);
+  background: rgba(18, 22, 20, 0.78);
   color: #ffffff;
   font-size: 0.65rem;
   font-weight: 500;
   padding: 0.15rem 0.45rem;
   border-radius: 4px;
-  backdrop-filter: blur(4px);
   font-family: var(--font-ui, 'Google Sans', 'Google Sans Text', 'Noto Sans SC Variable', 'Source Han Sans SC', 'Noto Sans SC', '思源黑体', sans-serif);
 }
 
@@ -734,4 +734,366 @@ md-filter-chip.lib-filter-chip {
   font-size: 0.8rem;
   color: var(--md-sys-color-error, #b3261e);
   word-break: break-word;
+}
+
+/* 拖拽上传覆盖高亮 */
+.library-content-scroll.is-drag-over {
+  outline: 2px dashed var(--md-sys-color-primary);
+  outline-offset: -10px;
+  background-color: color-mix(in srgb, var(--md-sys-color-primary) 4%, var(--md-sys-color-surface, #ffffff));
+}
+
+/* 解析中 / 待解析 / 异常中断覆层（遵循极简与 M3 规范） */
+.processing-overlay {
+  position: absolute;
+  inset: 0;
+  background: color-mix(in srgb, var(--md-sys-color-surface, #ffffff) 92%, transparent);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  color: var(--md-sys-color-primary);
+  font-weight: 500;
+  text-align: center;
+  padding: 0.75rem;
+  box-sizing: border-box;
+  font-family: inherit;
+}
+
+.processing-overlay.is-error {
+  color: var(--md-sys-color-error, #b3261e);
+  background: color-mix(in srgb, var(--md-sys-color-surface, #ffffff) 94%, transparent);
+}
+
+.processing-overlay.is-idle {
+  color: var(--md-sys-color-on-surface-variant, #49454f);
+  background: color-mix(in srgb, var(--md-sys-color-surface, #ffffff) 93%, transparent);
+}
+
+.overlay-status-icon {
+  font-size: 26px;
+}
+
+.overlay-status-text {
+  line-height: 1.35;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  word-break: break-word;
+}
+
+.overlay-actions-row {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-top: 0.2rem;
+}
+
+.card-reparse-btn {
+  --md-filled-tonal-button-container-height: 30px;
+  --md-filled-tonal-button-label-text-size: 0.74rem;
+}
+
+.card-delete-btn {
+  --md-icon-button-icon-size: 18px;
+  width: 30px;
+  height: 30px;
+}
+
+/* 列表视图下隐藏小封面的遮罩按钮，改在行末呈现 */
+.card-list-actions {
+  display: none;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.library-entities-list .processing-overlay .overlay-status-text,
+.library-entities-list .processing-overlay .overlay-actions-row,
+.library-entities-list .card-kind-pill {
+  display: none;
+}
+
+.library-entities-list .card-list-actions {
+  display: flex;
+}
+
+.list-status-label {
+  font-size: 0.76rem;
+  color: var(--md-sys-color-on-surface-variant, #49454f);
+}
+
+.list-status-label.is-error {
+  color: var(--md-sys-color-error, #b3261e);
+}
+
+/* M3 对话框内容布局 */
+.lib-dialog-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  min-width: min(460px, 80vw);
+  font-size: 0.86rem;
+  line-height: 1.55;
+  color: var(--md-sys-color-on-surface-variant, #49454f);
+}
+
+.lib-dialog-file-list {
+  margin: 0;
+  padding-left: 1.25rem;
+  font-size: 0.82rem;
+  color: var(--md-sys-color-on-surface, #1d1b20);
+}
+
+.page-range-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 0.75rem;
+  border-radius: 10px;
+  border: 1px solid var(--md-sys-color-outline-variant, #dfe4e0);
+}
+
+.page-range-item-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: 0.84rem;
+  font-weight: 500;
+  color: var(--md-sys-color-on-surface, #1d1b20);
+}
+
+.page-range-item-meta {
+  font-size: 0.75rem;
+  color: var(--md-sys-color-outline, #737976);
+  flex-shrink: 0;
+}
+
+.page-range-field {
+  width: 100%;
+}
+
+.page-range-hint {
+  font-size: 0.75rem;
+  color: var(--md-sys-color-on-surface-variant, #49454f);
+}
+
+.page-range-hint.is-error {
+  color: var(--md-sys-color-error, #b3261e);
+}
+
+/* ============================================================================
+   MIT Press / 岩波文库克制学术极简缺省书封 (.academic-default-cover)
+   ============================================================================ */
+.academic-default-cover {
+  --adc-bg: #faf8f4;
+  --adc-fg: #1b1e23;
+  --adc-muted: #5a606a;
+  --adc-accent: #2c3e50;
+  --adc-rule: rgba(27, 30, 35, 0.14);
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  background-color: var(--adc-bg);
+  color: var(--adc-fg);
+  box-sizing: border-box;
+  overflow: hidden;
+  user-select: none;
+}
+
+.academic-default-cover.is-tone-math {
+  --adc-bg: #f6f8fb;
+  --adc-accent: #1d4e89;
+  --adc-rule: rgba(29, 78, 137, 0.18);
+}
+
+.academic-default-cover.is-tone-physics {
+  --adc-bg: #f5f9f6;
+  --adc-accent: #1f5140;
+  --adc-rule: rgba(31, 81, 64, 0.18);
+}
+
+.academic-default-cover.is-tone-cs {
+  --adc-bg: #f6f7fb;
+  --adc-accent: #313d6b;
+  --adc-rule: rgba(49, 61, 107, 0.18);
+}
+
+.academic-default-cover.is-tone-telecom {
+  --adc-bg: #f5f8fa;
+  --adc-accent: #23506b;
+  --adc-rule: rgba(35, 80, 107, 0.18);
+}
+
+.academic-default-cover.is-tone-literature {
+  --adc-bg: #fcf7f4;
+  --adc-accent: #8a3324;
+  --adc-rule: rgba(138, 51, 36, 0.18);
+}
+
+.academic-default-cover.is-tone-paper {
+  --adc-bg: #f7f8fa;
+  --adc-accent: #445163;
+  --adc-rule: rgba(68, 81, 99, 0.16);
+}
+
+[data-theme='dark'] .academic-default-cover {
+  --adc-bg: #1c1e22;
+  --adc-fg: #e7e9ee;
+  --adc-muted: #9da4b0;
+  --adc-accent: #8ab4f8;
+  --adc-rule: rgba(231, 233, 238, 0.14);
+}
+
+[data-theme='dark'] .academic-default-cover.is-tone-math {
+  --adc-bg: #18202c;
+  --adc-accent: #8ab4f8;
+}
+
+[data-theme='dark'] .academic-default-cover.is-tone-physics {
+  --adc-bg: #18231e;
+  --adc-accent: #81c995;
+}
+
+[data-theme='dark'] .academic-default-cover.is-tone-cs {
+  --adc-bg: #1c1e2b;
+  --adc-accent: #a8c7fa;
+}
+
+[data-theme='dark'] .academic-default-cover.is-tone-telecom {
+  --adc-bg: #172129;
+  --adc-accent: #78d9ec;
+}
+
+[data-theme='dark'] .academic-default-cover.is-tone-literature {
+  --adc-bg: #251b1a;
+  --adc-accent: #f2b8b5;
+}
+
+[data-theme='dark'] .academic-default-cover.is-tone-paper {
+  --adc-bg: #1d2026;
+  --adc-accent: #b8c4d4;
+}
+
+.adc-spine {
+  width: 5px;
+  flex-shrink: 0;
+  background-color: var(--adc-accent);
+  opacity: 0.85;
+}
+
+.adc-inner {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 14px 12px 34px 12px;
+  border-left: 1px solid var(--adc-rule);
+  box-sizing: border-box;
+}
+
+.adc-overline {
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--adc-accent);
+  font-family: var(--font-ui, 'Google Sans', 'Noto Sans SC Variable', sans-serif);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.adc-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 6px 0;
+}
+
+.adc-rule {
+  width: 24px;
+  height: 2px;
+  background-color: var(--adc-accent);
+  opacity: 0.65;
+}
+
+.adc-title {
+  font-family: 'Noto Serif SC Variable', 'Source Han Serif SC', 'Noto Serif SC', Georgia, serif;
+  font-size: 0.98rem;
+  font-weight: 700;
+  line-height: 1.32;
+  color: var(--adc-fg);
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  word-break: break-word;
+}
+
+.adc-subtitle {
+  font-size: 0.68rem;
+  line-height: 1.3;
+  color: var(--adc-muted);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.adc-footer {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.adc-author {
+  font-size: 0.68rem;
+  line-height: 1.25;
+  color: var(--adc-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.adc-monogram {
+  display: none;
+}
+
+/* 列表紧凑缩略模式 (50x65px)：退让为书脊 + 居中首字徽识 */
+.library-entities-list .adc-spine {
+  width: 3px;
+}
+
+.library-entities-list .adc-inner {
+  padding: 6px;
+  align-items: center;
+  justify-content: center;
+}
+
+.library-entities-list .adc-overline,
+.library-entities-list .adc-body,
+.library-entities-list .adc-author {
+  display: none;
+}
+
+.library-entities-list .adc-footer {
+  justify-content: center;
+}
+
+.library-entities-list .adc-monogram {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Noto Serif SC Variable', 'Source Han Serif SC', Georgia, serif;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--adc-accent);
 }

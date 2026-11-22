@@ -166,4 +166,44 @@ $$
     expect(result!.markdown).toContain('[^2]');
     expect(result!.markdown).toContain('[^2]:');
   });
+
+  it('9. should discover and resolve tasks from multiple candidate directories', () => {
+    const tasks = taskManager.listTasks();
+    expect(tasks.length).toBeGreaterThanOrEqual(1);
+
+    const first = tasks[0];
+    const taskDir = taskManager.findTaskDir(first.taskId);
+    expect(taskDir).not.toBeNull();
+    expect(fs.existsSync(taskDir!)).toBe(true);
+
+    const pdfPath = taskManager.getOriginPdfPath(first.taskId);
+    if (pdfPath) {
+      expect(fs.existsSync(pdfPath)).toBe(true);
+    }
+  });
+
+  it('10. should reconcile stale running tasks and support deleting idle/failed tasks', async () => {
+    const dummyBuffer = Buffer.from('%PDF-1.4\n<</Type /Pages /Count 250>>\n%%EOF');
+    const meta = await taskManager.createTask('stale_big_paper.pdf', dummyBuffer, {
+      engine: 'api',
+    });
+    expect(meta.pageCount).toBe(250);
+
+    // 模拟上次进程崩溃遗留在 meta.json 的运行态
+    const taskDir = taskManager.findTaskDir(meta.taskId)!;
+    const metaFile = path.join(taskDir, 'meta.json');
+    meta.status = 'processing';
+    meta.progress = 35;
+    fs.writeFileSync(metaFile, JSON.stringify(meta, null, 2), 'utf-8');
+
+    expect(taskManager.isJobActive(meta.taskId)).toBe(false);
+    const reconciled = taskManager.reconcileStaleTask(meta.taskId);
+    expect(reconciled?.status).toBe('failed');
+    expect(reconciled?.error).toContain('中断');
+
+    // 验证删除接口正常清理物理目录
+    const deleted = taskManager.deleteTask(meta.taskId);
+    expect(deleted).toBe(true);
+    expect(fs.existsSync(taskDir)).toBe(false);
+  });
 });

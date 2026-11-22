@@ -879,10 +879,10 @@ export class TranslationDockController {
 
       try {
         const maskResult = StructurePreservingMasker.mask(text, false);
-        const endpoint =
-          typeof import.meta !== 'undefined' && import.meta.env?.DEV
-            ? '/api/proxy/gemini/v1beta/openai/chat/completions'
-            : 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions';
+        const { shouldUseLocalProxy } = await import('../../../ai/ai-config.ts');
+        const endpoint = shouldUseLocalProxy()
+          ? '/api/proxy/gemini/v1beta/openai/chat/completions'
+          : 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions';
 
         const res = await fetch(endpoint, {
           method: 'POST',
@@ -941,10 +941,10 @@ export class TranslationDockController {
 
     // 3. 北京邮电大学「人人有算力」校内模型服务网关
     if (provider === 'bupt') {
-      const endpoint =
-        typeof import.meta !== 'undefined' && import.meta.env?.DEV
-          ? '/api/proxy/bupt/chat/completions'
-          : 'https://myai.bupt.edu.cn/llm-gw/v1/chat/completions';
+      const { shouldUseLocalProxy } = await import('../../../ai/ai-config.ts');
+      const endpoint = shouldUseLocalProxy()
+        ? '/api/proxy/bupt/chat/completions'
+        : 'https://myai.bupt.edu.cn/llm-gw/v1/chat/completions';
 
       try {
         const maskResult = StructurePreservingMasker.mask(text, false);

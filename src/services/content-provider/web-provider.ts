@@ -6,7 +6,7 @@
  */
 
 import {
-  validateAbpBundle,
+  type AbpBundlePayload,
   type AstroBookManifest,
   type AstroBookChapterPayload,
   type LibraryCatalog,
@@ -17,6 +17,7 @@ import {
   AbpInstallError,
   AbpInstallErrorCode,
 } from './install-validation.ts';
+import { bookFormatRegistry } from '../../core/book-formats/registry.ts';
 import type { IContentProvider, RemoteSourceConfig, StorageStats } from './types.ts';
 
 const DB_NAME = 'astrolib_books_db';
@@ -146,11 +147,41 @@ class BrowserBookDb {
     });
   }
 
+  async putAsset(bookId: string, relPath: string, dataBase64: string): Promise<void> {
+    if (!this.isSupported) {
+      BrowserBookDb.memoryFallback.assets.set(`${bookId}:${relPath}`, dataBase64);
+      return;
+    }
+    const db = await this.openDb();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(STORE_ASSETS, 'readwrite');
+      tx.objectStore(STORE_ASSETS).put({ key: `${bookId}:${relPath}`, dataBase64 });
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    });
+  }
+
+  async getAsset(bookId: string, relPath: string): Promise<string | null> {
+    if (!this.isSupported) {
+      return BrowserBookDb.memoryFallback.assets.get(`${bookId}:${relPath}`) || null;
+    }
+    const db = await this.openDb();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(STORE_ASSETS, 'readonly');
+      const req = tx.objectStore(STORE_ASSETS).get(`${bookId}:${relPath}`);
+      req.onsuccess = () => resolve(req.result ? req.result.dataBase64 : null);
+      req.onerror = () => reject(req.error);
+    });
+  }
+
   async deleteBook(bookId: string): Promise<void> {
     if (!this.isSupported) {
       BrowserBookDb.memoryFallback.manifests.delete(bookId);
       for (const k of Array.from(BrowserBookDb.memoryFallback.chapters.keys())) {
         if (k.startsWith(`${bookId}:`)) BrowserBookDb.memoryFallback.chapters.delete(k);
+      }
+      for (const k of Array.from(BrowserBookDb.memoryFallback.assets.keys())) {
+        if (k.startsWith(`${bookId}:`)) BrowserBookDb.memoryFallback.assets.delete(k);
       }
       return;
     }
@@ -158,17 +189,20 @@ class BrowserBookDb {
     return new Promise((resolve, reject) => {
       const tx = db.transaction([STORE_MANIFESTS, STORE_CHAPTERS, STORE_ASSETS], 'readwrite');
       tx.objectStore(STORE_MANIFESTS).delete(bookId);
-      const chapStore = tx.objectStore(STORE_CHAPTERS);
-      const cursorReq = chapStore.openCursor();
-      cursorReq.onsuccess = (e: any) => {
-        const cursor = e.target.result;
-        if (cursor) {
-          if (String(cursor.key).startsWith(`${bookId}:`)) {
-            cursor.delete();
+      const cleanStore = (store: IDBObjectStore) => {
+        const cursorReq = store.openCursor();
+        cursorReq.onsuccess = (e: any) => {
+          const cursor = e.target.result;
+          if (cursor) {
+            if (String(cursor.key).startsWith(`${bookId}:`)) {
+              cursor.delete();
+            }
+            cursor.continue();
           }
-          cursor.continue();
-        }
+        };
       };
+      cleanStore(tx.objectStore(STORE_CHAPTERS));
+      cleanStore(tx.objectStore(STORE_ASSETS));
       tx.oncomplete = () => resolve();
       tx.onerror = () => reject(tx.error);
     });
@@ -286,6 +320,25 @@ export class WebContentProvider implements IContentProvider {
     return null;
   }
 
+  async getBookAsset(colSlug: string, bookSlug: string, relPath: string): Promise<string | null> {
+    const bookId = `${colSlug}-${bookSlug}`;
+    try {
+      return await this.db.getAsset(bookId, relPath);
+    } catch {
+      return null;
+    }
+  }
+
+  async installBookFromFile(
+    fileName: string,
+    fileData: ArrayBuffer | Uint8Array,
+    onProgress?: (percent: number, stageText: string) => void
+  ): Promise<InstalledBookMeta> {
+    if (onProgress) onProgress(15, `正在解析书籍 ${fileName}...`);
+    const normalized = await bookFormatRegistry.normalizeFile(fileName, fileData);
+    return await this.installNormalizedBundle(normalized.bundle, onProgress);
+  }
+
   async installBookFromAbp(
     abpData: ArrayBuffer | Uint8Array,
     onProgress?: (percent: number, stageText: string) => void
@@ -315,8 +368,17 @@ export class WebContentProvider implements IContentProvider {
 
     // 统一安装校验入口 (P1-C1)
     const bundle = validateInstallPayload(rawJson);
+    return await this.installNormalizedBundle(bundle, onProgress);
+  }
+
+  private async installNormalizedBundle(
+    bundleInput: AbpBundlePayload,
+    onProgress?: (percent: number, stageText: string) => void
+  ): Promise<InstalledBookMeta> {
+    const bundle = validateInstallPayload(bundleInput);
     const manifest: AstroBookManifest = bundle.manifest;
     const chapters: Record<string, AstroBookChapterPayload> = bundle.chapters || {};
+    const assets: Record<string, string> = bundle.assets || {};
 
     const meta: InstalledBookMeta = {
       manifest,
@@ -325,7 +387,7 @@ export class WebContentProvider implements IContentProvider {
     };
 
     // 逆序提交原子安装 (P1-C2)：
-    // 先写章节 → 全部成功后再写 manifest；中途任何异常立即触发 deleteBook 回滚
+    // 先写章节与静态资源 → 全部成功后再写 manifest；中途任何异常立即触发 deleteBook 回滚
     try {
       if (onProgress) onProgress(60, '持久化章节数据...');
 
@@ -336,8 +398,16 @@ export class WebContentProvider implements IContentProvider {
         await this.db.putChapter(manifest.id, slug, payload);
         count++;
         if (onProgress && total > 0) {
-          const pct = 60 + Math.floor((count / total) * 25);
+          const pct = 60 + Math.floor((count / total) * 20);
           onProgress(pct, `持久化章节 (${count}/${total})...`);
+        }
+      }
+
+      const assetEntries = Object.entries(assets);
+      if (assetEntries.length > 0) {
+        if (onProgress) onProgress(82, '写入书籍配图与字体资源...');
+        for (const [relPath, b64] of assetEntries) {
+          await this.db.putAsset(manifest.id, relPath, b64);
         }
       }
 

@@ -28,12 +28,12 @@ import AlignmentHeatmapSheet from './bilingual/AlignmentHeatmapSheet.astro';
 <script is:inline>
   (function() {
     try {
-      if (localStorage.getItem('astrolib_typography_indent') === 'false') {
+      if (!document.documentElement.dataset.sourceFormat && localStorage.getItem('astrolib_typography_indent') === 'false') {
         document.documentElement.dataset.paragraphIndent = 'false';
       }
-      var p = localStorage.getItem('astrolib_punct_style');
+      var p = !document.documentElement.dataset.sourceFormat ? localStorage.getItem('astrolib_punct_style') : null;
       if (p) document.documentElement.dataset.punctStyle = p;
-      var fs = localStorage.getItem('astrolib_font_size');
+      var fs = !document.documentElement.dataset.sourceFormat ? localStorage.getItem('astrolib_font_size') : null;
       if (fs) {
         var pxVal = parseFloat(fs);
         if (!isNaN(pxVal)) {

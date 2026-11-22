@@ -95,6 +95,12 @@ export const CHAT_DEFAULT_SUGGESTIONS = [
   '这道例题的解题步骤是什么？',
 ];
 
+export const CHAT_LITERARY_SUGGESTIONS = [
+  '梳理本章的核心情节与人物关系',
+  '解读本章的关键细节、伏笔与心理描写',
+  '概括本节涉及的背景设定与译注要点',
+];
+
 export function getElementDataConfig(el: Element): any {
   try { return JSON.parse(el.getAttribute('data-config') || '{}'); } catch { return {}; }
 }

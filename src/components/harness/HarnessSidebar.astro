@@ -1,0 +1,63 @@
+---
+/**
+ * src/components/harness/HarnessSidebar.astro
+ * ============================================================================
+ * Agent Harness 左侧历史会话与项目管理边栏
+ * ============================================================================
+ */
+---
+
+<aside class="harness-sidebar" id="harness-sidebar">
+  <div class="harness-sidebar__actions">
+    <button type="button" class="harness-new-conv-btn" id="harness-btn-new-conv" title="创建新对话 (Ctrl+N)">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+        <line x1="12" y1="5" x2="12" y2="19"></line>
+        <line x1="5" y1="12" x2="19" y2="12"></line>
+      </svg>
+      <span>新建对话</span>
+    </button>
+
+    <div class="harness-quick-nav-list">
+      <div class="harness-quick-nav-item" id="harness-nav-automations" title="自动化任务流">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"></circle>
+          <polyline points="12 6 12 12 16 14"></polyline>
+        </svg>
+        <span>Automations</span>
+      </div>
+      <div class="harness-quick-nav-item" id="harness-nav-customizations" title="智能体自定义配置">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M3 21h18M3 7v1a3 3 0 0 0 6 0V7m0 1a3 3 0 0 0 6 0V7m0 1a3 3 0 0 0 6 0V7H3l2-4h14l2 4"></path>
+        </svg>
+        <span>Customizations</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="harness-sidebar__projects">
+    <div class="harness-project-header">
+      <span>Projects</span>
+      <div style="display: flex; gap: 4px;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="6 9 12 15 18 9"></polyline>
+        </svg>
+      </div>
+    </div>
+
+    <div class="harness-project-tree">
+      <div class="harness-project-item active">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+        </svg>
+        <span>AstroLib</span>
+      </div>
+
+      <div class="harness-session-list" id="harness-session-list">
+        <div class="harness-session-item active" data-session-id="s-default">
+          <span class="harness-session-item__title">Harness 首屏与架构设计</span>
+          <span class="harness-session-item__time">now</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</aside>

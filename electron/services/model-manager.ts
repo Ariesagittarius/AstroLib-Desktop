@@ -9,6 +9,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { EnvDetector } from './env-detector.ts';
 import type { ModelInfoPayload, ModelDownloadProgress, ModelInstallStatus } from '../types.ts';
+import { createSanitizedChildEnv } from '../../src/core/security/child-env.ts';
 
 interface ModelRegistryEntry {
   id: string;
@@ -150,7 +151,6 @@ export class ModelManager {
       path.join(diag.modelsDir, entry.id),
       path.join(this.projectRoot, 'node_modules', '@huggingface', 'transformers', '.cache', entry.repo),
       path.join(diag.huggingFaceCacheDir, '..', 'modelscope', 'models', entry.repo.replace('/', '--'), 'snapshots', 'master'),
-      'C:\\Users\\白羊欣存\\.cache\\modelscope\\models\\Qwen--Qwen3-0.6B-Base\\snapshots\\master',
     ];
 
     let foundPath: string | null = null;
@@ -278,11 +278,24 @@ export class ModelManager {
     let lastTime = startTime;
     let lastBytes = 0;
 
+    // 校验镜像 URL 严格为可信 HTTPS 地址，防止任意协议/命令注入
+    let safeMirrorUrl = 'https://hf-mirror.com';
+    try {
+      const parsedMirror = new URL(mirrorUrl || 'https://hf-mirror.com');
+      const allowedHosts = new Set(['hf-mirror.com', 'huggingface.co']);
+      if (parsedMirror.protocol !== 'https:' || !allowedHosts.has(parsedMirror.hostname)) {
+        throw new Error(`不受信任的 HuggingFace 镜像域名: ${parsedMirror.hostname}`);
+      }
+      safeMirrorUrl = parsedMirror.origin;
+    } catch (err: any) {
+      throw new Error(err?.message || `非法的模型镜像 URL: ${mirrorUrl}`);
+    }
+
     // 针对 MiniLM：通过 Transformers.js 自动下载机制或镜像拉取
     if (entry.id === 'minilm-l12') {
       try {
         const { pipeline, env } = await import('@huggingface/transformers');
-        env.remoteHost = mirrorUrl.replace(/\/$/, '') + '/';
+        env.remoteHost = safeMirrorUrl.replace(/\/$/, '') + '/';
         env.cacheDir = targetDir;
 
         const pipe = await pipeline('feature-extraction', entry.repo, {
@@ -344,22 +357,27 @@ export class ModelManager {
       throw new Error('未找到 Python 环境，无法下载 Qwen3 权重');
     }
 
-    // 在 Python 脚本中调用 snapshot_download
-    const pythonCode = `
-import os, sys
-os.environ["HF_ENDPOINT"] = "${mirrorUrl}"
-try:
-    from huggingface_hub import snapshot_download
-    snapshot_download(repo_id="${entry.repo}", local_dir=r"${targetDir}", max_workers=4)
-    print("SUCCESS")
-except Exception as e:
-    print(f"ERROR: {e}", file=sys.stderr)
-    sys.exit(1)
-`;
+    // 在 Python 脚本中通过环境变量读取参数，彻底消除代码字符串拼接注入风险
+    const pythonCode = [
+      'import os, sys',
+      'try:',
+      '    from huggingface_hub import snapshot_download',
+      '    snapshot_download(repo_id=os.environ["ASTROLIB_HF_REPO"], local_dir=os.environ["ASTROLIB_HF_TARGET"], max_workers=4)',
+      '    print("SUCCESS")',
+      'except Exception as e:',
+      '    print(f"ERROR: {e}", file=sys.stderr)',
+      '    sys.exit(1)',
+    ].join('\n');
 
     const { spawn } = await import('node:child_process');
     const child = spawn(diag.pythonPath, ['-c', pythonCode], {
       signal: abortController.signal,
+      env: createSanitizedChildEnv({
+        HF_ENDPOINT: safeMirrorUrl,
+        ASTROLIB_HF_REPO: entry.repo,
+        ASTROLIB_HF_TARGET: targetDir,
+        PYTHONIOENCODING: 'utf-8',
+      }),
     });
 
     child.on('error', (err) => {

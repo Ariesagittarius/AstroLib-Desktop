@@ -43,11 +43,14 @@ const WIDTH_MAP: Record<SideloadWidthTier, string> = {
 
 export const SIDEBAR_RIGHT_STORAGE_KEY = 'astrolib_sidebar_right_collapsed';
 export const SIDELOAD_ACTIVE_PANEL_KEY = 'astrolib_sideload_active_panel';
+export const READER_RIGHT_TOC_WIDTH_KEY = 'astrolib_reader_right_toc_width';
+export const READER_RIGHT_PANEL_WIDTH_KEY = 'astrolib_reader_right_panel_width';
 
 class SideloadManager {
   private activePanelId = 'toc';
   private previousPanelId: string | null = null;
   private panels = new Map<string, SideloadPanelConfig>();
+  private customWidthOverrides = new Map<'toc' | 'panel', number>();
   private listeners = new Set<(state: SideloadState) => void>();
   private isInitialized = false;
 
@@ -81,6 +84,12 @@ class SideloadManager {
       id: 'focus',
       title: '关注点透镜',
       widthTier: 'medium',
+      allowDrawer: true,
+    });
+    this.register({
+      id: 'annotations',
+      title: '批注与笔记',
+      widthTier: 'wide',
       allowDrawer: true,
     });
   }
@@ -287,13 +296,81 @@ class SideloadManager {
     this.syncDom();
   }
 
+  private getWidthBucket(panelId: string = this.activePanelId): 'toc' | 'panel' {
+    return panelId === 'toc' ? 'toc' : 'panel';
+  }
+
+  private getCustomWidthStorageKey(bucket: 'toc' | 'panel'): string {
+    return bucket === 'toc' ? READER_RIGHT_TOC_WIDTH_KEY : READER_RIGHT_PANEL_WIDTH_KEY;
+  }
+
+  public getCustomWidthPx(panelId: string = this.activePanelId): number | null {
+    if (panelId === 'none') return null;
+    const bucket = this.getWidthBucket(panelId);
+    if (this.customWidthOverrides.has(bucket)) {
+      return this.customWidthOverrides.get(bucket)!;
+    }
+    try {
+      if (typeof localStorage !== 'undefined') {
+        const raw = localStorage.getItem(this.getCustomWidthStorageKey(bucket));
+        if (raw) {
+          const parsed = Number(raw);
+          if (Number.isFinite(parsed) && parsed >= 160 && parsed <= 900) {
+            this.customWidthOverrides.set(bucket, Math.round(parsed));
+            return Math.round(parsed);
+          }
+        }
+      }
+    } catch {}
+    return null;
+  }
+
+  public setCustomWidth(widthPx: number | null, persist = true): void {
+    if (this.activePanelId === 'none') return;
+    const bucket = this.getWidthBucket(this.activePanelId);
+    if (widthPx === null || !Number.isFinite(widthPx)) {
+      this.customWidthOverrides.delete(bucket);
+      if (persist) {
+        try {
+          if (typeof localStorage !== 'undefined') {
+            localStorage.removeItem(this.getCustomWidthStorageKey(bucket));
+          }
+        } catch {}
+      }
+    } else {
+      const rounded = Math.round(widthPx);
+      this.customWidthOverrides.set(bucket, rounded);
+      if (persist) {
+        try {
+          if (typeof localStorage !== 'undefined') {
+            localStorage.setItem(this.getCustomWidthStorageKey(bucket), String(rounded));
+          }
+        } catch {}
+      }
+    }
+
+    if (typeof document !== 'undefined') {
+      const state = this.getState();
+      document.documentElement.style.setProperty('--sl-sideload-width', state.widthValue, 'important');
+    }
+    if (persist) {
+      this.syncDom();
+    }
+  }
+
   /**
    * 获取当前侧载状态
    */
   public getState(): SideloadState {
     const config = this.panels.get(this.activePanelId);
     const widthTier = config ? config.widthTier : (this.activePanelId === 'none' ? 'none' : 'compact');
-    const widthValue = config?.customWidth || WIDTH_MAP[widthTier];
+    const customPx = this.getCustomWidthPx(this.activePanelId);
+    const widthValue =
+      this.activePanelId === 'none'
+        ? WIDTH_MAP.none
+        : customPx !== null
+          ? `${customPx}px`
+          : config?.customWidth || WIDTH_MAP[widthTier];
     const isDrawerOpen = typeof window !== 'undefined'
       ? window.matchMedia('(max-width: 71.999rem)').matches && this.activePanelId !== 'toc' && this.activePanelId !== 'none'
       : false;
@@ -367,8 +444,16 @@ class SideloadManager {
       document.querySelector('.custom-page-sidebar')?.classList.remove('has-focus-active');
     }
 
+    if (state.activePanelId === 'annotations') {
+      body.classList.add('annotations-sidebar-active');
+      document.querySelector('.custom-page-sidebar')?.classList.add('has-annotations-active');
+    } else {
+      body.classList.remove('annotations-sidebar-active');
+      document.querySelector('.custom-page-sidebar')?.classList.remove('has-annotations-active');
+    }
+
     // 2. 注入核心 CSS 变量（驱动宽度平滑过渡）
-    root.style.setProperty('--sl-sideload-width', state.widthValue);
+    root.style.setProperty('--sl-sideload-width', state.widthValue, 'important');
 
     // 3. 同步侧载面板 DOM 的 active / hidden 状态
     document.querySelectorAll<HTMLElement>('.sideload-panel-view').forEach((panel) => {

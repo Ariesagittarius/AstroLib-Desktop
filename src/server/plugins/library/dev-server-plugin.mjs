@@ -15,16 +15,45 @@ import fs from 'node:fs';
 import path from 'node:path';
 import zlib from 'node:zlib';
 import { TaskManager } from '../doc-ingestion/task-manager.ts';
+import { mapIngestTaskToEntityStatus } from '../../../features/library/core/entity-status.ts';
 import { validateInstallPayload, AbpInstallError } from '../../../services/content-provider/install-validation.ts';
+import { bookFormatRegistry } from '../../../core/book-formats/registry.ts';
 
 const LIBRARY_PATH_PREFIX = '/api/library';
+
+const DEV_MIME_TYPES = {
+  '.json': 'application/json; charset=utf-8',
+  '.css': 'text/css; charset=utf-8',
+  '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.webp': 'image/webp',
+  '.svg': 'image/svg+xml',
+  '.gif': 'image/gif',
+  '.woff': 'font/woff',
+  '.woff2': 'font/woff2',
+  '.ttf': 'font/ttf',
+  '.otf': 'font/otf',
+};
+
+function sendStaticAssetFile(res, filePath) {
+  const ext = path.extname(filePath).toLowerCase();
+  const mime = DEV_MIME_TYPES[ext] || 'application/octet-stream';
+  res.writeHead(200, {
+    'Content-Type': mime,
+    'Cache-Control': 'no-cache',
+  });
+  fs.createReadStream(filePath).pipe(res);
+}
+
+function isSafeSubPath(baseDir, resolvedPath) {
+  const rel = path.relative(baseDir, resolvedPath);
+  return Boolean(rel) && !rel.startsWith('..') && !path.isAbsolute(rel);
+}
 
 function sendJson(res, statusCode, data) {
   res.writeHead(statusCode, {
     'Content-Type': 'application/json; charset=utf-8',
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS, PUT, DELETE',
-    'Access-Control-Allow-Headers': '*',
     'Cache-Control': 'no-cache, no-store, must-revalidate',
   });
   res.end(JSON.stringify(data));
@@ -80,22 +109,73 @@ export function devLibraryServerPlugin() {
     configureServer(server) {
       server.middlewares.use(async (req, res, next) => {
         const rawUrl = req.url || '';
+        const urlObj = new URL(rawUrl, 'http://localhost');
+        const pathname = urlObj.pathname;
+
+        // 0. 开发态只读静态资产伺服 (.tmp/dev-abp-packs 与 artifacts/，严格不触及 public/)
+        if (req.method === 'GET' && pathname.startsWith('/abp-packs/')) {
+          const decodedRel = decodeURIComponent(pathname.slice('/abp-packs/'.length));
+          if (!decodedRel.includes('..') && !decodedRel.includes('\\')) {
+            const devBase = path.resolve(projectRoot, '.tmp/dev-abp-packs');
+            const artBase = path.resolve(projectRoot, 'artifacts/abp-packs');
+            for (const base of [devBase, artBase]) {
+              const candidate = path.resolve(base, decodedRel);
+              if (isSafeSubPath(base, candidate) && fs.existsSync(candidate) && fs.statSync(candidate).isFile()) {
+                return sendStaticAssetFile(res, candidate);
+              }
+            }
+          }
+        }
+
+        if (req.method === 'GET' && pathname.startsWith('/ai-index/') && pathname.endsWith('.json')) {
+          const fileName = decodeURIComponent(pathname.slice('/ai-index/'.length));
+          const bookKey = fileName.replace(/\.json$/i, '');
+          if (bookKey && !bookKey.includes('..') && !bookKey.includes('/') && !bookKey.includes('\\')) {
+            const devAiPath = path.resolve(projectRoot, '.tmp/dev-abp-packs', bookKey, 'ai-index.json');
+            const artAiPath = path.resolve(projectRoot, 'artifacts/ai-index', `${bookKey}.json`);
+            for (const candidate of [devAiPath, artAiPath]) {
+              if (fs.existsSync(candidate) && fs.statSync(candidate).isFile()) {
+                return sendStaticAssetFile(res, candidate);
+              }
+            }
+          }
+        }
+
+        const assetMatch =
+          req.method === 'GET'
+            ? pathname.match(/^\/collections\/([^/]+)\/([^/]+)\/((?:assets|styles|fonts|images)\/.+)$/)
+            : null;
+        if (assetMatch) {
+          const colSlug = decodeURIComponent(assetMatch[1]);
+          const bookSlug = decodeURIComponent(assetMatch[2]);
+          const relAsset = decodeURIComponent(assetMatch[3]);
+          if (
+            !colSlug.includes('..') &&
+            !bookSlug.includes('..') &&
+            !relAsset.includes('..') &&
+            !relAsset.includes('\\')
+          ) {
+            const devBookDir = path.resolve(projectRoot, '.tmp/dev-abp-packs', `${colSlug}-${bookSlug}`);
+            const artBookDir = path.resolve(projectRoot, 'artifacts/abp-packs', `${colSlug}-${bookSlug}`);
+            for (const baseDir of [devBookDir, artBookDir]) {
+              const candidate = path.resolve(baseDir, relAsset);
+              if (isSafeSubPath(baseDir, candidate) && fs.existsSync(candidate) && fs.statSync(candidate).isFile()) {
+                return sendStaticAssetFile(res, candidate);
+              }
+            }
+          }
+        }
+
         if (!rawUrl.startsWith(LIBRARY_PATH_PREFIX)) {
           return next();
         }
 
         if (req.method === 'OPTIONS') {
           res.writeHead(204, {
-            'Access-Control-Allow-Origin': '*',
-            'Access-Control-Allow-Methods': 'GET, POST, OPTIONS, PUT, DELETE',
-            'Access-Control-Allow-Headers': '*',
-            'Access-Control-Max-Age': '86400',
+            'Cache-Control': 'no-store',
           });
           return res.end();
         }
-
-        const urlObj = new URL(rawUrl, 'http://localhost');
-        const pathname = urlObj.pathname;
 
         try {
           const store = getStore();
@@ -103,8 +183,62 @@ export function devLibraryServerPlugin() {
           // 1. 获取全库统一实体 (书籍 + 文献)
           if (req.method === 'GET' && pathname === `${LIBRARY_PATH_PREFIX}/entities`) {
             const entities = [];
+            const seenBookIds = new Set();
 
-            // A. 读取开发产物或临时目录的 catalog.json 书籍（不再读取 public/abp-packs）
+            const pushBookManifest = (b, fallbackTs) => {
+              const colSlug = b.colSlug || 'general';
+              const bookSlug = b.slug;
+              if (!bookSlug) return;
+              const entityId = `book:${colSlug}-${bookSlug}`;
+              if (seenBookIds.has(entityId)) return;
+              seenBookIds.add(entityId);
+              const userMeta = store.customMeta[entityId] || {};
+              const sourceFormat = b.sourceFormat || 'abp';
+              entities.push({
+                id: entityId,
+                kind: 'book',
+                title: b.title,
+                subtitle: b.subtitle || b.description || '',
+                author: b.author || '',
+                publisher: b.publisher || '',
+                cover: b.cover || '/favicon.png',
+                category: colSlug,
+                shelfId: userMeta.shelfId,
+                createdAt: (b.updatedAt ? Date.parse(b.updatedAt) : 0) || fallbackTs,
+                lastReadAt: userMeta.lastReadAt,
+                readProgress: userMeta.readProgress || 0,
+                status: 'ready',
+                metadata: {
+                  colSlug,
+                  bookSlug,
+                  entryPoint: b.entryPoint || 'chapter-01',
+                  abpPackPath: `/abp-packs/${colSlug}-${bookSlug}`,
+                  edition: b.edition,
+                  isbn: b.isbn,
+                  sourceFormat,
+                  readingProfile: b.readingProfile || (sourceFormat === 'epub' ? 'literary' : 'academic'),
+                },
+              });
+            };
+
+            // A.1 优先扫描开发态已上传安装目录 (.tmp/dev-abp-packs/*/manifest.json)
+            const devPacksDir = path.resolve(projectRoot, '.tmp/dev-abp-packs');
+            if (fs.existsSync(devPacksDir)) {
+              try {
+                for (const entry of fs.readdirSync(devPacksDir, { withFileTypes: true })) {
+                  if (!entry.isDirectory() || entry.name.startsWith('.')) continue;
+                  const mf = path.join(devPacksDir, entry.name, 'manifest.json');
+                  if (fs.existsSync(mf)) {
+                    try {
+                      const m = JSON.parse(fs.readFileSync(mf, 'utf8'));
+                      pushBookManifest(m, Date.now());
+                    } catch {}
+                  }
+                }
+              } catch {}
+            }
+
+            // A.2 读取开发产物或临时目录的 catalog.json 书籍（不再读取 public/abp-packs）
             const candidateCatalogs = [
               path.resolve(projectRoot, 'artifacts/abp-packs/catalog.json'),
               path.resolve(projectRoot, '.tmp/dev-abp-packs/catalog.json'),
@@ -114,31 +248,7 @@ export function devLibraryServerPlugin() {
               try {
                 const cat = JSON.parse(fs.readFileSync(catalogPath, 'utf8'));
                 for (const b of cat.books || []) {
-                  const entityId = `book:${b.colSlug}-${b.slug}`;
-                  const userMeta = store.customMeta[entityId] || {};
-                  entities.push({
-                    id: entityId,
-                    kind: 'book',
-                    title: b.title,
-                    subtitle: b.subtitle || '',
-                    author: b.author || 'AstroLib',
-                    publisher: b.publisher || '高等教育出版社',
-                    cover: b.cover || '/favicon.png',
-                    category: b.colSlug || 'math',
-                    shelfId: userMeta.shelfId,
-                    createdAt: Date.now() - 86400000 * 15,
-                    lastReadAt: userMeta.lastReadAt,
-                    readProgress: userMeta.readProgress || 0,
-                    status: 'ready',
-                    metadata: {
-                      colSlug: b.colSlug,
-                      bookSlug: b.slug,
-                      entryPoint: b.entryPoint || 'chapter-01',
-                      abpPackPath: `/abp-packs/${b.colSlug}-${b.slug}`,
-                      edition: b.edition,
-                      isbn: b.isbn,
-                    },
-                  });
+                  pushBookManifest(b, Date.now() - 86400000 * 15);
                 }
               } catch {}
             }
@@ -152,23 +262,13 @@ export function devLibraryServerPlugin() {
                 const entityId = `paper:${taskId}`;
                 const userMeta = store.customMeta[entityId] || {};
 
-                let entityStatus = 'ready';
-                let statusMsg = '';
-                if (t.status === 'completed') {
-                  entityStatus = 'ready';
-                } else if (t.status === 'failed') {
-                  entityStatus = 'error';
-                  statusMsg = t.error || '解析失败';
-                } else {
-                  entityStatus = 'processing';
-                  statusMsg = `MinerU 解析中 ${t.progress || 0}%`;
-                }
+                const mappedStatus = mapIngestTaskToEntityStatus(t, taskMgr.isJobActive(taskId));
 
                 entities.push({
                   id: entityId,
                   kind: 'paper',
                   title: t.fileName.replace(/\.pdf$/i, ''),
-                  subtitle: `PDF 学术文献 · ${t.engine === 'api' ? '云端 MinerU' : '本地引擎'}`,
+                  subtitle: `PDF 学术文献 · ${t.engine === 'api' ? '云端 MinerU' : t.engine === 'agent' ? 'Agent 通道' : '本地引擎'}`,
                   author: 'MinerU 学术解析',
                   publisher: '学术文献库',
                   cover: '/astrolib-logo.webp',
@@ -177,8 +277,8 @@ export function devLibraryServerPlugin() {
                   createdAt: t.createdAt || Date.now(),
                   lastReadAt: userMeta.lastReadAt,
                   readProgress: userMeta.readProgress || 0,
-                  status: entityStatus,
-                  statusMessage: statusMsg,
+                  status: mappedStatus.status,
+                  statusMessage: mappedStatus.statusMessage,
                   metadata: {
                     taskId: taskId,
                     originPdfUrl: `/api/ingest/pdf?taskId=${taskId}`,
@@ -187,6 +287,7 @@ export function devLibraryServerPlugin() {
                     hasAnnotations: true,
                     fileSizeBytes: t.fileSize,
                     totalPages: t.pageCount,
+                    pageRanges: t.pageRanges,
                   },
                 });
               }
@@ -234,31 +335,39 @@ export function devLibraryServerPlugin() {
             return sendJson(res, 200, { success: true });
           }
 
-          // 5. 上传并安装 .abp 书籍包（开发态写入 .tmp/dev-abp-packs，严禁污染 public/）
-          if (req.method === 'POST' && pathname === `${LIBRARY_PATH_PREFIX}/upload-abp`) {
+          // 5. 统一上传并安装书籍文件 (.abp / .epub)（开发态写入 .tmp/dev-abp-packs，严禁污染 public/）
+          if (
+            req.method === 'POST' &&
+            (pathname === `${LIBRARY_PATH_PREFIX}/upload-abp` || pathname === `${LIBRARY_PATH_PREFIX}/upload-book`)
+          ) {
             const fileBuf = await readBufferBody(req);
             if (!fileBuf || fileBuf.length === 0) {
               return sendJson(res, 400, { error: '上传内容为空', code: 'INVALID_PAYLOAD' });
             }
+            const rawHeaderName = req.headers?.['x-file-name'];
+            let fileName = pathname.endsWith('/upload-abp') ? 'book.abp' : 'book.epub';
+            if (typeof rawHeaderName === 'string' && rawHeaderName.trim()) {
+              try {
+                fileName = decodeURIComponent(rawHeaderName.trim());
+              } catch {
+                fileName = rawHeaderName.trim();
+              }
+            }
             try {
-              let decompressed;
+              let normalized;
               try {
-                decompressed = zlib.gunzipSync(fileBuf);
+                normalized = await bookFormatRegistry.normalizeFile(
+                  fileName,
+                  new Uint8Array(fileBuf.buffer, fileBuf.byteOffset, fileBuf.byteLength)
+                );
               } catch (err) {
-                return sendJson(res, 400, { error: `解压 .abp 数据包失败: ${err.message}`, code: 'DECOMPRESS_FAILED' });
+                const code = err instanceof AbpInstallError ? err.code : 'NORMALIZE_FAILED';
+                return sendJson(res, 400, { error: err.message, code });
               }
 
-              let rawJson;
-              try {
-                rawJson = JSON.parse(decompressed.toString('utf8'));
-              } catch (err) {
-                return sendJson(res, 400, { error: `解析 ABP JSON 失败: ${err.message}`, code: 'JSON_PARSE_FAILED' });
-              }
-
-              // 统一安装校验入口 (P1-C1)
               let bundle;
               try {
-                bundle = validateInstallPayload(rawJson);
+                bundle = validateInstallPayload(normalized.bundle);
               } catch (err) {
                 const code = err instanceof AbpInstallError ? err.code : 'VALIDATION_FAILED';
                 return sendJson(res, 400, { error: err.message, code });
@@ -299,6 +408,23 @@ export function devLibraryServerPlugin() {
                     fs.mkdirSync(path.dirname(destAsset), { recursive: true });
                     fs.writeFileSync(destAsset, Buffer.from(b64, 'base64'));
                   }
+                }
+
+                // 3.1 写入自包含 AI 索引与原始归档
+                if (bundle.aiIndex) {
+                  fs.writeFileSync(path.join(stagingDir, 'ai-index.json'), JSON.stringify(bundle.aiIndex, null, 2), 'utf8');
+                }
+                if (normalized.sourceArchive && normalized.sourceArchive.bytes?.byteLength > 0) {
+                  const archiveDir = path.join(stagingDir, 'source');
+                  fs.mkdirSync(archiveDir, { recursive: true });
+                  fs.writeFileSync(
+                    path.join(archiveDir, path.basename(normalized.sourceArchive.fileName || 'original.epub')),
+                    Buffer.from(
+                      normalized.sourceArchive.bytes.buffer,
+                      normalized.sourceArchive.bytes.byteOffset,
+                      normalized.sourceArchive.bytes.byteLength
+                    )
+                  );
                 }
 
                 // 4. 写入习题
@@ -351,7 +477,7 @@ export function devLibraryServerPlugin() {
                 throw writeErr;
               }
             } catch (err) {
-              return sendJson(res, 500, { error: `安装 ABP 失败: ${err.message}`, code: 'INSTALL_FAILED' });
+              return sendJson(res, 500, { error: `安装书籍失败: ${err.message}`, code: 'INSTALL_FAILED' });
             }
           }
 

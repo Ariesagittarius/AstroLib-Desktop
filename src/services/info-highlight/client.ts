@@ -190,9 +190,13 @@ export class InfoHighlightClient {
 
     if (statusText) {
       if (state === 'analyzing') {
-        statusText.textContent = 'Qwen 模型本地推理中...';
+        const isWarm = (this as any)._hasCompletedWarmRun === true;
+        statusText.textContent = isWarm
+          ? 'Qwen 模型本地推理中...'
+          : '正在按需载入 Qwen3 本地模型并推理（首次约 3–5 秒）...';
         statusText.className = 'focus-status is-analyzing';
       } else if (state === 'ready') {
+        (this as any)._hasCompletedWarmRun = true;
         statusText.textContent = '关注点透镜已激活';
         statusText.className = 'focus-status is-ready';
       } else if (state === 'error') {

@@ -15,6 +15,7 @@ import { BipartiteMatcher } from '../../../services/bilingual/bipartite-matcher.
 import { BilingualAlignerClient } from '../../../services/bilingual/aligner-client.ts';
 import { QwenEngine } from './qwen-engine.ts';
 import type { BilingualModelInfo } from '../../../services/bilingual/types.ts';
+import { LocalModelIdleController, type RuntimeModelStatus } from '../../../services/local-model-lifecycle.ts';
 
 export interface AlignResultPayload {
   matrix: number[][];
@@ -42,6 +43,9 @@ export class BilingualOnnxEngine {
   private isLoading = false;
   private loadError: Error | null = null;
   private lastUsedTimestamp = 0;
+  private activeCalls = 0;
+  private activeDevice = 'unloaded';
+  private idleCtrl = new LocalModelIdleController();
   private readonly modelName = 'Xenova/paraphrase-multilingual-MiniLM-L12-v2';
 
   static getInstance(): BilingualOnnxEngine {
@@ -51,12 +55,52 @@ export class BilingualOnnxEngine {
     return this.instance;
   }
 
+  private isModelLoaded = (): boolean => Boolean(this.pipelineInstance);
+  private isModelBusy = (): boolean => this.isLoading || this.activeCalls > 0;
+  private touchIdleTimer(): void {
+    this.lastUsedTimestamp = Date.now();
+    this.idleCtrl.touch(this.isModelBusy, this.isModelLoaded, () => this.dispose());
+  }
+
+  public setIdleTimeoutMs(ms: number): void {
+    this.idleCtrl.setIdleTimeoutMs(ms, this.isModelBusy, this.isModelLoaded, () => this.dispose());
+  }
+
+  public getRuntimeInfo(): RuntimeModelStatus {
+    const loaded = this.isModelLoaded();
+    return {
+      id: 'minilm-align',
+      name: 'MiniLM-L12 双语向量',
+      loaded,
+      initializing: this.isLoading,
+      device: loaded ? this.activeDevice : 'unloaded',
+      vramMB: 0,
+      lastUsedAt: this.idleCtrl.getLastUsedAt() ?? (this.lastUsedTimestamp || null),
+      idleTimeoutMs: this.idleCtrl.getIdleTimeoutMs(),
+    };
+  }
+
+  public async dispose(): Promise<void> {
+    this.idleCtrl.reset();
+    const pipe = this.pipelineInstance;
+    this.pipelineInstance = null;
+    this.activeDevice = 'unloaded';
+    this.lastUsedTimestamp = 0;
+    try {
+      if (pipe && typeof pipe.dispose === 'function') {
+        await pipe.dispose();
+      }
+    } catch {
+      // ignore disposal errors on ONNX session teardown
+    }
+  }
+
   /**
-   * 惰性获取推理 Pipeline（优先 DML，回退 CPU）
+   * 惰性获取推理 Pipeline（优先 CPU q8，回退 DML）
    */
   private async getPipeline(): Promise<any> {
     if (this.pipelineInstance) {
-      this.lastUsedTimestamp = Date.now();
+      this.touchIdleTimer();
       return this.pipelineInstance;
     }
 
@@ -65,7 +109,10 @@ export class BilingualOnnxEngine {
       while (this.isLoading) {
         await new Promise((r) => setTimeout(r, 100));
       }
-      if (this.pipelineInstance) return this.pipelineInstance;
+      if (this.pipelineInstance) {
+        this.touchIdleTimer();
+        return this.pipelineInstance;
+      }
     }
 
     this.isLoading = true;
@@ -87,16 +134,20 @@ export class BilingualOnnxEngine {
       // 使用高效且内存稳定的 CPU / AVX2 引擎（INT8 q8 模型在 CPU 原生量化执行速度最优，且彻底免疫 Direct3D 12 缓冲区溢出与 TDR 崩溃）
       const loadWithTimeout = async () => {
         try {
-          return await pipeline('feature-extraction', this.modelName, {
+          const pipe = await pipeline('feature-extraction', this.modelName, {
             dtype: 'q8',
             device: 'cpu',
           });
+          this.activeDevice = 'cpu';
+          return pipe;
         } catch (e) {
           console.warn('[bilingual-engine] CPU load failed, attempting DML fallback:', e);
-          return await pipeline('feature-extraction', this.modelName, {
+          const pipe = await pipeline('feature-extraction', this.modelName, {
             dtype: 'q8',
             device: 'dml',
           });
+          this.activeDevice = 'dml';
+          return pipe;
         }
       };
 
@@ -105,7 +156,7 @@ export class BilingualOnnxEngine {
       );
 
       this.pipelineInstance = await Promise.race([loadWithTimeout(), timeoutPromise]);
-      this.lastUsedTimestamp = Date.now();
+      this.touchIdleTimer();
       return this.pipelineInstance;
     } catch (err: any) {
       console.warn('[bilingual-engine] Model load error:', err.message || err);
@@ -120,10 +171,11 @@ export class BilingualOnnxEngine {
    * 批量计算文本嵌入向量（分批 Mini-Batch 推理，彻底避免大数组导致的内存暴涨与命令缓冲区溢出）
    */
   async embedTexts(texts: string[], batchSize = 16): Promise<number[][] | null> {
-    const pipe = await this.getPipeline();
-    if (!pipe) return null;
-
+    this.activeCalls++;
     try {
+      const pipe = await this.getPipeline();
+      if (!pipe) return null;
+
       // 过滤和清洗文本：截断至 1024 字符，兼顾完整语义与 Tokenizer 效率
       const cleanTexts = texts.map((t) => (t && t.trim().length > 0 ? t.trim().slice(0, 1024) : 'empty'));
       const embeddings: number[][] = [];
@@ -146,6 +198,11 @@ export class BilingualOnnxEngine {
     } catch (err) {
       console.warn('[bilingual-engine] Embed error, falling back to lexical:', err);
       return null;
+    } finally {
+      this.activeCalls = Math.max(0, this.activeCalls - 1);
+      if (this.pipelineInstance) {
+        this.touchIdleTimer();
+      }
     }
   }
 

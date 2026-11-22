@@ -41,7 +41,8 @@ export function initSpaNavigationEngine(): void {
         if (!isNaN(val) && val > 0) return val;
       }
     } catch {}
-    return 5;
+    const isEmbeddedIframe = typeof window !== 'undefined' && window.self !== window.top;
+    return isEmbeddedIframe ? 2 : 5;
   }
 
   /**
@@ -164,7 +165,7 @@ export function initSpaNavigationEngine(): void {
 
     stripScripts(mainPane);
     // 清除离屏 main-pane 中将被 Portal 到 body 的多余重复组件外壳，保持母版 DOM 纯净
-    mainPane.querySelectorAll('#dsh-inspector-root, #dsh-editor-root, #dsh-feedback-root, #dsh-chat-root, #dsh-relation-graph-root').forEach((el) => el.remove());
+    mainPane.querySelectorAll('#dsh-chat-root').forEach((el) => el.remove());
 
     const rightSidebar = doc.querySelector('.right-sidebar-container');
     if (rightSidebar) stripScripts(rightSidebar);
@@ -384,16 +385,9 @@ export function initSpaNavigationEngine(): void {
       target.closest('.ft-panel') ||
       target.closest('.ft-backdrop') ||
       target.closest('starlight-feature-toggles') ||
-      target.closest('#dsh-inspector-root') ||
-      target.closest('.insp-root') ||
-      target.closest('.insp-panel') ||
-      target.closest('.insp-backdrop') ||
       target.closest('#dsh-chat-root') ||
       target.closest('.chat-drawer') ||
       target.closest('.chat-backdrop') ||
-      target.closest('#dsh-feedback-root') ||
-      target.closest('.feedback-modal') ||
-      target.closest('.dsh-relation-graph-modal') ||
       target.closest('[role="dialog"]') ||
       target.closest('dialog') ||
       target.closest('[aria-modal="true"]')
@@ -554,9 +548,6 @@ export function initSpaNavigationEngine(): void {
       // 5. 立即触发既有初始化管线（大纲重建、公式交互、图文联动等，直接在真实 live DOM 上初始化，零闪烁）
       document.dispatchEvent(new CustomEvent('astro:page-load'));
 
-      // 6. 触发全书空闲智能预热
-      triggerIdlePrewarming();
-
     } catch (err) {
       finishProgressBar();
       console.error('[SPA Navigation Error]', err);
@@ -599,111 +590,6 @@ export function initSpaNavigationEngine(): void {
     currentPathname = targetPath;
     return loadPage(url);
   };
-
-  // 智能预热引擎（Configurable Pre-warming Queue）
-  let prewarmQueue: URL[] = [];
-  let isPrewarmingActive = false;
-
-  function triggerIdlePrewarming(): void {
-    const isDev = location.hostname === 'localhost' || location.hostname === '127.0.0.1' || location.hostname.endsWith('.localhost');
-    // 1. 读取用户后台预加载范围偏好设置（1: 前后1页 [默认] | 2: 前后2页 | 3: 前后3页 | -1: 全书拉取 | 0: 关闭）
-    // 在本地 Dev 模式下默认不自动全量扫全书，避免每次刷新触发 Vite 全量 SSR 编译
-    let prewarmPages = isDev ? 0 : 1;
-    try {
-      const saved = localStorage.getItem('astrolib_prewarm_pages');
-      if (saved !== null && saved !== undefined && saved !== '') {
-        const parsed = parseInt(saved, 10);
-        if (!isNaN(parsed)) prewarmPages = parsed;
-      }
-    } catch {}
-
-    // 若用户设置为 0 或处于低性能模式，则完全关闭后台空闲预热
-    if (prewarmPages === 0 || localStorage.getItem('astrolib_lite_mode') === 'true') {
-      prewarmQueue = [];
-      return;
-    }
-
-    const sidebar = document.querySelector('nav.sidebar, .sidebar');
-    if (!sidebar) return;
-
-    const rawLinks = Array.from(sidebar.querySelectorAll<HTMLAnchorElement>('a[href]'))
-      .filter((a) => isNavLink(a))
-      .map((a) => {
-        try {
-          return new URL(a.getAttribute('href') || '', location.href);
-        } catch {
-          return null;
-        }
-      })
-      .filter((u): u is URL => Boolean(u));
-
-    const currentPath = normPath(location.pathname);
-    let targetLinks: URL[] = [];
-
-    if (prewarmPages === -1) {
-      // -1: 全书全量拉取
-      targetLinks = rawLinks.filter((u) => normPath(u.pathname) !== currentPath);
-    } else {
-      // > 0: 按前后指定页数切片（滑动窗口）
-      const curIdx = rawLinks.findIndex((u) => normPath(u.pathname) === currentPath);
-      if (curIdx !== -1) {
-        const start = Math.max(0, curIdx - prewarmPages);
-        const end = Math.min(rawLinks.length, curIdx + prewarmPages + 1);
-        targetLinks = rawLinks.slice(start, end).filter((u) => normPath(u.pathname) !== currentPath);
-      } else {
-        // 若不在侧边栏中（如首页），尝试使用 pagination-links 或取前 N 个
-        const paginationLinks = Array.from(document.querySelectorAll<HTMLAnchorElement>('.pagination-links a[href]'))
-          .map((a) => {
-            try { return new URL(a.getAttribute('href') || '', location.href); } catch { return null; }
-          })
-          .filter((u): u is URL => Boolean(u && normPath(u.pathname) !== currentPath));
-        targetLinks = paginationLinks.length > 0 ? paginationLinks : rawLinks.slice(0, prewarmPages * 2);
-      }
-    }
-
-    // 提取尚未缓存且未在请求中的链接
-    prewarmQueue = targetLinks.filter((u) => !pageCache.has(normPath(u.pathname)) && !inFlightRequests.has(normPath(u.pathname)));
-    if (prewarmQueue.length === 0) return;
-
-    if (!isPrewarmingActive) {
-      isPrewarmingActive = true;
-      scheduleNextPrewarm();
-    }
-  }
-
-  function scheduleNextPrewarm(): void {
-    if (prewarmQueue.length === 0) {
-      isPrewarmingActive = false;
-      return;
-    }
-
-    const idleCallback = (window as any).requestIdleCallback || ((cb: Function) => setTimeout(cb, 120));
-    idleCallback((deadline: any) => {
-      while (prewarmQueue.length > 0 && (deadline.timeRemaining ? deadline.timeRemaining() > 18 : true)) {
-        const targetUrl = prewarmQueue.shift();
-        const maxCache = getMaxPageCacheSize();
-        // 若设置了有限页面缓存上限且当前常驻缓存已达上限，中止后续拉取避免无谓的先拉后丢
-        if (maxCache !== Infinity && maxCache > 0 && pageCache.size >= maxCache) {
-          prewarmQueue = [];
-          break;
-        }
-        if (targetUrl && !pageCache.has(normPath(targetUrl.pathname))) {
-          fetchPage(targetUrl).then((record) => {
-            if (record && record.textSnippet) {
-              warmPageFonts(record.textSnippet, 0);
-            }
-          }).catch(() => {});
-          break; // 每次执行拉取 1 个，平滑让出主线程与网络带宽
-        }
-      }
-
-      if (prewarmQueue.length > 0) {
-        setTimeout(scheduleNextPrewarm, 60);
-      } else {
-        isPrewarmingActive = false;
-      }
-    }, { timeout: 1500 });
-  }
 
   // 拦截全站内部导航链接
   document.addEventListener('click', (e) => {
@@ -838,11 +724,6 @@ export function initSpaNavigationEngine(): void {
     prunePageCache();
   });
 
-  // 监听用户在偏好设置中实时调整后台空闲预加载范围
-  window.addEventListener('prewarm:config-change', () => {
-    triggerIdlePrewarming();
-  });
-
   // 监听用户在偏好设置中实时调整左侧栏悬停预加载开关
   window.addEventListener('sidebar-prefetch:config-change', (e: any) => {
     if (e && e.detail && typeof e.detail.enabled === 'boolean') {
@@ -872,14 +753,10 @@ export function initSpaNavigationEngine(): void {
         }
       }
       pageCache.clear();
-      prewarmQueue = [];
-      isPrewarmingActive = false;
       clearTimeout(hoverPrefetchTimer);
       if (hoverAbortController) {
         hoverAbortController.abort();
       }
-    } else {
-      triggerIdlePrewarming();
     }
   });
 
@@ -901,13 +778,6 @@ export function initSpaNavigationEngine(): void {
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'hidden') saveSidebarScroll();
   });
-
-  // 初始页面就绪后，排队启动全书空闲智能预热
-  if (document.readyState === 'complete') {
-    triggerIdlePrewarming();
-  } else {
-    window.addEventListener('load', () => triggerIdlePrewarming(), { once: true });
-  }
 }
 
 if (typeof window !== 'undefined') {

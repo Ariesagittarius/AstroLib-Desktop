@@ -165,5 +165,94 @@ describe('AI Chat Markdown Parser Suite (Unit Tests)', () => {
       expect(html).toContain('<tr><td>1</td><td>2</td><td></td></tr>');
     });
   });
+
+  describe('astrolib:// 协议节点定位链接与徽章化', () => {
+    it('应正确解析标准 Markdown 链接中的 astrolib:// 节点，并输出 target="_self" 及 canonical 路径', () => {
+      const input = '研读 [Why Graphs](astrolib://cs/algorithms/031_why-graphs)';
+      const html = mdToHtml(input);
+      expect(html).toContain('class="block-ref-badge interactive-badge ai-link-badge astrolib-node-link"');
+      expect(html).toContain('target="_self"');
+      expect(html).toContain('href="/collections/cs/algorithms/031_why-graphs/"');
+      expect(html).toContain('data-astrolib-uri="astrolib://cs/algorithms/031_why-graphs"');
+      expect(html).toContain('title="点击跳转研读视窗：Algorithms"');
+      expect(html).toContain('Why Graphs');
+    });
+
+    it('应自动捕获正文中裸写的 astrolib:// 协议链接并徽章化', () => {
+      const input = '建议研读 astrolib://cs/algorithms/031_why-graphs 与 astrolib://math/graph_theory/11_图。';
+      const html = mdToHtml(input);
+      expect(html).toContain('href="/collections/cs/algorithms/031_why-graphs/"');
+      expect(html).toContain('data-astrolib-uri="astrolib://cs/algorithms/031_why-graphs"');
+      expect(html).toContain('href="/collections/math/graph_theory/11_%E5%9B%BE/"');
+      expect(html).toContain('data-astrolib-uri="astrolib://math/graph_theory/11_图"');
+    });
+
+    it('应支持带卡片 ID 锚点的节点定位', () => {
+      const input = '重点精读 astrolib://math/graph_theory/15_树和森林#card-1-23 处定理。';
+      const html = mdToHtml(input);
+      expect(html).toContain('href="/collections/math/graph_theory/15_%E6%A0%91%E5%92%8C%E6%A3%AE%E6%9E%97/#card-1-23"');
+      expect(html).toContain('data-astrolib-uri="astrolib://math/graph_theory/15_树和森林#card-1-23"');
+      expect(html).toContain('title="点击跳转研读视窗：图论"');
+    });
+
+    it('应精确识别被反引号与 /read 包裹且带空格锚点的指令链接 (对应截图案例)', () => {
+      const input = '👉 `/read astrolib://science/vectors_and_tensors/zh/063_riemann-curvature-tensor math-128`';
+      const html = mdToHtml(input);
+      expect(html).toContain('data-astrolib-uri="astrolib://science/vectors_and_tensors/zh/063_riemann-curvature-tensor#math-128"');
+      expect(html).toContain('href="/collections/science/vectors_and_tensors/zh/063_riemann-curvature-tensor/#math-128"');
+      // math-128 必须在 <a> 标签内部，绝不可被丢在徽章外部，且遵循 MD3E 学术书目指向而不是裸露协议
+      expect(html).toContain('math-128');
+      expect(html).toContain('从向量到张量');
+      expect(html).not.toMatch(/<\/a>\s*math-128/);
+      expect(html).not.toContain('%60');
+    });
+
+    it('应精确识别反引号分离但带 # 锚点的 /read 指令', () => {
+      const input = '👉 /read `astrolib://science/vectors_and_tensors/zh/063_riemann-curvature-tensor` #math-128';
+      const html = mdToHtml(input);
+      expect(html).toContain('data-astrolib-uri="astrolib://science/vectors_and_tensors/zh/063_riemann-curvature-tensor#math-128"');
+      expect(html).not.toMatch(/<\/a>\s*#?math-128/);
+    });
+
+    it('应完整吸收中文引号包裹的 astrolib 节点并剔除多余符号', () => {
+      const input = '“astrolib://math/graph_theory/11_图”（并可研究...）';
+      const html = mdToHtml(input);
+      expect(html).toContain('href="/collections/math/graph_theory/11_%E5%9B%BE/"');
+      expect(html).toContain('data-astrolib-uri="astrolib://math/graph_theory/11_图"');
+      // 绝不泄漏未转义的引号或把引号转成 %E2%80%9D 混入链接
+      expect(html).not.toContain('%E2%80%9D');
+    });
+
+    it('应在 GFM 表格中将反引号包裹的 astrolib 节点渲染为独立徽章', () => {
+      const input = '| 《图论》§7.3 **Hadwiger 猜想** | 一个从字面意思就能看懂 | `astrolib://math/graph_theory/73_hadwiger猜想` |';
+      const html = mdToHtml(input);
+      expect(html).toContain('class="block-ref-badge interactive-badge ai-link-badge astrolib-node-link"');
+      expect(html).toContain('data-astrolib-uri="astrolib://math/graph_theory/73_hadwiger猜想"');
+      expect(html).not.toContain('%60');
+    });
+
+    it('应在括号内正确解析 astrolib 协议链接，绝不被括号遮蔽导致裸露', () => {
+      const input = '正式证明在第 8 章 NP 完全性 (astrolib://cs/algorithms/zh/082_np-complete-problems) 。';
+      const html = mdToHtml(input);
+      expect(html).toContain('data-astrolib-uri="astrolib://cs/algorithms/zh/082_np-complete-problems"');
+      expect(html).toContain('astrolib-node-link');
+      expect(html).not.toContain('(astrolib://');
+    });
+
+    it('应将以 / 开头的快捷指令自动解析为 m3-command-chip 胶囊', () => {
+      const input = '• /ast algorithms zh/064_knapsack - 精读背包两版递推与记忆化实现';
+      const html = mdToHtml(input);
+      expect(html).toContain('class="m3-command-chip"');
+      expect(html).toContain('data-cmd="/ast algorithms zh/064_knapsack"');
+    });
+
+    it('应自动识别 flowchart/graph 代码块为 Mermaid 容器并附带放大与复制按钮', () => {
+      const input = '```\nflowchart TD\n  A --> B\n```';
+      const html = mdToHtml(input);
+      expect(html).toContain('class="mermaid-container"');
+      expect(html).toContain('mermaid-zoom-btn');
+      expect(html).toContain('mermaid-copy-btn');
+    });
+  });
 });
 

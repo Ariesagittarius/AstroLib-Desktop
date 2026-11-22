@@ -84,8 +84,8 @@ export class InfoHighlightRenderer {
     const nodes: TextNodeMapping[] = [];
     let currentOffset = 0;
 
-    // 忽略标签：脚本、公式源码回填、隐藏元素、侧边栏
-    const ignoredTags = new Set(['SCRIPT', 'STYLE', 'NOSCRIPT', 'TEMPLATE', 'MD-ICON', 'SVG']);
+    // 忽略标签：脚本、公式源码回填、隐藏元素、侧边栏、假名注音
+    const ignoredTags = new Set(['SCRIPT', 'STYLE', 'NOSCRIPT', 'TEMPLATE', 'MD-ICON', 'SVG', 'RT', 'RP']);
 
     const walker = document.createTreeWalker(
       root,
@@ -95,7 +95,13 @@ export class InfoHighlightRenderer {
           const parent = node.parentElement;
           if (!parent) return NodeFilter.FILTER_REJECT;
           if (ignoredTags.has(parent.tagName)) return NodeFilter.FILTER_REJECT;
-          if (parent.closest('.katex-mathml') || parent.closest('.sideload-panel-view')) {
+          if (
+            parent.closest('.katex-mathml') ||
+            parent.closest('.sideload-panel-view') ||
+            parent.closest('.noteref') ||
+            parent.closest('[data-astrolib-footnote]') ||
+            parent.closest('.astrolib-footnote-popover')
+          ) {
             return NodeFilter.FILTER_REJECT;
           }
           return NodeFilter.FILTER_ACCEPT;

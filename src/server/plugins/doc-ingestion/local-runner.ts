@@ -15,6 +15,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
+import { createSanitizedChildEnv } from '../../../core/security/child-env.ts';
 
 const execFileAsync = promisify(execFile);
 
@@ -44,12 +45,11 @@ export class LocalPipelineRunner {
       return process.env.PYTHON_PATH;
     }
 
+    const pySub = process.platform === 'win32' ? path.join('Scripts', 'python.exe') : path.join('bin', 'python');
     const candidatePaths = [
-      'D:\\Antigravity\\project\\practice\\.venv\\Scripts\\python.exe',
-      path.resolve(process.cwd(), '../practice/.venv/Scripts/python.exe'),
-      path.resolve(process.cwd(), '.venv/Scripts/python.exe'),
-      'C:\\Program Files\\PyManager\\python.exe',
-      'python.exe',
+      path.resolve(process.cwd(), '.venv', pySub),
+      path.resolve(process.cwd(), '..', '.venv', pySub),
+      process.platform === 'win32' ? 'python.exe' : 'python3',
       'python',
     ];
 
@@ -113,7 +113,9 @@ except Exception:
 import json
 print(json.dumps({"has_mp": has_mp, "cuda_ok": cuda_ok, "dev_name": dev_name}))
 `;
-      const { stdout } = await execFileAsync(python, ['-c', probeCode]);
+      const { stdout } = await execFileAsync(python, ['-c', probeCode], {
+        env: createSanitizedChildEnv(),
+      });
       const res = JSON.parse(stdout.trim());
       magicPdfInstalled = Boolean(res.has_mp);
       cudaAvailable = Boolean(res.cuda_ok);
@@ -165,6 +167,7 @@ print(json.dumps({"has_mp": has_mp, "cuda_ok": cuda_ok, "dev_name": dev_name}))
       const args = ['-m', 'magic_pdf.tools.cli', '-p', pdfPath, '-o', outputDir, '-m', 'pipeline'];
       await execFileAsync(status.pythonPath, args, {
         cwd: process.cwd(),
+        env: createSanitizedChildEnv(),
       });
       return { success: true, outputDir };
     } catch (err) {

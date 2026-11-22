@@ -71,7 +71,14 @@ export function buildBookCatalog(directoryPath, options = {}) {
       // 如果是 mdx/md 文件，读取其 Frontmatter 里的真实 title
       const content = fs.readFileSync(fullPath, 'utf-8');
       const titleMatch = content.match(/title:\s*['"](.*?)['"]/);
-      const title = titleMatch ? titleMatch[1] : path.basename(file, path.extname(file));
+      const basename = path.basename(file, path.extname(file));
+      let title = titleMatch ? titleMatch[1] : basename;
+
+      // 防御性自愈：若 Frontmatter 提取到的标题明显是内部次级习题（如 "$5.1.4$ 练习题"）
+      // 而文件名本身为核心主节（如 "5.1_连续性概念"），自动回退为基于文件名规范格式化标题
+      if (/^\$?\d+\.\d+\.\d+\$?(\s*练习题)?$/.test(title.trim()) && /^\d+[\._-]/.test(basename)) {
+        title = '§' + basename.replace(/_/g, ' ');
+      }
 
       const rawSlug = toCollectionRelativeSlug(fullPath);
       const slug = cleanSlug(rawSlug);

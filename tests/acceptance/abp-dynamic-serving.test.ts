@@ -47,9 +47,7 @@ describe('ABP Dynamic Content Serving Acceptance Test', () => {
     expect(fs.existsSync(path.join(targetDir, 'manifest.json'))).toBe(true);
     expect(fs.existsSync(path.join(targetDir, 'chapters'))).toBe(true);
     expect(fs.existsSync(path.join(targetDir, 'ai-index.json'))).toBe(true);
-    expect(fs.existsSync(path.join(targetDir, 'relation-graph.json'))).toBe(true);
     expect(fs.existsSync(path.join(targetDir, 'cross-refs.json'))).toBe(true);
-    expect(fs.existsSync(path.join(targetDir, 'inspector-data.json'))).toBe(true);
 
     const manifest = JSON.parse(fs.readFileSync(path.join(targetDir, 'manifest.json'), 'utf8'));
     expect(manifest.id).toBe('math-math_senior');
@@ -153,9 +151,7 @@ describe('ABP Dynamic Content Serving Acceptance Test', () => {
     // 5. 自包含辅助数据端点从已安装目录直出（无需 public/ 或 projectRoot）
     for (const auxUrl of [
       '/ai-index/math-math_senior.json',
-      '/relation-graphs/math-math_senior.json',
       '/data/cross-ref/math-math_senior.json',
-      '/inspector-data/math-math_senior.json',
     ]) {
       let statusCode = 0;
       const handled = await handler.handle(

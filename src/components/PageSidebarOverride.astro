@@ -463,21 +463,6 @@ const bookConfigJson = JSON.stringify(currentBook || {});
               <md-icon class="header-mdicon action-btn-icon" aria-hidden="true">quiz</md-icon>
             </button>
           )}
-          {features.inspector.enabled && (
-            <button type="button" class="vp-local-nav-btn-link" data-inspector-trigger data-tooltip="模块速查" title="查看全书模块索引速查" aria-label="模块索引速查">
-              <md-icon class="header-mdicon action-btn-icon" aria-hidden="true">table_chart</md-icon>
-            </button>
-          )}
-          {features.relationGraph.enabled && (
-            <button type="button" class="vp-local-nav-btn-link relation-graph-trigger" data-feature="relationGraph" data-open-relation-graph data-tooltip="关系图谱" title="查看全书章节内联关系图谱" aria-label="关系图谱">
-              <md-icon class="header-mdicon action-btn-icon" aria-hidden="true">account_tree</md-icon>
-            </button>
-          )}
-          {features.feedback?.enabled && (
-            <button type="button" class="vp-local-nav-btn-link" data-feedback-trigger data-tooltip="读者勘误" title="读者段落勘误与反馈" aria-label="读者勘误">
-              <md-icon class="header-mdicon action-btn-icon" aria-hidden="true">rate_review</md-icon>
-            </button>
-          )}
           {features.chapterExport?.enabled && (
             <button type="button" class="vp-local-nav-btn-link" data-chapter-export-trigger data-tooltip="导出本章" title="导出本章为 LaTeX / PDF" aria-label="导出本章">
               <md-icon class="header-mdicon action-btn-icon" aria-hidden="true">download</md-icon>
@@ -509,26 +494,62 @@ const bookConfigJson = JSON.stringify(currentBook || {});
   import { initImageBlur } from './sidebar/image-blur-loader';
   import { initExerciseSidebarTriggerDelegation, probeActiveExerciseSession } from './exercises/lazy-exercise-sidebar';
   import { sideloadManager } from './sideload/sideload-manager';
-  import '../services/translation/client/translation-dock-controller';
   import { infoHighlightClient } from '../services/info-highlight/client';
+  import { initReaderRuntimeEnhancer } from '../features/reader-layout/runtime-enhancer';
 
-  function syncRelationGraphButtonVisibility() {
-    const isShow = localStorage.getItem('astro-show-relation-graph-btn') !== 'false';
-    document.querySelectorAll('.relation-graph-trigger').forEach((btn) => {
-      (btn as HTMLElement).style.display = isShow ? '' : 'none';
-    });
+  let translationDockPromise: Promise<any> | null = null;
+  function ensureTranslationDockLoaded(): Promise<any> {
+    if (!translationDockPromise) {
+      translationDockPromise = import('../services/translation/client/translation-dock-controller').then((mod) => {
+        const ctrl = mod.TranslationDockController.getInstance();
+        ctrl.init();
+        return ctrl;
+      });
+    }
+    return translationDockPromise;
   }
 
   function handleInit() {
     sideloadManager.init();
+    initReaderRuntimeEnhancer();
     setupVPLocalNav();
     initPageSidebar();
-    syncRelationGraphButtonVisibility();
     initMermaid();
     setupMermaidThemeListener();
     initImageBlur();
     initExerciseSidebarTriggerDelegation();
     probeActiveExerciseSession();
+
+    if (!(window as any).__astrolibTranslationLazyBound) {
+      (window as any).__astrolibTranslationLazyBound = true;
+      document.addEventListener('click', (e) => {
+        const trigger = (e.target as HTMLElement | null)?.closest('[data-translation-trigger]');
+        if (trigger && !translationDockPromise) {
+          e.preventDefault();
+          void ensureTranslationDockLoaded().then((ctrl) => ctrl.handleTriggerClick());
+        }
+      });
+      window.addEventListener('keydown', (e) => {
+        if (translationDockPromise) return;
+        const target = e.target as HTMLElement | null;
+        if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'MD-OUTLINED-TEXT-FIELD' || target.isContentEditable)) {
+          return;
+        }
+        if (e.altKey && (e.key.toLowerCase() === 'y' || (e.shiftKey && e.key.toLowerCase() === 't'))) {
+          e.preventDefault();
+          void ensureTranslationDockLoaded().then((ctrl) => ctrl.handleTriggerClick());
+        }
+      });
+      window.addEventListener('astrolib:sideload-change', ((e: CustomEvent<{ activePanelId?: string }>) => {
+        if (e?.detail?.activePanelId === 'translate') {
+          void ensureTranslationDockLoaded();
+        }
+      }) as EventListener);
+    }
+
+    if (sideloadManager.getActivePanelId() === 'translate') {
+      void ensureTranslationDockLoaded();
+    }
 
     // 绑定关注点透镜侧载面板控制与返回大纲
     const focusBack = document.getElementById('focus-back-to-toc');

@@ -14,9 +14,21 @@ import type {
   AppUpdateInfo,
 } from './types.ts';
 
+function readAppVersionSync(): string {
+  try {
+    const ver = ipcRenderer.sendSync('astrolib:get-app-version-sync');
+    if (typeof ver === 'string' && ver.trim()) {
+      return ver.trim();
+    }
+  } catch {
+    // 沙箱降级兜底版本号
+  }
+  return '0.0.4';
+}
+
 const bridge: AstroLibDesktopBridge = {
   isElectron: true,
-  appVersion: process.env.npm_package_version || '0.0.1',
+  appVersion: readAppVersionSync(),
 
   async openHubWindow(): Promise<void> {
     return ipcRenderer.invoke('astrolib:open-hub-window');
@@ -77,6 +89,16 @@ const bridge: AstroLibDesktopBridge = {
     return ipcRenderer.invoke('astrolib:open-external-url', url);
   },
 
+  onNavigateToUrl(callback: (url: string) => void): () => void {
+    const handler = (_event: any, url: string) => {
+      callback(url);
+    };
+    ipcRenderer.on('astrolib:navigate-to-url', handler);
+    return () => {
+      ipcRenderer.removeListener('astrolib:navigate-to-url', handler);
+    };
+  },
+
   async selectPythonPath(): Promise<string | null> {
     return ipcRenderer.invoke('astrolib:select-python');
   },
@@ -88,6 +110,11 @@ const bridge: AstroLibDesktopBridge = {
   async installBookFromAbp(abpData: ArrayBuffer | Uint8Array): Promise<any> {
     const uint8 = abpData instanceof Uint8Array ? abpData : new Uint8Array(abpData);
     return ipcRenderer.invoke('astrolib:install-book-from-abp', uint8);
+  },
+
+  async installBookFromFile(fileName: string, fileData: ArrayBuffer | Uint8Array, options?: any): Promise<any> {
+    const uint8 = fileData instanceof Uint8Array ? fileData : new Uint8Array(fileData);
+    return ipcRenderer.invoke('astrolib:install-book-from-file', fileName, uint8, options);
   },
 
   async fetchOfficialCatalog(customUrl?: string): Promise<any> {
@@ -134,6 +161,18 @@ const bridge: AstroLibDesktopBridge = {
     return ipcRenderer.invoke('astrolib:get-info-highlight-status');
   },
 
+  async getRuntimeModelStatus(): Promise<any> {
+    return ipcRenderer.invoke('astrolib:get-runtime-model-status');
+  },
+
+  async setModelIdleTimeout(idleTimeoutMs: number): Promise<{ ok: boolean; idleTimeoutMs: number }> {
+    return ipcRenderer.invoke('astrolib:set-model-idle-timeout', idleTimeoutMs);
+  },
+
+  async unloadLocalModels(modelId: 'qwen-highlight' | 'qwen-align' | 'minilm-align' | 'all' = 'all'): Promise<{ ok: boolean; unloaded: string[] }> {
+    return ipcRenderer.invoke('astrolib:unload-local-models', modelId);
+  },
+
   async getSettings(): Promise<Record<string, string>> {
     return ipcRenderer.invoke('astrolib:get-settings');
   },
@@ -146,8 +185,8 @@ const bridge: AstroLibDesktopBridge = {
     return ipcRenderer.invoke('astrolib:save-settings-batch', batch);
   },
 
-  async getLibraryEntities(): Promise<any[]> {
-    return ipcRenderer.invoke('astrolib:get-library-entities');
+  async getLibraryEntities(forceRefresh?: boolean): Promise<any[]> {
+    return ipcRenderer.invoke('astrolib:get-library-entities', Boolean(forceRefresh));
   },
 
   async getLibraryShelves(): Promise<any[]> {
@@ -164,6 +203,93 @@ const bridge: AstroLibDesktopBridge = {
 
   async updateEntityMeta(entityId: string, updates: any): Promise<void> {
     return ipcRenderer.invoke('astrolib:update-entity-meta', entityId, updates);
+  },
+
+  async getAntigravityCliStatus(): Promise<any> {
+    return ipcRenderer.invoke('astrolib:get-antigravity-cli-status');
+  },
+
+  async exportCanvasPdf(options: {
+    colSlug: string;
+    bookSlug: string;
+    chapterSlug: string;
+    title?: string;
+    width?: number;
+    height?: number;
+  }): Promise<{ ok: boolean; filePath?: string; canceled?: boolean; error?: string }> {
+    return ipcRenderer.invoke('astrolib:export-canvas-pdf', options);
+  },
+
+  async exportCanvasPng(options: {
+    colSlug: string;
+    bookSlug: string;
+    chapterSlug: string;
+    title?: string;
+    dpi?: number;
+    width?: number;
+    height?: number;
+  }): Promise<{ ok: boolean; filePath?: string; canceled?: boolean; error?: string }> {
+    return ipcRenderer.invoke('astrolib:export-canvas-png', options);
+  },
+
+  async windowMinimize(): Promise<void> {
+    return ipcRenderer.invoke('astrolib:window-minimize');
+  },
+
+  async windowToggleMaximize(): Promise<{ isMaximized: boolean }> {
+    return ipcRenderer.invoke('astrolib:window-toggle-maximize');
+  },
+
+  async windowClose(): Promise<void> {
+    return ipcRenderer.invoke('astrolib:window-close');
+  },
+
+  async windowToggleFullscreen(): Promise<{ isFullScreen: boolean }> {
+    return ipcRenderer.invoke('astrolib:window-toggle-fullscreen');
+  },
+
+  async getWindowState(): Promise<{ isMaximized: boolean; isFullScreen: boolean }> {
+    return ipcRenderer.invoke('astrolib:window-get-state');
+  },
+
+  onWindowStateChange(callback: (state: { isMaximized: boolean; isFullScreen: boolean }) => void): () => void {
+    const handler = (_event: any, state: { isMaximized: boolean; isFullScreen: boolean }) => {
+      callback(state);
+    };
+    ipcRenderer.on('astrolib:window-state-change', handler);
+    return () => {
+      ipcRenderer.removeListener('astrolib:window-state-change', handler);
+    };
+  },
+
+  onToggleNavRail(callback: () => void): () => void {
+    const handler = () => {
+      callback();
+    };
+    ipcRenderer.on('astrolib:toggle-nav-rail', handler);
+    return () => {
+      ipcRenderer.removeListener('astrolib:toggle-nav-rail', handler);
+    };
+  },
+
+  async selectPdfFile(): Promise<string | null> {
+    return ipcRenderer.invoke('astrolib:select-pdf-file');
+  },
+
+  async revealFileInFolder(
+    relOrAbsPath: string
+  ): Promise<{ ok: boolean; absPath?: string; error?: string }> {
+    return ipcRenderer.invoke('astrolib:reveal-file-in-folder', relOrAbsPath);
+  },
+
+  onLibraryUpdated(callback: (info: { id: string; title?: string }) => void): () => void {
+    const handler = (_event: any, info: { id: string; title?: string }) => {
+      callback(info);
+    };
+    ipcRenderer.on('astrolib:library-updated', handler);
+    return () => {
+      ipcRenderer.removeListener('astrolib:library-updated', handler);
+    };
   },
 };
 

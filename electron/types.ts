@@ -5,6 +5,10 @@
  * ============================================================================
  */
 
+import type { RuntimeModelStatus } from '../src/services/local-model-lifecycle.ts';
+
+export type { RuntimeModelStatus };
+
 export interface SystemDiagnostics {
   platform: string;
   arch: string;
@@ -84,9 +88,11 @@ export interface AstroLibDesktopBridge {
   onModelProgress: (callback: (progress: ModelDownloadProgress) => void) => () => void;
   checkForUpdates: () => Promise<AppUpdateInfo>;
   openExternalUrl: (url: string) => Promise<void>;
+  onNavigateToUrl?: (callback: (url: string) => void) => () => void;
   selectPythonPath?: () => Promise<string | null>;
   setCustomPythonPath?: (customPath: string) => Promise<SystemDiagnostics>;
   installBookFromAbp?: (abpData: ArrayBuffer | Uint8Array) => Promise<any>;
+  installBookFromFile?: (fileName: string, fileData: ArrayBuffer | Uint8Array, options?: any) => Promise<any>;
   fetchOfficialCatalog?: (customUrl?: string) => Promise<any>;
   installOfficialBook?: (entry: any) => Promise<any>;
   getInstalledBooks?: () => Promise<any[]>;
@@ -98,18 +104,52 @@ export interface AstroLibDesktopBridge {
   clearAllUserData?: () => Promise<{ ok: boolean; message?: string }>;
   analyzeTextHighlight?: (text: string) => Promise<any>;
   getInfoHighlightStatus?: () => Promise<any>;
+  getRuntimeModelStatus?: () => Promise<{ idleTimeoutMs: number; models: RuntimeModelStatus[] }>;
+  setModelIdleTimeout?: (idleTimeoutMs: number) => Promise<{ ok: boolean; idleTimeoutMs: number }>;
+  unloadLocalModels?: (
+    modelId?: 'qwen-highlight' | 'qwen-align' | 'minilm-align' | 'all'
+  ) => Promise<{ ok: boolean; unloaded: string[] }>;
   getSettings?: () => Promise<Record<string, string>>;
   saveSetting?: (key: string, value: string | null) => Promise<{ ok: boolean }>;
   saveSettingsBatch?: (batch: Record<string, string | null>) => Promise<{ ok: boolean }>;
-  getLibraryEntities?: () => Promise<any[]>;
+  getLibraryEntities?: (forceRefresh?: boolean) => Promise<any[]>;
   getLibraryShelves?: () => Promise<any[]>;
   createLibraryShelf?: (name: string) => Promise<any>;
   removeLibraryShelf?: (shelfId: string) => Promise<boolean>;
   updateEntityMeta?: (entityId: string, updates: any) => Promise<void>;
+  getAntigravityCliStatus?: () => Promise<{ available: boolean; version?: string; executablePath?: string; models?: any[] }>;
+  exportCanvasPdf?: (options: {
+    colSlug: string;
+    bookSlug: string;
+    chapterSlug: string;
+    title?: string;
+    width?: number;
+    height?: number;
+  }) => Promise<{ ok: boolean; filePath?: string; canceled?: boolean; error?: string }>;
+  exportCanvasPng?: (options: {
+    colSlug: string;
+    bookSlug: string;
+    chapterSlug: string;
+    title?: string;
+    dpi?: number;
+    width?: number;
+    height?: number;
+  }) => Promise<{ ok: boolean; filePath?: string; canceled?: boolean; error?: string }>;
+  windowMinimize?: () => Promise<void>;
+  windowToggleMaximize?: () => Promise<{ isMaximized: boolean }>;
+  windowClose?: () => Promise<void>;
+  windowToggleFullscreen?: () => Promise<{ isFullScreen: boolean }>;
+  getWindowState?: () => Promise<{ isMaximized: boolean; isFullScreen: boolean }>;
+  onWindowStateChange?: (callback: (state: { isMaximized: boolean; isFullScreen: boolean }) => void) => () => void;
+  onToggleNavRail?: (callback: () => void) => () => void;
+  selectPdfFile?: () => Promise<string | null>;
+  revealFileInFolder?: (relOrAbsPath: string) => Promise<{ ok: boolean; absPath?: string; error?: string }>;
+  onLibraryUpdated?: (callback: (info: { id: string; title?: string }) => void) => () => void;
 }
 
 declare global {
   interface Window {
     astrolib?: AstroLibDesktopBridge;
+    astrolibDesktop?: AstroLibDesktopBridge;
   }
 }

@@ -23,8 +23,11 @@
  *    - 严格转义 `<`、`>` 与 `&`，杜绝任意 HTML 标签与脚本注入
  */
 
+import { parseAstrolibUri, buildAstrolibUri, isAstrolibUri } from '../../utils/astrolib-uri.ts';
+import { renderAstroUiBlock } from '../../features/harness/astro-blocks.ts';
+
 export function safeLink(url: string): string {
-  let u = (url || '').replace(/["'<>]/g, '').trim();
+  let u = (url || '').replace(/["'<>`“”‘’]/g, '').trim();
   if (!u) return '';
   u = u.replace(/&amp;/g, '&');
   if (/^javascript:/i.test(u) || /^data:/i.test(u) || /^vbscript:/i.test(u)) return '';
@@ -32,6 +35,14 @@ export function safeLink(url: string): string {
   // 剔除可能被误捕获的尾部标点（如右括号、句号、分号等）
   u = u.replace(/[),.，。；;!?！？、]+$/, '').trim();
   if (!u) return '';
+
+  // 0. 优先精准识别 astrolib 统一协议节点定位链接 (如 astrolib://cs/algorithms/031_why-graphs)
+  if (isAstrolibUri(u)) {
+    const target = parseAstrolibUri(u);
+    if (target) {
+      return buildAstrolibUri(target.colSlug, target.bookSlug, target.chapterSlug, target.anchor);
+    }
+  }
 
   const origin = typeof location !== 'undefined' ? location.origin : '';
   const mCol = u.match(/(?:https?:)?\/\/[^\/]*collections\/(.+)$/i) || u.match(/^\/?collections\/(.+)$/i);
@@ -76,9 +87,126 @@ export function safeLink(url: string): string {
   return (origin || '') + encodedPath + encodedHash;
 }
 
+function escapeHtmlAttr(str: string): string {
+  return String(str || '')
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
+/**
+ * 图像白名单安全校验：
+ * - 允许本站沙箱工作区、文献插图、PDF2ABP、ABP 解包图像路径；
+ * - 允许相对工作区图像文件名（自动路由至 /api/v1/content/agent-tools/workspace-file?path=...）；
+ * - 允许 https://（及本机 http://127.0.0.1 / localhost）；
+ * - 允许 Base64 DataURL 图像（含 SVG，统一走 <img src> 沙箱渲染，绝不注入裸 <svg> DOM）。
+ */
+export function safeImageUrl(rawUrl: string): string {
+  let u = (rawUrl || '').replace(/["'<>`“”‘’]/g, '').trim();
+  if (!u) return '';
+  u = u.replace(/&amp;/g, '&');
+
+  if (/^(?:javascript|vbscript):/i.test(u)) return '';
+
+  // Base64 图像严格白名单
+  if (/^data:/i.test(u)) {
+    const cleanData = u.replace(/\s+/g, '');
+    if (/^data:image\/(?:png|jpeg|jpg|webp|gif|svg\+xml);base64,[a-z0-9+/=]+$/i.test(cleanData)) {
+      if (cleanData.length <= 8 * 1024 * 1024) {
+        return cleanData;
+      }
+    }
+    return '';
+  }
+
+  // 允许受信任站内路径
+  if (
+    /^\/(?:api\/v1\/content\/agent-tools\/workspace-file|api\/ingest\/image|api\/v1\/pdf2abp\/|abp-packs\/|collections\/)/i.test(
+      u
+    )
+  ) {
+    return u;
+  }
+
+  // 允许 HTTPS 或本机本地调试 HTTP
+  if (/^https:\/\//i.test(u) || /^http:\/\/(?:127\.0\.0\.1|localhost)(?::\d+)?\//i.test(u)) {
+    return u;
+  }
+
+  // 自动将 Python 沙箱输出的工作区相对图像路径（如 sin_v2.png 或 plots/fig1.svg）映射为安全 API URL
+  const cleanedRel = u.replace(/^(\.\/)+/, '').replace(/^\/+/, '');
+  if (
+    cleanedRel &&
+    !cleanedRel.includes('..') &&
+    !/^[a-zA-Z]+:/.test(cleanedRel) &&
+    /\.(?:png|jpe?g|webp|gif|svg)$/i.test(cleanedRel)
+  ) {
+    return `/api/v1/content/agent-tools/workspace-file?path=${encodeURIComponent(cleanedRel)}`;
+  }
+
+  return '';
+}
+
+export function formatAstrolibLabel(href: string, userText?: string): string {
+  const nodeTarget = parseAstrolibUri(href);
+  if (!nodeTarget) {
+    return userText && !userText.startsWith('astrolib://') ? userText : href;
+  }
+
+  if (nodeTarget.entityKind === 'paper') {
+    const labelBase =
+      userText && !userText.startsWith('astrolib://') && !userText.startsWith('paper://')
+        ? userText
+        : `文献 ${nodeTarget.taskId || nodeTarget.bookSlug}`;
+    return nodeTarget.sectionId ? `${labelBase} · ${nodeTarget.sectionId}` : labelBase;
+  }
+
+  const bookTitle = nodeTarget.title || nodeTarget.bookSlug;
+  let chapTitle = '';
+  if (nodeTarget.chapterSlug) {
+    let cleanChap = decodeURIComponent(nodeTarget.chapterSlug);
+    // 格式化章节序号：如 74_szemeredi正则性引理 -> 7.4 szemeredi正则性引理
+    cleanChap = cleanChap.replace(/^0*(\d)(\d)_+/, '$1.$2 ');
+    cleanChap = cleanChap.replace(/^0*(\d)_+/, '第$1章 ');
+    cleanChap = cleanChap.replace(/[-_]+/g, ' ').trim();
+    chapTitle = cleanChap;
+  }
+
+  let anchorTitle = '';
+  if (nodeTarget.anchor) {
+    if (nodeTarget.anchor.includes('example')) anchorTitle = '例题';
+    else if (nodeTarget.anchor.includes('def')) anchorTitle = '定义';
+    else if (nodeTarget.anchor.includes('thm') || nodeTarget.anchor.includes('theorem')) anchorTitle = '定理';
+    else if (nodeTarget.anchor.includes('knowledge')) anchorTitle = '知识点';
+    else anchorTitle = `#${nodeTarget.anchor}`;
+  }
+
+  if (userText && !userText.startsWith('astrolib://') && !userText.startsWith('/collections/')) {
+    return `${userText} · 《${bookTitle}》${chapTitle ? ` ${chapTitle}` : ''}`;
+  }
+
+  if (chapTitle) {
+    return `《${bookTitle}》· ${chapTitle}${anchorTitle ? ` (${anchorTitle})` : ''}`;
+  }
+  return `《${bookTitle}》${anchorTitle ? ` (${anchorTitle})` : ''}`;
+}
+
 export function makeAiBadgeLink(href: string, text: string, target: string, rel: string): string {
   const icon = `<span class="block-icon"><svg class="badge-svg" viewBox="0 0 24 24" width="11" height="11" fill="currentColor" aria-hidden="true"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"/></svg></span>`;
   const arrow = `<span class="block-arrow"><svg class="badge-svg badge-arrow-svg" viewBox="0 0 24 24" width="9" height="9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17l9.2-9.2M17 17V8H8"></path></svg></span>`;
+
+  // 判断是否为 astrolib 统一协议节点定位或站内书籍阅读链接 (MD3E 现代精致学术胶囊徽章)
+  if (isAstrolibUri(href)) {
+    const nodeTarget = parseAstrolibUri(href);
+    const canonical = nodeTarget ? nodeTarget.canonicalPath : href;
+    const label = formatAstrolibLabel(href, text);
+    const titleAttr = nodeTarget ? ` title="点击跳转研读视窗：${nodeTarget.title}"` : '';
+
+    return `<a href="${canonical}" data-astrolib-uri="${href}" class="block-ref-badge interactive-badge ai-link-badge astrolib-node-link" target="_self"${titleAttr}>${icon}<span class="block-text m3-pill-label">${label}</span>${arrow}</a>`;
+  }
+
   return `<a href="${href}" class="block-ref-badge interactive-badge ai-link-badge" target="${target}" ${rel}>${icon}<span class="block-text">${text}</span>${arrow}</a>`;
 }
 
@@ -86,6 +214,35 @@ export function renderInline(s: string, openNew = true): string {
   const target = openNew ? '_blank' : '_self';
   const rel = openNew ? 'rel="noopener"' : '';
   const placeholders: string[] = [];
+
+  // 0. 特殊交互指令：/read 或 `/read astrolib://... [anchor]` 聚合识别
+  // 兼容反引号包裹、行内代码、以及空格分隔或 # 分隔的锚点（如 math-128, card-1-23）
+  s = s.replace(
+    /(👉\s*)?(?:`|<code>)?\/read\s+(?:`|<code>)?(astrolib:\/\/[^\s`"'“”‘’<>（）()\[\]【】{}]+)(?:`|<\/code>)?(?:(?:\s*#|\s+)([a-zA-Z0-9_\u4e00-\u9fa5-]+))?(?:`|<\/code>)?/gi,
+    (_fullMatch, pointer, rawUri, rawAnchor) => {
+      let uri = rawUri.trim();
+      const anchor = rawAnchor ? rawAnchor.trim().replace(/^#/, '') : '';
+      if (anchor && !uri.includes('#')) {
+        uri += `#${anchor}`;
+      }
+      const href = safeLink(uri);
+      if (!href) return _fullMatch;
+      const tag = makeAiBadgeLink(href, uri, target, rel);
+      placeholders.push(tag);
+      return `${pointer || ''}___LINK_PLACEHOLDER_${placeholders.length - 1}___`;
+    }
+  );
+
+  // 0.5 Markdown 图像 ![alt](url "title") —— 必须在链接解析之前匹配，防止被误当作链接！
+  s = s.replace(/!\[([^\]\n]*)\]\(\s*<?([^)\s>]+)>?(?:\s+["']([^"']*)["'])?\s*\)/g, (_m, alt, url, titleAttr) => {
+    const imgUrl = safeImageUrl(url);
+    if (!imgUrl) return `![${alt}](${url})`;
+    const cleanAlt = escapeHtmlAttr((alt || '').trim());
+    const cleanTitle = escapeHtmlAttr((titleAttr || alt || '').trim());
+    const tag = `<span class="harness-md-img-wrap"><img class="harness-md-img" src="${escapeHtmlAttr(imgUrl)}" alt="${cleanAlt}" title="${cleanTitle}" loading="lazy" /></span>`;
+    placeholders.push(tag);
+    return `___LINK_PLACEHOLDER_${placeholders.length - 1}___`;
+  });
 
   // 1. Markdown 链接 [text](url "title") 或 [text]( <url> )
   s = s.replace(/\[([^\]\n]+)\]\(\s*<?([^)\s>]+)>?(?:\s+["'][^"']*["'])?\s*\)/g, (_m, text, url) => {
@@ -101,24 +258,59 @@ export function renderInline(s: string, openNew = true): string {
     return `___LINK_PLACEHOLDER_${placeholders.length - 1}___`;
   });
 
-  // 2. 裸路径/各类畸形 collections 链接（含 https://collections/...、//collections/...、/collections/...）
-  s = s.replace(/(^|[^\w"'/=])((?:https?:)?\/\/[^\s<>"']*collections\/[^\s<>"']+|\/?collections\/[^\s<>"']+)/gi, (fullMatch, prefix, rawUrl) => {
-    let cleanUrl = rawUrl.replace(/[),.，。；;!?！？、]+$/, '');
-    const trailing = rawUrl.slice(cleanUrl.length);
-    const href = safeLink(cleanUrl);
-    if (!href) return fullMatch;
-    const tag = makeAiBadgeLink(href, cleanUrl, target, rel);
-    placeholders.push(tag);
-    return `${prefix}___LINK_PLACEHOLDER_${placeholders.length - 1}___${trailing}`;
+  // 2. 裸 astrolib:// 协议链接识别（支持前后包裹的反引号与各种单双全半角引号/括号整体吸收）
+  s = s.replace(
+    /(^|[^\w/=%])(?:[`"“‘(（\[【])?(astrolib:\/\/[^\s`"'“”‘’<>（）()\[\]【】{}]+)(?:[`"”’)）\]】])?/gi,
+    (_fullMatch, prefix, rawUrl) => {
+      let cleanUrl = rawUrl.replace(/[),.，。；;!?！？、`"”’）\]】]+$/, '');
+      const trailing = rawUrl.slice(cleanUrl.length);
+      const href = safeLink(cleanUrl);
+      if (!href) return _fullMatch;
+      const tag = makeAiBadgeLink(href, cleanUrl, target, rel);
+      placeholders.push(tag);
+      return `${prefix}___LINK_PLACEHOLDER_${placeholders.length - 1}___${trailing}`;
+    }
+  );
+
+  // 3. 裸路径/各类 collections 链接（含 https://collections/...、//collections/...、/collections/...）
+  s = s.replace(
+    /(^|[^\w"'/=`“‘(（\[【])(?:[`"“‘])?((?:https?:)?\/\/[^\s<>"'`“”‘’]*collections\/[^\s<>"'`“”‘’]+|\/?collections\/[^\s<>"'`“”‘’]+)(?:[`"”’])?/gi,
+    (_fullMatch, prefix, rawUrl) => {
+      let cleanUrl = rawUrl.replace(/[),.，。；;!?！？、`"”’]+$/, '');
+      const trailing = rawUrl.slice(cleanUrl.length);
+      const href = safeLink(cleanUrl);
+      if (!href) return _fullMatch;
+      const tag = makeAiBadgeLink(href, cleanUrl, target, rel);
+      placeholders.push(tag);
+      return `${prefix}___LINK_PLACEHOLDER_${placeholders.length - 1}___${trailing}`;
+    }
+  );
+
+  // 4. 行内基础 Markdown 格式与指令胶囊识别（杜绝 Windows 宋体回退与裸红字）
+  s = s.replace(/`([^`]+)`/g, (_m, codeText) => {
+    const trimmed = codeText.trim();
+    if (trimmed.startsWith('/') || /^\/(ast|read|toc|exercises|diff|terminal|clear)\b/.test(trimmed)) {
+      const cmdOnly = trimmed.split(/\s+[-—–]\s+/)[0] || trimmed;
+      return `<code class="m3-command-chip" data-cmd="${cmdOnly.replace(/"/g, '&quot;')}" title="快捷指令胶囊：点击直接填入对话框">${codeText}</code>`;
+    }
+    return `<code>${codeText}</code>`;
   });
 
-  // 3. 行内基础 Markdown 格式
-  s = s.replace(/`([^`]+)`/g, '<code>$1</code>');
+  // 4.1 裸快捷指令（如行首或列表中的 /ast, /read, /exercises, /toc 等）自动胶囊化
+  s = s.replace(
+    /(^|[\s•·*+-])(\/(?:ast|read|toc|exercises|diff|terminal|clear)\b[^\n<`，。；！？]+)/g,
+    (_m, prefix, cmdStr) => {
+      const trimmed = cmdStr.trim();
+      const cmdOnly = trimmed.split(/\s+[-—–]\s+/)[0] || trimmed;
+      return `${prefix}<code class="m3-command-chip" data-cmd="${cmdOnly.replace(/"/g, '&quot;')}" title="快捷指令胶囊：点击直接填入对话框">${trimmed}</code>`;
+    }
+  );
+
   s = s.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
   s = s.replace(/(^|[^*])\*([^*\n]+)\*(?!\*)/g, '$1<em>$2</em>');
   s = s.replace(/~~([^~]+)~~/g, '<del>$1</del>');
 
-  // 4. 还原所有链接占位符
+  // 5. 还原所有链接占位符
   s = s.replace(/___LINK_PLACEHOLDER_(\d+)___/g, (_m, idx) => placeholders[Number(idx)]);
 
   return s;
@@ -235,24 +427,86 @@ export function parseBlocks(lines: string[], openNew = true): string {
   let i = 0;
   const inline = (t: string) => renderInline(t, openNew);
 
-  // 块起始探测正则（涵盖标题、引用块 > / &gt;、列表、公式块 $$、代码块）
-  const BLOCK_START = /^(#{1,6})\s|^\s*(?:>|&gt;)(?:\s|$|>)|^\s*[-*+]\s|^\s*\d+[.)]\s|^\s*\$\$\s*$|^\s*\$\$.*|^\s*(?:```+|~~~+)/;
+  // 块起始探测正则（涵盖标题、独立插图、引用块 > / &gt;、列表、公式块 $$、代码块）
+  const BLOCK_START = /^(#{1,6})\s|^\s*!\[[^\]\n]*\]\([^)\n]+\)\s*$|^\s*(?:>|&gt;)(?:\s|$|>)|^\s*[-*+]\s|^\s*\d+[.)]\s|^\s*\$\$\s*$|^\s*\$\$.*|^\s*(?:```+|~~~+)/;
 
   while (i < lines.length) {
     const line = lines[i];
 
-    // 1. 代码块
+    // 1. 代码块与 Mermaid 流程图智能分流解析
     const fence = line.match(/^\s*(```+|~~~+)\s*([\w-]*)?\s*$/);
     if (fence) {
       const marker = fence[1][0];
+      const lang = (fence[2] || '').trim().toLowerCase();
       const buf: string[] = [];
       i++;
       while (i < lines.length && !new RegExp(`^\\s*${marker}{3,}\\s*$`).test(lines[i])) {
         buf.push(lines[i]);
         i++;
       }
-      if (i < lines.length) i++;
-      out.push(`<pre><code>${buf.join('\n')}</code></pre>`);
+      const isClosed = i < lines.length;
+      if (isClosed) i++;
+
+      if (lang === 'astro-ui' || lang === 'ui') {
+        const uiRes = renderAstroUiBlock(buf.join('\n'), {
+          isClosed,
+          inlineFormatter: (rawText: string) =>
+            renderInline(
+              rawText.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'),
+              openNew
+            ),
+        });
+        if (uiRes.ok) {
+          out.push(uiRes.html);
+          continue;
+        }
+      }
+
+      const firstLineTrimmed = buf.find((l) => l.trim())?.trim() || '';
+      const isMermaid = lang === 'mermaid' || lang === 'flowchart' ||
+        /^(?:graph\s|flowchart\s|sequenceDiagram|stateDiagram|classDiagram|erDiagram|mindmap|timeline)/i.test(firstLineTrimmed);
+
+      if (isMermaid) {
+        // 解除外层转义以喂给 Mermaid 解析引擎
+        const unescapedCode = buf.join('\n')
+          .replace(/&amp;/g, '&')
+          .replace(/&lt;/g, '<')
+          .replace(/&gt;/g, '>');
+        out.push(`
+          <div class="mermaid-container" data-mermaid-code="${encodeURIComponent(unescapedCode)}">
+            <div class="mermaid-header">
+              <div class="mermaid-header__title">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+                <span>Mermaid 流程图</span>
+              </div>
+              <div class="mermaid-header__actions">
+                <button type="button" class="mermaid-zoom-btn" title="全屏放大查看流程图">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><line x1="11" y1="8" x2="11" y2="14"></line><line x1="8" y1="11" x2="14" y2="11"></line></svg>
+                  <span>放大查看</span>
+                </button>
+                <button type="button" class="mermaid-copy-btn" title="复制 Mermaid 源码">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                  <span>复制</span>
+                </button>
+              </div>
+            </div>
+            <div class="mermaid-render"><pre class="mermaid">${unescapedCode}</pre></div>
+          </div>
+        `.trim());
+      } else {
+        out.push(`
+          <div class="m3-code-block" data-lang="${lang || 'text'}">
+            <div class="m3-code-block__header">
+              <span class="m3-code-block__lang">${lang || 'code'}</span>
+              <button type="button" class="m3-code-copy-btn" title="复制代码">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                <span>复制</span>
+              </button>
+            </div>
+            <pre><code>${buf.join('\n')}</code></pre>
+          </div>
+        `.trim());
+      }
       continue;
     }
 
@@ -287,6 +541,23 @@ export function parseBlocks(lines: string[], openNew = true): string {
       out.push(`<h${h[1].length}>${inline(h[2])}</h${h[1].length}>`);
       i++;
       continue;
+    }
+
+    // 3.5 独占一行的 Markdown 图像 ![alt](url "title") 提升为规范学术插图 figure
+    const standaloneImgMatch = line.match(
+      /^\s*!\[([^\]\n]*)\]\(\s*<?([^)\s>]+)>?(?:\s+["']([^"']*)["'])?\s*\)\s*$/
+    );
+    if (standaloneImgMatch) {
+      const imgUrl = safeImageUrl(standaloneImgMatch[2]);
+      if (imgUrl) {
+        const alt = escapeHtmlAttr((standaloneImgMatch[1] || '').trim());
+        const caption = (standaloneImgMatch[3] || standaloneImgMatch[1] || '').trim();
+        out.push(
+          `<figure class="harness-md-figure"><img class="harness-md-img" src="${escapeHtmlAttr(imgUrl)}" alt="${alt}" loading="lazy" />${caption ? `<figcaption>${escapeHtmlAttr(caption)}</figcaption>` : ''}</figure>`
+        );
+        i++;
+        continue;
+      }
     }
 
     // 4. 分割线

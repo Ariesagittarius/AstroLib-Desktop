@@ -16,6 +16,7 @@ import path from 'node:path';
 import { MineruApiClient } from './mineru-api-client.ts';
 import { LocalPipelineRunner } from './local-runner.ts';
 import { compileIngestAST, synthesizeStructuredMarkdown } from './ast-compiler.ts';
+import { isIngestRunningState } from '../../../features/library/core/entity-status.ts';
 import type {
   IngestEngineType,
   IngestTaskMeta,
@@ -51,6 +52,70 @@ export class TaskManager {
 
   public getBaseDir(): string {
     return this.baseDir;
+  }
+
+  /**
+   * 获取所有可能存放摄取任务的候选目录列表 (用户目录优先，回退工作区目录)
+   */
+  public getCandidateDirs(): string[] {
+    const dirs: string[] = [];
+    if (this.baseDir && !dirs.includes(this.baseDir)) {
+      dirs.push(this.baseDir);
+    }
+    if (process.env.ASTROLIB_INGEST_DIR) {
+      const envDir = path.resolve(process.env.ASTROLIB_INGEST_DIR);
+      if (!dirs.includes(envDir)) dirs.push(envDir);
+    }
+    try {
+      const appData = process.env.APPDATA;
+      if (appData) {
+        const userTasksDir = path.resolve(appData, 'AstroLib', 'ingest-tasks');
+        if (!dirs.includes(userTasksDir)) dirs.push(userTasksDir);
+      }
+    } catch {}
+    const cwdTaskDir = path.resolve(process.cwd(), 'task/ingest');
+    if (!dirs.includes(cwdTaskDir)) dirs.push(cwdTaskDir);
+    try {
+      const exeDir = path.dirname(process.execPath);
+      const relDevTaskDir = path.resolve(exeDir, '../../task/ingest');
+      if (!dirs.includes(relDevTaskDir)) dirs.push(relDevTaskDir);
+    } catch {}
+
+    return dirs.filter((d) => fs.existsSync(d));
+  }
+
+  /**
+   * 定位某个任务所在的真实物理目录
+   */
+  public findTaskDir(taskId: string): string | null {
+    if (!taskId || taskId.includes('..')) return null;
+    const candidateDirs = this.getCandidateDirs();
+    for (const base of candidateDirs) {
+      const candidate = path.join(base, taskId);
+      const metaFile = path.join(candidate, 'meta.json');
+      if (fs.existsSync(metaFile)) {
+        return candidate;
+      }
+    }
+    return null;
+  }
+
+  /**
+   * 获取任务对应原始 PDF 的真实路径
+   */
+  public getOriginPdfPath(taskId: string): string | null {
+    const dir = this.findTaskDir(taskId) || path.join(this.baseDir, taskId);
+    const pdf = path.join(dir, 'origin.pdf');
+    return fs.existsSync(pdf) ? pdf : null;
+  }
+
+  /**
+   * 获取任务对应解包产物 unpacked 目录的真实路径
+   */
+  public getUnpackedDir(taskId: string): string | null {
+    const dir = this.findTaskDir(taskId) || path.join(this.baseDir, taskId);
+    const unpacked = path.join(dir, 'unpacked');
+    return fs.existsSync(unpacked) ? unpacked : null;
   }
 
   public getApiClient(): MineruApiClient {
@@ -140,10 +205,18 @@ export class TaskManager {
     return meta;
   }
 
+  public isJobActive(taskId: string): boolean {
+    return this.activeJobs.has(taskId);
+  }
+
   /**
-   * 2. 启动异步解析工作流
+   * 2. 启动或重新启动异步解析工作流
    */
-  public startParse(taskId: string, engine?: IngestEngineType, options?: { token?: string }): IngestTaskMeta {
+  public startParse(
+    taskId: string,
+    engine?: IngestEngineType,
+    options?: { token?: string; pageRanges?: string }
+  ): IngestTaskMeta {
     const meta = this.getTask(taskId);
     if (!meta) {
       throw new Error(`找不到任务 ${taskId}`);
@@ -153,8 +226,12 @@ export class TaskManager {
       meta.engine = engine;
     }
 
+    if (options && options.pageRanges !== undefined) {
+      meta.pageRanges = options.pageRanges.trim() || undefined;
+    }
+
     if (options?.token) {
-      this.mineruClient.setToken(options.token);
+      this.mineruClient.persistToken(options.token);
     }
 
     if (this.activeJobs.has(taskId)) {
@@ -188,6 +265,37 @@ export class TaskManager {
 
     this.activeJobs.set(taskId, jobPromise);
     return meta;
+  }
+
+  /**
+   * 若任务处于运行态但后台已无活跃作业（进程重启遗留僵尸任务），将其收敛为失败中断态
+   */
+  public reconcileStaleTask(taskId: string): IngestTaskMeta | null {
+    const meta = this.getTask(taskId);
+    if (!meta) return null;
+    if (isIngestRunningState(meta.status) && !this.activeJobs.has(taskId)) {
+      meta.status = 'failed';
+      meta.error = '上次解析已中断，可点击重新解析';
+      meta.updatedAt = Date.now();
+      this.saveTaskMeta(meta);
+    }
+    return meta;
+  }
+
+  /**
+   * 移除尚未运行中的任务物理目录
+   */
+  public deleteTask(taskId: string): boolean {
+    if (!taskId || taskId.includes('..')) return false;
+    if (this.activeJobs.has(taskId)) {
+      throw new Error('该文献正在解析中，暂无法删除');
+    }
+    const taskDir = this.findTaskDir(taskId);
+    if (!taskDir || !fs.existsSync(taskDir)) {
+      return false;
+    }
+    fs.rmSync(taskDir, { recursive: true, force: true });
+    return true;
   }
 
   /**
@@ -369,33 +477,43 @@ export class TaskManager {
    * 3. 读取任务元数据
    */
   public getTask(taskId: string): IngestTaskMeta | null {
-    const metaPath = path.join(this.baseDir, taskId, 'meta.json');
-    if (!fs.existsSync(metaPath)) return null;
+    const taskDir = this.findTaskDir(taskId);
+    if (!taskDir) return null;
+    const metaPath = path.join(taskDir, 'meta.json');
     try {
-      return JSON.parse(fs.readFileSync(metaPath, 'utf-8'));
+      const meta = JSON.parse(fs.readFileSync(metaPath, 'utf-8')) as IngestTaskMeta;
+      if (meta) {
+        meta.outputDir = taskDir;
+      }
+      return meta;
     } catch {
       return null;
     }
   }
 
   /**
-   * 3.1 获取所有历史摄取任务列表 (按创建时间降序)
+   * 3.1 获取所有历史摄取任务列表 (按创建时间降序，跨所有候选目录聚合)
    */
   public listTasks(): IngestTaskMeta[] {
-    if (!fs.existsSync(this.baseDir)) return [];
-    try {
-      const entries = fs.readdirSync(this.baseDir, { withFileTypes: true });
-      const tasks: IngestTaskMeta[] = [];
-      for (const ent of entries) {
-        if (ent.isDirectory() && ent.name.startsWith('task_')) {
-          const meta = this.getTask(ent.name);
-          if (meta) tasks.push(meta);
+    const taskMap = new Map<string, IngestTaskMeta>();
+    const candidateDirs = this.getCandidateDirs();
+    for (const base of candidateDirs) {
+      try {
+        const entries = fs.readdirSync(base, { withFileTypes: true });
+        for (const ent of entries) {
+          if (ent.isDirectory() && ent.name.startsWith('task_')) {
+            if (taskMap.has(ent.name) && taskMap.get(ent.name)!.status === 'completed') {
+              continue;
+            }
+            const meta = this.getTask(ent.name);
+            if (meta) {
+              taskMap.set(meta.taskId, meta);
+            }
+          }
         }
-      }
-      return tasks.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-    } catch {
-      return [];
+      } catch {}
     }
+    return Array.from(taskMap.values()).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
   }
 
   /**
@@ -405,7 +523,7 @@ export class TaskManager {
     const meta = this.getTask(taskId);
     if (!meta || meta.status !== 'completed') return null;
 
-    const taskDir = path.join(this.baseDir, taskId);
+    const taskDir = this.findTaskDir(taskId) || path.join(this.baseDir, taskId);
     const unpackedDir = path.join(taskDir, 'unpacked');
 
     // 搜索 Markdown 文件
@@ -514,7 +632,7 @@ export class TaskManager {
     }
 
     // 拷贝提取出的图片
-    const taskDir = path.join(this.baseDir, taskId);
+    const taskDir = this.findTaskDir(taskId) || path.join(this.baseDir, taskId);
     const unpackedDir = path.join(taskDir, 'unpacked');
     // 寻找源 images 目录
     const copyImages = (dir: string) => {
@@ -580,7 +698,12 @@ description: "由 MinerU 智能解析与规整的学术文献"
   }
 
   private saveTaskMeta(meta: IngestTaskMeta): void {
-    const metaPath = path.join(this.baseDir, meta.taskId, 'meta.json');
+    const taskDir = this.findTaskDir(meta.taskId) || path.join(this.baseDir, meta.taskId);
+    if (!fs.existsSync(taskDir)) {
+      fs.mkdirSync(taskDir, { recursive: true });
+    }
+    meta.outputDir = taskDir;
+    const metaPath = path.join(taskDir, 'meta.json');
     fs.writeFileSync(metaPath, JSON.stringify(meta, null, 2), 'utf-8');
   }
 }

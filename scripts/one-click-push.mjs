@@ -104,7 +104,7 @@ function generateSmartCommitMessage(statusLines) {
   const hasFormula = filePaths.some((p) => p.includes('formula') || p.includes('katex'));
   const hasAi = filePaths.some((p) => p.includes('/ai/') || p.includes('ai-index') || p.includes('chat'));
   const hasInspector = filePaths.some((p) => p.includes('inspector') || p.includes('relation'));
-  const hasContent = filePaths.some((p) => p.includes('src/content/docs/'));
+  const hasContent = filePaths.some((p) => p.includes('content-sources/collections/'));
   const hasUi = filePaths.some(
     (p) => p.includes('src/components/') || p.includes('src/styles/') || p.includes('src/pages/')
   );
@@ -190,7 +190,7 @@ async function main() {
   }
 
   console.log('\n===================================================================');
-  console.log('  🚀 AstroLib 一键自动同步与推送 (One-Click Update & Push)');
+  console.log('  AstroLib One-Click Update & Push');
   console.log('===================================================================\n');
 
   // 1. 检查 Git 仓库状态
@@ -199,41 +199,41 @@ async function main() {
   const statusOutput = runGit('status --porcelain').trim();
   const statusLines = statusOutput ? statusOutput.split(/\r?\n/).filter(Boolean) : [];
 
-  console.log(`📌 当前分支: \x1b[36m${branch}\x1b[0m`);
-  console.log(`🔗 已配置远程仓库: \x1b[33m${remotes.join(', ') || '无'}\x1b[0m`);
+  console.log(`[push] Current branch: ${branch}`);
+  console.log(`[push] Remotes: ${remotes.join(', ') || 'none'}`);
 
   // 2. 处理工作区变动
   if (statusLines.length > 0) {
-    console.log(`\n📦 检测到 \x1b[32m${statusLines.length}\x1b[0m 个未提交的文件变动:`);
+    console.log(`\n[push] Detected ${statusLines.length} modified files:`);
     const preview = statusLines.slice(0, 8);
     for (const line of preview) {
       console.log(`   ${line}`);
     }
     if (statusLines.length > 8) {
-      console.log(`   ... 以及其他 ${statusLines.length - 8} 个文件`);
+      console.log(`   ... and ${statusLines.length - 8} more files`);
     }
 
     const commitMsg = normalizeCommitMessage(options.message, statusLines);
-    console.log(`\n📝 准备生成规范提交: \x1b[32m"${commitMsg}"\x1b[0m`);
+    console.log(`\n[push] Commit message: "${commitMsg}"`);
 
     if (!options.dryRun) {
-      console.log('➕ 正在暂存文件 (git add -A)...');
+      console.log('[push] Staging changes (git add -A)...');
       runGit('add -A');
 
-      console.log('💾 正在创建本地提交 (git commit)...');
+      console.log('[push] Creating commit...');
       runGit(`commit -m "${commitMsg.replace(/"/g, '\\"')}"`);
       const newCommit = runGit('rev-parse --short HEAD').trim();
-      console.log(`✅ 本地提交成功: \x1b[36m${newCommit}\x1b[0m`);
+      console.log(`[push] Committed ${newCommit}`);
     } else {
-      console.log('🔎 [Dry Run] 演练模式：跳过实际 git add 与 git commit。');
+      console.log('[push] [Dry Run] Skipping git add / git commit.');
     }
   } else {
-    console.log('\n✨ 本地工作区整洁，无未提交更改。');
+    console.log('\n[push] Working tree clean.');
   }
 
   // 3. 执行远程推送
   console.log('\n-------------------------------------------------------------------');
-  console.log('📡 正在调用远程发布管线 (scripts/git-clean-push.mjs)...');
+  console.log('[push] Invoking distribution pipeline (scripts/git-clean-push.mjs)...');
   console.log('-------------------------------------------------------------------');
 
   const pushFlags = [];
@@ -250,16 +250,16 @@ async function main() {
   try {
     execSync(cmd, { cwd: PROJECT_ROOT, stdio: 'inherit' });
   } catch (err) {
-    console.error('\n❌ 推送过程中出现错误:', err.message);
+    console.error('\n[push] Push failed:', err.message);
     process.exit(1);
   }
 
   console.log('\n===================================================================');
-  console.log('  🎉 一键更新完成！本地与远程已保持最新状态。');
+  console.log('  Push workflow complete.');
   console.log('===================================================================\n');
 }
 
 main().catch((err) => {
-  console.error('\n❌ 执行失败:', err.message);
+  console.error('\n[push] Execution failed:', err.message);
   process.exit(1);
 });

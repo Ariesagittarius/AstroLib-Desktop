@@ -105,7 +105,12 @@ async function renderSingleDiagram(container: HTMLElement, rawCode: string, isDa
   try {
     const mermaid = await getMermaidInstance(isDark);
     const { svg } = await mermaid.render(renderId, sanitizedCode);
-    container.innerHTML = `<div class="mermaid-render">${svg}</div>`;
+    const renderTarget = container.querySelector('.mermaid-render') as HTMLElement | null;
+    if (renderTarget) {
+      renderTarget.innerHTML = svg;
+    } else {
+      container.innerHTML = `<div class="mermaid-render">${svg}</div>`;
+    }
     container.classList.add('mermaid-container');
     container.dataset.mermaidRendered = 'true';
     container.dataset.renderedTheme = isDark ? 'dark' : 'light';
@@ -114,19 +119,25 @@ async function renderSingleDiagram(container: HTMLElement, rawCode: string, isDa
     cleanMermaidArtifacts(renderId);
 
     // 优雅降级展示：以安静克制的原生代码框呈现，不撑爆布局，绝不在网页底部注入大面积红色报错
-    container.innerHTML = `
-      <div class="mermaid-fallback-box" style="margin: 1rem 0; padding: 1rem; border-radius: 8px; background: var(--sl-color-bg-nav, rgba(0,0,0,0.03)); border: 1px dashed var(--sl-color-hairline, rgba(0,0,0,0.15));">
-        <div style="font-size: 0.75rem; color: var(--sl-color-gray-3); margin-bottom: 0.5rem;">[Mermaid 流程图解析提示]</div>
-        <pre style="margin: 0; overflow-x: auto; font-size: 0.85rem; line-height: 1.4;"><code>${sanitizedCode.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</code></pre>
+    const fallbackHtml = `
+      <div class="mermaid-fallback-box" style="margin: 0.5rem 0; padding: 0.8rem; border-radius: 8px; background: var(--sl-color-bg-nav, rgba(0,0,0,0.03)); border: 1px dashed var(--sl-color-hairline, rgba(0,0,0,0.15));">
+        <div style="font-size: 0.75rem; color: var(--sl-color-gray-3); margin-bottom: 0.4rem;">[Mermaid 流程图解析提示]</div>
+        <pre style="margin: 0; overflow-x: auto; font-size: 0.82rem; line-height: 1.4;"><code>${sanitizedCode.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</code></pre>
       </div>
     `.trim();
+    const renderTarget = container.querySelector('.mermaid-render') as HTMLElement | null;
+    if (renderTarget) {
+      renderTarget.innerHTML = fallbackHtml;
+    } else {
+      container.innerHTML = fallbackHtml;
+    }
     container.classList.add('mermaid-container');
     container.dataset.mermaidRendered = 'true';
     container.dataset.renderedTheme = isDark ? 'dark' : 'light';
   }
 }
 
-export function initMermaid(): void {
+export function initMermaid(options?: { immediate?: boolean }): void {
   const targetElements = Array.from(
     document.querySelectorAll<HTMLElement>(
       '.mermaid-container, pre[data-language="mermaid"], code.language-mermaid, .mermaid'
@@ -174,7 +185,27 @@ export function initMermaid(): void {
 
   if (jobs.length === 0) return;
 
-  // 使用 IntersectionObserver 视口交叉按需渲染，预留 240px 视口裕量
+  // 分流：如果在对话流或显式要求 immediate，直接一次性渲染，杜绝滚动视口交叉引起的跳变和闪烁
+  const immediateJobs: typeof jobs = [];
+  const lazyJobs: typeof jobs = [];
+
+  for (const job of jobs) {
+    if (options?.immediate || job.container.closest('.harness-stage, #harness-messages-container, .harness-message')) {
+      immediateJobs.push(job);
+    } else {
+      lazyJobs.push(job);
+    }
+  }
+
+  if (immediateJobs.length > 0) {
+    immediateJobs.forEach(({ container, rawCode }) => {
+      renderSingleDiagram(container, rawCode, isDark);
+    });
+  }
+
+  if (lazyJobs.length === 0) return;
+
+  // 其余普通正文页面保留 IntersectionObserver 视口交叉按需渲染，预留 240px 视口裕量
   if (typeof IntersectionObserver !== 'undefined') {
     if (intersectionObserver) {
       intersectionObserver.disconnect();
@@ -187,7 +218,7 @@ export function initMermaid(): void {
             const container = entry.target as HTMLElement;
             intersectionObserver?.unobserve(container);
 
-            const job = jobs.find((j) => j.container === container);
+            const job = lazyJobs.find((j) => j.container === container);
             if (job) {
               renderSingleDiagram(job.container, job.rawCode, isDark);
             }
@@ -197,14 +228,14 @@ export function initMermaid(): void {
       { rootMargin: '240px 0px' }
     );
 
-    jobs.forEach(({ container }) => {
+    lazyJobs.forEach(({ container }) => {
       intersectionObserver?.observe(container);
     });
   } else {
     // 降级支持：使用 requestIdleCallback 分批渲染
     const idle = (typeof window !== 'undefined' && window.requestIdleCallback) || ((fn: Function) => setTimeout(fn, 120));
     idle(() => {
-      jobs.forEach(({ container, rawCode }) => {
+      lazyJobs.forEach(({ container, rawCode }) => {
         renderSingleDiagram(container, rawCode, isDark);
       });
     });

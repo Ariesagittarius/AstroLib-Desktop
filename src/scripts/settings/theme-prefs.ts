@@ -4,7 +4,7 @@
  */
 
 import { loadSiteTheme } from '../site-themes';
-import { loadThemeColor } from '../../themes/material-you/color-engine';
+import { loadThemeColor, THEME_COLOR_PRESETS } from '../../themes/material-you/color-engine';
 
 export const THEME_MODE_STORAGE_KEY = 'starlight-theme';
 export type ThemeMode = 'light' | 'dark' | 'auto';
@@ -109,11 +109,12 @@ export function syncAllThemeChips(): void {
 /** 同步当前所有实例的 M3 主题色高亮 Swatches */
 export function syncAllThemeColors(): void {
   const currentColor = loadThemeColor();
+  const matchedPreset = THEME_COLOR_PRESETS.find((p) => p.id === currentColor || p.seed.toLowerCase() === currentColor.toLowerCase());
   document.querySelectorAll('.ft-panel .ft-preset-swatch, starlight-feature-toggles .ft-preset-swatch').forEach((swatch) => {
     const val = swatch.getAttribute('data-m3-color');
-    const active = val === currentColor;
-    swatch.classList.toggle('active', active);
-    swatch.setAttribute('aria-selected', String(active));
+    const active = val === currentColor || (matchedPreset && val === matchedPreset.id);
+    swatch.classList.toggle('active', !!active);
+    swatch.setAttribute('aria-selected', String(!!active));
   });
 
   // 同步原生 color input
@@ -124,7 +125,7 @@ export function syncAllThemeColors(): void {
   });
 
   // 同步自定义 Tile 状态
-  const isCustomHex = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(currentColor);
+  const isCustomHex = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(currentColor) && !matchedPreset;
   document.querySelectorAll<HTMLElement>('.ft-custom-color-tile').forEach((tile) => {
     tile.classList.toggle('active', isCustomHex);
     const dropper = tile.querySelector<HTMLElement>('.ft-eyedropper-circle');

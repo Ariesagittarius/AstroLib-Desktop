@@ -39,7 +39,7 @@ describe('Mermaid Integrity Invariant Contract (图表语法与数学公式契�
     });
   });
 
-  const docsDir = path.resolve('src/content/docs');
+  const docsDir = path.resolve('content-sources/collections');
   const allMdxFiles = walk(docsDir);
 
   it('全站所有 Mermaid 代码块必须 100% 成功通过 mermaid.parse 词法与语法分析', async () => {

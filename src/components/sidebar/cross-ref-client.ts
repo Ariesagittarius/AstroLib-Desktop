@@ -280,6 +280,11 @@ export function linkPageElements(
 ): void {
   if (refsMode === 'static') return;
 
+  const docEl = typeof document !== 'undefined' ? document.documentElement : null;
+  if (docEl?.dataset.readingProfile === 'literary') {
+    return;
+  }
+
   const mainContent =
     document.querySelector('main') ||
     document.querySelector('.main-pane') ||
@@ -288,6 +293,10 @@ export function linkPageElements(
   if (!mainContent) return;
 
   const modules = bookConfig.modules || {};
+
+  if (docEl?.dataset.sourceFormat === 'epub' && Object.keys(modules).length === 0) {
+    return;
+  }
 
   if (modules['图']) {
     modules['图'].isImage = true;
@@ -349,10 +358,14 @@ export function linkPageElements(
   });
 
   const escapeRegExp = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const typePattern = allAliases.map(escapeRegExp).join('|');
-  const globalRefRegex = new RegExp(`(${typePattern})\\s*(\\d+(?:\\.\\d+)*)`, 'g');
+  const validAliases = allAliases.map((a) => String(a).trim()).filter(Boolean);
+  const typePattern = validAliases.map(escapeRegExp).join('|');
+  const globalRefRegex = typePattern ? new RegExp(`(${typePattern})\\s*(\\d+(?:\\.\\d+)*)`, 'g') : null;
 
   const imageModules = Object.entries(modules).filter(([_, meta]: [string, any]) => meta.isImage);
+  if (!globalRefRegex && imageModules.length === 0) {
+    return;
+  }
 
   imageModules.forEach(([_, meta]: [string, any]) => {
     const targetQuery = meta.targetQuery || 'p, div, figcaption';
@@ -388,8 +401,8 @@ export function linkPageElements(
       const text = node.textContent || '';
       let modified = false;
 
-      globalRefRegex.lastIndex = 0;
-      if (globalRefRegex.test(text)) {
+      globalRefRegex && (globalRefRegex.lastIndex = 0);
+      if (globalRefRegex && globalRefRegex.test(text)) {
         globalRefRegex.lastIndex = 0;
         const span = document.createElement('span');
 

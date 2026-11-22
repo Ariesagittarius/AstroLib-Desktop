@@ -1,8 +1,6 @@
 ---
 import SidebarPersister from '@astrojs/starlight/components/SidebarPersister.astro';
 import SidebarSublist from './sidebar/CustomSidebarSublist.astro';
-import fs from 'node:fs';
-import { features } from '../config/features.config.ts';
 import { collections } from '../config/collections.config.ts';
 import { buildTwoTierSidebar } from '../utils/sidebar/sidebar-tree';
 
@@ -11,25 +9,6 @@ const pathname = Astro.url.pathname;
 
 // 构造 Google Docs 规范的双级侧边栏结构
 const filteredSidebar = buildTwoTierSidebar(sidebar, pathname, collections);
-const bookMatch = pathname.match(/\/collections\/([^/]+)\/([^/]+)/);
-
-// 当前图书的 EPUB 下载链接：优先探测本地 artifacts/epub/<slug>.epub，若无则回退至 GitHub Release 资产链接。
-let epubHref = null;
-if (features.epub.enabled && bookMatch) {
-  const bookSlug = bookMatch[2];
-  const epubPath = `artifacts/epub/${bookSlug}.epub`;
-  try {
-    if (fs.existsSync(epubPath)) {
-      epubHref = `/epub/${bookSlug}.epub`;
-    } else if (features.epub?.config?.releaseBaseUrl) {
-      epubHref = `${features.epub.config.releaseBaseUrl}/${bookSlug}.epub`;
-    }
-  } catch {
-    if (features.epub?.config?.releaseBaseUrl) {
-      epubHref = `${features.epub.config.releaseBaseUrl}/${bookSlug}.epub`;
-    }
-  }
-}
 ---
 
 <!-- 1. 渲染过滤后的侧边栏结构 -->
@@ -47,50 +26,6 @@ if (features.epub.enabled && bookMatch) {
     } catch {}
   })();
 </script>
-
-{features.epub.enabled && epubHref && (
-  <div class="epub-entry" data-feature="epub">
-    <a href={epubHref} download title="下载本书 EPUB（离线阅读）" aria-label="下载本书 EPUB">
-      <svg class="epub-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-        <polyline points="7 10 12 15 17 10" />
-        <line x1="12" y1="3" x2="12" y2="15" />
-      </svg>
-    </a>
-  </div>
-)}
-
-<style>
-  .epub-entry {
-    margin: auto 0.75rem 0.25rem 0;
-    display: flex;
-    justify-content: flex-end;
-    padding-top: 0.5rem;
-  }
-  .epub-entry a {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 1.75rem;
-    height: 1.75rem;
-    border-radius: 50%;
-    color: var(--sl-color-gray-4);
-    opacity: 0.85;
-    text-decoration: none;
-    transition: color 0.15s ease, opacity 0.15s ease, background-color 0.15s ease;
-  }
-  .epub-entry a .epub-icon {
-    width: 1rem;
-    height: 1rem;
-    flex-shrink: 0;
-  }
-  .epub-entry a:hover,
-  .epub-entry a:focus-visible {
-    opacity: 1;
-    color: var(--sl-color-text-accent);
-    background-color: color-mix(in srgb, var(--sl-color-text-accent) 12%, transparent);
-  }
-</style>
 
 <!-- 2. 注入客户端路由与交互管线：阅读记录、SPA 极速导航引擎与数字资源弹层 -->
 <script>

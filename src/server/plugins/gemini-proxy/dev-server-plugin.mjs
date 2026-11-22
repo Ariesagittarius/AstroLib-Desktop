@@ -22,13 +22,9 @@ export function geminiProxyDevServerPlugin() {
           return next();
         }
 
-        // 1. 响应浏览器 CORS 预检
         if (req.method === 'OPTIONS') {
           res.writeHead(204, {
-            'Access-Control-Allow-Origin': '*',
-            'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-            'Access-Control-Allow-Headers': '*',
-            'Access-Control-Max-Age': '86400',
+            'Cache-Control': 'no-store',
           });
           return res.end();
         }
@@ -40,7 +36,6 @@ export function geminiProxyDevServerPlugin() {
         if (req.method === 'GET' && (pathname === `${PROXY_PATH_PREFIX}/health` || pathname === `${PROXY_PATH_PREFIX}/health/`)) {
           res.writeHead(200, {
             'Content-Type': 'application/json; charset=utf-8',
-            'Access-Control-Allow-Origin': '*',
           });
           return res.end(
             JSON.stringify({
@@ -150,11 +145,7 @@ async function readBody(req) {
           const upstreamRes = await fetch(targetUrl, fetchOptions);
 
           // 转发上游响应头
-          const responseHeaders = {
-            'Access-Control-Allow-Origin': '*',
-            'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-            'Access-Control-Allow-Headers': '*',
-          };
+          const responseHeaders = {};
 
           const upstreamContentType = upstreamRes.headers.get('content-type') || '';
           if (upstreamContentType) {
@@ -174,23 +165,9 @@ async function readBody(req) {
 
           res.writeHead(upstreamRes.status, responseHeaders);
 
-          try {
-            fs.writeFileSync('.astro/gemini-last-req.json', JSON.stringify({
-              time: new Date().toISOString(),
-              url: targetUrl,
-              status: upstreamRes.status,
-              headers: Object.fromEntries(upstreamRes.headers.entries()),
-              body: hasBody && fetchOptions.body ? fetchOptions.body.toString('utf-8') : null,
-            }, null, 2));
-            fs.writeFileSync('.astro/gemini-raw-stream.log', '');
-          } catch {}
-
           if (upstreamRes.body) {
             for await (const chunk of upstreamRes.body) {
               if (res.writableEnded) break;
-              try {
-                fs.appendFileSync('.astro/gemini-raw-stream.log', chunk);
-              } catch {}
               res.write(chunk);
             }
           }
@@ -205,7 +182,6 @@ async function readBody(req) {
           if (!res.headersSent) {
             res.writeHead(502, {
               'Content-Type': 'application/json; charset=utf-8',
-              'Access-Control-Allow-Origin': '*',
             });
           }
           res.end(

@@ -71,6 +71,24 @@ export class ElectronContentProvider implements IContentProvider {
     return meta;
   }
 
+  async installBookFromFile(
+    fileName: string,
+    fileData: ArrayBuffer | Uint8Array,
+    onProgress?: (percent: number, stageText: string) => void
+  ): Promise<InstalledBookMeta> {
+    const bridge = this.requireIpc();
+    if (typeof bridge.installBookFromFile === 'function') {
+      if (onProgress) onProgress(30, `正在通过桌面原生通道导入 ${fileName}...`);
+      const meta = await bridge.installBookFromFile(fileName, fileData);
+      if (onProgress) onProgress(100, '安装完成');
+      return meta;
+    }
+    if (fileName.toLowerCase().endsWith('.abp')) {
+      return await this.installBookFromAbp(fileData, onProgress);
+    }
+    throw new Error('Electron IPC 缺少 installBookFromFile 方法');
+  }
+
   async removeBook(colSlug: string, bookSlug: string): Promise<boolean> {
     const bridge = this.requireIpc();
     if (typeof bridge.removeBook !== 'function') {

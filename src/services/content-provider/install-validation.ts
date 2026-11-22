@@ -166,6 +166,20 @@ export function validateInstallPayload(raw: unknown): AbpBundlePayload {
 
   // 5. 清单分区与章节引用的一致性、完备性校验
   for (const sec of manifest.sections || []) {
+    if (sec.introSlug) {
+      if (!isSafeSlug(sec.introSlug)) {
+        throw new AbpInstallError(
+          AbpInstallErrorCode.PATH_TRAVERSAL_DETECTED,
+          `清单引用了包含非法字符的导语章节 slug: ${sec.introSlug}`
+        );
+      }
+      if (!Object.prototype.hasOwnProperty.call(bundle.chapters, sec.introSlug)) {
+        throw new AbpInstallError(
+          AbpInstallErrorCode.CHAPTER_MISSING,
+          `清单声明的导语章节缺失实体数据: ${sec.introSlug}`
+        );
+      }
+    }
     for (const ch of sec.chapters || []) {
       if (!isSafeSlug(ch.slug)) {
         throw new AbpInstallError(

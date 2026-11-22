@@ -15,6 +15,8 @@ import { DEFAULT_DESKTOP_RELEASE_REPO } from '../../config/release.config';
 import { CJK_PRESETS, LATIN_PRESETS, DEFAULT_PREF } from '../../scripts/font-presets';
 import { THEME_COLOR_PRESETS } from '../../themes/material-you/color-engine';
 import SettingsSystemPanels from './SettingsSystemPanels.astro';
+import SettingsIngestPanel from './SettingsIngestPanel.astro';
+import SettingsAgentPanel from './SettingsAgentPanel.astro';
 import '../../styles/components/feature-toggles.css';
 import '../../styles/components/settings-hub.css';
 
@@ -30,14 +32,13 @@ const RUNTIME_IDS = new Set([
   'fonts',
   'crossRef',
   'formulaActions',
-  'prewarm',
-  'relationGraph',
   'mermaid',
-  'epub',
   'aiAsk',
-  'editor',
-  'inspector',
-  'pwa',
+  'translation',
+  'bilingualComparison',
+  'infoHighlight',
+  'chapterExport',
+  'exercises',
 ]);
 
 const featureMeta = Object.entries(features).map(([id, f]) => ({
@@ -88,6 +89,10 @@ const metaJson = JSON.stringify(featureMeta);
           <span class="material-symbols-outlined hub-nav-icon">tune</span>
           <span>阅读设置</span>
         </button>
+        <button type="button" class="hub-nav-item" data-target="panel-ingest">
+          <span class="material-symbols-outlined hub-nav-icon">description</span>
+          <span>文献解析与研读</span>
+        </button>
         <button type="button" class="hub-nav-item" data-target="panel-diagnostics">
           <span class="material-symbols-outlined hub-nav-icon">developer_board</span>
           <span>硬件与自省环境</span>
@@ -96,13 +101,9 @@ const metaJson = JSON.stringify(featureMeta);
           <span class="material-symbols-outlined hub-nav-icon">model_training</span>
           <span>端侧模型仓库</span>
         </button>
-        <button type="button" class="hub-nav-item" data-target="panel-services">
-          <span class="material-symbols-outlined hub-nav-icon">dns</span>
-          <span>本地服务与端口</span>
-        </button>
-        <button type="button" class="hub-nav-item" data-target="panel-extensions">
-          <span class="material-symbols-outlined hub-nav-icon">extension</span>
-          <span>扩展生态</span>
+        <button type="button" class="hub-nav-item" data-target="panel-agent">
+          <span class="material-symbols-outlined hub-nav-icon">smart_toy</span>
+          <span>Agent 与工具</span>
         </button>
       </div>
     </nav>
@@ -200,33 +201,59 @@ const metaJson = JSON.stringify(featureMeta);
                           </button>
                         </div>
 
-                        <!-- 4x4 色盘网格 -->
-                        <div class="ft-m3-palette-grid ft-grid-4">
+                        <!-- 4x4 Chrome 风格精致色盘网格与取色器 -->
+                        <div class="ft-chrome-swatches-grid">
                           {THEME_COLOR_PRESETS.map((preset) => (
                             <button
                               type="button"
-                              class="ft-palette-swatch"
-                              data-color-id={preset.id}
-                              data-seed-hex={preset.seed}
+                              class="ft-color-swatch ft-preset-swatch ft-chrome-color-tile"
+                              data-m3-color={preset.id}
                               title={`主题色：${preset.label}`}
                               aria-label={`选择${preset.label}主题色`}
                             >
-                              <span class="ft-swatch-ring" style={`--swatch-accent: ${preset.seed}`}>
-                                <span class="ft-swatch-inner" style={`background: ${preset.seed}`}></span>
-                              </span>
-                              <span class="ft-swatch-name">{preset.label}</span>
+                              <svg class="ft-color-wheel-svg" viewBox="0 0 36 36" width="42" height="42">
+                                <path d="M 18,18 L 18,0 A 18,18 0 0,1 33.588,9 Z" fill={preset.top}></path>
+                                <path d="M 18,18 L 33.588,9 A 18,18 0 0,1 33.588,27 Z" fill={preset.right}></path>
+                                <path d="M 18,18 L 33.588,27 A 18,18 0 0,1 18,36 Z" fill={preset.right}></path>
+                                <path d="M 18,18 L 18,36 A 18,18 0 0,1 2.412,27 Z" fill={preset.left}></path>
+                                <path d="M 18,18 L 2.412,27 A 18,18 0 0,1 2.412,9 Z" fill={preset.left}></path>
+                                <path d="M 18,18 L 2.412,9 A 18,18 0 0,1 18,0 Z" fill={preset.top}></path>
+                              </svg>
+                              <div class="ft-tile-check-badge">
+                                <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor">
+                                  <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"></path>
+                                </svg>
+                              </div>
                             </button>
                           ))}
-                        </div>
 
-                        <!-- 自定义拾色器 -->
-                        <div class="ft-custom-picker-row">
-                          <label class="ft-custom-picker-btn" title="自定义 HEX 主题色">
-                            <span class="material-symbols-outlined" style="font-size: 16px;">colorize</span>
-                            <span>自定义色彩</span>
-                            <input type="color" id="ft-custom-color-input" value="#0b57d0" aria-label="自定义主题色取色器" />
-                          </label>
-                          <span id="ft-custom-hex-label" class="ft-custom-hex-code">#0B57D0</span>
+                          <!-- 第 16 项：自定义取色器 (Chrome Eyedropper) -->
+                          <div
+                            class="ft-chrome-color-tile ft-custom-color-tile"
+                            data-action="open-custom-color"
+                            role="button"
+                            tabindex="0"
+                            title="自定义 HEX 主题色"
+                            aria-label="自定义主题色"
+                          >
+                            <input
+                              type="color"
+                              class="ft-color-native-input"
+                              id="ft-custom-color-native-input"
+                              value="#0b57d0"
+                              aria-label="自定义主题色取色器"
+                            />
+                            <div class="ft-eyedropper-circle">
+                              <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                                <path d="M20.71 5.63l-2.34-2.34a1 1 0 0 0-1.41 0l-3.12 3.12-1.93-1.91-1.41 1.41 1.42 1.42L3 16.25V21h4.75l8.92-8.92 1.42 1.42 1.41-1.41-1.92-1.92 3.12-3.12c.4-.4.4-1.03.01-1.42zM6.92 19L5 17.08l8.06-8.06 1.92 1.92L6.92 19z"></path>
+                              </svg>
+                            </div>
+                            <div class="ft-tile-check-badge">
+                              <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor">
+                                <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"></path>
+                              </svg>
+                            </div>
+                          </div>
                         </div>
                       </div>
 
@@ -257,21 +284,53 @@ const metaJson = JSON.stringify(featureMeta);
 
               <!-- 分组：字体与排版偏好 -->
               {features.fonts.enabled && (
-                <div class="hub-card">
+                <div class="hub-card hub-format-defaults-card">
                   <div class="ft-section hub-ft-section">
-                    <div class="ft-section-title">字体与排版偏好</div>
+                    <div class="hub-format-card-header" style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:6px;">
+                      <div class="ft-section-title" style="margin-bottom:0;">默认排版配置（按书籍格式）</div>
+                      <md-text-button id="hub-format-defaults-reset">恢复默认</md-text-button>
+                    </div>
+                    <p class="ft-settings-hint-text" style="margin:0 0 12px 0;">
+                      分别为不同格式设定全局默认字体与版式；单本书籍可在阅读窗顶部「版式与视图」独立覆写且互不影响。
+                    </p>
+                    <md-chip-set class="ft-font-chip-set" id="hub-format-defaults-tabs" style="margin-bottom:14px;">
+                      <md-filter-chip label="ABP 学术教材" data-format-tab="abp" selected></md-filter-chip>
+                      <md-filter-chip label="EPUB 电子书" data-format-tab="epub"></md-filter-chip>
+                    </md-chip-set>
                     <div class="ft-stack">
+                      <!-- 正文字号大小滑块 -->
+                      <div class="ft-segment-wrapper">
+                        <div class="ft-slider-header">
+                          <div class="ft-sub-label">默认正文字号</div>
+                          <md-assist-chip class="ft-slider-val-chip" id="hub-format-font-size-val" label="15px (11.25 pt)"></md-assist-chip>
+                        </div>
+                        <div class="ft-slider-row">
+                          <span class="ft-slider-mark min" title="紧凑精炼字阶 (9.75 pt / 13px)">A-</span>
+                          <md-slider
+                            class="ft-font-size-slider"
+                            id="hub-format-font-size-slider"
+                            min="13"
+                            max="20"
+                            step="1"
+                            value="15"
+                            labeled
+                            ticks
+                            aria-label="调整该格式默认正文字号"
+                          ></md-slider>
+                          <span class="ft-slider-mark max" title="醒目大字阶 (15.0 pt / 20px)">A+</span>
+                        </div>
+                      </div>
+
                       <!-- 西文字体预设 -->
                       <div class="ft-segment-wrapper">
-                        <div class="ft-sub-label">西文 / 公式主字体</div>
-                        <md-chip-set class="ft-font-chip-set" id="ft-font-latin-chip-set">
+                        <div class="ft-sub-label">默认西文 / 公式字体</div>
+                        <md-chip-set class="ft-font-chip-set" id="hub-format-latin-chips">
                           {LATIN_PRESETS.map((p) => (
                             <md-filter-chip
-                              class="ft-font-chip"
+                              class="ft-format-chip"
                               label={p.label}
-                              data-font-type="latin"
-                              data-font-val={p.value}
-                              selected={p.value === DEFAULT_PREF.latin}
+                              data-format-latin={p.value}
+                              selected={p.value === DEFAULT_PREF.latin ? true : undefined}
                             ></md-filter-chip>
                           ))}
                         </md-chip-set>
@@ -279,15 +338,14 @@ const metaJson = JSON.stringify(featureMeta);
 
                       <!-- 中文字体预设 -->
                       <div class="ft-segment-wrapper">
-                        <div class="ft-sub-label">中文无衬线正文字体</div>
-                        <md-chip-set class="ft-font-chip-set" id="ft-font-cjk-chip-set">
+                        <div class="ft-sub-label">默认正文中文字体</div>
+                        <md-chip-set class="ft-font-chip-set" id="hub-format-cjk-chips">
                           {CJK_PRESETS.map((p) => (
                             <md-filter-chip
-                              class="ft-font-chip"
+                              class="ft-format-chip"
                               label={p.label}
-                              data-font-type="cjk"
-                              data-font-val={p.value}
-                              selected={p.value === DEFAULT_PREF.cjk}
+                              data-format-cjk={p.value}
+                              selected={p.value === DEFAULT_PREF.cjk ? true : undefined}
                             ></md-filter-chip>
                           ))}
                         </md-chip-set>
@@ -296,41 +354,37 @@ const metaJson = JSON.stringify(featureMeta);
                       <!-- 段前空两格 (M3 Switch) -->
                       <div class="ft-item-row">
                         <div class="ft-row-info">
-                          <span class="ft-row-name">段前空两格</span>
+                          <span class="ft-row-name">默认段前空两格</span>
                         </div>
-                        <md-switch data-typography-indent aria-label="段落首行缩进两格" selected></md-switch>
+                        <md-switch id="hub-format-indent-switch" aria-label="默认段落首行缩进两格" selected></md-switch>
+                      </div>
+
+                      <!-- 默认排版体裁 -->
+                      <div class="ft-segment-wrapper">
+                        <div class="ft-sub-label">默认排版体裁</div>
+                        <md-chip-set class="ft-font-chip-set" id="hub-format-profile-chips">
+                          <md-filter-chip label="学术排版" data-format-profile="academic" selected></md-filter-chip>
+                          <md-filter-chip label="文学排版" data-format-profile="literary"></md-filter-chip>
+                        </md-chip-set>
                       </div>
 
                       <!-- 句号形态 -->
                       <div class="ft-segment-wrapper">
-                        <div class="ft-sub-label">句末标点形式</div>
-                        <md-chip-set class="ft-font-chip-set ft-punct-chip-set">
-                          <md-filter-chip class="ft-font-chip" label="数理圆点 (．)" data-punct-val="dot" selected></md-filter-chip>
-                          <md-filter-chip class="ft-font-chip" label="全角句号 (。)" data-punct-val="circle"></md-filter-chip>
+                        <div class="ft-sub-label">默认句末标点形式</div>
+                        <md-chip-set class="ft-font-chip-set" id="hub-format-punct-chips">
+                          <md-filter-chip label="数理圆点 (．)" data-format-punct="dot" selected></md-filter-chip>
+                          <md-filter-chip label="全角句号 (。)" data-format-punct="circle"></md-filter-chip>
                         </md-chip-set>
                       </div>
 
-                      <!-- 正文字号大小滑块 -->
+                      <!-- 默认阅读布局 -->
                       <div class="ft-segment-wrapper">
-                        <div class="ft-slider-header">
-                          <div class="ft-sub-label">正文字号大小</div>
-                          <md-assist-chip class="ft-slider-val-chip" id="ft-font-size-val-chip" label="16px (12.0 pt)"></md-assist-chip>
-                        </div>
-                        <div class="ft-slider-row">
-                          <span class="ft-slider-mark min" title="紧凑小字阶 (10.5 pt / 14px)">A-</span>
-                          <md-slider
-                            class="ft-font-size-slider"
-                            min="14"
-                            max="22"
-                            step="1"
-                            value="16"
-                            labeled
-                            ticks
-                            data-font-size-slider
-                            aria-label="调整正文字号"
-                          ></md-slider>
-                          <span class="ft-slider-mark max" title="醒目大字阶 (16.5 pt / 22px)">A+</span>
-                        </div>
+                        <div class="ft-sub-label">默认阅读布局</div>
+                        <md-chip-set class="ft-font-chip-set" id="hub-format-layout-chips">
+                          <md-filter-chip label="连续滚动" data-format-layout="scroll" selected></md-filter-chip>
+                          <md-filter-chip label="单页翻阅" data-format-layout="paged-single"></md-filter-chip>
+                          <md-filter-chip label="双栏对页" data-format-layout="paged-dual"></md-filter-chip>
+                        </md-chip-set>
                       </div>
                     </div>
                   </div>
@@ -375,33 +429,6 @@ const metaJson = JSON.stringify(featureMeta);
                 </div>
               </div>
 
-              <!-- Web 端 PWA 卡片 -->
-              {features.pwa?.enabled && (
-                <div class="ft-pwa-card" id="ft-pwa-card">
-                  <div class="ft-pwa-main">
-                    <div class="ft-pwa-icon-wrap" aria-hidden="true">
-                      <svg class="ft-pwa-icon" viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
-                        <path d="M20 17H4V5h16m0-2H4c-1.11 0-2 .89-2 2v12c0 1.1.89 2 2 2h4v2h8v-2h4c1.1 0 2-.9 2-2V5c0-1.11-.9-2-2-2m-3 8-5 5-5-5h3V7h4v4h3z"/>
-                      </svg>
-                    </div>
-                    <div class="ft-pwa-texts">
-                      <div class="ft-pwa-title-row">
-                        <span class="ft-pwa-title">独立应用模式</span>
-                        <span class="ft-pwa-badge" id="ft-pwa-install-badge" aria-live="polite">浏览器运行</span>
-                      </div>
-                      <div class="ft-pwa-desc">
-                        将 AstroLib 安装至系统桌面，享受极简独立阅读窗口、免浏览器外框与极速启动
-                      </div>
-                    </div>
-                    <div class="ft-pwa-action">
-                      <button type="button" class="ft-pwa-install-btn" id="ft-pwa-install-btn" title="安装为桌面独立窗口应用">
-                        安装应用
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )}
-
               <!-- 阅读特性与缓存策略 -->
               <div class="hub-card">
                 <div class="ft-section hub-ft-section">
@@ -419,17 +446,6 @@ const metaJson = JSON.stringify(featureMeta);
                         <span class="ft-row-name">公式操作</span>
                       </div>
                       <md-switch data-feature-id="formulaActions" aria-label="公式交互操作" disabled={!features.formulaActions.enabled}></md-switch>
-                    </div>
-
-                    <div class="ft-segment-wrapper ft-prewarm-wrapper">
-                      <div class="ft-sub-label">后台章节预加载</div>
-                      <div class="ft-segment-track ft-grid-5 ft-prewarm-track">
-                        <button type="button" class="ft-prewarm-btn" data-prewarm-val="0" title="关闭后台预加载（仅在点击章节时实时请求）">关闭</button>
-                        <button type="button" class="ft-prewarm-btn" data-prewarm-val="1" title="预加载前后 1 节（推荐，节省流量与内存）">前后1节</button>
-                        <button type="button" class="ft-prewarm-btn" data-prewarm-val="2" title="预加载前后 2 节">前后2节</button>
-                        <button type="button" class="ft-prewarm-btn" data-prewarm-val="3" title="预加载前后 3 节（翻页极速但增加网络请求）">前后3节</button>
-                        <button type="button" class="ft-prewarm-btn" data-prewarm-val="chapter" title="预加载当前整章所有小节（适合沉浸精读，消耗更多内存）">整章</button>
-                      </div>
                     </div>
 
                     <div class="ft-segment-wrapper ft-cache-wrapper">
@@ -453,47 +469,24 @@ const metaJson = JSON.stringify(featureMeta);
                       <>
                         <div class="ft-segment-wrapper ft-trans-mode-wrapper">
                           <div class="ft-sub-label">双语助读呈现方式</div>
-                          <md-chip-set class="ft-font-chip-set ft-trans-mode-chip-set">
-                            <md-filter-chip class="ft-font-chip" label="侧边栏对照 (默认)" data-trans-mode-val="sidebar" selected></md-filter-chip>
-                            <md-filter-chip class="ft-font-chip" label="段落下方显示" data-trans-mode-val="inline"></md-filter-chip>
+                          <md-chip-set class="ft-trans-mode-chip-set">
+                            <md-filter-chip class="ft-trans-mode-chip" label="侧边栏对照 (默认)" data-trans-mode-val="sidebar" selected={true}></md-filter-chip>
+                            <md-filter-chip class="ft-trans-mode-chip" label="段落下方显示" data-trans-mode-val="inline"></md-filter-chip>
                           </md-chip-set>
                           <div class="ft-settings-hint-text">选择「段落下方显示」时，译文将直接呈现在各段落下方，不影响右侧侧边栏大纲。</div>
                         </div>
 
                         <div class="ft-segment-wrapper ft-trans-provider-wrapper" style="margin-top: 6px;">
                           <div class="ft-sub-label">助读翻译服务商</div>
-                          <md-chip-set class="ft-font-chip-set ft-trans-provider-chip-set" aria-label="选择助读翻译服务商">
-                            <md-filter-chip class="ft-font-chip" label="Google 翻译 (免密)" data-trans-provider-val="google" selected></md-filter-chip>
-                            <md-filter-chip class="ft-font-chip ft-trans-provider-bupt hidden" label="北京邮电大学 (校内)" data-trans-provider-val="bupt" title="北京邮电大学「人人有算力」校内专属服务 · 非校园网环境不可用"></md-filter-chip>
-                            <md-filter-chip class="ft-font-chip" label="智谱 GLM-4 (免费)" data-trans-provider-val="zhipu" title="智谱开放平台 GLM-4-Flash 官方免费模型 · 国内免翻直连"></md-filter-chip>
-                            <md-filter-chip class="ft-font-chip" label="Google Gemini" data-trans-provider-val="gemini"></md-filter-chip>
+                          <md-chip-set class="ft-trans-provider-chip-set" aria-label="选择助读翻译服务商">
+                            <md-filter-chip class="ft-trans-provider-chip" label="Google 翻译 (免密)" data-trans-provider-val="google" selected={true}></md-filter-chip>
+                            <md-filter-chip class="ft-trans-provider-chip ft-trans-provider-bupt hidden" label="北京邮电大学 (校内)" data-trans-provider-val="bupt" title="北京邮电大学「人人有算力」校内专属服务 · 非校园网环境不可用"></md-filter-chip>
+                            <md-filter-chip class="ft-trans-provider-chip" label="智谱 GLM-4 (免费)" data-trans-provider-val="zhipu" title="智谱开放平台 GLM-4-Flash 官方免费模型 · 国内免翻直连"></md-filter-chip>
+                            <md-filter-chip class="ft-trans-provider-chip" label="Google Gemini" data-trans-provider-val="gemini"></md-filter-chip>
                           </md-chip-set>
                           <div class="ft-settings-hint-text">随时切换段落与侧栏翻译源；智谱 GLM-4 与 Gemini 可在侧栏或 AI 栏配置 Key，北邮需校园网。</div>
                         </div>
                       </>
-                    )}
-
-                    {features.inspector.enabled && (
-                      <div class="ft-item-row">
-                        <div class="ft-row-info">
-                          <div class="ft-row-title-line">
-                            <span class="ft-row-name">模块速查</span>
-                            <button type="button" class="ft-open-inspector-btn" data-inspector-trigger title="立即打开书籍模块速查 (Alt+M)">
-                              Alt+M
-                            </button>
-                          </div>
-                        </div>
-                        <md-switch data-feature-id="inspector" aria-label="模块速查"></md-switch>
-                      </div>
-                    )}
-
-                    {features.epub.enabled && (
-                      <div class="ft-item-row">
-                        <div class="ft-row-info">
-                          <span class="ft-row-name">离线 EPUB</span>
-                        </div>
-                        <md-switch data-feature-id="epub" aria-label="EPUB 离线下载"></md-switch>
-                      </div>
                     )}
                   </div>
                 </div>
@@ -527,18 +520,18 @@ const metaJson = JSON.stringify(featureMeta);
                       <div class="ft-ai-advanced-content">
                         <div class="ft-segment-wrapper">
                           <div class="ft-sub-label">回答方式</div>
-                          <md-chip-set class="ft-font-chip-set ft-ai-mode-chip-set">
-                            <md-filter-chip class="ft-font-chip" label="检索本书 (默认)" data-ai-mode-val="retrieve" selected></md-filter-chip>
-                            <md-filter-chip class="ft-font-chip" label="深度讨论" data-ai-mode-val="discussion"></md-filter-chip>
+                          <md-chip-set class="ft-ai-mode-chip-set">
+                            <md-filter-chip class="ft-ai-mode-chip" label="检索本书 (默认)" data-ai-mode-val="retrieve" selected={true}></md-filter-chip>
+                            <md-filter-chip class="ft-ai-mode-chip" label="深度讨论" data-ai-mode-val="discussion"></md-filter-chip>
                           </md-chip-set>
                           <div class="ft-settings-hint-text">「检索本书」优先结合教材片段溯源；「深度讨论」注重深入推导与全面讲解，需要时按需查书。</div>
                         </div>
 
                         <div class="ft-segment-wrapper">
                           <div class="ft-sub-label">来源卡片跳转</div>
-                          <md-chip-set class="ft-font-chip-set ft-ai-src-chip-set">
-                            <md-filter-chip class="ft-font-chip" label="新窗口打开" data-ai-src-val="new" selected></md-filter-chip>
-                            <md-filter-chip class="ft-font-chip" label="本页平滑跳转" data-ai-src-val="same"></md-filter-chip>
+                          <md-chip-set class="ft-ai-src-chip-set">
+                            <md-filter-chip class="ft-ai-src-chip" label="新窗口打开" data-ai-src-val="new" selected={true}></md-filter-chip>
+                            <md-filter-chip class="ft-ai-src-chip" label="本页平滑跳转" data-ai-src-val="same"></md-filter-chip>
                           </md-chip-set>
                         </div>
 
@@ -561,11 +554,11 @@ const metaJson = JSON.stringify(featureMeta);
 
                         <div class="ft-segment-wrapper">
                           <div class="ft-sub-label">问答窗口预设宽度</div>
-                          <md-chip-set class="ft-font-chip-set ft-ai-win-chip-set">
-                            <md-filter-chip class="ft-font-chip" label="紧凑 (460px)" data-ai-win-val="compact"></md-filter-chip>
-                            <md-filter-chip class="ft-font-chip" label="标准 (560px)" data-ai-win-val="standard" selected></md-filter-chip>
-                            <md-filter-chip class="ft-font-chip" label="宽屏 (720px)" data-ai-win-val="wide"></md-filter-chip>
-                            <md-filter-chip class="ft-font-chip ft-ai-win-custom-chip" label="自定义" data-ai-win-val="custom"></md-filter-chip>
+                          <md-chip-set class="ft-ai-win-chip-set">
+                            <md-filter-chip class="ft-ai-win-chip" label="紧凑 (460px)" data-ai-win-val="compact"></md-filter-chip>
+                            <md-filter-chip class="ft-ai-win-chip" label="标准 (560px)" data-ai-win-val="standard" selected={true}></md-filter-chip>
+                            <md-filter-chip class="ft-ai-win-chip" label="宽屏 (720px)" data-ai-win-val="wide"></md-filter-chip>
+                            <md-filter-chip class="ft-ai-win-chip ft-ai-win-custom-chip" label="自定义" data-ai-win-val="custom"></md-filter-chip>
                           </md-chip-set>
                         </div>
 
@@ -597,13 +590,6 @@ const metaJson = JSON.stringify(featureMeta);
 
                     <div class="ft-item-row">
                       <div class="ft-row-info">
-                        <span class="ft-row-name">章节关系图谱</span>
-                      </div>
-                      <md-switch data-feature-id="relationGraph" aria-label="章节关系图谱" disabled={!features.relationGraph.enabled}></md-switch>
-                    </div>
-
-                    <div class="ft-item-row">
-                      <div class="ft-row-info">
                         <span class="ft-row-name">Mermaid 图表</span>
                       </div>
                       <md-switch data-feature-id="mermaid" aria-label="Mermaid 图表" disabled={!features.mermaid.enabled}></md-switch>
@@ -612,29 +598,36 @@ const metaJson = JSON.stringify(featureMeta);
                 </div>
               </div>
 
-              {isDev && (
-                <div class="hub-card">
-                  <div class="ft-section ft-section-dev hub-ft-section">
-                    <div class="ft-section-title">开发者选项</div>
-                    <div class="ft-stack">
-                      <div class="ft-item-row">
-                        <div class="ft-row-info">
-                          <div class="ft-row-title-line">
-                            <span class="ft-row-name">MDX 在线精修</span>
-                            <span class="ft-badge ft-badge-dev ft-m3-dev-chip">DEV</span>
-                          </div>
-                        </div>
-                        <md-switch data-feature-id="editor" aria-label="在线精修"></md-switch>
+              <!-- 多窗口与分屏行为设置卡片 -->
+              <div class="hub-card">
+                <div class="ft-section hub-ft-section">
+                  <div class="ft-section-title">多窗口与分屏行为</div>
+                  <div class="ft-stack">
+                    <div class="ft-segment-wrapper">
+                      <div class="ft-sub-label">分屏中关闭正在展示的标签页时</div>
+                      <md-chip-set id="hub-split-close-policy-chips">
+                        <md-filter-chip label="自动补入后台标签 (默认)" data-split-policy="backfill" selected></md-filter-chip>
+                        <md-filter-chip label="自动降级分屏模式" data-split-policy="collapse"></md-filter-chip>
+                        <md-filter-chip label="保留空槽待选" data-split-policy="keep-empty"></md-filter-chip>
+                      </md-chip-set>
+                      <div class="ft-settings-hint-text">
+                        选择当多窗格中的某个标签被关闭时，空出窗格的处理方式：由后台最近标签自动补位、随剩余数量自动收缩分屏，或保留空槽待选。
                       </div>
                     </div>
                   </div>
                 </div>
-              )}
+              </div>
             </div>
           </section>
         </starlight-feature-toggles>
 
-        <!-- 面板 2-5: 系统硬件自省、模型仓库、本地服务与扩展生态 -->
+        <!-- 面板 2: 文献解析与研读 -->
+        <SettingsIngestPanel />
+
+        <!-- 面板 2b: Agent 与工具 -->
+        <SettingsAgentPanel />
+
+        <!-- 面板 3-6: 系统硬件自省、模型仓库、本地服务与扩展生态 -->
         <SettingsSystemPanels />
       </main>
     </div>

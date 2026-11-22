@@ -59,13 +59,24 @@ export const GEMINI_DEV_PROXY_ENDPOINT = '/api/proxy/gemini/v1beta/openai/chat/c
 export const BUPT_OFFICIAL_ENDPOINT = 'https://myai.bupt.edu.cn/llm-gw/v1/chat/completions';
 export const BUPT_DEV_PROXY_ENDPOINT = '/api/proxy/bupt/chat/completions';
 
+export function shouldUseLocalProxy(): boolean {
+  if (typeof import.meta !== 'undefined' && import.meta.env?.DEV) return true;
+  if (typeof window !== 'undefined') {
+    const h = window.location.hostname;
+    if (h === '127.0.0.1' || h === 'localhost' || Boolean((window as any).astrolib?.isElectron)) {
+      return true;
+    }
+  }
+  return false;
+}
+
 /**
  * 获取 Google Gemini 的有效默认端点：
- * 在 Vite 本地开发态 (import.meta.env.DEV) 下默认使用本地 Node.js 进程全双工反代端点，
- * 彻底消除浏览器 CORS 预检与 TLS 指纹阻断；生产静态构建下使用官方直连端点。
+ * 在 Vite dev 或 Electron LocalServer (127.0.0.1) 下默认使用本地 Node.js 全双工反代端点，
+ * 彻底消除浏览器 CORS 预检与 TLS 指纹阻断；纯静态托管下使用官方直连端点。
  */
 export function getGeminiDefaultEndpoint(): string {
-  if (typeof import.meta !== 'undefined' && import.meta.env?.DEV) {
+  if (shouldUseLocalProxy()) {
     return GEMINI_DEV_PROXY_ENDPOINT;
   }
   return GEMINI_OFFICIAL_ENDPOINT;
@@ -73,11 +84,11 @@ export function getGeminiDefaultEndpoint(): string {
 
 /**
  * 获取北京邮电大学「人人有算力」AI 资源服务平台的有效默认端点：
- * 在 Vite 本地开发态下默认使用本地 Node.js 进程直连端点 (10.3.19.2)，彻底屏蔽本地科学上网客户端分流干扰；
- * 生产静态构建下使用官方直连端点。
+ * 在 Vite dev 或 Electron LocalServer 下默认使用本地 Node.js 进程直连端点，屏蔽本地代理分流干扰；
+ * 纯静态托管下使用官方直连端点。
  */
 export function getBuptDefaultEndpoint(): string {
-  if (typeof import.meta !== 'undefined' && import.meta.env?.DEV) {
+  if (shouldUseLocalProxy()) {
     return BUPT_DEV_PROXY_ENDPOINT;
   }
   return BUPT_OFFICIAL_ENDPOINT;
@@ -85,23 +96,20 @@ export function getBuptDefaultEndpoint(): string {
 
 /**
  * 探测北京邮电大学校园网 AI 网关连通性
- * 快速静默探针（超时 2.5s）：
- * - 本地开发模式下通过 /api/proxy/bupt/health 探测
- * - 生产/浏览器模式下向 BUPT 官方端点发起 OPTIONS 预检探测
  */
 export async function checkBuptCampusNetwork(): Promise<boolean> {
   try {
-    const isDev = typeof import.meta !== 'undefined' && Boolean(import.meta.env?.DEV);
-    const probeUrl = isDev ? '/api/proxy/bupt/health' : BUPT_OFFICIAL_ENDPOINT;
+    const useProxy = shouldUseLocalProxy();
+    const probeUrl = useProxy ? '/api/proxy/bupt/health' : BUPT_OFFICIAL_ENDPOINT;
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 2500);
     const res = await fetch(probeUrl, {
-      method: isDev ? 'GET' : 'OPTIONS',
+      method: useProxy ? 'GET' : 'OPTIONS',
       signal: controller.signal,
       mode: 'cors',
     });
     clearTimeout(timer);
-    if (isDev) {
+    if (useProxy) {
       if (!res.ok) return false;
       const data = await res.json().catch(() => null);
       return Boolean(data?.ok && data?.isCampus);
@@ -586,12 +594,12 @@ export function getProviderEndpoint(providerId?: string): string {
     const cleanOverride = override.trim();
     // 特化 Gemini：若处于本地开发态，且本地存储残留的是 Google 官方端点，
     // 智能映射为本地 Dev Server 反代端点，避免因历史缓存导致浏览器/代理握手失败
-    if (targetProvider === 'gemini' && typeof import.meta !== 'undefined' && import.meta.env?.DEV) {
+    if (targetProvider === 'gemini' && shouldUseLocalProxy()) {
       if (cleanOverride === GEMINI_OFFICIAL_ENDPOINT) {
         return GEMINI_DEV_PROXY_ENDPOINT;
       }
     }
-    if (targetProvider === 'bupt' && typeof import.meta !== 'undefined' && import.meta.env?.DEV) {
+    if (targetProvider === 'bupt' && shouldUseLocalProxy()) {
       if (cleanOverride === BUPT_OFFICIAL_ENDPOINT || cleanOverride.includes('myai.bupt.edu.cn')) {
         return BUPT_DEV_PROXY_ENDPOINT;
       }
@@ -650,7 +658,7 @@ export function getAiEndpoint(modelId?: string): string {
 
   // 1. 如果模型自身有特定 endpoint 且不属于默认提供商端点
   if (found && found.endpoint) {
-    if (found.provider === 'gemini' && typeof import.meta !== 'undefined' && import.meta.env?.DEV) {
+    if (found.provider === 'gemini' && shouldUseLocalProxy()) {
       if (found.endpoint === GEMINI_OFFICIAL_ENDPOINT) {
         return getProviderEndpoint('gemini');
       }
@@ -957,12 +965,12 @@ export async function testAiConnection(
   const targetId = modelId || getActiveAiModelId();
   const apiKey = (explicitKey !== undefined ? explicitKey : getProviderApiKey(targetProviderId)).trim();
   let endpoint = (explicitEndpoint !== undefined ? explicitEndpoint : getProviderEndpoint(targetProviderId)).trim();
-  if (targetProviderId === 'gemini' && typeof import.meta !== 'undefined' && import.meta.env?.DEV) {
+  if (targetProviderId === 'gemini' && shouldUseLocalProxy()) {
     if (endpoint === GEMINI_OFFICIAL_ENDPOINT) {
       endpoint = GEMINI_DEV_PROXY_ENDPOINT;
     }
   }
-  if (targetProviderId === 'bupt' && typeof import.meta !== 'undefined' && import.meta.env?.DEV) {
+  if (targetProviderId === 'bupt' && shouldUseLocalProxy()) {
     if (endpoint === BUPT_OFFICIAL_ENDPOINT || endpoint.includes('myai.bupt.edu.cn')) {
       endpoint = BUPT_DEV_PROXY_ENDPOINT;
     }

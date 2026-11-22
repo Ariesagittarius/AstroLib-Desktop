@@ -1,3 +1,11 @@
+@font-face {
+  font-family: 'Material Symbols Outlined';
+  font-style: normal;
+  font-weight: 100 700;
+  font-display: swap;
+  src: url('/fonts/material-symbols-outlined.woff2') format('woff2');
+}
+
 /* ==========================================================================
    字体系统（Font Presets & Reader Override）
    --------------------------------------------------------------------------
@@ -36,15 +44,15 @@
         并以自托管的 'Noto Serif SC Variable' (@fontsource) 作为高质量无缝兜底；
      3. 传统中易宋体 (SimSun) 仅置于最末端作为系统兜底，绝不优先匹配。 */
   --academic-font-body: 'Times New Roman', Georgia,
-    'Source Han Serif SC', 'Source Han Serif CN',
+    'Noto Serif SC Variable', 'Source Han Serif SC', 'Source Han Serif CN',
     'Noto Serif SC', 'Noto Serif CJK SC', '思源宋体',
-    'Noto Serif SC Variable', 'Songti SC', 'STSong', 'SimSun', serif;
+    'Songti SC', 'STSong', 'SimSun', serif;
 
   /* 学术标题/环境标签字体栈：严肃经典大学教材黑体体系（高教社/科学社权威质感） */
-  --academic-font-heading: 'Google Sans', 'Google Sans Text',
+  --academic-font-heading: 'Plus Jakarta Sans Variable', 'Noto Sans SC Variable',
     'Source Han Sans SC', 'Source Han Sans CN',
     'Noto Sans SC', 'Noto Sans CJK SC', '思源黑体',
-    'Noto Sans SC Variable', 'PingFang SC', sans-serif;
+    'PingFang SC', sans-serif;
 
   --academic-font-latin: 'Times New Roman', Georgia, serif;
   --academic-font-math: 'KaTeX_Math', 'KaTeX_Main', 'Times New Roman', serif;
@@ -55,11 +63,11 @@
   --academic-color-tag: #1a1a1a;         /* 亮色：公式编号 (\tag) 采用与正文同级深墨 */
 
   /* 正文与标题文字韵律 */
-  --academic-font-size-body: 1rem;       /* 16px 标准学术基准字阶 */
+  --academic-font-size-body: 0.9375rem;  /* 15px (11.25pt) 精炼学术基准字阶，杜绝过大溢出 */
   --academic-line-height-body: 1.74;     /* 紧凑且包容复杂行内公式的学术阅读行高 (27.8px) */
   --academic-letter-spacing-body: normal;/* 纯正 0 letter-spacing，不人为拉大中文 tracking */
   --academic-font-weight-body: 400;      /* 纯正 400 原生字重，杜绝加粗假充印刷质感 */
-  --academic-font-weight-heading: 650;   /* 标题与定理标签采用精确 SemiBold */
+  --academic-font-weight-heading: 550;   /* 标题与定理标签采用精确克制 SemiBold，杜绝 700 压迫感 */
 }
 
 /* 暗色模式墨色适配（柔和夜读纸色） */
@@ -149,12 +157,13 @@
    行内代码/代码块仍走 --sl-font-mono，KaTeX 公式仍走 KaTeX 自带字体，均不受影响。 */
 .sl-markdown-content,
 .sl-markdown-content :is(p, li, dd, td, th, blockquote, .fallback-content, .card-body) {
-  font-family: var(--font-reading) !important;
+  font-family: var(--font-reading);
   font-size: var(--academic-font-size-body);
   line-height: var(--academic-line-height-body) !important;
   color: var(--academic-color-ink);
   letter-spacing: var(--academic-letter-spacing-body);
   font-weight: var(--academic-font-weight-body);
+  font-synthesis-weight: none;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
@@ -164,15 +173,66 @@
   text-autospace: normal;
 }
 
-.main-pane h1,
-#_top,
-.sl-markdown-content :is(h1, h2, h3, h4, h5, h6) {
+html:not([data-source-format='epub'][data-use-book-fonts='true']:not([data-style-mode='reflow'])) .sl-markdown-content,
+html:not([data-source-format='epub'][data-use-book-fonts='true']:not([data-style-mode='reflow'])) .sl-markdown-content :is(p, li, dd, td, th, blockquote, .fallback-content, .card-body) {
+  font-family: var(--font-reading) !important;
+}
+
+.astrolib-book-scope,
+.astrolib-book-scope * {
+  font-synthesis-weight: none;
+}
+
+.main-pane .chapter-header h1,
+#_top {
   font-family: var(--font-heading) !important;
+  font-size: 1.45rem !important;
+  font-weight: 550 !important;
+  line-height: 1.35 !important;
+  color: var(--academic-color-heading);
+}
+
+.sl-markdown-content :is(h1, h2, h3, h4, h5, h6) {
+  font-family: var(--font-heading);
   color: var(--academic-color-heading);
   font-weight: var(--academic-font-weight-heading);
+  font-synthesis-weight: none;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
+}
+
+html:not([data-reading-profile='literary']) .sl-markdown-content :is(h1, h2, h3, h4, h5, h6) {
+  font-family: var(--font-heading) !important;
+}
+
+html[data-reading-profile='literary']:not([data-use-book-fonts='true'][data-style-mode='original']):not([data-use-book-fonts='true'][data-style-mode='harmonized']) .sl-markdown-content :is(h1, h2, h3, h4, h5, h6) {
+  font-family: var(--font-reading) !important;
+}
+
+.sl-markdown-content h2 {
+  font-size: 1.25rem !important;
+  line-height: 1.38 !important;
+  margin-top: 1.6rem !important;
+  margin-bottom: 0.8rem !important;
+}
+
+.sl-markdown-content h3 {
+  font-size: 1.08rem !important;
+  line-height: 1.4 !important;
+  margin-top: 1.3rem !important;
+  margin-bottom: 0.6rem !important;
+}
+
+.sl-markdown-content h4 {
+  font-size: 0.98rem !important;
+  line-height: 1.4 !important;
+}
+
+.sl-markdown-content :is(strong, b) {
+  font-weight: 700;
+  font-synthesis-weight: none;
+  color: var(--academic-color-heading);
 }
 
 

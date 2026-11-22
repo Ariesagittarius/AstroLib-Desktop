@@ -8,14 +8,16 @@
 import { app } from 'electron';
 import path from 'node:path';
 import fs from 'node:fs';
-import zlib from 'node:zlib';
 import {
-  validateAbpBundle,
+  type AbpBundlePayload,
   type AstroBookManifest,
   type AstroBookChapterPayload,
   type InstalledBookMeta,
 } from '../../src/types/content-package.ts';
 import type { StorageStats } from '../../src/services/content-provider/types.ts';
+import { validateInstallPayload } from '../../src/services/content-provider/install-validation.ts';
+import { bookFormatRegistry } from '../../src/core/book-formats/registry.ts';
+import type { BookNormalizeOptions, NormalizedSourceArchive } from '../../src/core/book-formats/types.ts';
 
 /**
  * 校验相对路径安全拼接：严禁路径穿越或写至基准目录之外
@@ -100,37 +102,56 @@ export class DesktopBookManager {
     }
   }
 
+  private toNodeBuffer(rawBuffer: Buffer | Uint8Array | ArrayBuffer | any): Buffer {
+    if (Buffer.isBuffer(rawBuffer)) {
+      return rawBuffer;
+    }
+    if (rawBuffer instanceof Uint8Array) {
+      return Buffer.from(rawBuffer.buffer, rawBuffer.byteOffset, rawBuffer.byteLength);
+    }
+    if (rawBuffer instanceof ArrayBuffer) {
+      return Buffer.from(rawBuffer);
+    }
+    if (Array.isArray(rawBuffer)) {
+      return Buffer.from(rawBuffer);
+    }
+    if (typeof rawBuffer === 'object' && rawBuffer !== null) {
+      const values = Object.values(rawBuffer) as number[];
+      return Buffer.from(values);
+    }
+    return Buffer.from(rawBuffer as any);
+  }
+
+  /**
+   * 统一从任意支持格式的书籍文件 (.abp / .epub 等) 安装到本地持久化存储
+   */
+  public async installBookFromFile(
+    fileName: string,
+    fileBuffer: Buffer | Uint8Array | ArrayBuffer | any,
+    options: BookNormalizeOptions = {}
+  ): Promise<InstalledBookMeta> {
+    const nodeBuf = this.toNodeBuffer(fileBuffer);
+    const uint8 = new Uint8Array(nodeBuf.buffer, nodeBuf.byteOffset, nodeBuf.byteLength);
+    const normalized = await bookFormatRegistry.normalizeFile(fileName, uint8, options);
+    const validated = validateInstallPayload(normalized.bundle);
+    return await this.installNormalizedBundle(validated, normalized.sourceArchive);
+  }
+
   /**
    * 从 .abp (Gzip 压缩 JSON) 字节流安装书籍到本地持久化存储
    */
   public async installBookFromAbp(abpBuffer: Buffer | Uint8Array | ArrayBuffer | any): Promise<InstalledBookMeta> {
-    let nodeBuf: Buffer;
-    if (Buffer.isBuffer(abpBuffer)) {
-      nodeBuf = abpBuffer;
-    } else if (abpBuffer instanceof Uint8Array) {
-      nodeBuf = Buffer.from(abpBuffer.buffer, abpBuffer.byteOffset, abpBuffer.byteLength);
-    } else if (abpBuffer instanceof ArrayBuffer) {
-      nodeBuf = Buffer.from(abpBuffer);
-    } else if (Array.isArray(abpBuffer)) {
-      nodeBuf = Buffer.from(abpBuffer);
-    } else if (typeof abpBuffer === 'object' && abpBuffer !== null) {
-      const values = Object.values(abpBuffer) as number[];
-      nodeBuf = Buffer.from(values);
-    } else {
-      nodeBuf = Buffer.from(abpBuffer as any);
-    }
+    return await this.installBookFromFile('book.abp', abpBuffer);
+  }
 
-    // 1. Gzip 解压缩
-    let jsonText: string;
-    try {
-      const decompressed = zlib.gunzipSync(nodeBuf);
-      jsonText = decompressed.toString('utf8');
-    } catch (err: any) {
-      throw new Error(`解压 .abp 数据包失败: ${err.message}`);
-    }
-
-    // 2. 解析并严格校验 ABP 数据包结构
-    const bundle = validateAbpBundle(JSON.parse(jsonText));
+  /**
+   * 将已归一化并通过契约校验的内容包原子安装至本地存储目录
+   */
+  public async installNormalizedBundle(
+    bundleInput: AbpBundlePayload,
+    sourceArchive?: NormalizedSourceArchive
+  ): Promise<InstalledBookMeta> {
+    const bundle = validateInstallPayload(bundleInput);
     const manifest: AstroBookManifest = bundle.manifest;
     const chapters: Record<string, AstroBookChapterPayload> = bundle.chapters || {};
     const assets: Record<string, string> = bundle.assets || {};
@@ -157,12 +178,25 @@ export class DesktopBookManager {
         fs.writeFileSync(chapFile, JSON.stringify(payload, null, 2), 'utf8');
       }
 
-      // 5. 写入配图资源 (Base64 解码，严格校验相对路径)
+      // 5. 写入配图与静态资产 (Base64 解码，严格校验相对路径)
       for (const [relPath, b64Data] of Object.entries(assets)) {
         const destPath = resolveSafeSubpath(stagingDir, relPath);
         this.ensureDir(path.dirname(destPath));
         const imgBuffer = Buffer.from(b64Data, 'base64');
         fs.writeFileSync(destPath, imgBuffer);
+      }
+
+      // 5.0 写入原始归档副本（如 source/original.epub）
+      if (sourceArchive && sourceArchive.bytes && sourceArchive.bytes.byteLength > 0) {
+        const safeArchiveName = path.basename(sourceArchive.fileName || 'original.epub') || 'original.epub';
+        const archivePath = resolveSafeSubpath(stagingDir, `source/${safeArchiveName}`);
+        this.ensureDir(path.dirname(archivePath));
+        fs.writeFileSync(archivePath, Buffer.from(sourceArchive.bytes.buffer, sourceArchive.bytes.byteOffset, sourceArchive.bytes.byteLength));
+      } else if (bundle.sourceArchiveBase64) {
+        const safeArchiveName = path.basename(bundle.sourceArchiveFileName || 'original.epub') || 'original.epub';
+        const archivePath = resolveSafeSubpath(stagingDir, `source/${safeArchiveName}`);
+        this.ensureDir(path.dirname(archivePath));
+        fs.writeFileSync(archivePath, Buffer.from(bundle.sourceArchiveBase64, 'base64'));
       }
 
       // 5.1 写入切片元数据与离线量化向量 (若 bundle 包含 embeddings)
@@ -180,18 +214,12 @@ export class DesktopBookManager {
         }
       }
 
-      // 5.2 写入自包含辅助数据（AI 索引、知识图谱、交叉引用、模块巡检、课后习题）
+      // 5.2 写入自包含辅助数据（AI 索引、交叉引用、课后习题）
       if (bundle.aiIndex) {
         fs.writeFileSync(path.join(stagingDir, 'ai-index.json'), JSON.stringify(bundle.aiIndex, null, 2), 'utf8');
       }
-      if (bundle.relationGraph) {
-        fs.writeFileSync(path.join(stagingDir, 'relation-graph.json'), JSON.stringify(bundle.relationGraph, null, 2), 'utf8');
-      }
       if (bundle.crossRefs) {
         fs.writeFileSync(path.join(stagingDir, 'cross-refs.json'), JSON.stringify(bundle.crossRefs, null, 2), 'utf8');
-      }
-      if (bundle.inspectorData) {
-        fs.writeFileSync(path.join(stagingDir, 'inspector-data.json'), JSON.stringify(bundle.inspectorData, null, 2), 'utf8');
       }
       if (bundle.exercises && typeof bundle.exercises === 'object') {
         this.ensureDir(stagingExercisesDir);
@@ -295,12 +323,13 @@ export class DesktopBookManager {
    * 获取单本书籍的 Manifest
    */
   public async getBookManifest(colSlug: string, bookSlug: string): Promise<AstroBookManifest | null> {
-    const manifestFile = path.join(this.storageDir, `${colSlug}-${bookSlug}`, 'manifest.json');
-    if (fs.existsSync(manifestFile)) {
-      try {
+    try {
+      const bookDir = resolveSafeSubpath(this.storageDir, `${colSlug}-${bookSlug}`);
+      const manifestFile = path.join(bookDir, 'manifest.json');
+      if (fs.existsSync(manifestFile)) {
         return JSON.parse(fs.readFileSync(manifestFile, 'utf8'));
-      } catch {}
-    }
+      }
+    } catch {}
     return null;
   }
 
@@ -312,12 +341,15 @@ export class DesktopBookManager {
     bookSlug: string,
     chapterSlug: string
   ): Promise<AstroBookChapterPayload | null> {
-    const chapFile = path.join(this.storageDir, `${colSlug}-${bookSlug}`, 'chapters', `${chapterSlug}.json`);
-    if (fs.existsSync(chapFile)) {
-      try {
+    try {
+      const chapFile = resolveSafeSubpath(
+        this.storageDir,
+        `${colSlug}-${bookSlug}/chapters/${chapterSlug}.json`
+      );
+      if (fs.existsSync(chapFile)) {
         return JSON.parse(fs.readFileSync(chapFile, 'utf8'));
-      } catch {}
-    }
+      }
+    } catch {}
     return null;
   }
 

@@ -31,22 +31,24 @@ const shouldRenderSearch =
 			document.documentElement.dataset.theme = resolvedColorTheme;
 			document.documentElement.style.colorScheme = resolvedColorTheme;
 
-			var fontKey = 'starlight-font';
-			var rawFont = localStorage.getItem(fontKey);
-			if (rawFont) {
-				var parsed = JSON.parse(rawFont);
-				if (parsed && typeof parsed === 'object') {
-					if (parsed.latin) document.documentElement.dataset.fontLatin = parsed.latin;
-					if (parsed.cjk) document.documentElement.dataset.fontCjk = parsed.cjk;
+			if (!document.documentElement.dataset.sourceFormat) {
+				var fontKey = 'starlight-font';
+				var rawFont = localStorage.getItem(fontKey);
+				if (rawFont) {
+					var parsed = JSON.parse(rawFont);
+					if (parsed && typeof parsed === 'object') {
+						if (parsed.latin) document.documentElement.dataset.fontLatin = parsed.latin;
+						if (parsed.cjk) document.documentElement.dataset.fontCjk = parsed.cjk;
+					}
 				}
-			}
-			var indentVal = localStorage.getItem('astrolib_typography_indent');
-			if (indentVal === null) indentVal = localStorage.getItem('starlight-paragraph-indent');
-			document.documentElement.dataset.paragraphIndent = indentVal === 'false' ? 'false' : 'true';
+				var indentVal = localStorage.getItem('astrolib_typography_indent');
+				if (indentVal === null) indentVal = localStorage.getItem('starlight-paragraph-indent');
+				document.documentElement.dataset.paragraphIndent = indentVal === 'false' ? 'false' : 'true';
 
-			var fsVal = parseInt(localStorage.getItem('astrolib_font_size') || '', 10);
-			if (!isNaN(fsVal) && fsVal >= 14 && fsVal <= 22) {
-				document.documentElement.style.setProperty('--academic-font-size-body', parseFloat((fsVal * 0.75).toFixed(2)) + 'pt');
+				var fsVal = parseInt(localStorage.getItem('astrolib_font_size') || '', 10);
+				if (!isNaN(fsVal) && fsVal >= 13 && fsVal <= 22) {
+					document.documentElement.style.setProperty('--academic-font-size-body', parseFloat((fsVal * 0.75).toFixed(2)) + 'pt');
+				}
 			}
 
 			if (localStorage.getItem('astrolib_lite_mode') === 'true') {
@@ -71,6 +73,7 @@ const shouldRenderSearch =
 	currentPath={Astro.url.pathname}
 	siteTitle={typeof config.title === 'string' ? config.title : 'AstroLib'}
 	showSearch={shouldRenderSearch}
+	showNavLinks={false}
 	showThemeToggle={false}
 	showHubButton={false}
 	showGithubLink={false}
@@ -146,6 +149,19 @@ const shouldRenderSearch =
 		>
 			<md-icon class="header-mdicon vp-focus-icon" aria-hidden="true">center_focus_strong</md-icon>
 		</button>
+
+		<!-- 章节 LaTeX / PDF 导出入口 (Alt+X) -->
+		<button
+			type="button"
+			class="m3-icon-btn m3-export-btn vp-export-btn"
+			id="btn-chapter-export"
+			data-chapter-export-trigger
+			aria-label="章节 LaTeX / PDF 导出 (Alt+X)"
+			title="导出本章为 LaTeX / PDF (Alt+X)"
+			data-tooltip="导出本章 (Alt+X)"
+		>
+			<md-icon class="header-mdicon vp-export-icon" aria-hidden="true">download</md-icon>
+		</button>
 	</div>
 </M3TopNavBar>
 
@@ -169,12 +185,12 @@ const shouldRenderSearch =
 	.vp-right-sidebar-toggle-btn,
 	.vp-translate-btn,
 	.vp-focus-btn,
-	.vp-blank-doc-btn {
+	.vp-export-btn {
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		width: 2.125rem;
-		height: 2.125rem;
+		width: 2rem;
+		height: 2rem;
 		padding: 0;
 		border-radius: 50%;
 		border: none;
@@ -189,7 +205,7 @@ const shouldRenderSearch =
 
 	.vp-translate-icon,
 	.vp-focus-icon,
-	.vp-blank-doc-icon,
+	.vp-export-icon,
 	.vp-hub-icon {
 		font-size: 1.25rem !important;
 		width: 1.25rem;
@@ -204,7 +220,7 @@ const shouldRenderSearch =
 	:global([data-theme='dark']) .vp-right-sidebar-toggle-btn,
 	:global([data-theme='dark']) .vp-translate-btn,
 	:global([data-theme='dark']) .vp-focus-btn,
-	:global([data-theme='dark']) .vp-blank-doc-btn {
+	:global([data-theme='dark']) .vp-export-btn {
 		color: var(--sl-color-gray-2, #e2e8f0);
 	}
 
@@ -212,7 +228,7 @@ const shouldRenderSearch =
 	.vp-right-sidebar-toggle-btn:hover,
 	.vp-translate-btn:hover,
 	.vp-focus-btn:hover,
-	.vp-blank-doc-btn:hover {
+	.vp-export-btn:hover {
 		background-color: var(--sl-color-gray-6, rgba(125, 125, 125, 0.1));
 		color: var(--sl-color-text-accent);
 	}
@@ -247,15 +263,13 @@ const shouldRenderSearch =
 	   ========================================================================== */
 	.vp-sidebar-toggle-btn[data-tooltip],
 	.vp-right-sidebar-toggle-btn[data-tooltip],
-	.vp-translate-btn[data-tooltip],
-	.vp-blank-doc-btn[data-tooltip] {
+	.vp-translate-btn[data-tooltip] {
 		position: relative;
 	}
 
 	.vp-sidebar-toggle-btn[data-tooltip]::before,
 	.vp-right-sidebar-toggle-btn[data-tooltip]::before,
-	.vp-translate-btn[data-tooltip]::before,
-	.vp-blank-doc-btn[data-tooltip]::before {
+	.vp-translate-btn[data-tooltip]::before {
 		content: attr(data-tooltip);
 		position: absolute;
 		top: calc(100% + 8px);
@@ -279,8 +293,7 @@ const shouldRenderSearch =
 
 	.vp-sidebar-toggle-btn[data-tooltip]::after,
 	.vp-right-sidebar-toggle-btn[data-tooltip]::after,
-	.vp-translate-btn[data-tooltip]::after,
-	.vp-blank-doc-btn[data-tooltip]::after {
+	.vp-translate-btn[data-tooltip]::after {
 		content: '';
 		position: absolute;
 		top: calc(100% + 3px);
@@ -307,11 +320,7 @@ const shouldRenderSearch =
 	.vp-translate-btn[data-tooltip]:hover::before,
 	.vp-translate-btn[data-tooltip]:hover::after,
 	.vp-translate-btn[data-tooltip]:focus-visible::before,
-	.vp-translate-btn[data-tooltip]:focus-visible::after,
-	.vp-blank-doc-btn[data-tooltip]:hover::before,
-	.vp-blank-doc-btn[data-tooltip]:hover::after,
-	.vp-blank-doc-btn[data-tooltip]:focus-visible::before,
-	.vp-blank-doc-btn[data-tooltip]:focus-visible::after {
+	.vp-translate-btn[data-tooltip]:focus-visible::after {
 		opacity: 1;
 		visibility: visible;
 		transform: translateX(-50%) translateY(0);
@@ -454,14 +463,13 @@ const shouldRenderSearch =
 		'fonts',
 		'crossRef',
 		'formulaActions',
-		'prewarm',
-		'relationGraph',
 		'mermaid',
-		'epub',
 		'aiAsk',
-		'editor',
-		'inspector',
-		'pwa',
+		'translation',
+		'bilingualComparison',
+		'infoHighlight',
+		'chapterExport',
+		'exercises',
 	]);
 
 	const readerMeta = Object.entries(features).map(([id, f]: [string, any]) => ({
@@ -516,21 +524,26 @@ const shouldRenderSearch =
 					document.documentElement.dataset.theme = effective;
 					document.documentElement.style.colorScheme = effective;
 				}
-				if (e.data.font) {
-					try {
-						const parsed = typeof e.data.font === 'string' ? JSON.parse(e.data.font) : e.data.font;
-						applyFontPref(parsed);
-					} catch {}
-				}
-				if (e.data.fontSize !== undefined && e.data.fontSize !== null) {
-					const parsedSize = parseInt(String(e.data.fontSize), 10);
-					if (!isNaN(parsedSize)) applyFontSize(parsedSize);
-				}
-				if (e.data.punctStyle === 'dot' || e.data.punctStyle === 'circle') {
-					applyPunctStyle(e.data.punctStyle);
-				}
-				if (e.data.indent !== undefined && e.data.indent !== null) {
-					applyParagraphIndent(String(e.data.indent) !== 'false');
+				const isBookReader =
+					Boolean(document.documentElement.dataset.sourceFormat) ||
+					typeof (window as any).__applyEffectiveBookTypography === 'function';
+				if (!isBookReader) {
+					if (e.data.font) {
+						try {
+							const parsed = typeof e.data.font === 'string' ? JSON.parse(e.data.font) : e.data.font;
+							applyFontPref(parsed);
+						} catch {}
+					}
+					if (e.data.fontSize !== undefined && e.data.fontSize !== null) {
+						const parsedSize = parseInt(String(e.data.fontSize), 10);
+						if (!isNaN(parsedSize)) applyFontSize(parsedSize);
+					}
+					if (e.data.punctStyle === 'dot' || e.data.punctStyle === 'circle') {
+						applyPunctStyle(e.data.punctStyle);
+					}
+					if (e.data.indent !== undefined && e.data.indent !== null) {
+						applyParagraphIndent(String(e.data.indent) !== 'false');
+					}
 				}
 				if (e.data.liteMode !== undefined && e.data.liteMode !== null) {
 					applyLiteMode(String(e.data.liteMode) === 'true');

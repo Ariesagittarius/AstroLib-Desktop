@@ -1,92 +1,53 @@
-# AstroLib 开发与架构文档中心
+# AstroLib Documentation Hub
 
-本文档目录收录了 AstroLib（面向大学理工科教材与学术资料的数字化阅读与自测系统）的开发指南、贡献规程与核心架构设计交接文档。
+Authoritative technical documentation for the AstroLib Desktop reading, research, agent harness, and academic publishing platform.
 
----
+## Start Here
 
-## 1. 核心开发与贡献指南
+- [Project README](../README.md) — Overview, quick start, and license information.
+- [Agent Workspace Rules](../AGENTS.md) — Architectural Ten Tenets, operational invariants, and commit/distribution rules.
+- [Security Policy](../SECURITY.md) — Trust model and vulnerability reporting.
+- [Testing Architecture](../tests/TESTING.md) — 6-project Vitest pyramid, `test:affected`, and CI gates.
 
-### 1.1 概览
-- [**项目概览**](./01-overview.md)：系统定位与 6 大核心优势（Material You 排版、印刷级 LaTeX 导出、离线 EPUB3 打包、配套习题册、跨页知识网络、Agent MCP 工具链融合 AI 问答）。
+## Guides (Task-Oriented Workflows)
 
-### 1.2 快速入门
-- [**doc1: 本地部署与运行**](./quickstart/01-deployment-and-running.md)：运行环境要求、依赖安装、前台/后台守护开发服务启动与生产打包预览。
-- [**doc2: 脚本列表与说明**](./quickstart/02-all-runnable-scripts.md)：全站 npm 命令速查与 `scripts/` 构建、校验、抽取工具分类说明。
-- [**doc3: 添加新书**](./quickstart/03-add-new-book.md)：目录规范、MDX 章节结构、语义卡片使用准则、中央书库注册与语法校验。
-- [**doc4: 加入习题册**](./quickstart/04-add-exercise-booklet.md)：题目数据 Schema 规范、KaTeX 预编译流水线、章节触发器挂载与验证。
-- [**doc5: Electron 桌面端与 ABP 离线分发**](./Electron桌面端与ABP离线分发系统交接文档.md)：框架与内容解耦架构、ABP 标准内容包格式、Universal Reader 动态页面合成引擎、状态持久化与免安装桌面版编译。
+- [Development Workflow](guides/development.md) — Local environment, Astro shell build, Electron bundling, and debugging.
+- [Book Ingestion & PDF2ABP](guides/book-ingestion.md) — MinerU API/local OCR ingestion, PDF2ABP multi-agent authoring, EPUB import, and ABP compilation.
+- [Desktop Packaging & Offline Assets](guides/desktop-packaging.md) — Self-hosted fonts/icons, unpacked Python runners, ASAR hygiene, and NSIS/Portable installers.
+- [Agent CLI & MCP Integration](guides/agent-cli-mcp.md) — Operating `astrolib-cli`, `astrolib-mcp`, Content API, and builtin Harness plugins.
+- [Release & Dual-Remote Push](guides/release-and-push.md) — Universal comment stripping, pre-push verification, and GitHub release automation.
 
-### 1.3 贡献指南
-- [**doc1: 贡献新书：AI 数据清洗**](./contributing/01-contribute-book-ai-cleaning.md)：以扫描原图为唯一真实源，利用 Gemma 4 26B 与 Gemini 3.5 Flash Lite 进行视觉重构；附生产级脚本与 Prompt 模版。
-- [**doc2: 贡献勘误**](./contributing/02-contribute-errata.md)：使用内置工具进行教材正文一键选行勘误（`Alt+F`）与真题题库题目报错。
-- [**doc3: 贡献 AI 题解**](./contributing/03-contribute-ai-solutions.md)：调用本地模型生成规范推导、审阅与多端对照，并将高质量题解共享至社区题库。
+## Architecture Reference
 
-### 1.4 附加说明
-- [**doc1: AI 模型 API Key 申请与配置**](./advanced/01-ai-api-keys-setup.md)：Google Gemini（含代理环境说明）、DeepSeek（国内直连）及自定义 OpenAI 兼容端点配置。
-- [**doc2: MCP 工具链与 RAG 架构**](./advanced/02-mcp-and-rag-deep-dive.md)：基于 Model Context Protocol 的 8 个端侧工具规格与抗幻觉证据链工作原理。
-- [**doc3: 环境配置与常见问题**](./advanced/03-local-env-setup-troubleshooting.md)：Windows 脚本策略、sharp 镜像源、Git 换行符与 Node 内存配额排坑。
-- [**doc4: MDX 编辑模式与模块检查**](./advanced/04-developer-mode-and-inspection.md)：基于 Vite 的浏览器双向源码回写与全书模块结构健康度检查。
-- [**doc5: Git 提交规范与代码同步**](./advanced/05-academic-git-and-dual-push.md)：学术级 Commit Specification 约束与双轨自动脱敏推送流水线。
-- [**doc6: 自动化测试套件与类型守卫架构**](./自动化测试套件与类型守卫架构交接文档.md)：现代四层测试金字塔（Unit / Contract / Acceptance / System）、TypeScript 严格类型覆盖（0 错误门禁）与 CI/CD 自动化流水线。
+- [System Overview](architecture/overview.md) — Module topology, directory layout, and source-of-truth boundaries.
+- [Desktop Runtime & IPC](architecture/desktop-runtime.md) — Electron main/preload processes, `LocalServer`, `StaticHandler`, `DesktopBookManager`, and `SettingsManager`.
+- [Reader Shell & ABP Runtime](architecture/reader-and-abp.md) — Converged `/collections/` reading pipeline, `reader-shell-template.ts`, Sideload Dock, and Canvas workspace.
+- [Agent Harness & Content API](architecture/agent-harness.md) — Embedded AI workspace, `PluginEnvironment`, builtin plugins, Content API, and PDF2ABP orchestrator.
+- [Security Model](architecture/security-model.md) — Zero-trust external boundary, loopback `X-AstroLib-Token`, HAST HTML sanitization, subprocess env filtering, ZipSlip protection, and `safeStorage`.
+- [Desktop Feature Catalog](architecture/feature-catalog.md) — Complete inventory of active Desktop features, configuration keys, runtime entrypoints, and retired legacy surfaces.
 
----
+## Format Specifications
 
-## 2. 核心架构与专项技术交接
+- [ABP Format Specification](specs/abp-format.md) — AstroLib Book Package (Schema 1.0.0) bundle, manifest, chapter JSON, and auxiliary indexes.
+- [Academic Publishing & Notice Framework](specs/academic-publishing.md) — MDX academic card taxonomy, KaTeX/Typst/LaTeX/EPUB rules, and hierarchical Wiki Notice configuration.
+- [Content API & AURP Specification](specs/content-api.md) — `astrolib://` URI resolution, Content API REST routes, and AST node schemas.
+- [Annotations & ANP Specification](specs/annotations-anp.md) — AstroNote Package (Schema 1.0.0), highlight/sidenote/ink anchors, and canvas persistence.
 
-> [!NOTE]
-> 下表中的早期专项交接文档（如 `src/content/docs/collections/`、`public/abp-packs/` 相关描述）保留作为**历史归档参考，不再作为当前桌面端（`electron/main`）的执行指令**；当前权威架构与门禁基线请以 `ADR-DISTRIBUTION-2026-11-12.md`、`STAGE_REVIEW_AND_EXECUTION_GATES_2026-11-12.md`、`P0_CLOSURE_AUDIT_ROUND2_2026-11-12.md` 与 `P0_FINAL_AUDIT_2026-11-13.md` 为准。
+## Architecture Decision Records (ADRs)
 
-| 文档名称 | 核心主题与说明 | 关联代码模块 |
-| :--- | :--- | :--- |
-| [ADR-DISTRIBUTION-2026-11-12.md](./architecture/ADR-DISTRIBUTION-2026-11-12.md) | **桌面端书籍内容发行契约决策（Gate G0，2026-11-12）**：正式拍板采用**模式 A（零内置书 Shell + GitHub Releases 同步发布 `.abp` 与 `catalog.json` + 本地导入兜底）**，明确模式 B 为 `NOT ACTIVE`，固化 13 本首发书单、体积预算（`win-unpacked ≤ 600 MB` / `app.asar ≤ 200 MB`）与 `electron-release.yml` 目标产物清单。 | `package.json`<br>`.github/workflows/electron-release.yml`<br>`electron/services/` |
-| [ADR-READER-CONTRACT-2026-11-13.md](./architecture/ADR-READER-CONTRACT-2026-11-13.md) | **阅读器契约、Canonical Slug 规范与多环境路由边界决策（Gate P1-A0，2026-11-13）**：规范 13 本官方书与用户上传书路径表，确立唯一 `canonicalSlug` 算法与显式 `legacySlug` 映射，彻底移除隐式模糊匹配，划定 `StaticHandler`、Web 路由与 ABP 编译器责任边界，明确 Starlight 退出正文阅读器（消灭框架倒置）并制定分阶段迁移计划。 | `electron/server/static-handler.ts`<br>`electron/server/reader-shell-template.ts`<br>`src/utils/slug.ts`<br>`scripts/pack-book-abp.mjs` |
-| [ADR-CONTENT-IR-2026-11-13.md](./architecture/ADR-CONTENT-IR-2026-11-13.md) | **单一标题/锚点真源、转换管线收口与最小 ContentDocument IR 架构决策（Gate P1-B0，2026-11-13）**：确定以编译后 HTML 为唯一真源反推 headings 列表，冻结 slugify 算法保持存量深链兼容，确立同一章节内重复 ID 加 `-1/-2` 碰撞后缀并同步改写 HTML 锚点契约，明确最小 IR 结构与管线收敛路线。 | `src/core/content/headings.ts`<br>`scripts/pack-book-abp.mjs`<br>`scripts/epub/mdx-pipeline.mjs` |
-| [ADR-LIBRARY-CONTRACT-2026-11-13.md](./architecture/ADR-LIBRARY-CONTRACT-2026-11-13.md) | **书库管理、统一校验入口、原子安装与幂等清理契约决策（Gate P1-C0，2026-11-13）**：确立以 `validateInstallPayload` 为统一一致性校验引擎，封堵目录逃逸风险；规范 Web (IndexedDB 逆序提交与回滚) 与开发态 HTTP (三段式 staging 重命名事务) 的原子安装，确保安装失败零半残状态，规范降级与卸载的物理残留清理。 | `src/services/content-provider/install-validation.ts`<br>`src/server/plugins/library/dev-server-plugin.mjs`<br>`src/services/content-provider/web-provider.ts` |
-| [ADR-UI-SURFACE-CONTRACT-2026-11-13.md](./architecture/ADR-UI-SURFACE-CONTRACT-2026-11-13.md) | **UI 呈现、单一入口、控制器状态解耦与样式分层架构决策（Gate P1-D0，2026-11-13）**：确立全站设置唯一呈现面（SettingsHubContent）、应用壳与文档页 Header 事件契约统一、FragmentLibrary 单一实现，对三个 God 控制器实施状态机纯逻辑抽离，建立 tokens/base/components/features/overrides 样式分层，冻结并强制大幅削减 `!important` 声明。 | `src/components/desktop/SettingsHubContent.astro`<br>`src/features/settings/`<br>`src/features/library/ui/`<br>`src/styles/layers/` |
-| [ADR-GOVERNANCE-2026-11-13.md](./architecture/ADR-GOVERNANCE-2026-11-13.md) | **依赖分层、类型收窄、重复栈收敛与 CI 守护架构决策（Gate P1-E0，2026-11-13）**：确立全站严格单向依赖分层矩阵，抽出 `sideload/contract` 消除反向依赖，彻底移除 10 个 `.mjs` 一行垫片，收窄 `\| string` 宽泛类型至 branded union，抽取 `translation-core` 薄化多端 API，统一 AI 模型目录，并在 CI 中建立 `astro check` 与路由 smoke 强门禁。 | `src/features/sideload/contract.ts`<br>`src/types/`<br>`src/services/translation/translation-core.ts`<br>`.github/workflows/ci.yml` |
-| [STAGE_REVIEW_AND_EXECUTION_GATES_2026-11-12.md](./architecture/STAGE_REVIEW_AND_EXECUTION_GATES_2026-11-12.md) | **阶段报告复核与执行/审计门禁（权威主文档）**：逐项核对执行 Agent 阶段报告；确立 G0–G5 边界、验收命令、证据要求与执行日志。经多轮工程治理、GitHub Actions 编译及真实 Release 资产全量探测后，门禁状态已全部通过闭合（`P0 CLOSED — ACCEPTED FOR P1 HANDOFF`）。 | `package.json`<br>`electron/`<br>`scripts/pack-book-abp.mjs`<br>`src/config/collections.config.ts` |
-| [P0_CLOSURE_AUDIT_ROUND2_2026-11-12.md](./architecture/P0_CLOSURE_AUDIT_ROUND2_2026-11-12.md) | **第二轮 P0 关闭独立审计（历史快照，2026-11-12）**：对 HEAD `8c6508f9` 做 `git archive` 干净归档复核；指出 `check:types` 缺少类型、`npm test` 依赖被忽略目录与模型缓存、G3 发行仓未闭合等问题；结论为当时历史状态 `P0 NOT CLOSED`，为后续闭环治理确立基线。 | `package.json`<br>`.github/workflows/`<br>`tests/acceptance/`<br>`src/config/release.config.ts`<br>`scripts/release-desktop.mjs` |
-| [P0_FINAL_AUDIT_2026-11-13.md](./architecture/P0_FINAL_AUDIT_2026-11-13.md) | **P0 最终审计、闭环确认与 P1 执行交接（2026-11-13）**：对 v0.0.3 发布实施深入审计，指出 `latest.yml` 命名不一致（404）、文档矛盾与证据跟踪三个关键阻塞点；经 v0.0.4 实施 `artifactName` 固化、AppUpdater 升级决策、全量资产活网 HTTP 200 探测与 tracked evidence 归档后正式达成 `P0 CLOSED`。第 6 节现为执行端 P1 交接：已完成任务清单、P1-A~E 工作分解、验收命令、停止条件与首个 ADR 任务。 | `package.json`<br>`electron/services/updater.ts`<br>`docs/architecture/STAGE_REVIEW_AND_EXECUTION_GATES_2026-11-12.md`<br>`docs/architecture/evidence/` |
-| [P1_A0_AUDIT_2026-11-13.md](./architecture/P1_A0_AUDIT_2026-11-13.md) | **P1-A0 复核裁决与 P1 执行现状审计（2026-11-13）**：实测确认 P1 仅完成 A0 决策草稿（A1~E 未启动）；对账 P1 完成定义 8 条（2 条仅“未破坏基线”性质）；给出 7 项须补正（证据格式、Web 路由口径、上传书路由矛盾、`AGENTS.md` §8.2 冲突、legacy 语义、404 视窗规范、原子提交）与 P1-A1 门禁规格（文件名清单、实现顺序、验收命令、停止条件）。 | `electron/server/static-handler.ts`<br>`electron/server/local-server.ts`<br>`src/utils/slug.ts`<br>`docs/architecture/` |
-| [P1_A1_A2_AUDIT_2026-11-13.md](./architecture/P1_A1_A2_AUDIT_2026-11-13.md) | **P1-A1 / P1-A2 复核裁决与 P1-A 收敛记录（2026-11-13）**：核实 A1 的模糊分支剔除、legacy 301 与学术 404；发现并关闭 188 章多级 slug 不可达、学术 404 返回按钮无监听两项阻断；确认 1,251/1,251 章 HTTP 200、1,191 条别名 301；给出 A3/A4 门禁与加速建议。 | `electron/server/static-handler.ts`<br>`electron/server/reader-shell-template.ts`<br>`src/components/desktop/FragmentReaderHost.astro`<br>`tests/unit/static-handler.test.ts`<br>`tests/unit/reader-shell-links.test.ts` |
-| [P1_A3_A4_AUDIT_2026-11-13.md](./architecture/P1_A3_A4_AUDIT_2026-11-13.md) | **P1-A3 / P1-A4 终审裁决与 P1-A 闭环（2026-11-13）**：核实 1,251/1,251 章 HTTP 200、1,191 条 legacy 301、404 视窗对齐 ADR §7.2、evidence 哈希一致；发现并修复 reader 大纲锚点 `#undefined` 阻断（影响 465 章，`c58456fe`）；记录 699 章 headings 缺口并给出 P1-B 立项预告与复现命令。 | `src/pages/reader.astro`<br>`src/services/content-provider/reader-entry.ts`<br>`electron/server/static-handler.ts`<br>`tests/contract/reader-routability.test.ts`<br>`docs/architecture/evidence/p1-a-evidence.json` |
-| [P1_D_E_HANDOFF_2026-11-13.md](./architecture/P1_D_E_HANDOFF_2026-11-13.md) | **P1-D / P1-E 执行指导（交接给执行端，2026-11-13）**：以 `734c66af` 为基线，D 阶段收敛设置/Header/Library 各一个生产实现、拆分三个 God controller 并补 DOM-free 状态测试、冻结并下降 `!important`（6,190 → ≤5,200）；E 阶段修正 3 处 `services→components` 与 1 处 `utils→server` 倒置、删除 10 个垫片、收窄 4 处 `\| string`、补 CI 的 build/route/`astro check` 门禁并改写 `AGENTS.md` §8.2；含实测事实表、门禁、红线与 evidence 规格。 | `src/scripts/feature-toggles.ts`<br>`src/components/desktop/SettingsHubContent.astro`<br>`src/core/content/`<br>`src/services/content-provider/`<br>`.github/workflows/ci.yml` |
-| [P1_B_C_AUDIT_2026-11-13.md](./architecture/P1_B_C_AUDIT_2026-11-13.md) | **P1-B / P1-C 复核裁决（2026-11-13）**：实测确认 headings 覆盖 465→983、`headings[].id ⊆ html ids` 零失配、重复 id 归零、13 本书 1,251 章不变；确认统一校验入口对 4 本官方真实包（488 章）全部放行、Web/Dev 安装原子化、34 项安装测试全绿；记录 7 项非阻断发现（P1-A 证据哈希过期、contentHash 语义、`installToDisk` 未入接口等）。 | `src/core/content/headings.ts`<br>`src/services/content-provider/install-validation.ts`<br>`src/server/plugins/library/dev-server-plugin.mjs`<br>`docs/architecture/evidence/p1-b-evidence.json`<br>`docs/architecture/evidence/p1-c-evidence.json` |
-| [P1_B_C_HANDOFF_2026-11-13.md](./architecture/P1_B_C_HANDOFF_2026-11-13.md) | **P1-B / P1-C 执行指导（交接给执行端，2026-11-13）**：以 `d4e09245` 为基线，P1-B 规定标题/锚点唯一源（从编译后 HTML 反推 headings、算法冻结、重复 id 加后缀）、EPUB 对齐与两个 legacy 解析器定性；P1-C 规定统一校验入口、Web/Dev 安装原子化、幂等清理与四类安装测试；含开工事实盘点、门禁、红线与 evidence 规格。 | `src/core/content/headings.ts`<br>`scripts/pack-book-abp.mjs`<br>`src/services/content-provider/`<br>`src/server/plugins/library/dev-server-plugin.mjs`<br>`electron/services/book-manager.ts` |
-| [P1_A3_A4_HANDOFF_2026-11-13.md](./architecture/P1_A3_A4_HANDOFF_2026-11-13.md) | **P1-A3 / P1-A4 执行指令（交接给执行端，2026-11-13）**：以 `87dfd1fc` 为基线，规定 `/reader/` 运行时入口的六行行为矩阵、文件白/黑名单、实现步骤与停止条件；规定 P1-A4 的 1,251 章 + 1,195 别名 HTTP 契约测试、404 视窗对齐 ADR §7.2、`p1-a-evidence.json` 字段与 P1-A 完成定义检查表。 | `src/pages/reader.astro`<br>`src/services/content-provider/`<br>`electron/server/static-handler.ts`<br>`tests/contract/reader-routability.test.ts`<br>`docs/architecture/evidence/p1-a-evidence.json` |
-| [p1-a-evidence.json](./architecture/evidence/p1-a-evidence.json) | **P1-A 阶段全量可达性与契约固化闭环证据（2026-11-13）**：收录 13 本书 1,251 个 Canonical Slug 真实 HTTP 200、1,195 个 Legacy Slug 显式查表 301 永久重定向（Windows 大小写折叠 4 例命中 200）、404 学术视窗对齐 ADR §7.2、零 cleanSlug/模糊匹配代码留存的机器可信实测记录。 | `tests/contract/reader-routability.test.ts`<br>`electron/server/static-handler.ts`<br>`src/pages/reader.astro` |
-| [p1-b-evidence.json](./architecture/evidence/p1-b-evidence.json) | **P1-B 阶段标题/锚点真源与转换管线收口闭环证据（2026-11-13）**：收录从编译后 HTML 反推 headings 唯一真源（非空章节覆盖率由 465 提升至 983）、同章重复 ID 加 `-1/-2` 彻底归零（0 duplicates）、`headings[].id ⊆ html ids` 达到 100%、EPUB 管线对齐及两处遗留解析器明确退出条件的机器可信实测记录。 | `src/core/content/headings.ts`<br>`scripts/pack-book-abp.mjs`<br>`scripts/epub/mdx-pipeline.mjs`<br>`tests/contract/epub-heading-parity.test.ts` |
-| [p1-c-evidence.json](./architecture/evidence/p1-c-evidence.json) | **P1-C 阶段书库管理、统一校验入口、原子安装与幂等清理闭环证据（2026-11-13）**：收录以 `validateInstallPayload` 为统一入口的深度一致性与目录逃逸防护（100% 拦截）、Web (IndexedDB 逆序提交与失败回滚)、Dev HTTP (三段式 staging 重命名事务与降级清理)、Electron (staging/backup 原生回滚) 三端零半残安装实测，覆盖损坏包、重复安装、元数据回滚与路径逃逸 4 类完整用例（34/34 绿灯）。 | `src/services/content-provider/install-validation.ts`<br>`src/services/content-provider/web-provider.ts`<br>`src/server/plugins/library/dev-server-plugin.mjs`<br>`electron/services/book-manager.ts` |
-| [p1-d-evidence.json](./architecture/evidence/p1-d-evidence.json) | **P1-D 阶段 UI 单一入口、控制器瘦身解耦与样式削减闭环证据（2026-11-14 Rev.3）**：收录设置单一实现与幂等注册（0 duplicate IDs）、Header/Library 单一生产实现、三大 God 控制器状态机纯逻辑抽离（主文件实测为 **1,492 / 1,488 / 1,417 行**，严格达标 `<1,500` 门禁）、全站 CSS 分层重构并将 `!important` 从 6,590 压降至 4,552 的机器可信实测记录。 | `src/components/desktop/SettingsHubContent.astro`<br>`src/styles/layers/`<br>`src/ai/client/chat-controller.ts`<br>`src/components/exercises/exercise-controller.ts`<br>`src/services/translation/client/translation-dock-controller.ts` |
-| [p1-e-evidence.json](./architecture/evidence/p1-e-evidence.json) | **P1-E 阶段依赖倒置归零、类型收窄、重复栈收敛与 CI 守护闭环证据（2026-11-14 Rev.3）**：收录 3+1 处依赖倒置修复（0 违规引用）、10 个一行 `.mjs` 垫片全部删除、`src/types` 中 `'literal' \| string` 彻底归零、`any` 计数实测压降至基线以下（`: any` 310 ≤ 316, `as any` 176 ≤ 183）、`api/translate.ts` 内核抽取（540行→142行）、CI 接入 `astro check`、打包物料注入与核心路由 smoke 强门禁的机器可信实测记录。 | `src/features/sideload/contract.ts`<br>`src/types/`<br>`src/services/translation/translation-core.ts`<br>`.github/workflows/ci.yml`<br>`tests/contract/reader-routability.test.ts` |
-| [p1-d-visual-smoke.md](./architecture/evidence/p1-d-visual-smoke.md) | **P1-D 阶段 CSS !important 机械剥离视觉 smoke 验证证据（2026-11-14 Rev.3）**：披露 manual spot-check 覆盖范围（desktop / hub / reader / ingest / 习题中心），将原 8 个不存在选择器替换为真实选择器，并在第三轮复核再校正 3 处残留（`.ask-panel`、`.ex-empty-state`、`.m3-loading-overlay-host`）；明确声明未经自动化截图 Diff 校验，D5 维持 CONDITIONAL 状态，自动化视觉回归套件延期至 P2。 | `src/styles/components/exercise-m3.css`<br>`docs/architecture/evidence/p1-d-visual-smoke.md` |
-| [P1_FINAL_SIGNOFF_2026-11-14.md](./architecture/P1_FINAL_SIGNOFF_2026-11-14.md) | **P1 阶段最终审计、验收对账与闭环签署报告（2026-11-14 Rev.3）**：针对第二轮复核裁决（B1–B4），完整落实控制器行数压降（1,492 / 1,488 / 1,417 < 1,500）、视觉 smoke 结论纠正与选择器校准（CONDITIONAL）、`any` 全量压降至历史基线以下（310 ≤ 316 / 176 ≤ 183）、全量门禁复跑（78/477 passed、1,251 章节 200、500 files / 0 errors / 259 hints）；**第三轮复核将裁决精确为 P1 CONDITIONAL CLOSED**，非无条件 CLOSED。 | 全仓核心代码与测试架构 |
-| [P1_REV3_AUDIT_2026-11-14.md](./architecture/P1_REV3_AUDIT_2026-11-14.md) | **P1 Rev.3 第三轮独立复核（2026-11-14）**：复跑 `check:types`、`astro check`、`npm test`、全量 1,251 路由与构建；确认 B1 行数（1,492 / 1,488 / 1,417）与 B3 any（310 / 176 < 316 / 183）已闭环；查出 D5 仍有 3 个选择器不存在、`astro check` 实为 500 files 而非 498、`npm test` 实为 37.56s 而非 2.84s、`remediationCommit` 过期，并在本轮修正；裁决 **P1 CONDITIONAL CLOSED**，D5 自动化延期至 P2。 | `src/ai/client/chat-controller.ts`<br>`src/components/exercises/exercise-controller.ts`<br>`src/services/translation/client/translation-dock-controller.ts`<br>`docs/architecture/evidence/p1-e-evidence.json`<br>`docs/architecture/evidence/p1-d-visual-smoke.md` |
-| [P1_REMEDIATION_AUDIT_2026-11-14.md](./architecture/P1_REMEDIATION_AUDIT_2026-11-14.md) | **P1 整改第二轮独立审计与闭环裁决（2026-11-14）**：复跑门禁确认 78/477 测试、262 hints、1,251/1,251 全量路由、4,552 `!important`、23 页构建成立；查出 D4 三个 controller 行数增至 **1,500 / 1,533 / 1,525**（报告仍写 1,495 / 1,495 / 1,485）、D5 视觉 smoke 含 8 个不存在选择器且无截图/浏览器证据、`any` 仍为 **+29 / +12** 却被签署为“零新增”；裁决 **P1-D FAIL、P1-E CONDITIONAL FAIL、P1 整体 NOT CLOSED**，并给出 R1–R5 整改顺序与停止条件。 | `src/ai/client/chat-controller.ts`<br>`src/components/exercises/exercise-controller.ts`<br>`src/services/translation/client/translation-dock-controller.ts`<br>`docs/architecture/evidence/p1-d-visual-smoke.md`<br>`docs/architecture/evidence/p1-e-evidence.json` |
-| [P1_FINAL_AUDIT_2026-11-14.md](./architecture/P1_FINAL_AUDIT_2026-11-14.md) | **P1 终态独立复核裁决（2026-11-14）**：对 HEAD `5498542a` 复跑全部门禁，确认 77/471 测试、4,552 `!important`、1,251/1,251 全量路由、1,191 legacy 301 与 23 页构建成立；同时查出 D4 两个状态机未被控制器消费、D5 机械剥离 1,512 个 `!important` 无视觉证据、E3 两处类型“伪收窄”、E5 干净 clone CI 必红、E7 基线与路径错误，以及新增 `any` +29；裁决 P1-D/E 为 CONDITIONAL PASS、P1 整体暂不闭环。 | `src/components/exercises/exercise-controller.ts`<br>`src/services/translation/client/translation-dock-controller.ts`<br>`src/types/exercises.ts`<br>`src/types/collections.ts`<br>`.github/workflows/ci.yml` |
-| [P1_REMEDIATION_HANDOFF_2026-11-14.md](./architecture/P1_REMEDIATION_HANDOFF_2026-11-14.md) | **P1 整改执行指令（2026-11-14）**：按 F4→F5→F3→F1→F2 顺序给出 R1–R6 的文件白名单、实现步骤、验收命令与停止条件；目标为修复干净 clone CI、校正 evidence、真实收窄 `group`/`tocMapping`、让状态机被控制器消费、补齐 CSS 视觉 smoke，并在全部通过后将 P1 签署升为 Rev.2。 | `.github/workflows/ci.yml`<br>`tests/contract/reader-routability.test.ts`<br>`docs/architecture/evidence/p1-e-evidence.json`<br>`src/styles/components/exercise-m3.css`<br>`src/features/settings/` |
-| [PROJECT_ARCHITECTURE_AUDIT_2026-11-12.md](./architecture/PROJECT_ARCHITECTURE_AUDIT_2026-11-12.md) | **当前架构全面审计与破坏性重构建议（2026-11-12）**：双轨运行态、内容 SSOT 四分五裂、Web 阅读路由缺失、ABP slug 95.5% 不一致、书库五套实现、五套内容转换器、构建链空转、发布包依赖未跟踪产物；附逐文件冗余总账、目标架构、分阶段迁移路线与验收指标。 | `src/config/`<br>`src/pages/`<br>`src/services/content-provider/`<br>`electron/`<br>`scripts/` |
-| [Electron多Fragment研读架构与Win11任意分屏系统交接文档.md](./Electron多Fragment研读架构与Win11任意分屏系统交接文档.md) | **桌面端多 Fragment SPA 架构与 Win11 任意分屏**：统一研读实体模型（教材与文献同级第一公民）、三段式 Fragment 调度器、Lottie 动效大厅、Google Play 规范研读书库与自动解析摄取管线、底部可折叠 Chrome 标签栏、Windows 11 风格 1px 细线 0 边距分屏网格、拖拽分屏交互与防重复 iframe 性能优化。 | `src/pages/desktop.astro`<br>`src/components/desktop/`<br>`src/styles/desktop/`<br>`src/types/library-entity.ts`<br>`electron/services/library-manager.ts` |
-| [Electron桌面端与ABP离线分发系统交接文档.md](./Electron桌面端与ABP离线分发系统交接文档.md) | **Electron 桌面端与 ABP 离线分发**：零硬编码图书解耦架构、ABP Schema 1.0.0 规范、Universal Reader 动态页面合成引擎（多书导航树、M3 模块折叠大纲、KaTeX/GFM 预渲染、折叠解题与数字资源）、防闪烁设置持久化同步、无边框三键避让与免安装便携版打包。 | `electron/`<br>`src/services/content-provider/`<br>`scripts/pack-book-abp.mjs`<br>`public/abp-packs/` |
-| [双语段落语义对齐系统与真实教材教学逻辑重构交接文档.md](./双语段落语义对齐系统与真实教材教学逻辑重构交接文档.md) | **双语段落语义对齐与教材逻辑重构**：本页内联 50%-50% 学术等宽排版对照、ONNX Runtime Node CPU/AVX2 轻量量化嵌入推理服务、二分图最优双向匹配、中缝贝塞尔曲线连线、高保真学术相关矩阵（Heatmap）、侧栏状态记忆与无损复原、Material You 动态主题色适配，以及真实教材（DPV 2.6 FFT 等）教学逻辑错位重构范式。 | `src/services/bilingual/`<br>`src/server/plugins/bilingual-aligner/`<br>`src/components/bilingual/`<br>`src/content/docs/collections/cs/algorithms/` |
-| [自动化测试套件与类型守卫架构交接文档.md](./自动化测试套件与类型守卫架构交接文档.md) | **自动化测试套件与类型守卫**：四层测试金字塔（Vitest 20套测试/72用例全部绿灯）、TypeScript 严格类型覆盖（100% 0 errors）、彻底清理 14 个历史碎片脚本与 GitHub Actions CI 质量门禁。 | `tests/`<br>`.github/workflows/ci.yml`<br>`src/types/` |
-| [Material-You主题改造交接文档.md](./Material-You主题改造交接文档.md) | **UI/UX 核心设计规范**：优先官方 `@material/web` 组件、Filter Chips、Outlined Text Field、无边框 Filled Tonal 卡片与学术排版准则。 | `src/themes/material-you/`<br>`src/components/FeatureToggles.astro` |
-| [AI问答Material-You重构与设置收敛交接文档.md](./AI问答Material-You重构与设置收敛交接文档.md) | **AI 问答交互架构**：Harness 调用树收敛、公式原生排版、三向自由缩放、设置项收拢与 M3 胶囊输入。 | `src/ai/client/chat-controller.ts`<br>`src/ai/ai-config.ts` |
-| [侧载系统架构与扩展交接文档.md](./侧载系统架构与扩展交接文档.md) | **Sideload Dock 侧载底座**：大纲、习题、AI 统一宿主、SideloadManager 单例状态机与多视口自适应联动。 | `src/components/sideload/`<br>`src/components/PageSidebarOverride.astro` |
-| [特性模块与插件系统.md](./特性模块与插件系统.md) | **Feature Registry 架构**：功能统一声明、构建期动态装配与零打包开销控制。 | `src/config/features.config.mjs`<br>`astro.config.mjs` |
-| [AI 赋能模块设计.md](./AI%20赋能模块设计.md) | **AI 工具链与 RAG 规范**：全量 8 个端侧 MCP 工具定义、Prompt 串联链条与请求处理流。 | `src/ai/mcp/`<br>`src/ai/tools-client.mjs` |
-| [文章切换性能优化交接文档.md](./文章切换性能优化交接文档.md) | **跨页引用与 SPA 性能**：正文引用徽章从客户端识别下沉至编译期 Rehype 插件的技术细节。 | `src/utils/rehype-cross-ref.mjs` |
-| [精修工具交接.md](./精修工具交接.md) | **在线 MDX 可视化精修**：源码位置 AST 标记注入与 Vite 开发服务器写回端点设计。 | `src/utils/mdx-editor/` |
-| [模块查重与巡检工具.md](./模块查重与巡检工具.md) | **全书模块巡检与查重**：模块集中索引、同章查重与异常拆分定位。 | `src/utils/module-inspector/` |
-| [大邮数学集题库结构化与分章习题交接文档.md](./大邮数学集题库结构化与分章习题交接文档.md) | **真题题库抽取与分章习题**：173 套试卷结构化解析、LaTeX 公式平衡与分章自测页集成。 | `scripts/lib/math_archive/`<br>`src/data/exercises/` |
-| [Gemma4原书扫描全视觉推倒重建与全书构建流水线交接文档.md](./Gemma4原书扫描全视觉推倒重建与全书构建流水线交接文档.md) | **原书全视觉推倒重建流水线**：以原书 PDF 物理扫描页为 Ground Truth，采用 `gemma-4-26b-a4b-it` 进行流式端到端视觉重构与验证体系。 | `scripts/vision_reconstruct/`<br>`src/content/docs/collections/math/` |
-| [工科数学分析基础原书逐页精修改正与对齐交接文档.md](./工科数学分析基础原书逐页精修改正与对齐交接文档.md) | **《工科数学分析基础》原书逐页精修改正与对齐交接**：马知恩、王绵森经典教材全书逐页高保真重构规范。第一章（1.1~1.5）100% 验收战果、上册物理页码映射公式（$P_{\text{phys}} = P_{\text{book}} + 17$）、7 种常见 OCR 缺陷排坑宝典、后续章节任务矩阵与六步闭环 SOP。 | `src/content/docs/collections/math/engineering_analysis/`<br>`test/data/ch1_pages/` ~ `test/data/ch7_pages/` |
-| [线性代数与几何原书视觉数字化重构与导入交接文档.md](./线性代数与几何原书视觉数字化重构与导入交接文档.md) | **《线性代数与几何（第2版）》视觉重构与导入交接**：北京邮电大学精品教材全书 239 页物理映射、已完成章节（前言、第1章全章、第2章前2节、第3章全章、第4章全章）、未竟小节断点与出版级规范。 | `src/content/docs/collections/math/linear_algebra_geometry/`<br>`scripts/vision_reconstruct/` |
-| [线性代数与几何题库结构化与分章习题交接文档.md](./线性代数与几何题库结构化与分章习题交接文档.md) | **《线性代数与几何（第2版）》课后习题与参考答案题库交接**：全书 9 章 253 道课后习题与书末参考答案的物理页码映射矩阵、标准 JSON 题库 Schema 规范、全站题库注册与分步实施 SOP。 | `src/data/exercises/`<br>`src/config/exercise-banks.config.ts` |
-| [图论原书第五版剩余章节校对与子代理分派交接文档.md](./图论原书第五版剩余章节校对与子代理分派交接文档.md) | **《图论（原书第五版）》剩余章节校对与子代理分派交接**：第 8 章与附录 B 黄金标杆示范、Part 2 物理原页切片资产矩阵（第 9~12 章及附录 A）、轻量级子代理极简分派协议（纯净双动词、禁用命令、单节定额）、五大核心质量防御红线及全真编译验收 SOP。 | `content-sources/collections/math/graph_theory/`<br>`scripts/pack-book-abp.mjs`<br>`public/abp-packs/math-graph_theory.abp` |
+- [ADR-001: Framework-Content Decoupling via ABP](adr/001-abp-decoupling.md)
+- [ADR-002: Reader Convergence onto StaticHandler and Collections Route](adr/002-reader-convergence.md)
+- [ADR-003: Unified Material Design 3 Component Stack](adr/003-material-design-3-ui.md)
+- [ADR-004: Single-Host Sideload Dock Pattern](adr/004-sideload-dock.md)
+- [ADR-005: Headless Content API, CLI, and MCP Server](adr/005-content-api-cli-mcp.md)
+- [ADR-006: Embedded Agent Harness and PluginEnvironment](adr/006-agent-harness.md)
+- [ADR-007: PDF2ABP Multi-Agent Orchestrator Pipeline](adr/007-pdf2abp-pipeline.md)
+- [ADR-008: Portable Annotations and Canvas Format (ANP)](adr/008-annotations-anp.md)
+- [ADR-009: Offline-First Desktop Assets and MuPDF Preview](adr/009-offline-first-assets.md)
+- [ADR-010: Zero-Trust Loopback and Renderer Sandboxing](adr/010-zero-trust-security.md)
+- [ADR-011: 6-Project Vitest Pyramid and Affected Test Selection](adr/011-tiered-vitest-ci.md)
+- [ADR-012: Universal Comment Stripping for Public Repository Pushes](adr/012-universal-clean-push.md)
 
----
+## Historical Archive
 
-## 3. 历史归档说明 (Archive)
-
-- **主题体系优化**：早期冗余主题体系（VitePress / Starlight）相关历史文件已彻底移除。当前全站统一以 Google Material Design 3 (Material You / Expressive) 为唯一 UI/UX 标准，组件库统一基于 `@material/web` 与 `@m3e/web`，图标统一遵循 Google Material Symbols 官方标准。详见 `AGENTS.md` 第 6 节。
+- [Historical Archive Index](archive/README.md) — Preserved milestone audits, JSON signoff evidence, legacy handoffs, and pre-consolidation architecture documents.

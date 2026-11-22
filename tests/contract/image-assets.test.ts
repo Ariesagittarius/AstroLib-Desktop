@@ -24,7 +24,7 @@ function walk(dir: string, list: string[] = []): string[] {
 describe('Image Asset Packaging & Integrity Contract (图片资产完整性与打包契约)', () => {
   const commDir = path.resolve('content-sources/collections/telecom/communication_principles');
   const allCommFiles = walk(commDir);
-  const allDocsFiles = walk(path.resolve('src/content/docs'));
+  const allDocsFiles = walk(path.resolve('content-sources/collections'));
 
   it('《通信原理》全书 91 篇章节引用的所有本地高清配图在磁盘上必须 100% 存在 (零丢失资源)', () => {
     if (allCommFiles.length === 0) return;

@@ -75,13 +75,9 @@ export function buptProxyDevServerPlugin() {
           return next();
         }
 
-        // 1. 响应浏览器 CORS 预检
         if (req.method === 'OPTIONS') {
           res.writeHead(204, {
-            'Access-Control-Allow-Origin': '*',
-            'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-            'Access-Control-Allow-Headers': '*',
-            'Access-Control-Max-Age': '86400',
+            'Cache-Control': 'no-store',
           });
           return res.end();
         }
@@ -98,7 +94,6 @@ export function buptProxyDevServerPlugin() {
           if (!res.headersSent && !res.writableEnded) {
             res.writeHead(200, {
               'Content-Type': 'application/json; charset=utf-8',
-              'Access-Control-Allow-Origin': '*',
             });
             res.end(
               JSON.stringify({
@@ -182,11 +177,7 @@ export function buptProxyDevServerPlugin() {
           (upstreamRes) => {
             if (res.headersSent || res.writableEnded) return;
 
-            const responseHeaders = {
-              'Access-Control-Allow-Origin': '*',
-              'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-              'Access-Control-Allow-Headers': '*',
-            };
+            const responseHeaders = {};
 
             const upstreamContentType = upstreamRes.headers['content-type'] || '';
             if (upstreamContentType) {
@@ -247,7 +238,6 @@ export function buptProxyDevServerPlugin() {
           if (!res.headersSent) {
             res.writeHead(502, {
               'Content-Type': 'application/json; charset=utf-8',
-              'Access-Control-Allow-Origin': '*',
             });
           }
           if (!res.writableEnded) {

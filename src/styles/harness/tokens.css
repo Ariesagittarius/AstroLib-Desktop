@@ -1,0 +1,73 @@
+/**
+ * src/styles/harness/tokens.css
+ * ============================================================================
+ * AstroLib Agent Harness 专属设计系统设计变量 (Tokens & Visual Theme)
+ * ============================================================================
+ * 极简、通透、高质感工程师美学：
+ * - 纯净微灰边框与自适应表面色
+ * - 精致圆角 (6px, 10px, 14px, pill)
+ * - 紧凑高信息密度排版
+ * ============================================================================
+ */
+
+:root {
+  --harness-font-family: 'Google Sans', 'Google Sans Text', 'Source Han Sans SC', 'Source Han Sans CN', 'Noto Sans SC', 'Noto Sans SC Variable', '思源黑体', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --harness-font-mono: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'SF Mono', Consolas, 'Source Han Sans SC', 'Noto Sans SC Variable', '思源黑体', monospace;
+
+  /* 基础色彩系统 (深度接入 Material Design 3 / Material You 动态色彩系统，纯净轻灵无滞重灰底) */
+  --harness-bg-window: var(--md-sys-color-surface, #ffffff);
+  --harness-bg-sidebar: var(--md-sys-color-surface, #ffffff);
+  --harness-bg-chat: var(--md-sys-color-surface, #ffffff);
+  --harness-bg-surface: var(--md-sys-color-surface, #ffffff);
+  --harness-bg-surface-hover: var(--md-sys-color-surface-container-low, #f8f9fa);
+  --harness-bg-surface-active: var(--md-sys-color-surface-container, #f1f3f4);
+
+  --harness-border-subtle: var(--md-sys-color-outline-variant, #e8eaed);
+  --harness-border-strong: color-mix(in srgb, var(--md-sys-color-outline, #74777f) 28%, var(--md-sys-color-surface, #ffffff));
+
+  --harness-text-primary: var(--md-sys-color-on-surface, #1f1f1f);
+  --harness-text-secondary: var(--md-sys-color-on-surface-variant, #5f6368);
+  --harness-text-tertiary: var(--md-sys-color-outline, #80868b);
+  --harness-text-accent: var(--md-sys-color-primary, #00668b);
+
+  /* 主题色直接联动系统主色 (随主题色盘动态切换，杜绝特立独行) */
+  --harness-accent-blue: var(--md-sys-color-primary, #00668b);
+  --harness-accent-blue-hover: var(--md-sys-color-primary, #00506e);
+  --harness-accent-blue-subtle: var(--md-sys-color-primary-container, #c2e8ff);
+  --harness-accent-blue-border: var(--md-sys-color-outline-variant, #c2c7ce);
+
+  --harness-radius-sm: 6px;
+  --harness-radius-md: 10px;
+  --harness-radius-lg: 14px;
+  --harness-radius-pill: 9999px;
+
+  --harness-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --harness-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+  --harness-shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+[data-theme='dark'] {
+  --harness-bg-window: var(--md-sys-color-surface, #131316);
+  --harness-bg-sidebar: var(--md-sys-color-surface, #131316);
+  --harness-bg-chat: var(--md-sys-color-surface, #131316);
+  --harness-bg-surface: var(--md-sys-color-surface, #131316);
+  --harness-bg-surface-hover: var(--md-sys-color-surface-container-low, #18191c);
+  --harness-bg-surface-active: var(--md-sys-color-surface-container, #202125);
+
+  --harness-border-subtle: var(--md-sys-color-outline-variant, rgba(255, 255, 255, 0.1));
+  --harness-border-strong: var(--md-sys-color-outline, rgba(255, 255, 255, 0.22));
+
+  --harness-text-primary: var(--md-sys-color-on-surface, #e3e3e3);
+  --harness-text-secondary: var(--md-sys-color-on-surface-variant, #9aa0a6);
+  --harness-text-tertiary: var(--md-sys-color-outline, #70757a);
+  --harness-text-accent: var(--md-sys-color-primary, #7ad0ff);
+
+  --harness-accent-blue: var(--md-sys-color-primary, #7ad0ff);
+  --harness-accent-blue-hover: var(--md-sys-color-primary, #bfe5ff);
+  --harness-accent-blue-subtle: var(--md-sys-color-primary-container, #004d6a);
+  --harness-accent-blue-border: var(--md-sys-color-outline-variant, rgba(122, 208, 255, 0.3));
+
+  --harness-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --harness-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+  --harness-shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.5);
+}

@@ -370,7 +370,12 @@ export class ParagraphAligner {
   private static scrollToSourceBlock(container: HTMLElement, transId: string): void {
     const el = container.querySelector<HTMLElement>(`[data-trans-id="${transId}"]`);
     if (el) {
-      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      const viewport = (window as any).__readerViewport;
+      if (viewport && typeof viewport.scrollToElement === 'function') {
+        viewport.scrollToElement(el, { behavior: 'smooth', block: 'center' });
+      } else {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
       el.classList.add('astrolib-trans-pulse');
       setTimeout(() => {
         el.classList.remove('astrolib-trans-pulse');
@@ -386,6 +391,9 @@ export class ParagraphAligner {
     const clone = typeof el.cloneNode === 'function' ? (el.cloneNode(true) as HTMLElement) : el;
 
     if (clone.querySelectorAll) {
+      // 剥离假名注音 <rt>/<rp> 及脚注角标，保持纯正翻译语境
+      clone.querySelectorAll<HTMLElement>('rt, rp, .noteref, [data-astrolib-footnote]').forEach((n) => n.remove?.());
+
       // 若是卡片标题，先移除图标和辅助元素，避免文字受损
       if (isHeader) {
         clone.querySelectorAll<HTMLElement>('.card-mdicon, svg, [aria-hidden="true"]').forEach((icon) => icon.remove?.());

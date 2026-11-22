@@ -122,6 +122,76 @@ export function parseTitleFromConfig(
   return { type: '模块', number: title };
 }
 
+function attachTocScrollSpy(
+  targets: HTMLElement[],
+  desktopLinks: HTMLAnchorElement[],
+  mobileLinks: HTMLAnchorElement[],
+  marker: HTMLElement | null
+): void {
+  let lastSpyIndex = -1;
+
+  function handleSpyScroll() {
+    let activeIndex = -1;
+    const scrollPosition = window.scrollY + 120;
+
+    targets.forEach((el, index) => {
+      const rect = el.getBoundingClientRect();
+      const elementTop = rect.top + window.scrollY;
+      if (scrollPosition >= elementTop) {
+        activeIndex = index;
+      }
+    });
+
+    desktopLinks.forEach((link, index) => link.classList.toggle('active', index === activeIndex));
+    mobileLinks.forEach((link, index) => link.classList.toggle('active', index === activeIndex));
+
+    if (activeIndex >= 0) {
+      const activeLink = desktopLinks[activeIndex];
+      if (activeLink) {
+        // 若当前激活的卡片位于已折叠的分组内，自动展开该分组以防视线迷失
+        const parentGroup = activeLink.closest('.toc-group');
+        if (parentGroup && parentGroup.getAttribute('data-collapsed') === 'true') {
+          parentGroup.setAttribute('data-collapsed', 'false');
+          const btn = parentGroup.querySelector('.toc-collapse-btn');
+          if (btn) btn.setAttribute('aria-expanded', 'true');
+        }
+
+        if (marker) {
+          marker.style.top = `${activeLink.offsetTop}px`;
+          marker.style.opacity = '1';
+        }
+      }
+    } else if (marker) {
+      marker.style.opacity = '0';
+    }
+
+    if (document.body.classList.contains('mobile-toc-open') && activeIndex !== lastSpyIndex) {
+      const activeMobile = mobileLinks[activeIndex];
+      if (activeMobile) activeMobile.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    }
+    lastSpyIndex = activeIndex;
+  }
+
+  let ticking = false;
+  function handleSpyScrollThrottled() {
+    if (!ticking) {
+      ticking = true;
+      requestAnimationFrame(() => {
+        handleSpyScroll();
+        ticking = false;
+      });
+    }
+  }
+
+  if (window.__slScrollSpy) window.removeEventListener('scroll', window.__slScrollSpy);
+  window.__slScrollSpy = handleSpyScrollThrottled;
+  window.addEventListener('scroll', window.__slScrollSpy, { passive: true });
+  // 消除 Layout Thrashing：在 DOM 突变后解耦读取，延后至下一渲染帧执行 getBoundingClientRect
+  requestAnimationFrame(() => {
+    handleSpyScroll();
+  });
+}
+
 export function buildBookTOC(
   sidebarContainer: HTMLElement | null,
   bookConfig: any,
@@ -136,6 +206,47 @@ export function buildBookTOC(
   if (!tocList) return;
   const mobileTocList = document.getElementById('vp-local-nav-toc-list');
   const marker = tocList.closest('.custom-page-sidebar')?.querySelector('.outline-marker') as HTMLElement | null;
+
+  const ssrChap = tocList.dataset.ssrChapter || '';
+  let decodedPath = '';
+  try {
+    decodedPath = decodeURIComponent(location.pathname);
+  } catch {
+    decodedPath = location.pathname;
+  }
+
+  if (
+    tocList.dataset.ssrToc === 'true' &&
+    tocList.children.length > 0 &&
+    (!ssrChap || decodedPath.includes(ssrChap))
+  ) {
+    const existingDesktopLinks = Array.from(tocList.querySelectorAll<HTMLAnchorElement>('a.toc-link'));
+    const existingMobileLinks = mobileTocList
+      ? Array.from(mobileTocList.querySelectorAll<HTMLAnchorElement>('a.toc-link'))
+      : [];
+    const spyTargets: HTMLElement[] = [];
+    const syncedDesktopLinks: HTMLAnchorElement[] = [];
+
+    existingDesktopLinks.forEach((link) => {
+      const rawHref = link.getAttribute('href') || '';
+      if (!rawHref.startsWith('#')) return;
+      let targetId = rawHref.slice(1);
+      try {
+        targetId = decodeURIComponent(targetId);
+      } catch {}
+      const targetEl = document.getElementById(targetId);
+      if (targetEl) {
+        spyTargets.push(targetEl);
+        syncedDesktopLinks.push(link);
+      }
+    });
+
+    if (spyTargets.length > 0) {
+      attachTocScrollSpy(spyTargets, syncedDesktopLinks, existingMobileLinks, marker);
+      return;
+    }
+  }
+  delete tocList.dataset.ssrToc;
 
   const trackSelectors =
     bookConfig.trackClasses && bookConfig.trackClasses.length > 0
@@ -249,6 +360,13 @@ export function buildBookTOC(
       if (isMobile) setMobileTocOpen(false);
       const target = document.getElementById(id);
       if (!target) return;
+      const viewport = (window as any).__readerViewport;
+      if (viewport && typeof viewport.getState === 'function' && viewport.getState()?.layoutMode !== 'scroll') {
+        viewport.scrollToElement(target, { behavior: 'smooth', block: 'start' });
+        history.replaceState({ ...(history.state || {}), scrollY: window.scrollY }, '', `#${encodeURIComponent(id)}`);
+        return;
+      }
+
       const rootStyle = getComputedStyle(document.documentElement);
       const navH = parseFloat(rootStyle.getPropertyValue('--sl-nav-height')) || 56;
       const tocH = parseFloat(rootStyle.getPropertyValue('--sl-mobile-toc-height')) || 0;
@@ -447,68 +565,12 @@ export function buildBookTOC(
   tocList.appendChild(desktopFrag);
   if (mobileTocList && mobileFrag) mobileTocList.appendChild(mobileFrag);
 
-  let lastSpyIndex = -1;
-
-  function handleSpyScroll() {
-    let activeIndex = -1;
-    const scrollPosition = window.scrollY + 120;
-
-    tocEntries.forEach((chunk, index) => {
-      const rect = chunk.el.getBoundingClientRect();
-      const elementTop = rect.top + window.scrollY;
-      if (scrollPosition >= elementTop) {
-        activeIndex = index;
-      }
-    });
-
-    desktopLinks.forEach((link, index) => link.classList.toggle('active', index === activeIndex));
-    mobileLinks.forEach((link, index) => link.classList.toggle('active', index === activeIndex));
-
-    if (activeIndex >= 0) {
-      const activeLink = desktopLinks[activeIndex];
-      if (activeLink) {
-        // 若当前激活的卡片位于已折叠的分组内，自动展开该分组以防视线迷失
-        const parentGroup = activeLink.closest('.toc-group');
-        if (parentGroup && parentGroup.getAttribute('data-collapsed') === 'true') {
-          parentGroup.setAttribute('data-collapsed', 'false');
-          const btn = parentGroup.querySelector('.toc-collapse-btn');
-          if (btn) btn.setAttribute('aria-expanded', 'true');
-        }
-
-        if (marker) {
-          marker.style.top = `${activeLink.offsetTop}px`;
-          marker.style.opacity = '1';
-        }
-      }
-    } else if (marker) {
-      marker.style.opacity = '0';
-    }
-
-    if (document.body.classList.contains('mobile-toc-open') && activeIndex !== lastSpyIndex) {
-      const activeMobile = mobileLinks[activeIndex];
-      if (activeMobile) activeMobile.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-    }
-    lastSpyIndex = activeIndex;
-  }
-
-  let ticking = false;
-  function handleSpyScrollThrottled() {
-    if (!ticking) {
-      ticking = true;
-      requestAnimationFrame(() => {
-        handleSpyScroll();
-        ticking = false;
-      });
-    }
-  }
-
-  if (window.__slScrollSpy) window.removeEventListener('scroll', window.__slScrollSpy);
-  window.__slScrollSpy = handleSpyScrollThrottled;
-  window.addEventListener('scroll', window.__slScrollSpy, { passive: true });
-  // 消除 Layout Thrashing：在 DOM 突变后解耦读取，延后至下一渲染帧执行 getBoundingClientRect
-  requestAnimationFrame(() => {
-    handleSpyScroll();
-  });
+  attachTocScrollSpy(
+    tocEntries.map((c) => c.el),
+    desktopLinks,
+    mobileLinks,
+    marker
+  );
 }
 
 export function renderSidebarMath(): void {

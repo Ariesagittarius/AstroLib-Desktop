@@ -62,7 +62,7 @@ describe('Ingest Dev Server Plugin Contract Tests', () => {
     return { req, res, getStatus: () => statusCode, getHeaders: () => resHeaders, getBody: () => responseData, isEnded: () => isEnded };
   }
 
-  it('1. OPTIONS 请求应正确返回 204 与跨域响应头', async () => {
+  it('1. OPTIONS 请求应正确返回 204 且不暴露通配 CORS 头', async () => {
     const { req, res, getStatus, getHeaders, isEnded } = createMockReqRes({
       method: 'OPTIONS',
       url: '/api/ingest/health',
@@ -70,7 +70,7 @@ describe('Ingest Dev Server Plugin Contract Tests', () => {
 
     await middleware(req, res, () => {});
     expect(getStatus()).toBe(204);
-    expect(getHeaders()['Access-Control-Allow-Origin']).toBe('*');
+    expect(getHeaders()['Access-Control-Allow-Origin']).toBeUndefined();
     expect(isEnded()).toBe(true);
   });
 

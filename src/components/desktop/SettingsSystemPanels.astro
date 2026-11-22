@@ -59,9 +59,11 @@
     </div>
   </div>
 
-  <div style="display: flex; gap: 10px; margin-top: 6px; flex-wrap: wrap;">
+  <div style="display: flex; gap: 10px; margin-top: 6px; flex-wrap: wrap; align-items: center;">
     <md-filled-button id="btn-recheck-env">重新自检硬件与环境</md-filled-button>
     <md-outlined-button id="btn-select-python">选择自定义 Python 路径</md-outlined-button>
+    <md-text-button id="btn-check-updates">检查客户端版本更新</md-text-button>
+    <span id="diag-update-status" class="service-desc"></span>
   </div>
 </section>
 
@@ -71,6 +73,30 @@
     <div>
       <div>端侧轻量 Transformer 模型库</div>
       <div class="panel-section-subtitle">默认开启国内镜像加速 (hf-mirror.com)</div>
+    </div>
+  </div>
+
+  <div class="hub-card" id="card-model-lifecycle">
+    <div class="hub-card-header">
+      <div class="hub-card-title-group">
+        <span class="hub-card-title">本地模型显存驻留策略</span>
+        <p class="hub-card-desc">
+          所有本地 AI 模型严格按需懒加载，启动软件零显存占用；闲置超过设定时长后自动释放显存。
+        </p>
+      </div>
+    </div>
+    <md-chip-set id="model-idle-ttl-chips" aria-label="模型空闲释放时长">
+      <md-filter-chip label="5 分钟后释放" data-ttl-ms="300000" selected></md-filter-chip>
+      <md-filter-chip label="10 分钟后释放" data-ttl-ms="600000"></md-filter-chip>
+      <md-filter-chip label="30 分钟后释放" data-ttl-ms="1800000"></md-filter-chip>
+      <md-filter-chip label="常驻至退出" data-ttl-ms="0"></md-filter-chip>
+    </md-chip-set>
+    <div id="model-runtime-status-summary" class="service-desc" style="margin-top: 10px;">
+      当前显存/内存驻留：全部未加载（0 MB）
+    </div>
+    <div class="hub-actions" style="margin-top: 12px;">
+      <md-outlined-button id="btn-unload-local-models">立即释放显存中的模型</md-outlined-button>
+      <md-text-button id="btn-refresh-model-runtime">刷新状态</md-text-button>
     </div>
   </div>
 
@@ -159,86 +185,49 @@
       <md-outlined-button id="btn-recheck-qwen">重新检测</md-outlined-button>
     </div>
   </div>
-</section>
 
-<!-- 面板 4: 本地服务与端口 -->
-<section id="panel-services" class="hub-panel" data-panel-title="本地服务与端口">
-  <div class="panel-section-title">
-    <div>
-      <div>本地嵌入式服务引擎 (127.0.0.1)</div>
-      <div class="panel-section-subtitle">离线静态服务与中间件总线</div>
-    </div>
-  </div>
-
-  <div class="hub-card">
-    <div class="service-item">
-      <div>
-        <div class="service-name">内嵌 Localhost HTTP 服务总线</div>
-        <div id="service-port-desc" class="service-desc">监听中: 127.0.0.1 (固定 origin 62960 本地分流)</div>
+  <div class="hub-card" id="card-qwen-base">
+    <div class="hub-card-header">
+      <div class="hub-card-title-group">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span class="hub-card-title">Qwen3-0.6B-Base 关注点透镜模型</span>
+          <span id="badge-qwen-base" class="status-indicator">
+            <span class="status-dot"></span>
+            <span class="status-text">检测中</span>
+          </span>
+        </div>
+        <p class="hub-card-desc">
+          0.6B 因果自回归语言模型，驱动信息熵惊异度（Surprisal）推导，智能淡化语法虚词并突出学术核心概念。
+        </p>
       </div>
-      <span class="status-indicator ready"><span class="status-dot"></span>运行中</span>
     </div>
-    <div class="service-item">
-      <div>
-        <div class="service-name">章节 LaTeX / Typst 编译导出服务 (/__chapter_export__)</div>
-        <div class="service-desc">基于本地 Typst / XeLaTeX 双编译器直出学术讲义与出版物 PDF</div>
-      </div>
-      <span class="status-indicator ready"><span class="status-dot"></span>已挂载</span>
+    <div class="hub-meta-row">
+      <span class="hub-meta-item">
+        <span class="material-symbols-outlined hub-meta-icon">package_2</span>
+        <span>体积: ~1.19 GB</span>
+      </span>
+      <span class="hub-meta-item">
+        <span class="material-symbols-outlined hub-meta-icon">memory</span>
+        <span>运行时: Python 3.10+ / PyTorch (CUDA)</span>
+      </span>
+      <span class="hub-meta-item">
+        <span class="material-symbols-outlined hub-meta-icon">terminal</span>
+        <span>硬件推荐: NVIDIA 独显 / CPU</span>
+      </span>
     </div>
-    <div class="service-item">
-      <div>
-        <div class="service-name">双语向量对齐与热力图计算 (/__bilingual__)</div>
-        <div class="service-desc">基于 ONNX Runtime 原生驱动段落嵌入与二部图匈牙利对齐匹配</div>
+    <div id="progress-box-qwen-base" class="hub-progress-box">
+      <div class="hub-progress-header">
+        <span id="progress-text-qwen-base">正在准备下载进程...</span>
+        <span id="progress-meta-qwen-base">0%</span>
       </div>
-      <span class="status-indicator ready"><span class="status-dot"></span>已挂载</span>
+      <md-linear-progress id="progress-bar-qwen-base" value="0"></md-linear-progress>
     </div>
-    <div class="service-item">
-      <div>
-        <div class="service-name">Gemini / BUPT AI 全双工中继代理 (/api/proxy/*)</div>
-        <div class="service-desc">Node.js 原生流式代理，解决跨域与校园内网学术模型穿透</div>
-      </div>
-      <span class="status-indicator ready"><span class="status-dot"></span>已挂载</span>
-    </div>
-    <div class="service-item">
-      <div>
-        <div class="service-name">习题库本地源码热写回与社区题解 (/api/exercise)</div>
-        <div class="service-desc">支持零刷新修改试题参数与题解答案本地即时持久化</div>
-      </div>
-      <span class="status-indicator ready"><span class="status-dot"></span>已挂载</span>
+    <div class="hub-actions">
+      <md-filled-button id="btn-download-qwen-base">下载模型</md-filled-button>
+      <md-outlined-button id="btn-cancel-qwen-base" style="display: none;">取消下载</md-outlined-button>
+      <md-outlined-button id="btn-recheck-qwen-base">重新检测</md-outlined-button>
     </div>
   </div>
 </section>
 
-<!-- 面板 5: 扩展生态 -->
-<section id="panel-extensions" class="hub-panel" data-panel-title="扩展生态">
-  <div class="panel-section-title">
-    <div>
-      <div>功能插件与扩展中心</div>
-      <div class="panel-section-subtitle">学术研读与数字化出版扩展生态</div>
-    </div>
-  </div>
-
-  <div class="hub-card">
-    <div class="service-item">
-      <div>
-        <div class="service-name">MinerU 学术文献与试卷摄取解析器</div>
-        <div class="service-desc">端侧自动解析高清 PDF 讲义并重构为规范 MDX 教材章节与公式块</div>
-      </div>
-      <span class="status-indicator ready"><span class="status-dot"></span>核心内置</span>
-    </div>
-    <div class="service-item">
-      <div>
-        <div class="service-name">高校历年考研真题与期末试卷爬取插件</div>
-        <div class="service-desc">自动聚合高校试题库并格式化为 AstroLib 交互练习册</div>
-      </div>
-      <span class="status-indicator warning"><span class="status-dot"></span>研发中</span>
-    </div>
-    <div class="service-item">
-      <div>
-        <div class="service-name">本地 Ollama / vLLM 大语言模型直连桥</div>
-        <div class="service-desc">100% 离线运行 Qwen2.5-Math / DeepSeek 理科题解推理</div>
-      </div>
-      <span class="status-indicator"><span class="status-dot"></span>规划中</span>
-    </div>
-  </div>
-</section>
+<!-- Panel 3 ended cleanly; mock Panel 4 (services) and Panel 5 (extensions) removed -->

@@ -16,6 +16,51 @@ import type { NoticeConfig } from './notices.ts';
 export const ABP_SCHEMA_VERSION = '1.0.0' as const;
 
 /**
+ * 书籍来源格式 (Source Book Format)
+ */
+export type BookSourceFormat = 'abp' | 'epub' | 'markdown' | 'custom';
+
+/**
+ * 阅读体裁预设 (Reading Profile)
+ * - academic: 理工科学术教材（数理圆点标点、交叉引用识别、卡片结构强化）
+ * - literary: 文学 / 轻小说 / 文化美学（保留原书句号、插画纯净赏析、避免误伤正则徽章）
+ */
+export type ReadingProfile = 'academic' | 'literary';
+
+/**
+ * 原书样式融合模式 (Book Stylesheet Harmonization Mode)
+ */
+export type BookStyleMode = 'harmonized' | 'original' | 'reflow';
+
+/**
+ * 通用阅读视口布局模式 (Universal Reading Viewport Layout)
+ */
+export type ReadingLayoutMode = 'scroll' | 'paged-single' | 'paged-dual';
+
+/**
+ * 章节内容语义类别
+ */
+export type ChapterContentKind =
+  | 'body'
+  | 'chapter-intro'
+  | 'cover'
+  | 'illustration'
+  | 'frontmatter'
+  | 'notes'
+  | 'colophon';
+
+/**
+ * 书籍跨章节脚注 / 译注条目
+ */
+export interface BookFootnoteEntry {
+  id: string;
+  title?: string;
+  html: string;
+  text: string;
+  chapterSlug?: string;
+}
+
+/**
  * 章节目录节点摘要 (TOC Node)
  */
 export interface AstroBookChapterSummary {
@@ -37,6 +82,7 @@ export interface AstroBookSection {
   id: string;
   title: string;
   slug: string;
+  introSlug?: string;
   collapsed?: boolean;
   order?: number;
   chapters: AstroBookChapterSummary[];
@@ -69,6 +115,16 @@ export interface AstroBookChapterPayload {
   readingTimeMinutes?: number;
   exercises?: unknown[];
   aiChunks?: unknown[];
+  chapterKind?: ChapterContentKind;
+  chapterIntro?: {
+    title: string;
+    html: string;
+    slug: string;
+  };
+  bodyClasses?: string[];
+  htmlClasses?: string[];
+  stylesheets?: string[];
+  footnotes?: Record<string, BookFootnoteEntry>;
   updatedAt: string;
 }
 
@@ -107,6 +163,14 @@ export interface AstroBookManifest {
   assets?: string[]; // 包含的相对资产路径列表，如 ['images/fig_1_1.webp']
   hasEmbeddings?: boolean; // 是否内置语义向量
   embeddingMeta?: AstroBookEmbeddingMeta; // 向量元数据配置
+  sourceFormat?: BookSourceFormat;
+  readingProfile?: ReadingProfile;
+  writingMode?: 'horizontal-tb' | 'vertical-rl';
+  language?: string;
+  stylesheets?: string[];
+  hasEmbeddedFonts?: boolean;
+  originalArchive?: string;
+  footnotes?: Record<string, BookFootnoteEntry>;
 }
 
 /**
@@ -199,6 +263,8 @@ export interface AbpBundlePayload {
   crossRefs?: Record<string, unknown> | null;
   inspectorData?: Record<string, unknown> | null;
   exercises?: Record<string, string> | null;
+  sourceArchiveBase64?: string;
+  sourceArchiveFileName?: string;
 }
 
 /**
@@ -246,7 +312,13 @@ export function validateAbpBundle(raw: unknown): AbpBundlePayload {
     if (!sec || typeof sec !== 'object' || !Array.isArray((sec as any).chapters)) {
       throw new Error('无效的 ABP manifest：section 条目缺少 chapters 数组');
     }
-    for (const ch of (sec as any).chapters) {
+    const secAny = sec as any;
+    if (typeof secAny.introSlug === 'string' && secAny.introSlug.trim()) {
+      if (!Object.prototype.hasOwnProperty.call(chapters, secAny.introSlug)) {
+        throw new Error(`无效的 ABP manifest：section 引用了不存在的导语章节 ${String(secAny.introSlug)}`);
+      }
+    }
+    for (const ch of secAny.chapters) {
       if (!ch || typeof ch.slug !== 'string' || !Object.prototype.hasOwnProperty.call(chapters, ch.slug)) {
         throw new Error(`无效的 ABP manifest：section 引用了不存在的章节 ${String(ch?.slug)}`);
       }

@@ -45,11 +45,6 @@ import {
 } from '../themes/material-you/color-engine';
 import { enableFormulaActions, disableFormulaActions } from './formula/ui';
 import {
-  getOfflinePackStatus,
-  downloadAndInstallOfflinePack,
-  clearOfflinePack,
-} from './pwa-offline-manager';
-import {
   getAllAiProviders,
   getAiProvider,
   getActiveAiProviderId,
@@ -96,7 +91,6 @@ import {
 export * from './settings/performance-prefs';
 export * from './settings/typography-prefs';
 export * from './settings/theme-prefs';
-export * from './settings/pwa-service';
 
 import {
   LITE_MODE_KEY,
@@ -105,10 +99,6 @@ import {
   type LiteModeBackup,
   loadLiteMode,
   saveLiteMode,
-  PREWARM_PAGES_KEY,
-  DEFAULT_PREWARM_PAGES,
-  loadPrewarmPref,
-  savePrewarmPref,
   MAX_PAGE_CACHE_KEY,
   DEFAULT_MAX_PAGE_CACHE,
   loadMaxPageCachePref,
@@ -117,7 +107,6 @@ import {
   DEFAULT_SIDEBAR_HOVER_PREFETCH,
   loadSidebarHoverPref,
   saveSidebarHoverPref,
-  syncAllPrewarmButtons,
   syncAllCacheButtons,
   syncAllLiteMode,
   registerApplyLiteModeHook,
@@ -162,12 +151,6 @@ import {
   syncAllThemeChips,
   syncAllThemeColors,
 } from './settings/theme-prefs';
-
-import {
-  getDeferredInstallPrompt,
-  setDeferredInstallPrompt,
-  syncAllPwaCard,
-} from './settings/pwa-service';
 
 import {
   TranslationStorage,
@@ -268,9 +251,6 @@ export function resetToggles(): void {
   saveThemeMode('auto');
   applyThemeMode('auto');
 
-  // 重置章节预加载配置为前后1页 (1)
-  savePrewarmPref(DEFAULT_PREWARM_PAGES);
-
   // 重置页面内存缓存上限为 5 页
   saveMaxPageCachePref(DEFAULT_MAX_PAGE_CACHE);
 
@@ -297,7 +277,6 @@ export function resetToggles(): void {
   syncAllFontButtons();
   syncAllThemeChips();
   syncAllThemeColors();
-  syncAllPrewarmButtons();
   syncAllCacheButtons();
   syncAllAiSettings();
   syncAllTransModeChips();
@@ -580,11 +559,6 @@ function applyFont(): void {
   }
 }
 
-/** 设置编辑器放行标志（editor.ts 会读取 window.__dshFeatureEditorAllowed） */
-function applyEditorAllowed(): void {
-  (window as unknown as Record<string, unknown>).__dshFeatureEditorAllowed = isEnabled('editor');
-}
-
 /** 应用引用联动与样式控制 */
 function applyCrossRef(): void {
   const root = document.documentElement;
@@ -601,7 +575,7 @@ function applyFormulaActions(): void {
   }
 }
 
-/** 应用到页面：显隐 [data-feature] 元素 + 字体 + 引用联动 + 编辑器放行 + 低性能模式 + 广播 */
+/** 应用到页面：显隐 [data-feature] 元素 + 字体 + 引用联动 + 低性能模式 + 广播 */
 export function apply(): void {
   if (meta.length === 0) return;
 
@@ -623,7 +597,6 @@ export function apply(): void {
 
   applyFont();
   applyCrossRef();
-  applyEditorAllowed();
   applyFormulaActions();
   document.dispatchEvent(new CustomEvent('dsh:feature-change'));
 }
@@ -640,7 +613,6 @@ export function applyLiteMode(enabled: boolean = loadLiteMode()): void {
     try {
       if (typeof localStorage !== 'undefined' && !localStorage.getItem(LITE_BACKUP_KEY)) {
         const backup: LiteModeBackup = {
-          prewarmPages: loadPrewarmPref(),
           maxPageCache: loadMaxPageCachePref(),
           sidebarHover: loadSidebarHoverPref(),
           toggles: { ...toggles },
@@ -650,12 +622,11 @@ export function applyLiteMode(enabled: boolean = loadLiteMode()): void {
       }
     } catch {}
 
-    // 2. 内存与网络减法：预热归零、缓存归零、悬停预取关闭
-    savePrewarmPref(0);
+    // 2. 内存与网络减法：缓存归零、悬停预取关闭
     saveMaxPageCachePref(0);
     saveSidebarHoverPref(false);
 
-    // 3. 重型模块减法：关闭公式交互、AI、图谱、做题、模块速查、反馈与Mermaid
+    // 3. 重型模块减法：关闭公式交互、AI、做题与 Mermaid
     LITE_DISABLED_FEATURES.forEach((fid) => {
       toggles[fid] = false;
     });
@@ -677,7 +648,6 @@ export function applyLiteMode(enabled: boolean = loadLiteMode()): void {
         localStorage.removeItem(LITE_BACKUP_KEY);
       }
       if (backup) {
-        savePrewarmPref(backup.prewarmPages);
         saveMaxPageCachePref(backup.maxPageCache);
         saveSidebarHoverPref(backup.sidebarHover);
         toggles = { ...backup.toggles };
@@ -686,7 +656,6 @@ export function applyLiteMode(enabled: boolean = loadLiteMode()): void {
           localStorage.setItem(THEME_TRANSITION_KEY, backup.themeTransition);
         }
       } else {
-        savePrewarmPref(DEFAULT_PREWARM_PAGES);
         saveMaxPageCachePref(DEFAULT_MAX_PAGE_CACHE);
         saveSidebarHoverPref(DEFAULT_SIDEBAR_HOVER_PREFETCH);
         LITE_DISABLED_FEATURES.forEach((fid) => {
@@ -703,10 +672,8 @@ export function applyLiteMode(enabled: boolean = loadLiteMode()): void {
   // 执行各子模块状态应用
   apply();
   syncAllCheckboxes();
-  syncAllPrewarmButtons();
   syncAllCacheButtons();
   syncAllLiteMode();
-  syncAllPwaCard();
 }
 
 registerApplyLiteModeHook(applyLiteMode);
@@ -863,7 +830,6 @@ class StarlightFeatureToggles extends FeatureToggleBase {
     this.bindFonts();
     this.bindSiteThemes();
     this.bindThemeColors();
-    this.bindPrewarm();
     this.bindCache();
     this.bindLiteMode();
     this.bindAiSettings();
@@ -882,7 +848,6 @@ class StarlightFeatureToggles extends FeatureToggleBase {
     syncAllFontButtons();
     syncAllThemeChips();
     syncAllThemeColors();
-    syncAllPrewarmButtons();
     syncAllCacheButtons();
     syncAllAiSettings();
     syncAllTransModeChips();
@@ -1109,114 +1074,6 @@ class StarlightFeatureToggles extends FeatureToggleBase {
       });
     });
 
-    // PWA 独立应用安装按钮
-    root.querySelectorAll<HTMLButtonElement>('[data-pwa-install-btn]').forEach((btn) => {
-      btn.addEventListener('click', async (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-
-        const isStandalone = (
-          window.matchMedia('(display-mode: standalone)').matches ||
-          (window.navigator as any).standalone === true ||
-          document.referrer.includes('android-app://')
-        );
-
-        if (isStandalone) return;
-
-        const prompt = getDeferredInstallPrompt();
-        if (prompt) {
-          try {
-            prompt.prompt();
-            const choice = await prompt.userChoice;
-            if (choice && choice.outcome === 'accepted') {
-              setDeferredInstallPrompt(null);
-              syncAllPwaCard();
-            }
-          } catch (err) {
-            console.debug('[PWA] 安装调用异常:', err);
-          }
-        } else {
-          alert('请点击浏览器地址栏右侧的【安装】图标（或在浏览器设置菜单中选择【安装 AstroLib】/【添加到主屏幕】），即可在计算机专用窗口中运行。');
-        }
-      });
-    });
-
-    // PWA 离线全量数据包下载按钮 (从 GitHub 拉取，0 消耗主站流量)
-    root.querySelectorAll<HTMLButtonElement>('[data-pwa-download-pack-btn]').forEach((btn) => {
-      btn.addEventListener('click', async (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-
-        const card = btn.closest('.ft-pwa-card');
-        const progressWrap = card?.querySelector<HTMLElement>('[data-pwa-progress-wrap]');
-        const progressFill = card?.querySelector<HTMLElement>('[data-pwa-progress-fill]');
-        const progressText = card?.querySelector<HTMLElement>('[data-pwa-progress-text]');
-        const clearBtn = card?.querySelector<HTMLButtonElement>('[data-pwa-clear-pack-btn]');
-
-        btn.disabled = true;
-        if (clearBtn) clearBtn.disabled = true;
-        if (progressWrap) progressWrap.classList.remove('hidden');
-
-        try {
-          await downloadAndInstallOfflinePack(undefined, (pct, text) => {
-            if (progressFill) progressFill.style.width = `${pct}%`;
-            if (progressText) progressText.textContent = text;
-          });
-
-          // 下载完成短暂保留状态后隐藏
-          setTimeout(() => {
-            if (progressWrap) progressWrap.classList.add('hidden');
-            btn.disabled = false;
-            if (clearBtn) clearBtn.disabled = false;
-            syncAllPwaCard();
-          }, 1200);
-        } catch (err: any) {
-          if (progressText) {
-            progressText.textContent = `下载失败: ${err.message || '网络中断'}`;
-            progressText.style.color = '#ef4444';
-          }
-          setTimeout(() => {
-            if (progressWrap) progressWrap.classList.add('hidden');
-            if (progressText) progressText.style.color = '';
-            btn.disabled = false;
-            if (clearBtn) clearBtn.disabled = false;
-          }, 3000);
-        }
-      });
-    });
-
-    // PWA 清空离线数据包按钮
-    root.querySelectorAll<HTMLButtonElement>('[data-pwa-clear-pack-btn]').forEach((btn) => {
-      btn.addEventListener('click', async (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-
-        const confirmed = window.confirm('确定要清空本地已缓存的离线全站数据包吗？清空后断网时将无法访问未翻阅过的章节。');
-        if (!confirmed) return;
-
-        btn.disabled = true;
-        try {
-          await clearOfflinePack();
-          syncAllPwaCard();
-        } finally {
-          btn.disabled = false;
-        }
-      });
-    });
-
-    // 模块巡检一键打开按钮：点击时先关闭设置面板，让巡检抽屉无遮挡打开
-    root.querySelectorAll<HTMLButtonElement>('[data-inspector-trigger]').forEach((btn) => {
-      btn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        if (this.dataset.inlineHub === 'true') {
-          window.dispatchEvent(new CustomEvent('astrolib:close-settings-hub'));
-          window.dispatchEvent(new CustomEvent('astrolib:open-inspector-from-hub'));
-        } else {
-          this.closePanel();
-        }
-      });
-    });
-
     // 段前空两格开关
     root.querySelectorAll<HTMLInputElement>('input[type="checkbox"][data-typography-indent]').forEach((cb) => {
       cb.checked = loadParagraphIndent();
@@ -1299,7 +1156,7 @@ class StarlightFeatureToggles extends FeatureToggleBase {
     const root = this.panel || this;
     root.querySelectorAll<HTMLElement>('.ft-font-btn, .ft-font-chip').forEach((btn) => {
       const handleSelect = (e: Event) => {
-        const setting = btn.getAttribute('data-font-setting') as 'latin' | 'cjk' | null;
+        const setting = (btn.getAttribute('data-font-setting') || btn.getAttribute('data-font-type')) as 'latin' | 'cjk' | null;
         const val = btn.getAttribute('data-font-val');
         if (!setting || !val) return;
 
@@ -1407,21 +1264,6 @@ class StarlightFeatureToggles extends FeatureToggleBase {
       };
       input.addEventListener('input', handleCustom);
       input.addEventListener('change', handleCustom);
-    });
-  }
-
-  bindPrewarm() {
-    const root = this.panel || this;
-    root.querySelectorAll<HTMLElement>('.ft-prewarm-chip, .ft-prewarm-btn').forEach((chip) => {
-      const handleSelect = (e: Event) => {
-        e.preventDefault();
-        e.stopPropagation();
-        const val = parseInt(chip.getAttribute('data-prewarm-val') || '-1', 10);
-        savePrewarmPref(val);
-        syncAllPrewarmButtons();
-      };
-      chip.addEventListener('click', handleSelect);
-      chip.addEventListener('change', handleSelect);
     });
   }
 
@@ -1858,7 +1700,6 @@ class StarlightFeatureToggles extends FeatureToggleBase {
     syncAllThemeModes();
     syncAllFontButtons();
     syncAllThemeChips();
-    syncAllPrewarmButtons();
     syncAllCacheButtons();
     syncAllAiSettings();
     syncAllPunctChips();
@@ -1970,14 +1811,12 @@ export function initFeatureToggles(): void {
     syncAllFontButtons();
     syncAllThemeChips();
     syncAllThemeColors();
-    syncAllPrewarmButtons();
     syncAllCacheButtons();
     syncAllAiSettings();
     syncAllTransModeChips();
     syncAllTransProviderChips();
     syncAllPunctChips();
     syncAllFontSizeSliders();
-    syncAllPwaCard();
   });
 
   window.addEventListener('site-theme-change', () => {
@@ -2007,8 +1846,6 @@ export function initFeatureToggles(): void {
     } else if (e.key === 'starlight-font') {
       applyFontPref(loadFontPref());
       syncAllFontButtons();
-    } else if (e.key === PREWARM_PAGES_KEY) {
-      syncAllPrewarmButtons();
     } else if (e.key === MAX_PAGE_CACHE_KEY) {
       syncAllCacheButtons();
     } else if (e.key === SIDEBAR_HOVER_PREFETCH_KEY) {
@@ -2035,7 +1872,6 @@ export function initFeatureToggles(): void {
     }
   });
 
-  // 监听浏览器 PWA 安装横幅事件与安装完成事件
   if (typeof window !== 'undefined') {
     window.addEventListener(TRANSLATION_DISPLAY_MODE_CHANGE_EVENT, () => {
       syncAllTransModeChips();
@@ -2044,25 +1880,6 @@ export function initFeatureToggles(): void {
     window.addEventListener(TRANSLATION_PROVIDER_CHANGE_EVENT, () => {
       syncAllTransProviderChips();
     });
-
-    window.addEventListener('beforeinstallprompt', (e: Event) => {
-      e.preventDefault();
-      setDeferredInstallPrompt(e);
-      syncAllPwaCard();
-    });
-
-    window.addEventListener('appinstalled', () => {
-      setDeferredInstallPrompt(null);
-      syncAllPwaCard();
-      console.info('[PWA] AstroLib 已成功安装为独立应用');
-    });
-
-    window.addEventListener('astrolib:pwa-pack-updated', () => {
-      syncAllPwaCard();
-    });
-
-    // 初次启动同步 PWA 状态
-    syncAllPwaCard();
   }
 }
 
@@ -2075,16 +1892,26 @@ export function initHeadlessReaderSettings(readerMeta: FeatureMeta[]): void {
     meta = readerMeta;
   }
   loadToggles();
-  applyFontPref(loadFontPref());
-  applyParagraphIndent();
-  applyPunctStyle();
-  applyFontSize();
+  const isBookReader =
+    Boolean(document.documentElement.dataset.sourceFormat) ||
+    typeof (window as any).__applyEffectiveBookTypography === 'function';
+  if (isBookReader && typeof (window as any).__applyEffectiveBookTypography === 'function') {
+    (window as any).__applyEffectiveBookTypography(false);
+  } else if (!isBookReader) {
+    applyFontPref(loadFontPref());
+    applyParagraphIndent();
+    applyPunctStyle();
+    applyFontSize();
+  }
   apply();
 
   if ((window as any).__headlessReaderSettingsBound) return;
   (window as any).__headlessReaderSettingsBound = true;
 
   window.addEventListener('storage', (e) => {
+    const hasBookOverrideHook =
+      Boolean(document.documentElement.dataset.sourceFormat) ||
+      typeof (window as any).__applyEffectiveBookTypography === 'function';
     if (e.key === STORAGE_KEY || e.key === THEME_TRANSITION_KEY) {
       loadToggles();
       apply();
@@ -2093,13 +1920,29 @@ export function initHeadlessReaderSettings(readerMeta: FeatureMeta[]): void {
     } else if (e.key === THEME_MODE_STORAGE_KEY) {
       applyThemeMode();
     } else if (e.key === 'starlight-font') {
-      applyFontPref(loadFontPref());
+      if (hasBookOverrideHook) {
+        (window as any).__applyEffectiveBookTypography?.(false);
+      } else {
+        applyFontPref(loadFontPref());
+      }
     } else if (e.key === TYPOGRAPHY_INDENT_KEY || e.key === 'starlight-paragraph-indent') {
-      applyParagraphIndent();
+      if (hasBookOverrideHook) {
+        (window as any).__applyEffectiveBookTypography?.(false);
+      } else {
+        applyParagraphIndent();
+      }
     } else if (e.key === PUNCT_STYLE_KEY) {
-      applyPunctStyle();
+      if (hasBookOverrideHook) {
+        (window as any).__applyEffectiveBookTypography?.(true);
+      } else {
+        applyPunctStyle();
+      }
     } else if (e.key === FONT_SIZE_KEY) {
-      applyFontSize();
+      if (hasBookOverrideHook) {
+        (window as any).__applyEffectiveBookTypography?.(false);
+      } else {
+        applyFontSize();
+      }
     } else if (e.key === LITE_MODE_KEY) {
       applyLiteMode();
     }
@@ -2108,8 +1951,12 @@ export function initHeadlessReaderSettings(readerMeta: FeatureMeta[]): void {
   document.addEventListener('astro:page-load', () => {
     loadToggles();
     apply();
-    applyParagraphIndent();
-    applyPunctStyle(undefined, true);
-    applyFontSize();
+    if (typeof (window as any).__applyEffectiveBookTypography === 'function') {
+      (window as any).__applyEffectiveBookTypography(true);
+    } else if (!document.documentElement.dataset.sourceFormat) {
+      applyParagraphIndent();
+      applyPunctStyle(undefined, true);
+      applyFontSize();
+    }
   });
 }

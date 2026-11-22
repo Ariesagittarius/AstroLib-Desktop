@@ -19,6 +19,8 @@ import type {
   ReadingEntityKind,
 } from '../../src/types/library-entity.ts';
 import { DesktopBookManager } from './book-manager.ts';
+import { TaskManager } from '../../src/server/plugins/doc-ingestion/task-manager.ts';
+import { mapIngestTaskToEntityStatus } from '../../src/features/library/core/entity-status.ts';
 
 interface IngestTaskMetaLite {
   taskId: string;
@@ -30,6 +32,7 @@ interface IngestTaskMetaLite {
   createdAt?: number;
   fileSize?: number;
   pageCount?: number;
+  pageRanges?: string;
 }
 
 interface RegistryStore {
@@ -96,6 +99,7 @@ export class DesktopLibraryManager {
   }
 
   private saveStore(): void {
+    this.invalidateCache();
     try {
       fs.writeFileSync(this.registryFile, JSON.stringify(this.store, null, 2), 'utf8');
     } catch (err) {
@@ -104,9 +108,65 @@ export class DesktopLibraryManager {
   }
 
   /**
-   * 聚合获取全库统一实体 (书籍 + 文献)
+   * 获取所有可能存放文献摄取任务的候选物理目录
    */
-  public async getAllEntities(): Promise<UnifiedReadingEntity[]> {
+  private getIngestCandidateDirs(): string[] {
+    const candidates: string[] = [];
+    if (process.env.ASTROLIB_INGEST_DIR) {
+      const envDir = path.resolve(process.env.ASTROLIB_INGEST_DIR);
+      if (!candidates.includes(envDir)) candidates.push(envDir);
+    }
+    try {
+      const userDataDir = path.join(app.getPath('userData'), 'ingest-tasks');
+      if (!candidates.includes(userDataDir)) candidates.push(userDataDir);
+    } catch {}
+    if (this.projectRoot) {
+      const projTaskDir = path.resolve(this.projectRoot, 'task/ingest');
+      if (!candidates.includes(projTaskDir)) candidates.push(projTaskDir);
+    }
+    const cwdTaskDir = path.resolve(process.cwd(), 'task/ingest');
+    if (!candidates.includes(cwdTaskDir)) candidates.push(cwdTaskDir);
+    try {
+      const exeDir = path.dirname(app.getPath('exe'));
+      const devRootTaskDir = path.resolve(exeDir, '../../task/ingest');
+      if (!candidates.includes(devRootTaskDir)) candidates.push(devRootTaskDir);
+    } catch {}
+
+    return candidates.filter((dir) => fs.existsSync(dir));
+  }
+
+  private entitiesCache: { data: UnifiedReadingEntity[]; expiresAt: number } | null = null;
+  private entitiesInFlight: Promise<UnifiedReadingEntity[]> | null = null;
+  private readonly entitiesCacheTtlMs = 3000;
+
+  public invalidateCache(): void {
+    this.entitiesCache = null;
+  }
+
+  /**
+   * 聚合获取全库统一实体 (书籍 + 文献)，附带 3 秒短期内存缓存与并发去重
+   */
+  public async getAllEntities(forceRefresh = false): Promise<UnifiedReadingEntity[]> {
+    const now = Date.now();
+    if (!forceRefresh && this.entitiesCache && now < this.entitiesCache.expiresAt) {
+      return this.entitiesCache.data;
+    }
+    if (forceRefresh) {
+      this.entitiesCache = null;
+    }
+    if (!forceRefresh && this.entitiesInFlight) {
+      return this.entitiesInFlight;
+    }
+
+    this.entitiesInFlight = this.scanAllEntities().finally(() => {
+      this.entitiesInFlight = null;
+    });
+    const result = await this.entitiesInFlight;
+    this.entitiesCache = { data: result, expiresAt: Date.now() + this.entitiesCacheTtlMs };
+    return result;
+  }
+
+  private async scanAllEntities(): Promise<UnifiedReadingEntity[]> {
     const entities: UnifiedReadingEntity[] = [];
 
     // 1. 聚合已安装的 ABP 书籍
@@ -122,10 +182,10 @@ export class DesktopLibraryManager {
           kind: 'book',
           title: m.title,
           subtitle: m.description || '',
-          author: m.author || 'AstroLib 编委会',
-          publisher: m.publisher || '高等教育出版社',
+          author: m.author || '',
+          publisher: m.publisher || '',
           cover: m.cover || '/favicon.png',
-          category: m.colSlug || 'math',
+          category: m.colSlug || 'general',
           shelfId: userMeta.shelfId,
           createdAt: (b.installedAt ? Date.parse(b.installedAt) : 0) || (m.updatedAt ? Date.parse(m.updatedAt) : 0) || Date.now(),
           lastReadAt: userMeta.lastReadAt,
@@ -138,6 +198,8 @@ export class DesktopLibraryManager {
             abpPackPath: `/abp-packs/${m.colSlug}-${m.slug}`,
             edition: m.edition,
             isbn: m.isbn,
+            sourceFormat: m.sourceFormat || 'abp',
+            readingProfile: m.readingProfile || (m.sourceFormat === 'epub' ? 'literary' : 'academic'),
           },
         });
       }
@@ -146,40 +208,50 @@ export class DesktopLibraryManager {
       console.error('[DesktopLibraryManager] 聚合书籍失败:', err);
     }
 
-    // 2. 聚合 MinerU 解析的学术文献（直接读取磁盘摄取任务目录，解耦 Vite 开发插件）
+    // 2. 聚合 MinerU 解析的学术文献（异步并行目录扫描，避免同步 IO 卡死主线程）
     try {
-      const ingestBaseDir = process.env.ASTROLIB_INGEST_DIR
-        ? path.resolve(process.env.ASTROLIB_INGEST_DIR)
-        : path.resolve(this.projectRoot, 'task/ingest');
-      const tasks: IngestTaskMetaLite[] = [];
-      if (fs.existsSync(ingestBaseDir)) {
-        const entries = fs.readdirSync(ingestBaseDir, { withFileTypes: true });
-        for (const ent of entries) {
-          if (!ent.isDirectory() || !ent.name.startsWith('task_')) continue;
-          const metaPath = path.join(ingestBaseDir, ent.name, 'meta.json');
-          if (!fs.existsSync(metaPath)) continue;
+      const candidateDirs = this.getIngestCandidateDirs();
+      const taskMap = new Map<string, IngestTaskMetaLite>();
+
+      const dirResults = await Promise.all(
+        candidateDirs.map(async (baseDir) => {
           try {
-            const parsed = JSON.parse(fs.readFileSync(metaPath, 'utf8')) as IngestTaskMetaLite;
-            if (parsed && parsed.taskId) tasks.push(parsed);
-          } catch {}
+            const entries = await fs.promises.readdir(baseDir, { withFileTypes: true });
+            const taskEntries = entries.filter((ent) => ent.isDirectory() && ent.name.startsWith('task_'));
+            const metas = await Promise.all(
+              taskEntries.map(async (ent) => {
+                const metaPath = path.join(baseDir, ent.name, 'meta.json');
+                try {
+                  const raw = await fs.promises.readFile(metaPath, 'utf8');
+                  return JSON.parse(raw) as IngestTaskMetaLite;
+                } catch {
+                  return null;
+                }
+              })
+            );
+            return metas;
+          } catch {
+            return [];
+          }
+        })
+      );
+
+      for (const metas of dirResults) {
+        for (const parsed of metas) {
+          if (!parsed || !parsed.taskId) continue;
+          const prev = taskMap.get(parsed.taskId);
+          if (prev && prev.status === 'completed') continue;
+          taskMap.set(parsed.taskId, parsed);
         }
-        tasks.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
       }
+
+      const taskManager = TaskManager.getInstance();
+      const tasks = Array.from(taskMap.values()).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
       for (const t of tasks) {
         const entityId = `paper:${t.taskId}`;
         const userMeta = this.store.customMeta[entityId] || {};
 
-        let entityStatus: 'ready' | 'processing' | 'error' = 'ready';
-        let statusMsg = '';
-        if (t.status === 'completed') {
-          entityStatus = 'ready';
-        } else if (t.status === 'failed') {
-          entityStatus = 'error';
-          statusMsg = t.error || '解析失败';
-        } else {
-          entityStatus = 'processing';
-          statusMsg = `MinerU 解析中 ${t.progress || 0}%`;
-        }
+        const mappedStatus = mapIngestTaskToEntityStatus(t, taskManager.isJobActive(t.taskId));
 
         // 智能提取干净文献名（去除 .pdf 扩展名）
         const cleanName = t.fileName.replace(/\.pdf$/i, '');
@@ -188,7 +260,7 @@ export class DesktopLibraryManager {
           id: entityId,
           kind: 'paper',
           title: cleanName,
-          subtitle: `PDF 学术文献 · ${t.engine === 'api' ? '云端 MinerU' : '本地加速引擎'}`,
+          subtitle: `PDF 学术文献 · ${t.engine === 'api' ? '云端 MinerU' : t.engine === 'agent' ? 'Agent 通道' : '本地加速引擎'}`,
           author: 'MinerU 学术摄取',
           publisher: '学术文献库',
           cover: '/astrolib-logo.webp',
@@ -197,8 +269,8 @@ export class DesktopLibraryManager {
           createdAt: t.createdAt || Date.now(),
           lastReadAt: userMeta.lastReadAt,
           readProgress: userMeta.readProgress || 0,
-          status: entityStatus,
-          statusMessage: statusMsg,
+          status: mappedStatus.status,
+          statusMessage: mappedStatus.statusMessage,
           metadata: {
             taskId: t.taskId,
             originPdfUrl: `/api/ingest/pdf?taskId=${t.taskId}`,
@@ -207,6 +279,7 @@ export class DesktopLibraryManager {
             hasAnnotations: true,
             fileSizeBytes: t.fileSize,
             totalPages: t.pageCount,
+            pageRanges: t.pageRanges,
           },
         });
       }

@@ -17,11 +17,13 @@
  */
 
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { execSync } from 'node:child_process';
+import { execFileSync } from 'node:child_process';
 import { cleanSlug } from '../../../utils/slug.ts';
 import { collections } from '../../../config/collections.config.ts';
+import { createSanitizedChildEnv } from '../../../core/security/child-env.ts';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '../../../..');
@@ -55,18 +57,18 @@ function parseJsonBody(req) {
  */
 function findXelatexBin() {
   const candidates = [
+    process.env.XELATEX_PATH,
     'xelatex',
-    'D:\\texlive\\2026\\bin\\windows\\xelatex.exe',
-    'C:\\texlive\\2026\\bin\\windows\\xelatex.exe',
-    'C:\\texlive\\2025\\bin\\windows\\xelatex.exe',
-    'C:\\texlive\\2024\\bin\\windows\\xelatex.exe',
-  ];
+    process.platform === 'win32' ? 'C:\\texlive\\2026\\bin\\windows\\xelatex.exe' : null,
+    process.platform === 'win32' ? 'C:\\texlive\\2025\\bin\\windows\\xelatex.exe' : null,
+    process.platform === 'win32' ? 'C:\\texlive\\2024\\bin\\windows\\xelatex.exe' : null,
+  ].filter(Boolean);
 
   for (const cand of candidates) {
     try {
-      execSync(`"${cand}" --version`, { stdio: 'ignore' });
+      execFileSync(cand, ['--version'], { stdio: 'ignore', timeout: 3000 });
       return cand;
-    } catch (e) {}
+    } catch {}
   }
   return null;
 }
@@ -99,9 +101,16 @@ function resolveMdxPathFromUrl(pathname) {
     }
   }
   if (!rawChapterSlug) return null;
+  if (colSlug.includes('..') || bookSlug.includes('..') || rawChapterSlug.includes('..')) {
+    return null;
+  }
 
-  const bookDir = path.join(ROOT, 'src', 'content', 'docs', 'collections', colSlug, bookSlug);
-  if (!fs.existsSync(bookDir)) return null;
+  const candidateDirs = [
+    path.join(ROOT, 'content-sources', 'collections', colSlug, bookSlug),
+    path.join(ROOT, 'src', 'content', 'docs', 'collections', colSlug, bookSlug),
+  ];
+  const bookDir = candidateDirs.find((d) => fs.existsSync(d));
+  if (!bookDir) return null;
 
   const targetCleanSlug = cleanSlug(rawChapterSlug);
   const normalizeKey = (s) => s.replace(/[^a-zA-Z0-9\u4e00-\u9fa5]/g, '').toLowerCase();
@@ -169,33 +178,44 @@ async function handle(req, res) {
 
     const resolved = resolveMdxPathFromUrl(pagePathname);
     if (!resolved) {
-      sendJson(res, 404, { ok: false, message: `未找到章节 MDX: ${pagePathname}` });
+      sendJson(res, 404, { ok: false, message: `未找到章节 MDX 源码: ${pagePathname}` });
       return true;
     }
 
+    const SAFE_OPT = /^[a-zA-Z0-9._-]+$/;
+    const safeParam = (val) => (val && SAFE_OPT.test(String(val)) ? String(val) : null);
+
+    let tempOutDir = '';
     try {
       const scriptPath = path.join(ROOT, 'scripts', 'export-chapter-latex.mjs');
-      const tempOutDir = path.join(ROOT, '.tmp', 'dev-chapter-compile', `${Date.now()}_${resolved.slug}`);
-      fs.mkdirSync(tempOutDir, { recursive: true });
+      tempOutDir = fs.mkdtempSync(path.join(os.tmpdir(), 'astrolib-chapter-export-'));
 
       const cmdArgs = [
-        `"${process.execPath}"`,
-        `"${scriptPath}"`,
-        `"${resolved.filePath}"`,
-        `--out "${tempOutDir}"`,
+        scriptPath,
+        resolved.filePath,
+        '--out',
+        tempOutDir,
       ];
 
-      if (typography) {
-        cmdArgs.push(`--typography "${typography}"`);
-        if (cjkFont) cmdArgs.push(`--cjk-font "${cjkFont}"`);
+      const sTyp = safeParam(typography);
+      const sCjk = safeParam(cjkFont);
+      const sMath = safeParam(mathFont);
+      const sMode = safeParam(mode);
+      const sSize = safeParam(fontSize);
+      const sPaper = safeParam(paperSize);
+      const sSide = safeParam(sidenoteMode);
+
+      if (sTyp) {
+        cmdArgs.push('--typography', sTyp);
+        if (sCjk) cmdArgs.push('--cjk-font', sCjk);
       } else {
-        if (mathFont) cmdArgs.push(`--math-font "${mathFont}"`);
-        if (cjkFont) cmdArgs.push(`--cjk-font "${cjkFont}"`);
+        if (sMath) cmdArgs.push('--math-font', sMath);
+        if (sCjk) cmdArgs.push('--cjk-font', sCjk);
       }
-      if (mode) cmdArgs.push(`--mode "${mode}"`);
-      if (fontSize) cmdArgs.push(`--font-size "${fontSize}"`);
-      if (paperSize) cmdArgs.push(`--paper-size "${paperSize}"`);
-      if (sidenoteMode) cmdArgs.push(`--sidenote-mode "${sidenoteMode}"`);
+      if (sMode) cmdArgs.push('--mode', sMode);
+      if (sSize) cmdArgs.push('--font-size', sSize);
+      if (sPaper) cmdArgs.push('--paper-size', sPaper);
+      if (sSide) cmdArgs.push('--sidenote-mode', sSide);
 
       if (format === 'zip') {
         cmdArgs.push('--zip');
@@ -203,10 +223,12 @@ async function handle(req, res) {
         cmdArgs.push('--compile');
       }
 
-      // 运行独立导出脚本
-      execSync(cmdArgs.join(' '), {
+      // 运行独立导出脚本 (兼容 Electron ELECTRON_RUN_AS_NODE=1，零 shell 拼接)
+      execFileSync(process.execPath, cmdArgs, {
         cwd: ROOT,
         stdio: 'pipe',
+        timeout: 120000,
+        env: createSanitizedChildEnv({ ELECTRON_RUN_AS_NODE: '1' }),
       });
 
       const noCacheHeaders = {
@@ -283,6 +305,12 @@ async function handle(req, res) {
         message: String(err?.message || err),
       });
       return true;
+    } finally {
+      if (tempOutDir) {
+        try {
+          fs.rmSync(tempOutDir, { recursive: true, force: true });
+        } catch {}
+      }
     }
   }
 
@@ -297,6 +325,7 @@ async function handle(req, res) {
       return true;
     }
 
+    let tempOutDir = '';
     try {
       const body = await parseJsonBody(req);
       const { latex, filename = 'document.pdf' } = body;
@@ -305,22 +334,22 @@ async function handle(req, res) {
         return true;
       }
 
-      const tempOutDir = path.join(ROOT, '.tmp', 'dev-latex-compile', `${Date.now()}`);
-      fs.mkdirSync(tempOutDir, { recursive: true });
+      tempOutDir = fs.mkdtempSync(path.join(os.tmpdir(), 'astrolib-latex-compile-'));
 
       const mainTexPath = path.join(tempOutDir, 'main.tex');
       fs.writeFileSync(mainTexPath, latex, 'utf8');
 
-      // 执行 XeLaTeX 双遍编译解决交叉引用与页码（解耦执行，防止第 1 遍非致命退出码阻断第 2 遍）
-      const runXeLaTeXPass = (pass) => {
+      // 执行 XeLaTeX 双遍编译（严格禁用 -shell-escape）
+      const runXeLaTeXPass = () => {
         try {
-          execSync(`"${xelatexBin}" -file-line-error -interaction=nonstopmode main.tex`, {
+          execFileSync(xelatexBin, ['-no-shell-escape', '-file-line-error', '-interaction=nonstopmode', 'main.tex'], {
             cwd: tempOutDir,
             stdio: 'pipe',
             timeout: 90000,
+            env: createSanitizedChildEnv(),
           });
           return true;
-        } catch (compileErr) {
+        } catch {
           return false;
         }
       };
@@ -362,6 +391,12 @@ async function handle(req, res) {
         message: String(err?.message || err),
       });
       return true;
+    } finally {
+      if (tempOutDir) {
+        try {
+          fs.rmSync(tempOutDir, { recursive: true, force: true });
+        } catch {}
+      }
     }
   }
 

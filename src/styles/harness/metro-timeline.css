@@ -1,0 +1,645 @@
+/**
+ * src/styles/harness/metro-timeline.css
+ * ============================================================================
+ * Linear Metro Rail Timeline (Google Gemini + DeepSeek Harness M3E Fusion)
+ * ============================================================================
+ */
+
+.harness-turn-timeline-slot {
+  width: 100%;
+  min-width: 0;
+}
+
+.metro-timeline-wrap {
+  width: 100%;
+  margin-bottom: 6px;
+}
+
+/* 顶部折叠摘要条 (Completed / Streaming Summary Bar) */
+.metro-summary-bar {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 100%;
+  padding: 5px 12px 5px 9px;
+  border-radius: 9999px;
+  border: 1px solid var(--md-sys-color-outline-variant, var(--harness-border-subtle));
+  background-color: var(--md-sys-color-surface-container-low, var(--harness-bg-surface-hover));
+  color: var(--md-sys-color-on-surface-variant, var(--harness-text-secondary));
+  font-family: var(--harness-font-family);
+  font-size: 0.81rem;
+  font-weight: 500;
+  line-height: 1.35;
+  cursor: pointer;
+  transition: background-color 0.16s ease, border-color 0.16s ease, color 0.16s ease;
+}
+
+.metro-summary-bar:hover {
+  background-color: var(--md-sys-color-surface-container, var(--harness-bg-surface-active));
+  border-color: var(--md-sys-color-outline, var(--harness-border-strong));
+  color: var(--md-sys-color-on-surface, var(--harness-text-primary));
+}
+
+.metro-summary-indicator {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  color: var(--md-sys-color-primary, var(--harness-accent-blue));
+  flex-shrink: 0;
+}
+
+.metro-summary-indicator .material-symbols-outlined {
+  font-size: 16px;
+}
+
+.metro-timeline-wrap.is-error .metro-summary-indicator {
+  color: var(--md-sys-color-error, #ba1a1a);
+}
+
+.metro-timeline-wrap.is-aborted .metro-summary-indicator {
+  color: var(--md-sys-color-on-surface-variant, var(--harness-text-secondary));
+}
+
+@keyframes metroSpin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes metroPulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--md-sys-color-primary, #00668b) 35%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 0 5px color-mix(in srgb, var(--md-sys-color-primary, #00668b) 0%, transparent);
+  }
+}
+
+.metro-spin {
+  animation: metroSpin 1s linear infinite;
+}
+
+.metro-summary-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.metro-chevron {
+  font-size: 17px;
+  color: var(--md-sys-color-on-surface-variant, var(--harness-text-tertiary));
+  flex-shrink: 0;
+  transition: transform 0.16s ease;
+}
+
+/* 地铁线性导览轨道 (Rail Container) */
+.metro-rail-container {
+  margin-top: 8px;
+  padding: 2px 0 4px 2px;
+}
+
+.metro-rail-container[hidden] {
+  display: none !important;
+}
+
+.metro-rail-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.metro-step {
+  display: flex;
+  align-items: stretch;
+  gap: 10px;
+  min-height: 28px;
+}
+
+.metro-rail-col {
+  width: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.metro-node-dot {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--md-sys-color-surface-container, #f1f3f4);
+  color: var(--md-sys-color-on-surface-variant, var(--harness-text-secondary));
+  border: 1px solid var(--md-sys-color-outline-variant, var(--harness-border-subtle));
+  flex-shrink: 0;
+  z-index: 1;
+  transition: background-color 0.16s ease, border-color 0.16s ease, color 0.16s ease;
+}
+
+.metro-step--thinking .metro-node-dot {
+  background-color: var(--md-sys-color-secondary-container, #e8def8);
+  color: var(--md-sys-color-on-secondary-container, #1d192b);
+  border-color: transparent;
+}
+
+.metro-step--complete .metro-node-dot {
+  background-color: var(--md-sys-color-primary-container, #d3e3fd);
+  color: var(--md-sys-color-on-primary-container, #041e49);
+  border-color: transparent;
+}
+
+.metro-step.is-error .metro-node-dot,
+.metro-step--complete.is-error .metro-node-dot {
+  background-color: var(--md-sys-color-error-container, #ffdad6);
+  color: var(--md-sys-color-on-error-container, #410002);
+  border-color: transparent;
+}
+
+.metro-step--complete.is-aborted .metro-node-dot {
+  background-color: var(--md-sys-color-surface-container-high, #e6e8ec);
+  color: var(--md-sys-color-on-surface-variant, var(--harness-text-secondary));
+}
+
+.metro-node-dot.is-warning {
+  background-color: var(--md-sys-color-tertiary-container, #ffdcc2);
+  color: var(--md-sys-color-on-tertiary-container, #2e1500);
+  border-color: transparent;
+}
+
+.metro-node-dot.is-pulsing {
+  border-color: var(--md-sys-color-primary, #00668b);
+  color: var(--md-sys-color-primary, #00668b);
+  animation: metroPulse 1.6s ease-in-out infinite;
+}
+
+.metro-node-glyph {
+  font-size: 14px;
+  line-height: 1;
+}
+
+.metro-node-custom-svg {
+  width: 14px;
+  height: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.metro-node-custom-svg svg {
+  width: 14px;
+  height: 14px;
+  display: block;
+}
+
+.metro-node-custom-img {
+  width: 14px;
+  height: 14px;
+  object-fit: contain;
+  border-radius: 3px;
+  display: block;
+}
+
+.metro-rail-line {
+  width: 1.5px;
+  flex: 1;
+  min-height: 8px;
+  margin: 3px 0;
+  background-color: var(--md-sys-color-outline-variant, var(--harness-border-subtle));
+}
+
+.metro-step:last-child .metro-rail-line {
+  display: none;
+}
+
+/* 节点正文行与对齐文本轴 */
+.metro-step-body {
+  flex: 1;
+  min-width: 0;
+  padding-top: 1px;
+  padding-bottom: 10px;
+}
+
+.metro-step:last-child .metro-step-body {
+  padding-bottom: 2px;
+}
+
+.metro-step-row-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.metro-step-head {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+  padding: 2px 8px;
+  margin-left: -8px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--md-sys-color-on-surface-variant, var(--harness-text-secondary));
+  font-family: var(--harness-font-family);
+  font-size: 0.83rem;
+  line-height: 1.45;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.14s ease, color 0.14s ease;
+}
+
+.metro-step-head:not(.is-static):hover {
+  background-color: var(--md-sys-color-surface-container-low, var(--harness-bg-surface-hover));
+  color: var(--md-sys-color-on-surface, var(--harness-text-primary));
+}
+
+.metro-step-head.is-static {
+  cursor: default;
+}
+
+.metro-step-title {
+  font-weight: 600;
+  color: var(--md-sys-color-on-surface, var(--harness-text-primary));
+  flex-shrink: 0;
+}
+
+.metro-step-label {
+  color: var(--md-sys-color-on-surface, var(--harness-text-primary));
+  word-break: break-word;
+}
+
+.metro-step-preview {
+  font-size: 0.78rem;
+  color: var(--md-sys-color-outline, var(--harness-text-tertiary));
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 480px;
+}
+
+.metro-status-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 7px;
+  border-radius: 9999px;
+  font-size: 0.7rem;
+  font-weight: 500;
+  flex-shrink: 0;
+}
+
+.metro-status-pill.is-running {
+  background-color: var(--md-sys-color-primary-container, #d3e3fd);
+  color: var(--md-sys-color-on-primary-container, #041e49);
+}
+
+.metro-status-pill.is-error {
+  background-color: var(--md-sys-color-error-container, #ffdad6);
+  color: var(--md-sys-color-on-error-container, #410002);
+}
+
+.metro-status-pill.is-muted {
+  background-color: var(--md-sys-color-surface-container, var(--harness-bg-surface-active));
+  color: var(--md-sys-color-on-surface-variant, var(--harness-text-secondary));
+}
+
+.metro-artifact-jump {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 9px;
+  border-radius: 9999px;
+  border: 1px solid var(--md-sys-color-outline-variant, var(--harness-border-subtle));
+  background-color: var(--md-sys-color-surface-container-low, var(--harness-bg-surface-hover));
+  color: var(--md-sys-color-primary, var(--harness-accent-blue));
+  font-size: 0.74rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.14s ease, border-color 0.14s ease;
+}
+
+.metro-artifact-jump .material-symbols-outlined {
+  font-size: 13px;
+}
+
+.metro-artifact-jump:hover {
+  background-color: var(--md-sys-color-primary-container, var(--harness-accent-blue-subtle));
+  border-color: transparent;
+}
+
+/* 思维展开抽屉 (限高独立滚动) */
+.metro-thinking-drawer {
+  margin-top: 6px;
+  padding: 8px 12px;
+  border-left: 2px solid var(--md-sys-color-outline-variant, var(--harness-border-subtle));
+  background-color: var(--md-sys-color-surface-container-lowest, transparent);
+  max-height: 260px;
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+
+.metro-thinking-drawer[hidden] {
+  display: none !important;
+}
+
+.metro-thinking-text {
+  font-size: 0.8rem;
+  line-height: 1.58;
+  color: var(--md-sys-color-on-surface-variant, var(--harness-text-secondary));
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* 工具参数与输出抽屉 (严格限高 220px，杜绝撑爆版面) */
+.metro-tool-drawer {
+  margin-top: 6px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--md-sys-color-outline-variant, var(--harness-border-subtle));
+  background-color: var(--md-sys-color-surface-container-low, var(--harness-bg-surface-hover));
+  max-height: 220px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  box-sizing: border-box;
+}
+
+.metro-tool-drawer[hidden] {
+  display: none !important;
+}
+
+.metro-drawer-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  font-size: 0.74rem;
+  color: var(--md-sys-color-on-surface-variant, var(--harness-text-secondary));
+}
+
+.metro-drawer-meta code {
+  font-family: var(--harness-font-mono);
+  font-size: 0.72rem;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background-color: var(--md-sys-color-surface-container, var(--harness-bg-surface-active));
+  color: var(--md-sys-color-on-surface, var(--harness-text-primary));
+}
+
+.metro-drawer-section {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.metro-drawer-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--md-sys-color-outline, var(--harness-text-tertiary));
+}
+
+.metro-drawer-pre {
+  margin: 0;
+  padding: 7px 9px;
+  border-radius: 6px;
+  background-color: var(--md-sys-color-surface-container-lowest, var(--harness-bg-window));
+  border: 1px solid var(--md-sys-color-outline-variant, var(--harness-border-subtle));
+  font-family: var(--harness-font-mono);
+  font-size: 0.73rem;
+  line-height: 1.48;
+  color: var(--md-sys-color-on-surface, var(--harness-text-primary));
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-x: auto;
+}
+
+.metro-thinking-drawer::-webkit-scrollbar,
+.metro-tool-drawer::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+.metro-thinking-drawer::-webkit-scrollbar-thumb,
+.metro-tool-drawer::-webkit-scrollbar-thumb {
+  background-color: var(--md-sys-color-outline-variant, rgba(0, 0, 0, 0.2));
+  border-radius: 9999px;
+}
+
+/* 权限确认卡 (Inline Approval Card) */
+.metro-approval-card {
+  padding: 11px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--md-sys-color-outline-variant, var(--harness-border-subtle));
+  background-color: var(--md-sys-color-surface-container-low, var(--harness-bg-surface-hover));
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.metro-approval-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--md-sys-color-on-surface, var(--harness-text-primary));
+}
+
+.metro-approval-reason {
+  font-size: 0.8rem;
+  line-height: 1.45;
+  color: var(--md-sys-color-on-surface-variant, var(--harness-text-secondary));
+}
+
+.metro-approval-path {
+  font-size: 0.76rem;
+  color: var(--md-sys-color-on-surface-variant, var(--harness-text-secondary));
+}
+
+.metro-approval-path code {
+  font-family: var(--harness-font-mono);
+  font-size: 0.74rem;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background-color: var(--md-sys-color-surface-container, var(--harness-bg-surface-active));
+}
+
+.metro-approval-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.metro-approval-btn {
+  padding: 5px 12px;
+  border-radius: 9999px;
+  border: 1px solid transparent;
+  font-family: var(--harness-font-family);
+  font-size: 0.77rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: filter 0.14s ease, background-color 0.14s ease;
+}
+
+.metro-approval-btn.is-primary {
+  background-color: var(--md-sys-color-primary, #00668b);
+  color: var(--md-sys-color-on-primary, #ffffff);
+}
+
+.metro-approval-btn.is-primary:hover {
+  filter: brightness(1.06);
+}
+
+.metro-approval-btn.is-tonal {
+  background-color: var(--md-sys-color-secondary-container, #e8def8);
+  color: var(--md-sys-color-on-secondary-container, #1d192b);
+}
+
+.metro-approval-btn.is-ghost {
+  background: transparent;
+  border-color: var(--md-sys-color-outline-variant, var(--harness-border-subtle));
+  color: var(--md-sys-color-on-surface-variant, var(--harness-text-secondary));
+}
+
+.metro-approval-btn.is-ghost:hover {
+  background-color: var(--md-sys-color-surface-container, var(--harness-bg-surface-active));
+}
+
+.metro-approval-resolved {
+  font-size: 0.77rem;
+  color: var(--md-sys-color-primary, var(--harness-accent-blue));
+  font-weight: 500;
+}
+
+/* 暗色主题微调 */
+[data-theme='dark'] .metro-node-dot {
+  background-color: var(--md-sys-color-surface-container-high, #25262b);
+}
+
+[data-theme='dark'] .metro-step--thinking .metro-node-dot {
+  background-color: var(--md-sys-color-secondary-container, #4a4458);
+  color: var(--md-sys-color-on-secondary-container, #e8def8);
+}
+
+[data-theme='dark'] .metro-step--complete .metro-node-dot {
+  background-color: var(--md-sys-color-primary-container, #0842a0);
+  color: var(--md-sys-color-on-primary-container, #d3e3fd);
+}
+
+[data-theme='dark'] .metro-tool-drawer,
+[data-theme='dark'] .metro-approval-card {
+  background-color: var(--md-sys-color-surface-container, #1e1f23);
+}
+
+[data-theme='dark'] .metro-thinking-drawer::-webkit-scrollbar-thumb,
+[data-theme='dark'] .metro-tool-drawer::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.22);
+}
+
+/* ============================================================================
+ * 交错时间流布局 (Interleaved Turn Stream & Inline Segments)
+ * ========================================================================== */
+
+.harness-turn-stream {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  min-width: 0;
+}
+
+.metro-segment {
+  margin-bottom: 2px;
+}
+
+.harness-prose-block {
+  width: 100%;
+  min-width: 0;
+}
+
+.harness-prose-rendered {
+  width: 100%;
+  min-width: 0;
+}
+
+.harness-widget-block,
+.harness-question-block {
+  width: 100%;
+  min-width: 0;
+  margin: 4px 0;
+}
+
+.harness-status-block {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--md-sys-color-outline-variant, var(--harness-border-subtle));
+  background-color: var(--md-sys-color-surface-container-low, var(--harness-bg-surface-hover));
+  color: var(--md-sys-color-on-surface-variant, var(--harness-text-secondary));
+  font-size: 0.84rem;
+  line-height: 1.45;
+}
+
+.harness-status-block.is-warning {
+  border-color: rgba(217, 119, 6, 0.35);
+  background-color: rgba(217, 119, 6, 0.08);
+  color: var(--md-sys-color-on-surface, var(--harness-text-primary));
+}
+
+.harness-status-block.is-error {
+  border-color: rgba(186, 26, 26, 0.38);
+  background-color: var(--md-sys-color-error-container, rgba(186, 26, 26, 0.1));
+  color: var(--md-sys-color-on-error-container, #8c1d18);
+}
+
+.harness-status-block.is-completed {
+  border-color: var(--md-sys-color-outline-variant, var(--harness-border-subtle));
+}
+
+.harness-status-icon {
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.harness-status-copy {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.harness-status-label {
+  font-weight: 500;
+  color: var(--md-sys-color-on-surface, var(--harness-text-primary));
+}
+
+.harness-status-detail {
+  font-size: 0.78rem;
+  margin-top: 2px;
+  opacity: 0.85;
+}
+
+.harness-status-action-btn {
+  flex-shrink: 0;
+  padding: 5px 12px;
+  border-radius: 9999px;
+  border: 1px solid var(--md-sys-color-outline, var(--harness-border-strong));
+  background: var(--md-sys-color-surface, #ffffff);
+  color: var(--md-sys-color-primary, #00668b);
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.harness-status-action-btn:hover {
+  background: var(--md-sys-color-primary-container, #cfe5ff);
+}

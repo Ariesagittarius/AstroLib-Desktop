@@ -10,9 +10,11 @@
  * ============================================================================
  */
 
-export type ReadingEntityKind = 'book' | 'paper' | 'slide' | 'video';
+import type { BookSourceFormat, ReadingProfile } from './content-package.ts';
 
-export type EntityStatus = 'ready' | 'processing' | 'error';
+export type ReadingEntityKind = 'book' | 'paper' | 'slide' | 'video' | 'canvas';
+
+export type EntityStatus = 'ready' | 'idle' | 'processing' | 'error';
 
 /**
  * 统一研读实体接口
@@ -42,6 +44,8 @@ export interface UnifiedReadingEntity {
     abpPackPath?: string;
     edition?: string;
     isbn?: string;
+    sourceFormat?: BookSourceFormat;
+    readingProfile?: ReadingProfile;
 
     // 文献专属 (kind: 'paper')
     taskId?: string;
@@ -51,6 +55,7 @@ export interface UnifiedReadingEntity {
     hasAnnotations?: boolean;
     fileSizeBytes?: number;
     totalPages?: number;
+    pageRanges?: string;
     doi?: string;
     year?: string;
   };

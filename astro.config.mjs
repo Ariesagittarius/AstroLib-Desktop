@@ -15,22 +15,10 @@ import { rehypeKatexAnnotate, rehypeKatexPromote } from './src/plugins/rehype/re
 // 数学变量智能提升插件：构建期提升正文漏网单字母变量与简式为 KaTeX 公式
 import rehypeMathPromote from './src/plugins/rehype/rehype-math-promote.mjs';
 // 构建期引用徽章下沉插件（方案 B）：把“例题 1.74 / 图 3-48 → badge”的匹配逻辑
-// 从客户端 SPA 切换时扫描下沉到构建期，客户端切换零扫描（详见 docs/文章切换性能优化交接文档）
+// 从客户端 SPA 切换时扫描下沉到构建期，客户端切换零扫描（详见 docs/architecture/reader-and-content-pipeline.md）
 import { rehypeCrossRef } from './src/plugins/rehype/rehype-cross-ref.mjs';
-// 在线可视化精修工具：源码位置注入（仅 dev 启用，见 M1 设计）
-import rehypeEditorAnnotate from './src/plugins/rehype/rehype-editor-annotate.mjs';
-// 在线可视化精修工具：/__edit__/* 写回端点（Vite dev server 插件，仅 dev 启用）。
-// 不用 Astro middleware：dev 下 /__edit__/* 会匹配到 prerendered 路由，Astro 构造
-// Request 时清空 query、丢弃 body（见 dev-server-plugin.mjs 头部说明）。
-import devEditServerPlugin from './src/features/mdx-editor/server/dev-server-plugin.mjs';
-// 书籍模块巡检与查重工具：/__inspector__/* 扫描端点（Vite dev server 插件，仅 dev 启用）
-import devInspectorServerPlugin from './src/server/plugins/module-inspector/dev-server-plugin.mjs';
-// 章节内联关系图谱：/__relation_graph__/* 实时端点（Vite dev server 插件，仅 dev 启用）
-import devRelationGraphServerPlugin from './src/server/plugins/relation-graph/dev-server-plugin.mjs';
 // 章节 LaTeX / PDF 导出：/__chapter_export__/* 实时端点（Vite dev server 插件，仅 dev 启用）
 import devChapterExportServerPlugin from './src/server/plugins/chapter-export/dev-server-plugin.mjs';
-// 习题模块：/api/exercise/* 源码热保存、读者反馈与社区题解端点（Vite dev server 插件，仅 dev 启用）
-import { exerciseDevServerPlugin } from './src/server/plugins/exercise-editor/dev-server-plugin.mjs';
 // Gemini AI 中继模块：/api/proxy/gemini/* 本地 Node.js 进程全双工反代端点（Vite dev server 插件，仅 dev 启用）
 import { geminiProxyDevServerPlugin } from './src/server/plugins/gemini-proxy/dev-server-plugin.mjs';
 // BUPT AI 中继模块：/api/proxy/bupt/* 本地 Node.js 进程全双工反代端点（Vite dev server 插件，仅 dev 启用）
@@ -45,6 +33,10 @@ import { bilingualDevServerPlugin } from './src/server/plugins/bilingual-aligner
 import { infoHighlightDevServerPlugin } from './src/server/plugins/info-highlight/dev-server-plugin.mjs';
 // 统一研读实体与书库端点：/api/library/* 本地服务端点（Vite dev server 插件，仅 dev 启用）
 import { devLibraryServerPlugin } from './src/server/plugins/library/dev-server-plugin.mjs';
+// 统一内部内容数据 REST 服务：/api/v1/content/* 本地服务端点（Vite dev server 插件，仅 dev 启用）
+import { contentApiDevServerPlugin } from './src/server/plugins/content-api/dev-server-plugin.mjs';
+// 自动化 PDF2ABP 多智能体转换端点：/api/v1/pdf2abp/* 本地服务端点
+import { pdf2abpDevServerPlugin } from './src/server/plugins/pdf2abp/dev-server-plugin.mjs';
 // Mermaid 图表拦截插件：将 ```mermaid 代码块转化为 .mermaid-container DOM
 import rehypeMermaid from './src/plugins/rehype/rehype-mermaid.mjs';
 // 图像高斯模糊占位插件：为正文图片在构建期生成微型 LQIP Base64 占位并平滑渐显
@@ -52,54 +44,8 @@ import rehypeImageBlur from './src/plugins/rehype/rehype-image-blur.mjs';
 // 中文学术标点规范化与呼吸间距自愈插件：智能修复 MinerU 识别的半角标点与句间间距
 import rehypeCjkPunctuation from './src/plugins/rehype/rehype-cjk-punctuation.mjs';
 
-// 项目开发文档侧边栏
-const devDocsSidebarGroup = {
-  label: '项目开发文档',
-  collapsed: false,
-  items: [
-    { label: '开发文档首页', link: '/dev/' },
-    {
-      label: '概览',
-      collapsed: false,
-      items: [
-        { label: '项目架构与能力', link: '/dev/overview/' },
-      ]
-    },
-    {
-      label: '快速入门',
-      collapsed: false,
-      items: [
-        { label: '部署、运行与环境变量', link: '/dev/getting-started/setup/' },
-        { label: '脚本索引与常用命令', link: '/dev/getting-started/scripts/' },
-        { label: '双语对照与语义对齐', link: '/dev/getting-started/bilingual-aligner/' },
-        { label: '添加一本新书', link: '/dev/getting-started/add-book/' },
-        { label: '加入一本习题册', link: '/dev/getting-started/add-exercises/' },
-      ]
-    },
-    {
-      label: '贡献',
-      collapsed: false,
-      items: [
-        { label: '贡献新的书籍', link: '/dev/contributing/book/' },
-        { label: '提交勘误', link: '/dev/contributing/errata/' },
-        { label: '贡献 AI 答案', link: '/dev/contributing/ai-answer/' },
-      ]
-    },
-    {
-      label: '附加文档',
-      collapsed: false,
-      items: [
-        { label: '配置 AI 问答 API Key', link: '/dev/appendix/ai-api-key/' },
-        { label: '文章提示条与 Wiki 标签', link: '/dev/appendix/wiki-notices/' },
-        { label: '内容、版权与故障排查', link: '/dev/appendix/notes/' },
-      ]
-    }
-  ]
-};
-
 // 根据中央图书配置，全自动生成自然排序的树状侧边栏 (Zero-Built-in Books 架构)
 const dynamicSidebar = [
-  devDocsSidebarGroup,
   ...collections.map(col => ({
     label: col.title,
     collapsed: true,
@@ -148,10 +94,6 @@ if (features.crossRef.enabled) {
   // 方案 B：构建期徽章下沉，须在 KaTeX 相关插件之后执行（依赖公式结构已定型）。
   // refs 取 features.crossRef.config.refs：'static' 时强制全部静态 chip（关闭同页联动）
   rehypePlugins.push([rehypeCrossRef, { collections, refs: crossRefRefs() }]);
-}
-if (isEffective('editor') || isEffective('feedback')) {
-  // 源码位置注入（用于在线精修与读者段落级勘误定位；生产环境轻量化注入）
-  rehypePlugins.push([rehypeEditorAnnotate, { isDev: IS_DEV }]);
 }
 
 if (features.mermaid.enabled) {
@@ -203,8 +145,8 @@ if (features.theme.enabled) {
 }
 
 export default defineConfig({
-  // 规范站点根域名：供 Canonical 链接、Sitemap 与 OpenGraph 绝对路径生成
-  site: features.seo?.config?.siteUrl || 'https://astrolib.cloud',
+  // 规范站点根域名
+  site: 'https://astrolib.cloud',
   // 彻底关闭 Starlight/Astro 默认隐式启用的全量链接悬停预取
   // 页面预取与内存缓存完全由 AstroLib 自研 SPA 路由引擎与用户偏好设置精准接管
   prefetch: false,
@@ -220,7 +162,7 @@ export default defineConfig({
   integrations: [
     starlight({
       title: 'AstroLib',
-      description: features.seo?.config?.defaultDescription || '大学理工科教材与学术资料数字化阅读与自测系统',
+      description: '大学理工科教材与学术资料数字化阅读与自测系统',
       defaultLocale: 'root',
       locales: {
         root: {
@@ -243,16 +185,8 @@ export default defineConfig({
   ],
   vite: {
     plugins: [
-      // 精修工具写回端点：仅 dev + editor 启用时注册（生产构建不加载，零污染）
-      ...(isEffective('editor') ? [devEditServerPlugin()] : []),
-      // 模块巡检与查重端点：仅 dev + inspector 启用时注册（生产构建不加载，零污染）
-      ...(isEffective('inspector') ? [devInspectorServerPlugin()] : []),
-      // 章节内联关系图谱端点：仅 dev + relationGraph 启用时注册（生产构建不加载，零污染）
-      ...(isEffective('relationGraph') ? [devRelationGraphServerPlugin()] : []),
       // 章节 LaTeX / PDF 导出端点：仅 dev + chapterExport 启用时注册（生产构建不加载，零污染）
       ...(isEffective('chapterExport') ? [devChapterExportServerPlugin()] : []),
-      // 习题模块本地 API 与源码持久化端点（仅 dev 启用）
-      exerciseDevServerPlugin(),
       // Gemini AI 本地 Node.js 进程全双工中继反代端点（仅 dev 启用）
       geminiProxyDevServerPlugin(),
       // 统一学术教材翻译本地服务端点（仅 dev 启用）
@@ -267,6 +201,10 @@ export default defineConfig({
       infoHighlightDevServerPlugin(),
       // 统一研读实体与书库端点（仅 dev 启用）
       devLibraryServerPlugin(),
+      // 统一内部内容数据 REST 服务端点（仅 dev 启用）
+      contentApiDevServerPlugin(),
+      // 自动化 PDF2ABP 多智能体转换端点（仅 dev 启用）
+      pdf2abpDevServerPlugin(),
     ],
     resolve: {
       alias: {
@@ -289,11 +227,15 @@ export default defineConfig({
           '**/dist/**',
         ],
       },
-      allowedHosts: [
-        '.trycloudflare.com',
-        '.vaiwan.com',
-        '.localtunnel.me'
-      ]
+      ...(process.env.ASTROLIB_ENABLE_TUNNEL === '1'
+        ? {
+            allowedHosts: [
+              '.trycloudflare.com',
+              '.vaiwan.com',
+              '.localtunnel.me',
+            ],
+          }
+        : {}),
     }
   },
 });

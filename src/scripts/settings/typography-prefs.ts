@@ -71,6 +71,29 @@ export function savePunctStyle(style: PunctStyle): void {
 }
 
 let currentDomPunctStyle: PunctStyle = 'dot'; // 构建期 rehype-cjk-punctuation 输出基准为 'dot'
+let punctProfileListenerBound = false;
+
+export function isLiteraryProfileActive(): boolean {
+  if (typeof document === 'undefined') return false;
+  return document.documentElement?.dataset?.readingProfile === 'literary';
+}
+
+function ensurePunctProfileListener(): void {
+  if (punctProfileListenerBound || typeof window === 'undefined') return;
+  punctProfileListenerBound = true;
+  window.addEventListener('astrolib:reading-profile-change', (ev: Event) => {
+    const profile = (ev as CustomEvent<{ readingProfile?: string }>).detail?.readingProfile;
+    if (profile === 'literary') {
+      document.documentElement.dataset.punctStyle = 'circle';
+      if (currentDomPunctStyle === 'dot') {
+        replaceBodyFullStops('circle');
+        currentDomPunctStyle = 'circle';
+      }
+    } else if (profile === 'academic') {
+      applyPunctStyle(loadPunctStyle(), true);
+    }
+  });
+}
 
 /** 递归替换正文纯文本节点中的句末标点（避开代码块、公式与徽章） */
 export function replaceBodyFullStops(targetStyle: PunctStyle): void {
@@ -107,6 +130,14 @@ export function replaceBodyFullStops(targetStyle: PunctStyle): void {
 
 export function applyPunctStyle(style: PunctStyle = loadPunctStyle(), force = false): void {
   if (typeof document === 'undefined') return;
+  ensurePunctProfileListener();
+
+  // 文学体裁（含 EPUB 书籍）强制保留全角中文句号，不执行数理圆点转换
+  if (isLiteraryProfileActive()) {
+    document.documentElement.dataset.punctStyle = 'circle';
+    return;
+  }
+
   document.documentElement.dataset.punctStyle = style;
 
   // 关键性能优化：构建期输出默认即为数理圆点 'dot'。
@@ -123,11 +154,11 @@ export function applyPunctStyle(style: PunctStyle = loadPunctStyle(), force = fa
   }, { timeout: 800 });
 }
 
-/** 正文字号存储键：'14' ~ '22'，默认 16 (px) */
+/** 正文字号存储键：'13' ~ '20'，默认 15 (px / 11.25 pt，严谨精炼学术字阶) */
 export const FONT_SIZE_KEY = 'astrolib_font_size';
-export const DEFAULT_FONT_SIZE = 16;
-export const MIN_FONT_SIZE = 14;
-export const MAX_FONT_SIZE = 22;
+export const DEFAULT_FONT_SIZE = 15;
+export const MIN_FONT_SIZE = 13;
+export const MAX_FONT_SIZE = 20;
 
 export function loadFontSize(): number {
   try {
@@ -199,18 +230,22 @@ export function syncAllPunctChips(targetStyle: PunctStyle = loadPunctStyle()): v
     const isSelected = val === targetStyle;
     chip.classList.toggle('is-selected', isSelected);
     chip.classList.toggle('active', isSelected);
-    chip.toggleAttribute('selected', isSelected);
+    if (isSelected) {
+      chip.setAttribute('selected', '');
+    } else {
+      chip.removeAttribute('selected');
+    }
     if ('selected' in chip) {
       chip.selected = isSelected;
     }
   });
 }
 
-/** 同步全局所有面板中的字体按钮 */
+/** 同步全局所有面板中的字体按钮 (严格单选互斥并彻底清除未选中项 selected 属性) */
 export function syncAllFontButtons(targetPref: FontPref = loadFontPref()): void {
   if (typeof document === 'undefined') return;
   document.querySelectorAll<any>('.ft-panel .ft-font-btn, starlight-feature-toggles .ft-font-btn, .ft-panel .ft-font-chip, starlight-feature-toggles .ft-font-chip').forEach((el) => {
-    const setting = el.getAttribute('data-font-setting');
+    const setting = el.getAttribute('data-font-setting') || el.getAttribute('data-font-type');
     const fontVal = el.getAttribute('data-font-val');
     const latinVal = el.getAttribute('data-font-latin') || (setting === 'latin' ? fontVal : null);
     const cjkVal = el.getAttribute('data-font-cjk') || (setting === 'cjk' ? fontVal : null);
@@ -218,7 +253,11 @@ export function syncAllFontButtons(targetPref: FontPref = loadFontPref()): void 
     const isSelected = (latinVal && latinVal === targetPref.latin) || (cjkVal && cjkVal === targetPref.cjk);
     el.classList.toggle('is-selected', !!isSelected);
     el.classList.toggle('active', !!isSelected);
-    el.toggleAttribute('selected', !!isSelected);
+    if (isSelected) {
+      el.setAttribute('selected', '');
+    } else {
+      el.removeAttribute('selected');
+    }
     if ('selected' in el) {
       el.selected = !!isSelected;
     }

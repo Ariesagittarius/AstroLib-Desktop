@@ -197,12 +197,12 @@ if (shouldZip) {
 if (shouldCompile) {
   console.log('\n⏳ 正在探测本地 XeLaTeX 编译器...');
   const candidates = [
+    process.env.XELATEX_PATH,
     'xelatex',
-    'D:\\texlive\\2026\\bin\\windows\\xelatex.exe',
-    'C:\\texlive\\2026\\bin\\windows\\xelatex.exe',
-    'C:\\texlive\\2025\\bin\\windows\\xelatex.exe',
-    'C:\\texlive\\2024\\bin\\windows\\xelatex.exe',
-  ];
+    process.platform === 'win32' ? 'C:\\texlive\\2026\\bin\\windows\\xelatex.exe' : null,
+    process.platform === 'win32' ? 'C:\\texlive\\2025\\bin\\windows\\xelatex.exe' : null,
+    process.platform === 'win32' ? 'C:\\texlive\\2024\\bin\\windows\\xelatex.exe' : null,
+  ].filter(Boolean);
 
   let xelatexBin = null;
   for (const cand of candidates) {

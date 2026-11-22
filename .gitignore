@@ -13,9 +13,11 @@ yarn-error.log*
 pnpm-debug.log*
 
 
-# environment variables
+# environment variables & local tokens
 .env
-.env.production
+.env.*
+!.env.example
+.mineru.json
 
 # macOS-specific files
 .DS_Store
@@ -54,6 +56,8 @@ src/data/exercises/raw_papers/
 
 # Python 与本地调试残留
 __pycache__/
+.venv/
+.venv-agent/
 public/_katex-check/
 .tmp/
 

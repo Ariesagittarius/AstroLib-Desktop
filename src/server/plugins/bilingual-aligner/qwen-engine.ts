@@ -18,6 +18,8 @@ import os from 'node:os';
 import readline from 'node:readline';
 import { fileURLToPath } from 'node:url';
 import type { AlignResultPayload } from './onnx-engine.ts';
+import { LocalModelIdleController, type RuntimeModelStatus } from '../../../services/local-model-lifecycle.ts';
+import { createSanitizedChildEnv } from '../../../core/security/child-env.ts';
 
 const currentDir = typeof __dirname !== 'undefined'
   ? __dirname
@@ -29,13 +31,40 @@ export class QwenEngine {
   private pythonProcess: ChildProcess | null = null;
   private isInitializing = false;
   private isReady = false;
+  private activeDevice = 'unknown';
+  private activeVramMB = 0;
   private cachedAvailability: boolean | null = null;
+  private idleCtrl = new LocalModelIdleController();
 
   private pendingRequests = new Map<
     string,
     { resolve: (val: AlignResultPayload) => void; reject: (err: Error) => void; startTime: number }
   >();
   private requestCounter = 0;
+
+  private isDaemonLoaded = (): boolean => Boolean(this.pythonProcess && !this.pythonProcess.killed && this.isReady);
+  private isDaemonBusy = (): boolean => this.isInitializing || this.pendingRequests.size > 0;
+  private touchIdleTimer(): void {
+    this.idleCtrl.touch(this.isDaemonBusy, this.isDaemonLoaded, () => this.destroy());
+  }
+
+  public setIdleTimeoutMs(ms: number): void {
+    this.idleCtrl.setIdleTimeoutMs(ms, this.isDaemonBusy, this.isDaemonLoaded, () => this.destroy());
+  }
+
+  public getRuntimeInfo(): RuntimeModelStatus {
+    const loaded = this.isDaemonLoaded();
+    return {
+      id: 'qwen-align',
+      name: 'Qwen3-Embedding 双语对齐',
+      loaded,
+      initializing: this.isInitializing,
+      device: loaded ? this.activeDevice : 'unloaded',
+      vramMB: loaded ? this.activeVramMB : 0,
+      lastUsedAt: this.idleCtrl.getLastUsedAt(),
+      idleTimeoutMs: this.idleCtrl.getIdleTimeoutMs(),
+    };
+  }
 
   static getInstance(): QwenEngine {
     if (!this.instance) {
@@ -52,16 +81,11 @@ export class QwenEngine {
       return process.env.PYTHON_PATH;
     }
 
+    const pySub = process.platform === 'win32' ? path.join('Scripts', 'python.exe') : path.join('bin', 'python');
     const candidatePaths = [
-      // 1. 同级 practice 项目已配置的独立 Python 3.12/PyTorch 环境
-      'D:\\Antigravity\\project\\practice\\.venv\\Scripts\\python.exe',
-      path.resolve(process.cwd(), '../practice/.venv/Scripts/python.exe'),
-      // 2. 本项目内部的虚拟环境（若有）
-      path.resolve(process.cwd(), '.venv/Scripts/python.exe'),
-      path.resolve(process.cwd(), '.venv/bin/python'),
-      // 3. 全局系统环境（通过 PATH 或 PyManager）
-      'C:\\Program Files\\PyManager\\python.exe',
-      'python.exe',
+      path.resolve(process.cwd(), '.venv', pySub),
+      path.resolve(process.cwd(), '..', '.venv', pySub),
+      process.platform === 'win32' ? 'python.exe' : 'python3',
       'python',
     ];
 
@@ -118,6 +142,7 @@ export class QwenEngine {
    */
   private async ensureDaemon(): Promise<ChildProcess> {
     if (this.pythonProcess && !this.pythonProcess.killed && this.isReady) {
+      this.touchIdleTimer();
       return this.pythonProcess;
     }
 
@@ -125,7 +150,10 @@ export class QwenEngine {
       while (this.isInitializing) {
         await new Promise((r) => setTimeout(r, 100));
       }
-      if (this.pythonProcess && this.isReady) return this.pythonProcess;
+      if (this.pythonProcess && this.isReady) {
+        this.touchIdleTimer();
+        return this.pythonProcess;
+      }
     }
 
     this.isInitializing = true;
@@ -135,19 +163,25 @@ export class QwenEngine {
       throw new Error('Python interpreter not found for Qwen3 engine');
     }
 
-    const runnerPath = path.resolve(currentDir, 'qwen-runner.py');
+    const resPath = typeof (process as any).resourcesPath === 'string' ? (process as any).resourcesPath : '';
+    const runnerCandidates = [
+      resPath ? path.join(resPath, 'app.asar.unpacked', 'dist-electron', 'qwen-runner.py') : '',
+      path.resolve(currentDir, 'qwen-runner.py'),
+      path.resolve(process.cwd(), 'dist-electron', 'qwen-runner.py'),
+      path.resolve(process.cwd(), 'src/server/plugins/bilingual-aligner/qwen-runner.py'),
+    ].filter(Boolean);
+    const runnerPath = runnerCandidates.find((p) => fs.existsSync(p)) || path.resolve(currentDir, 'qwen-runner.py');
 
     return new Promise((resolve, reject) => {
       try {
         const proc = spawn(pythonPath, [runnerPath, '--daemon'], {
           windowsHide: true,
           stdio: ['pipe', 'pipe', 'pipe'],
-          env: {
-            ...process.env,
+          env: createSanitizedChildEnv({
             HF_HUB_OFFLINE: '1',
             HF_ENDPOINT: 'https://hf-mirror.com',
             PYTHONIOENCODING: 'utf-8',
-          },
+          }),
         });
 
         this.pythonProcess = proc;
@@ -168,6 +202,9 @@ export class QwenEngine {
             if (data.status === 'ready') {
               this.isReady = true;
               this.isInitializing = false;
+              this.activeDevice = data.device || 'cuda';
+              this.activeVramMB = data.vramAllocatedMB || 0;
+              this.touchIdleTimer();
               resolve(proc);
               return;
             }
@@ -178,6 +215,9 @@ export class QwenEngine {
               this.pendingRequests.delete(data.id);
 
               if (data.status === 'ok') {
+                if (data.device) this.activeDevice = data.device;
+                if (typeof data.vramAllocatedMB === 'number') this.activeVramMB = data.vramAllocatedMB;
+                this.touchIdleTimer();
                 reqResolve({
                   matrix: data.matrix || [],
                   inferenceTimeMs: data.inferenceTimeMs || 0,
@@ -188,6 +228,7 @@ export class QwenEngine {
                   device: data.device || 'CUDA',
                 });
               } else {
+                this.touchIdleTimer();
                 reqReject(new Error(data.error || 'Qwen3 engine inference error'));
               }
             }
@@ -205,8 +246,11 @@ export class QwenEngine {
         });
 
         proc.on('close', (code) => {
+          this.idleCtrl.reset();
           this.isReady = false;
           this.isInitializing = false;
+          this.activeDevice = 'unknown';
+          this.activeVramMB = 0;
           this.pythonProcess = null;
 
           // Reject any pending requests
@@ -217,8 +261,11 @@ export class QwenEngine {
         });
 
         proc.on('error', (err) => {
+          this.idleCtrl.reset();
           this.isReady = false;
           this.isInitializing = false;
+          this.activeDevice = 'unknown';
+          this.activeVramMB = 0;
           this.pythonProcess = null;
           reject(err);
         });
@@ -257,10 +304,12 @@ export class QwenEngine {
       this.pendingRequests.set(reqId, {
         resolve: (val) => {
           clearTimeout(timeoutId);
+          this.touchIdleTimer();
           resolve(val);
         },
         reject: (err) => {
           clearTimeout(timeoutId);
+          this.touchIdleTimer();
           reject(err);
         },
         startTime,
@@ -274,6 +323,7 @@ export class QwenEngine {
         batchSize: 16,
       }) + '\n';
 
+      this.touchIdleTimer();
       proc.stdin?.write(payload, 'utf-8', (err) => {
         if (err) {
           this.pendingRequests.delete(reqId);
@@ -287,6 +337,7 @@ export class QwenEngine {
    * 优雅停止 Daemon 进程
    */
   destroy() {
+    this.idleCtrl.reset();
     if (this.pythonProcess && !this.pythonProcess.killed) {
       try {
         this.pythonProcess.kill();
@@ -296,6 +347,12 @@ export class QwenEngine {
       this.pythonProcess = null;
     }
     this.isReady = false;
+    this.isInitializing = false;
+    this.activeDevice = 'unknown';
+    this.activeVramMB = 0;
+    this.pendingRequests.forEach(({ reject }) => {
+      reject(new Error('Qwen3 align engine unloaded'));
+    });
     this.pendingRequests.clear();
   }
 }

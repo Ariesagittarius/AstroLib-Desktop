@@ -1,0 +1,222 @@
+/* ============================================================================
+ * src/styles/desktop/chrome.css
+ * ============================================================================
+ * 桌面端 28px 紧凑自定义顶栏、自绘 Windows 三键、56px 可收纳主侧栏与 F11 全屏样式
+ * ============================================================================ */
+
+:root {
+  --desktop-titlebar-height: 28px;
+  --desktop-rail-width: 56px;
+}
+
+/* 28px 极简桌面主顶栏 */
+.desktop-titlebar-drag-region {
+  height: var(--desktop-titlebar-height);
+  background-color: var(--md-sys-color-surface, #ffffff);
+  border-bottom: 1px solid var(--md-sys-color-outline-variant, #e8eaed);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 0 0 6px;
+  -webkit-app-region: drag;
+  user-select: none;
+  flex-shrink: 0;
+  z-index: var(--layer-sticky);
+  box-sizing: border-box;
+}
+
+.titlebar-left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.titlebar-toggle-btn {
+  width: 22px;
+  height: 22px;
+  border: none;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--md-sys-color-on-surface-variant, #444746);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  flex-shrink: 0;
+  -webkit-app-region: no-drag;
+  transition: background-color 0.14s ease, color 0.14s ease;
+}
+
+.titlebar-toggle-btn:hover {
+  background-color: var(--md-sys-color-surface-container-high, #e8eaed);
+  color: var(--md-sys-color-on-surface, #1f1f1f);
+}
+
+.titlebar-toggle-btn:focus-visible {
+  outline: 2px solid var(--md-sys-color-primary, #0b57d0);
+  outline-offset: -1px;
+}
+
+.titlebar-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  pointer-events: none;
+}
+
+.titlebar-brand-img {
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.titlebar-product-title {
+  font-family: var(--font-ui, 'Google Sans', 'Google Sans Text', 'Noto Sans SC Variable', 'Source Han Sans SC', 'Noto Sans SC', '思源黑体', sans-serif);
+  font-size: 0.76rem;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  color: var(--md-sys-color-on-surface, #1f1f1f);
+  line-height: 1;
+}
+
+/* 自绘 Windows 11 紧凑三键 */
+.titlebar-win-controls {
+  display: flex;
+  align-items: stretch;
+  height: 100%;
+  -webkit-app-region: no-drag;
+  flex-shrink: 0;
+}
+
+.titlebar-win-controls[hidden] {
+  display: none;
+}
+
+.win-ctrl-btn {
+  width: 36px;
+  height: 100%;
+  border: none;
+  background: transparent;
+  color: var(--md-sys-color-on-surface-variant, #444746);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  transition: background-color 0.12s ease, color 0.12s ease;
+}
+
+.win-ctrl-btn:hover {
+  background-color: var(--md-sys-color-surface-container-high, #e8eaed);
+  color: var(--md-sys-color-on-surface, #1f1f1f);
+}
+
+.win-ctrl-btn--close:hover {
+  background-color: #c42b1c;
+  color: #ffffff;
+}
+
+.win-ctrl-btn:focus-visible {
+  outline: 2px solid var(--md-sys-color-primary, #0b57d0);
+  outline-offset: -2px;
+}
+
+.win-icon-restore {
+  display: none;
+}
+
+html[data-window-maximized='true'] .win-icon-max {
+  display: none;
+}
+
+html[data-window-maximized='true'] .win-icon-restore {
+  display: block;
+}
+
+/* 主侧栏收纳状态 */
+html[data-nav-rail-collapsed='true'] .desktop-nav-rail {
+  width: 0;
+  min-width: 0;
+  padding-left: 0;
+  padding-right: 0;
+  border-right: none;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* F11 沉浸全屏：隐藏桌面顶栏、主侧栏与底部标签栏，展示完整正文 */
+html[data-desktop-fullscreen='true'] {
+  --desktop-titlebar-height: 0px;
+}
+
+html[data-desktop-fullscreen='true'] .desktop-titlebar-drag-region,
+html[data-desktop-fullscreen='true'] .desktop-nav-rail {
+  display: none;
+}
+
+html[data-desktop-fullscreen='true'] .desktop-shell-root {
+  height: 100vh;
+}
+
+/* 全屏模式顶部边缘唤出条 */
+.fullscreen-hover-zone {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 220px;
+  height: 12px;
+  z-index: var(--layer-system);
+  align-items: flex-start;
+  justify-content: center;
+  pointer-events: auto;
+}
+
+html[data-desktop-fullscreen='true'] .fullscreen-hover-zone {
+  display: flex;
+}
+
+.fullscreen-hover-zone:hover,
+.fullscreen-hover-zone:focus-within {
+  height: 48px;
+}
+
+.fullscreen-exit-pill {
+  height: 28px;
+  padding: 0 12px;
+  border-radius: 9999px;
+  margin-top: 8px;
+  border: 1px solid var(--md-sys-color-outline-variant, #e8eaed);
+  background: var(--md-sys-color-surface, #ffffff);
+  color: var(--md-sys-color-on-surface, #1f1f1f);
+  font-family: var(--font-ui, 'Google Sans', 'Google Sans Text', 'Noto Sans SC Variable', 'Source Han Sans SC', 'Noto Sans SC', '思源黑体', sans-serif);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.14);
+  opacity: 0;
+  transform: translateY(-10px);
+  pointer-events: none;
+  transition: opacity 0.16s ease, transform 0.16s ease, background-color 0.14s ease;
+}
+
+.fullscreen-hover-zone:hover .fullscreen-exit-pill,
+.fullscreen-hover-zone:focus-within .fullscreen-exit-pill {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.fullscreen-exit-pill:hover {
+  background-color: var(--md-sys-color-surface-container-high, #e8eaed);
+}

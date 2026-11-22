@@ -11,9 +11,12 @@
  * ============================================================================
  */
 
-import { app } from 'electron';
+import { app, safeStorage } from 'electron';
 import path from 'node:path';
 import fs from 'node:fs';
+
+const SENSITIVE_KEY_RE = /(?:api[_-]?key|token|secret|password|bupt.*key|gemini.*key|mineru)/i;
+const ENCRYPTED_PREFIX = 'enc:v1:';
 
 export class SettingsManager {
   private static instance: SettingsManager | null = null;
@@ -37,6 +40,45 @@ export class SettingsManager {
     this.loadFromDisk();
   }
 
+  private canUseSafeStorage(): boolean {
+    try {
+      return Boolean(safeStorage && typeof safeStorage.isEncryptionAvailable === 'function' && safeStorage.isEncryptionAvailable());
+    } catch {
+      return false;
+    }
+  }
+
+  private isSensitiveKey(key: string): boolean {
+    return SENSITIVE_KEY_RE.test(key);
+  }
+
+  private encryptSecret(plain: string): string {
+    if (!plain || plain.startsWith(ENCRYPTED_PREFIX) || !this.canUseSafeStorage()) {
+      return plain;
+    }
+    try {
+      const encryptedBuf = safeStorage.encryptString(plain);
+      return `${ENCRYPTED_PREFIX}${encryptedBuf.toString('base64')}`;
+    } catch {
+      return plain;
+    }
+  }
+
+  private decryptSecret(stored: string): string {
+    if (!stored || !stored.startsWith(ENCRYPTED_PREFIX)) {
+      return stored;
+    }
+    if (!this.canUseSafeStorage()) {
+      return '';
+    }
+    try {
+      const rawBuf = Buffer.from(stored.slice(ENCRYPTED_PREFIX.length), 'base64');
+      return safeStorage.decryptString(rawBuf);
+    } catch {
+      return '';
+    }
+  }
+
   /**
    * 初始化默认配置（思源黑体、默认段前空两格开启）
    */
@@ -44,7 +86,7 @@ export class SettingsManager {
     return {
       'starlight-font': JSON.stringify({ latin: 'sans', cjk: 'han-sans' }),
       'astrolib_typography_indent': 'true',
-      'astrolib_font_size': '16',
+      'astrolib_font_size': '15',
       'astrolib_punct_style': 'dot',
       'starlight-theme': 'dark',
       'starlight-m3-theme-color': '#0b57d0',
@@ -52,7 +94,7 @@ export class SettingsManager {
   }
 
   /**
-   * 从磁盘同步读取配置
+   * 从磁盘同步读取配置（透明解密敏感项并将历史明文迁移为密文落盘）
    */
   private loadFromDisk(): void {
     const defaults = this.getDefaults();
@@ -61,7 +103,31 @@ export class SettingsManager {
         const raw = fs.readFileSync(this.filePath, 'utf8');
         const parsed = JSON.parse(raw);
         if (parsed && typeof parsed === 'object') {
-          this.cache = { ...defaults, ...parsed };
+          let needsMigration = false;
+          const loaded: Record<string, string> = { ...defaults };
+          for (const [k, rawVal] of Object.entries(parsed)) {
+            if (typeof rawVal !== 'string' && rawVal === undefined) continue;
+            const valStr = String(rawVal);
+            if (this.isSensitiveKey(k)) {
+              if (valStr.startsWith(ENCRYPTED_PREFIX)) {
+                const decrypted = this.decryptSecret(valStr);
+                if (decrypted) {
+                  loaded[k] = decrypted;
+                }
+              } else if (valStr) {
+                loaded[k] = valStr;
+                if (this.canUseSafeStorage()) {
+                  needsMigration = true;
+                }
+              }
+            } else {
+              loaded[k] = valStr;
+            }
+          }
+          this.cache = loaded;
+          if (needsMigration) {
+            this.flushToDiskSync();
+          }
           return;
         }
       }
@@ -129,8 +195,16 @@ export class SettingsManager {
    * 同步原子写盘，杜绝进程突发退出时数据截断
    */
   public flushToDiskSync(): void {
+    if (this.saveTimeout) {
+      clearTimeout(this.saveTimeout);
+      this.saveTimeout = null;
+    }
     try {
-      const json = JSON.stringify(this.cache, null, 2);
+      const diskPayload: Record<string, string> = {};
+      for (const [k, v] of Object.entries(this.cache)) {
+        diskPayload[k] = this.isSensitiveKey(k) ? this.encryptSecret(v) : v;
+      }
+      const json = JSON.stringify(diskPayload, null, 2);
       const tmpFile = `${this.filePath}.tmp.${Date.now()}`;
       fs.writeFileSync(tmpFile, json, 'utf8');
       fs.renameSync(tmpFile, this.filePath);

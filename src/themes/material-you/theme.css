@@ -18,8 +18,8 @@
    1. Global App Chrome (Header & Brand)
    -------------------------------------------------------------------------- */
 html[data-site-theme='material-you'] header.header {
-  height: var(--sl-nav-height, 3rem) !important;
-  max-height: var(--sl-nav-height, 3rem) !important;
+  height: var(--sl-nav-height, 2.5rem) !important;
+  max-height: var(--sl-nav-height, 2.5rem) !important;
   padding-block: 0 !important;
   padding-inline: 1rem !important;
   background-color: #ffffff !important;
@@ -82,8 +82,8 @@ html[data-site-theme='material-you'] .vp-right-sidebar-toggle-btn {
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
-  width: 2.25rem !important;
-  height: 2.25rem !important;
+  width: 2rem !important;
+  height: 2rem !important;
   border-radius: var(--md-shape-corner-full, 9999px) !important;
   border: none !important;
   background: transparent !important;
@@ -145,12 +145,12 @@ html[data-site-theme='material-you'] starlight-feature-toggles {
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
-  width: 2.125rem !important; /* 34px */
-  height: 2.125rem !important;
-  min-width: 2.125rem !important;
-  min-height: 2.125rem !important;
-  max-width: 2.125rem !important;
-  max-height: 2.125rem !important;
+  width: 2rem !important; /* 32px */
+  height: 2rem !important;
+  min-width: 2rem !important;
+  min-height: 2rem !important;
+  max-width: 2rem !important;
+  max-height: 2rem !important;
   margin: 0 !important;
   padding: 0 !important;
   position: relative !important;
@@ -170,12 +170,12 @@ html[data-site-theme='material-you'] .vp-font-btn {
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
-  width: 2.125rem !important;
-  height: 2.125rem !important;
-  min-width: 2.125rem !important;
-  min-height: 2.125rem !important;
-  max-width: 2.125rem !important;
-  max-height: 2.125rem !important;
+  width: 2rem !important;
+  height: 2rem !important;
+  min-width: 2rem !important;
+  min-height: 2rem !important;
+  max-width: 2rem !important;
+  max-height: 2rem !important;
   padding: 0 !important;
   margin: 0 !important;
   border-radius: var(--md-shape-corner-full, 9999px) !important;
@@ -350,13 +350,13 @@ html:not([data-site-theme='material-you']) #m3-appearance-switch {
 @media (min-width: 50rem) {
   html[data-site-theme='material-you'] .ft-panel {
     position: fixed !important;
-    top: var(--sl-nav-height, 3rem) !important;
+    top: var(--sl-nav-height, 2.5rem) !important;
     right: 0 !important;
     bottom: 0 !important;
     width: 360px !important;
     max-width: 90vw !important;
-    height: calc(100vh - var(--sl-nav-height, 3rem)) !important;
-    max-height: calc(100vh - var(--sl-nav-height, 3rem)) !important;
+    height: calc(100vh - var(--sl-nav-height, 2.5rem)) !important;
+    max-height: calc(100vh - var(--sl-nav-height, 2.5rem)) !important;
     border-radius: 0 !important;
     border-top: none !important;
     border-right: none !important;
@@ -1477,7 +1477,7 @@ html[data-site-theme='material-you'] .vp-nav-search-btn {
   align-items: center !important;
   gap: 0.5rem !important;
   width: 100% !important;
-  height: 2.125rem !important;
+  height: 1.875rem !important;
   padding: 0 0.85rem !important;
   background-color: var(--md-sys-color-surface-container-high) !important;
   border: 1px solid transparent !important;
@@ -1600,59 +1600,68 @@ html[data-site-theme='material-you'] button.site-search kbd > kbd {
   }
 }
 
-/* Material You Mobile Outline Modal Popover (Viewport-bounded fixed sheet) */
-@media (max-width: 71.999rem) {
+/* Material You Outline Modal Popover (Viewport-bounded fixed sheet across all viewports) */
+html[data-site-theme='material-you'] .vp-local-nav-items {
+  position: fixed;
+  top: calc(var(--sl-nav-height, 2.5rem) + 0.5rem);
+  left: 0.75rem;
+  right: 0.75rem;
+  bottom: auto;
+  width: auto;
+  max-width: 24rem;
+  margin-inline: auto;
+  max-height: calc(100dvh - var(--sl-nav-height, 2.5rem) - 1.5rem);
+  border-radius: var(--md-shape-corner-large, 1rem);
+  border: 1px solid var(--md-sys-color-outline-variant, var(--sl-color-hairline));
+  box-shadow: var(--md-elevation-level-3, 0 10px 30px rgba(0, 0, 0, 0.25));
+  background-color: var(--md-sys-color-surface-container, var(--sl-color-bg-sidebar));
+  z-index: var(--layer-popover, 300);
+  transform: translateY(-0.5rem) scale(0.98);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  overscroll-behavior: contain;
+  transition: opacity 0.18s ease-out, transform 0.18s ease-out, visibility 0.18s;
+}
+
+@media (min-width: 72rem) {
   html[data-site-theme='material-you'] .vp-local-nav-items {
-    position: fixed !important;
-    top: calc(var(--sl-nav-height, 3.5rem) + 0.5rem) !important;
-    left: 0.75rem !important;
-    right: 0.75rem !important;
-    bottom: auto !important;
-    width: auto !important;
-    max-width: 24rem !important;
-    margin-inline: auto !important;
-    max-height: calc(100dvh - var(--sl-nav-height, 3.5rem) - 1.5rem) !important;
-    border-radius: var(--md-shape-corner-large, 1rem) !important;
-    border: 1px solid var(--md-sys-color-outline-variant, var(--sl-color-hairline)) !important;
-    box-shadow: var(--md-elevation-level-3, 0 10px 30px rgba(0, 0, 0, 0.25)) !important;
-    background-color: var(--md-sys-color-surface-container, var(--sl-color-bg-sidebar)) !important;
-    z-index: var(--layer-popover, 300) !important;
-    transform: translateY(-0.5rem) scale(0.98) !important;
-    opacity: 0 !important;
-    visibility: hidden !important;
-    pointer-events: none !important;
-    overflow: hidden auto !important;
-    overscroll-behavior: contain !important;
-    transition: opacity 0.18s ease-out, transform 0.18s ease-out, visibility 0.18s !important;
+    left: auto;
+    right: 1rem;
+    width: min(24rem, calc(100vw - 2rem));
+    margin-inline: 0;
   }
+}
 
-  html[data-site-theme='material-you'] body.mobile-toc-open .vp-local-nav-items,
-  body.mobile-toc-open .vp-local-nav-items {
-    transform: translateY(0) scale(1) !important;
-    opacity: 1 !important;
-    visibility: visible !important;
-    pointer-events: auto !important;
-  }
+html[data-site-theme='material-you'] body.mobile-toc-open .vp-local-nav-items,
+body.mobile-toc-open .vp-local-nav-items {
+  transform: translateY(0) scale(1);
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
 
-  html[data-site-theme='material-you'] .vp-local-nav-header {
-    background-color: var(--md-sys-color-surface-container, var(--sl-color-bg-sidebar)) !important;
-    border-bottom: 1px solid var(--md-sys-color-outline-variant, var(--sl-color-hairline)) !important;
-  }
+html[data-site-theme='material-you'] .vp-local-nav-header {
+  background-color: var(--md-sys-color-surface-container, var(--sl-color-bg-sidebar));
+  border-bottom: 1px solid var(--md-sys-color-outline-variant, var(--sl-color-hairline));
+}
 
-  html[data-site-theme='material-you'] .vp-local-nav-top-link:hover,
-  html[data-site-theme='material-you'] .vp-local-nav-btn-link:hover,
-  html[data-site-theme='material-you'] .vp-local-nav-close-btn:hover {
-    background-color: var(--md-sys-color-surface-container-highest, rgba(125, 125, 125, 0.12)) !important;
-    color: var(--md-sys-color-primary) !important;
-  }
+html[data-site-theme='material-you'] .vp-local-nav-top-link:hover,
+html[data-site-theme='material-you'] .vp-local-nav-btn-link:hover,
+html[data-site-theme='material-you'] .vp-local-nav-close-btn:hover {
+  background-color: var(--md-sys-color-surface-container-highest, rgba(125, 125, 125, 0.12));
+  color: var(--md-sys-color-primary);
+}
 
-  html[data-site-theme='material-you'] .vp-local-nav-header [data-tooltip]::before {
-    background-color: var(--md-sys-color-inverse-surface) !important;
-    color: var(--md-sys-color-inverse-on-surface) !important;
-  }
-  html[data-site-theme='material-you'] .vp-local-nav-header [data-tooltip]::after {
-    border-bottom-color: var(--md-sys-color-inverse-surface) !important;
-  }
+html[data-site-theme='material-you'] .vp-local-nav-header [data-tooltip]::before {
+  background-color: var(--md-sys-color-inverse-surface);
+  color: var(--md-sys-color-inverse-on-surface);
+}
+html[data-site-theme='material-you'] .vp-local-nav-header [data-tooltip]::after {
+  border-bottom-color: var(--md-sys-color-inverse-surface);
 }
 
 html[data-site-theme='material-you'] site-search dialog {
@@ -5854,9 +5863,9 @@ html[data-site-theme='material-you'] .solution-details .solution-content {
   background-color: transparent !important;
 }
 
-/* 12.3 注意、说明与概念回退提示卡片 */
-html[data-site-theme='material-you'] .sl-markdown-content :is(.note-block, .fallback-block),
-html[data-site-theme='material-you'] :is(.note-block, .fallback-block) {
+/* 12.3 注意、说明、思路分析与教材灰底专栏卡片 (Material 3 清晰语义分层) */
+html[data-site-theme='material-you'] .sl-markdown-content :is(.note-block, .note-card),
+html[data-site-theme='material-you'] :is(.note-block, .note-card) {
   background-color: var(--md-sys-color-surface) !important;
   border: 1px solid var(--md-sys-color-outline-variant) !important;
   border-radius: var(--md-shape-corner-medium, 10px) !important;
@@ -5866,32 +5875,50 @@ html[data-site-theme='material-you'] :is(.note-block, .fallback-block) {
   overflow: hidden !important;
 }
 
-html[data-site-theme='material-you'][data-theme='dark'] .sl-markdown-content :is(.note-block, .fallback-block),
-html[data-site-theme='material-you'][data-theme='dark'] :is(.note-block, .fallback-block) {
+/* 教材独立灰底专栏/拓展框 (<Block>): 采用克制 M3 柔和色调底面区分正式定理框与普通正文 */
+html[data-site-theme='material-you'] .sl-markdown-content :is(.fallback-block, .block-card),
+html[data-site-theme='material-you'] :is(.fallback-block, .block-card) {
+  background-color: var(--md-sys-color-surface-container-low, #f4f5f7) !important;
+  border: 1px solid var(--md-sys-color-outline-variant) !important;
+  border-radius: var(--md-shape-corner-medium, 10px) !important;
+  padding: 0 !important;
+  margin: 1.5rem 0 1.35rem !important;
+  box-shadow: none !important;
+  overflow: hidden !important;
+}
+
+html[data-site-theme='material-you'][data-theme='dark'] .sl-markdown-content :is(.note-block, .note-card),
+html[data-site-theme='material-you'][data-theme='dark'] :is(.note-block, .note-card) {
   background-color: var(--md-sys-color-surface) !important;
   border-color: var(--md-sys-color-outline-variant) !important;
 }
 
-html[data-site-theme='material-you'] :is(.note-block, .fallback-block) :is(.note-header, .fallback-header) {
+html[data-site-theme='material-you'][data-theme='dark'] .sl-markdown-content :is(.fallback-block, .block-card),
+html[data-site-theme='material-you'][data-theme='dark'] :is(.fallback-block, .block-card) {
+  background-color: var(--md-sys-color-surface-container, #1e2026) !important;
+  border-color: var(--md-sys-color-outline-variant) !important;
+}
+
+html[data-site-theme='material-you'] :is(.note-block, .note-card, .fallback-block, .block-card) :is(.note-header, .fallback-header, .card-header) {
   display: flex !important;
   align-items: center !important;
   gap: 0.5rem !important;
   padding: 0.5rem 0.95rem !important;
   margin-bottom: 0 !important;
-  background-color: rgba(0, 0, 0, 0.025) !important;
+  background-color: rgba(0, 0, 0, 0.03) !important;
   border-bottom: 1px solid var(--md-sys-color-outline-variant) !important;
   font-family: var(--font-heading, var(--academic-font-heading, var(--md-sys-typescale-title-medium-font))) !important;
   font-size: 0.9375rem !important;
-  font-weight: 600 !important;
+  font-weight: 650 !important;
   color: var(--md-sys-color-on-surface) !important;
 }
 
-html[data-site-theme='material-you'][data-theme='dark'] :is(.note-block, .fallback-block) :is(.note-header, .fallback-header) {
-  background-color: rgba(255, 255, 255, 0.035) !important;
+html[data-site-theme='material-you'][data-theme='dark'] :is(.note-block, .note-card, .fallback-block, .block-card) :is(.note-header, .fallback-header, .card-header) {
+  background-color: rgba(255, 255, 255, 0.04) !important;
 }
 
-html[data-site-theme='material-you'] .note-block .note-mdicon,
-html[data-site-theme='material-you'] .fallback-block .block-mdicon {
+html[data-site-theme='material-you'] :is(.note-block, .note-card) .note-mdicon,
+html[data-site-theme='material-you'] :is(.fallback-block, .block-card) .block-mdicon {
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
@@ -5901,11 +5928,38 @@ html[data-site-theme='material-you'] .fallback-block .block-mdicon {
   height: 18px !important;
 }
 
-html[data-site-theme='material-you'] :is(.note-block, .fallback-block) :is(.note-content, .fallback-content) {
+html[data-site-theme='material-you'] :is(.note-block, .note-card, .fallback-block, .block-card) :is(.note-content, .fallback-content, .card-body) {
   padding: 0.75rem 1rem 0.85rem !important;
   color: var(--md-sys-color-on-surface) !important;
   line-height: 1.75 !important;
   background-color: transparent !important;
+}
+
+/* 12.3.0 思路分析块 (<Analysis>): 极简左边界缩进衬托 */
+html[data-site-theme='material-you'] .sl-markdown-content :is(.analysis-block, .analysis-card),
+html[data-site-theme='material-you'] :is(.analysis-block, .analysis-card) {
+  background-color: transparent !important;
+  border: none !important;
+  border-left: 2.5px solid var(--md-sys-color-outline, #74777f) !important;
+  border-radius: 0 !important;
+  padding: 0.15rem 0 0.15rem 0.9rem !important;
+  margin: 1.25rem 0 !important;
+  box-shadow: none !important;
+}
+
+html[data-site-theme='material-you'] :is(.analysis-block, .analysis-card) :is(.analysis-header, .card-header) {
+  background-color: transparent !important;
+  border-bottom: none !important;
+  padding: 0 0 0.35rem 0 !important;
+  font-family: var(--font-heading, var(--academic-font-heading, var(--md-sys-typescale-title-medium-font))) !important;
+  font-size: 0.95rem !important;
+  font-weight: 650 !important;
+  color: var(--md-sys-color-on-surface) !important;
+}
+
+html[data-site-theme='material-you'] :is(.analysis-block, .analysis-card) :is(.analysis-content, .card-body) {
+  padding: 0 !important;
+  line-height: 1.75 !important;
 }
 
 /* 12.3.1 代码块 (Expressive Code) 圆角与边框统一 (参照 Android Studio 代码块) */
@@ -5928,7 +5982,7 @@ html[data-site-theme='material-you'] .expressive-code:is(:has(.has-title, .is-te
 }
 
 /* 12.3.2 行内代码 (Material 3 Chip-styled Inline Code) */
-html[data-site-theme='material-you'] .sl-markdown-content :not(pre) > code {
+html[data-site-theme='material-you'] .sl-markdown-content :not(pre):not(.algorithm-body):not(.algo-line-text) > code {
   font-family: var(--sl-font-mono, ui-monospace, 'Menlo', 'Monaco', monospace) !important;
   font-size: 0.85em !important;
   padding: 0.16em 0.42em !important;

@@ -52,6 +52,7 @@ import {
 import {
   decorateFootnotes,
   CHAT_DEFAULT_SUGGESTIONS as SUGGESTIONS,
+  CHAT_LITERARY_SUGGESTIONS,
   getElementDataConfig as getConfig,
 } from './chat-formatter';
 import { ChatChapterPicker } from './chat-chapter-picker';
@@ -613,7 +614,9 @@ export class AIAskElement extends CustomElementBase {
     const sugg = this.querySelector('.ask-suggest');
     if (sugg) {
       sugg.innerHTML = '';
-      for (const s of SUGGESTIONS) {
+      const isLiterary = document.documentElement?.dataset?.readingProfile === 'literary';
+      const activeSuggestions = isLiterary ? CHAT_LITERARY_SUGGESTIONS : SUGGESTIONS;
+      for (const s of activeSuggestions) {
         const b = document.createElement('button');
         b.type = 'button';
         b.className = 'ask-suggest-chip';

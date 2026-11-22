@@ -107,7 +107,7 @@ export function saveThemeColor(colorIdOrHex: string): void {
 /**
  * 根据种子颜色生成 M3 CSS 样式表内容（严格限定在 html[data-site-theme='material-you']）
  */
-function generateSchemeCss(seedHex: string): string {
+export function generateSchemeCss(seedHex: string): string {
   let theme;
   try {
     theme = themeFromSourceColor(argbFromHex(seedHex));
@@ -137,7 +137,8 @@ function generateSchemeCss(seedHex: string): string {
   const lightOnSurfaceVariant = hexFromArgb(light.onSurfaceVariant);
 
   const lightOutline = hexFromArgb(light.outline);
-  const lightOutlineVariant = hexFromArgb(light.outlineVariant);
+  // 浅色纯白表面上原生 Tone 80 分割线过深偏浊，统一提升至低彩度高明度中性 Tone 91，同时保持文字用 outline 不变
+  const lightOutlineVariant = hexFromArgb(theme.palettes.neutral.tone(91));
 
   // Dark 模式 Tonal 变量
   const darkPrimary = hexFromArgb(dark.primary);

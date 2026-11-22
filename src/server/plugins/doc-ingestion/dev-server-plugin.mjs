@@ -14,9 +14,6 @@ const INGEST_PATH_PREFIX = '/api/ingest';
 function sendJson(res, statusCode, data) {
   res.writeHead(statusCode, {
     'Content-Type': 'application/json; charset=utf-8',
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-    'Access-Control-Allow-Headers': '*',
     'Cache-Control': 'no-cache, no-store, must-revalidate',
   });
   res.end(JSON.stringify(data));
@@ -62,13 +59,9 @@ export function ingestDevServerPlugin() {
           return next();
         }
 
-        // 1. CORS 预检
         if (req.method === 'OPTIONS') {
           res.writeHead(204, {
-            'Access-Control-Allow-Origin': '*',
-            'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-            'Access-Control-Allow-Headers': '*',
-            'Access-Control-Max-Age': '86400',
+            'Cache-Control': 'no-store',
           });
           return res.end();
         }
@@ -84,6 +77,7 @@ export function ingestDevServerPlugin() {
             const localStatus = await taskManager.getLocalRunner().checkEnvironment();
             return sendJson(res, 200, {
               status: 'ok',
+              maxPagesPerParse: 200,
               api: {
                 hasToken: Boolean(apiToken),
                 tokenPrefix: apiToken ? apiToken.slice(0, 8) + '...' : null,
@@ -93,15 +87,31 @@ export function ingestDevServerPlugin() {
             });
           }
 
-          // 2.1 更新 MinerU API Token /api/ingest/token
-          if (req.method === 'POST' && pathname === `${INGEST_PATH_PREFIX}/token`) {
-            const body = await readJsonBody(req);
-            const token = body.token;
-            if (!token || typeof token !== 'string') {
-              return sendJson(res, 400, { error: '请提供有效的 token 字符串' });
+          // 2.1 获取或更新 MinerU API Token /api/ingest/token (单一路由，支持清空)
+          if (pathname === `${INGEST_PATH_PREFIX}/token`) {
+            if (req.method === 'GET') {
+              const currentToken = taskManager.getApiClient().getToken() || '';
+              const maskedToken =
+                currentToken.length > 8
+                  ? `${currentToken.slice(0, 4)}****${currentToken.slice(-4)}`
+                  : currentToken
+                    ? '****'
+                    : '';
+              return sendJson(res, 200, { hasToken: Boolean(currentToken), maskedToken });
             }
-            taskManager.getApiClient().setToken(token);
-            return sendJson(res, 200, { success: true, message: 'MinerU API Token 已更新' });
+            if (req.method === 'POST') {
+              const body = await readJsonBody(req);
+              if (typeof body.token !== 'string') {
+                return sendJson(res, 400, { error: '请提供合法的 token 字符串' });
+              }
+              const cleaned = body.token.trim();
+              taskManager.getApiClient().persistToken(cleaned);
+              return sendJson(res, 200, {
+                success: true,
+                hasToken: Boolean(cleaned),
+                message: cleaned ? 'MinerU API Token 已更新' : 'MinerU API Token 已清除',
+              });
+            }
           }
 
           // 3. 上传 PDF /api/ingest/upload
@@ -150,34 +160,26 @@ export function ingestDevServerPlugin() {
             const bearerToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : '';
             const passedToken = bearerToken || (typeof body.token === 'string' ? body.token.trim() : '');
 
-            if (passedToken) {
-              taskManager.getApiClient().setToken(passedToken);
-              try {
-                fs.writeFileSync(path.join(process.cwd(), '.mineru.json'), JSON.stringify({ token: passedToken }, null, 2), 'utf-8');
-              } catch {}
-            }
-
             const engine = body.engine === 'local' ? 'local' : body.engine === 'agent' ? 'agent' : 'api';
-            const updatedTask = taskManager.startParse(taskId, engine, { token: passedToken });
+            const pageRanges = typeof body.pageRanges === 'string' ? body.pageRanges : undefined;
+            const updatedTask = taskManager.startParse(taskId, engine, {
+              token: passedToken || undefined,
+              pageRanges,
+            });
             return sendJson(res, 200, { success: true, task: updatedTask });
           }
 
-          // 4.0 同步与获取 MinerU Token /api/ingest/token
-          if (pathname === `${INGEST_PATH_PREFIX}/token`) {
-            if (req.method === 'POST') {
-              const body = await readJsonBody(req);
-              const token = (body.token || '').trim();
-              if (token) {
-                taskManager.getApiClient().setToken(token);
-                try {
-                  fs.writeFileSync(path.join(process.cwd(), '.mineru.json'), JSON.stringify({ token }, null, 2), 'utf-8');
-                } catch {}
-              }
-              return sendJson(res, 200, { success: true });
-            } else if (req.method === 'GET') {
-              const currentToken = taskManager.getApiClient().getToken() || '';
-              return sendJson(res, 200, { token: currentToken });
+          // 4.05 删除文献任务 /api/ingest/task?taskId=...
+          if (req.method === 'DELETE' && pathname === `${INGEST_PATH_PREFIX}/task`) {
+            const taskId = query.taskId;
+            if (!taskId) {
+              return sendJson(res, 400, { error: '缺少 taskId' });
             }
+            const deleted = taskManager.deleteTask(taskId);
+            if (!deleted) {
+              return sendJson(res, 404, { error: `未找到任务 ${taskId}` });
+            }
+            return sendJson(res, 200, { success: true });
           }
 
           // 4.1 AI Agent 专用免密极速轻量解析 /api/ingest/agent-parse
@@ -216,11 +218,14 @@ export function ingestDevServerPlugin() {
             if (!taskId) {
               return sendJson(res, 400, { error: '缺少 taskId' });
             }
-            const task = taskManager.getTask(taskId);
+            const task = taskManager.reconcileStaleTask(taskId);
             if (!task) {
               return sendJson(res, 404, { error: `未找到任务 ${taskId}` });
             }
-            return sendJson(res, 200, { task });
+            return sendJson(res, 200, {
+              task,
+              isActive: taskManager.isJobActive(taskId),
+            });
           }
 
           // 6. 获取解析结果 (Markdown + Blocks + Images) /api/ingest/result
@@ -240,13 +245,80 @@ export function ingestDevServerPlugin() {
             return sendJson(res, 200, { result });
           }
 
+          // 7.1 获取 PDF 元数据 (页数与每页尺寸，基于本地 mupdf，免外网 CDN) /api/ingest/pdf/meta?taskId=...
+          if (req.method === 'GET' && pathname === `${INGEST_PATH_PREFIX}/pdf/meta`) {
+            const taskId = query.taskId;
+            if (!taskId) return sendJson(res, 400, { error: '缺少 taskId' });
+
+            const pdfPath = taskManager.getOriginPdfPath(taskId);
+            if (!pdfPath || !fs.existsSync(pdfPath)) {
+              return sendJson(res, 404, { error: '未找到对应 PDF 文件' });
+            }
+
+            try {
+              const mupdfMod = await import('mupdf');
+              const mupdf = mupdfMod.default || mupdfMod;
+              const pdfBuf = fs.readFileSync(pdfPath);
+              const doc = mupdf.Document.openDocument(pdfBuf, 'application/pdf');
+              const pageCount = doc.countPages();
+              const pages = [];
+              for (let i = 0; i < pageCount; i++) {
+                const page = doc.loadPage(i);
+                const bounds = page.getBounds();
+                pages.push({
+                  width: Math.max(1, bounds[2] - bounds[0]),
+                  height: Math.max(1, bounds[3] - bounds[1]),
+                });
+              }
+              return sendJson(res, 200, { pageCount, pages });
+            } catch (err) {
+              return sendJson(res, 500, { error: `PDF 元数据解析失败: ${err?.message || err}` });
+            }
+          }
+
+          // 7.2 本地 MuPDF 渲染单页 PNG /api/ingest/pdf/page?taskId=...&page=0&scale=1.5
+          if (req.method === 'GET' && pathname === `${INGEST_PATH_PREFIX}/pdf/page`) {
+            const taskId = query.taskId;
+            if (!taskId) return sendJson(res, 400, { error: '缺少 taskId' });
+
+            const pdfPath = taskManager.getOriginPdfPath(taskId);
+            if (!pdfPath || !fs.existsSync(pdfPath)) {
+              return sendJson(res, 404, { error: '未找到对应 PDF 文件' });
+            }
+
+            try {
+              const mupdfMod = await import('mupdf');
+              const mupdf = mupdfMod.default || mupdfMod;
+              const pdfBuf = fs.readFileSync(pdfPath);
+              const doc = mupdf.Document.openDocument(pdfBuf, 'application/pdf');
+              const pageCount = doc.countPages();
+              const rawPage = Number.parseInt(String(query.page ?? '0'), 10);
+              const pageIdx = Math.max(0, Math.min(pageCount - 1, Number.isFinite(rawPage) ? rawPage : 0));
+              const rawScale = Number.parseFloat(String(query.scale ?? '1.5'));
+              const scale = Math.max(0.5, Math.min(3.0, Number.isFinite(rawScale) ? rawScale : 1.5));
+
+              const page = doc.loadPage(pageIdx);
+              const pixmap = page.toPixmap(mupdf.Matrix.scale(scale, scale), mupdf.ColorSpace.DeviceRGB, false, true);
+              const pngBytes = Buffer.from(pixmap.asPNG());
+              res.writeHead(200, {
+                'Content-Type': 'image/png',
+                'Content-Length': pngBytes.byteLength,
+                'Cache-Control': 'private, max-age=300',
+              });
+              res.end(pngBytes);
+              return;
+            } catch (err) {
+              return sendJson(res, 500, { error: `PDF 页面渲染失败: ${err?.message || err}` });
+            }
+          }
+
           // 7. 流式传输原版 PDF /api/ingest/pdf?taskId=...
           if (req.method === 'GET' && pathname === `${INGEST_PATH_PREFIX}/pdf`) {
             const taskId = query.taskId;
             if (!taskId) return sendJson(res, 400, { error: '缺少 taskId' });
 
-            const pdfPath = path.join(taskManager.getBaseDir(), taskId, 'origin.pdf');
-            if (!fs.existsSync(pdfPath)) {
+            const pdfPath = taskManager.getOriginPdfPath(taskId);
+            if (!pdfPath || !fs.existsSync(pdfPath)) {
               return sendJson(res, 404, { error: '未找到对应 PDF 文件' });
             }
 
@@ -254,9 +326,8 @@ export function ingestDevServerPlugin() {
             res.writeHead(200, {
               'Content-Type': 'application/pdf',
               'Content-Length': stat.size,
-              'Access-Control-Allow-Origin': '*',
               'Accept-Ranges': 'bytes',
-              'Cache-Control': 'public, max-age=3600',
+              'Cache-Control': 'private, max-age=3600',
             });
             fs.createReadStream(pdfPath).pipe(res);
             return;
@@ -270,7 +341,10 @@ export function ingestDevServerPlugin() {
               return sendJson(res, 400, { error: '缺少 taskId 或 image name' });
             }
 
-            const taskDir = path.join(taskManager.getBaseDir(), taskId, 'unpacked');
+            const taskDir = taskManager.getUnpackedDir(taskId);
+            if (!taskDir || !fs.existsSync(taskDir)) {
+              return sendJson(res, 404, { error: '未找到任务解包资源' });
+            }
             // 递归搜索该图片
             let foundPath = null;
             const findImg = (dir) => {
@@ -307,7 +381,6 @@ export function ingestDevServerPlugin() {
 
             res.writeHead(200, {
               'Content-Type': contentType,
-              'Access-Control-Allow-Origin': '*',
               'Cache-Control': 'public, max-age=86400',
             });
             fs.createReadStream(foundPath).pipe(res);
@@ -319,14 +392,14 @@ export function ingestDevServerPlugin() {
             const taskId = query.taskId;
             if (!taskId) return sendJson(res, 400, { error: '缺少 taskId' });
 
-            const zipPath = path.join(taskManager.getBaseDir(), taskId, 'unpacked', 'result_archive.zip');
+            const resolvedTaskDir = taskManager.findTaskDir(taskId) || path.join(taskManager.getBaseDir(), taskId);
+            const zipPath = path.join(resolvedTaskDir, 'unpacked', 'result_archive.zip');
             if (fs.existsSync(zipPath)) {
               const stat = fs.statSync(zipPath);
               res.writeHead(200, {
                 'Content-Type': 'application/zip',
                 'Content-Length': stat.size,
                 'Content-Disposition': `attachment; filename="mineru_clean_${taskId}.zip"`,
-                'Access-Control-Allow-Origin': '*',
               });
               fs.createReadStream(zipPath).pipe(res);
               return;

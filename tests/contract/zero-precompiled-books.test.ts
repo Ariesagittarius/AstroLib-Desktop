@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { collections } from '../../src/config/collections.config.ts';
 
@@ -48,18 +49,17 @@ describe('Zero Precompiled Books Invariant Contract (零预编译书籍架构契
 
   it('5. DesktopBookManager 在全新启动时已安装书架必须绝对为空 (0 本书)', async () => {
     const { DesktopBookManager } = await import('../../electron/services/book-manager.ts');
-    const freshDir = path.join(ROOT, 'tests', 'fixtures', 'zero-book-fresh-launch');
-    if (fs.existsSync(freshDir)) {
+    const freshDir = fs.mkdtempSync(path.join(os.tmpdir(), 'astrolib-zero-book-'));
+    try {
+      const manager = new DesktopBookManager(freshDir);
+      const books = await manager.getInstalledBooks();
+      expect(Array.isArray(books)).toBe(true);
+      expect(books.length).toBe(0);
+
+      const stats = await manager.getStorageStats();
+      expect(stats.bookCount).toBe(0);
+    } finally {
       fs.rmSync(freshDir, { recursive: true, force: true });
     }
-    fs.mkdirSync(freshDir, { recursive: true });
-
-    const manager = new DesktopBookManager(freshDir);
-    const books = await manager.getInstalledBooks();
-    expect(Array.isArray(books)).toBe(true);
-    expect(books.length).toBe(0);
-
-    const stats = await manager.getStorageStats();
-    expect(stats.bookCount).toBe(0);
   });
 });

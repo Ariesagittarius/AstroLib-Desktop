@@ -253,6 +253,29 @@ describe('StaticHandler Unit & Invariant Contract Tests (P1-A1)', () => {
     expect(headers['Location']).toContain('/zh-wp/001_books-and-algorithms/');
   });
 
+  it('8b. /workspace 与 /workspace/ 请求必须规范 302 重定向至 /workspace/ingest/，杜绝 404', async () => {
+    const handler = new StaticHandler(distDir, undefined, ROOT);
+    for (const testUrl of ['/workspace', '/workspace/', '/workspace/ingest']) {
+      let statusCode = 0;
+      let headers: Record<string, string> = {};
+
+      const handled = await handler.handle(
+        { method: 'GET', url: testUrl, headers: {} } as any,
+        {
+          writeHead: (code: number, h: any) => {
+            statusCode = code;
+            headers = h;
+          },
+          end: () => {},
+        } as any
+      );
+
+      expect(handled).toBe(true);
+      expect(statusCode).toBe(302);
+      expect(headers['Location']).toBe('/workspace/ingest/');
+    }
+  });
+
   it('9. 官方 13 本书全量 1,251 章 Canonical Slug 绝对契约普查', () => {    const catalogPath = path.join(artifactsAbpDir, 'catalog.json');
     expect(fs.existsSync(catalogPath)).toBe(true);
 

@@ -1,0 +1,903 @@
+/**
+ * src/styles/harness/astro-blocks.css
+ * ============================================================================
+ * Dual-Track Rich Presentation Styles:
+ * - Track A: AstroBlocks (` ```astro-ui ` Declarative M3 Academic Primitives)
+ * - Track B: AstroCanvas (Sandboxed Interactive HTML/SVG Workspace & Inline Card)
+ * ============================================================================
+ */
+
+.astro-ui-root {
+  margin: 14px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  --astro-accent: var(--md-sys-color-primary, #00668b);
+  --astro-accent-bg: var(--md-sys-color-primary-container, #d3e3fd);
+  --astro-on-accent: var(--md-sys-color-on-primary-container, #041e49);
+  --astro-border: var(--md-sys-color-outline-variant, var(--harness-border-subtle));
+  --astro-surface: var(--md-sys-color-surface-container-lowest, #ffffff);
+  --astro-surface-muted: var(--md-sys-color-surface-container-low, #f8f9fa);
+}
+
+/* 可控字体家族 */
+.astro-ui-font-sans {
+  font-family: var(--harness-font-family);
+}
+
+.astro-ui-font-serif {
+  font-family: 'Noto Serif SC', 'Source Han Serif SC', 'Songti SC', Georgia, Cambria, 'Times New Roman', serif;
+}
+
+.astro-ui-font-mono {
+  font-family: var(--harness-font-mono);
+}
+
+/* 语义色板 (Strict M3 Tones) */
+.astro-ui-tone-neutral {
+  --astro-accent: var(--md-sys-color-on-surface, #1f1f1f);
+  --astro-accent-bg: var(--md-sys-color-surface-container, #f1f3f4);
+  --astro-on-accent: var(--md-sys-color-on-surface-variant, #444746);
+}
+
+.astro-ui-tone-primary {
+  --astro-accent: var(--md-sys-color-primary, #00668b);
+  --astro-accent-bg: var(--md-sys-color-primary-container, #d3e3fd);
+  --astro-on-accent: var(--md-sys-color-on-primary-container, #041e49);
+}
+
+.astro-ui-tone-secondary {
+  --astro-accent: var(--md-sys-color-secondary, #5c5f5f);
+  --astro-accent-bg: var(--md-sys-color-secondary-container, #e8def8);
+  --astro-on-accent: var(--md-sys-color-on-secondary-container, #1d192b);
+}
+
+.astro-ui-tone-tertiary {
+  --astro-accent: var(--md-sys-color-tertiary, #7d5260);
+  --astro-accent-bg: var(--md-sys-color-tertiary-container, #ffd8e4);
+  --astro-on-accent: var(--md-sys-color-on-tertiary-container, #31111d);
+}
+
+.astro-ui-tone-success {
+  --astro-accent: #146c2e;
+  --astro-accent-bg: #c4eed0;
+  --astro-on-accent: #072711;
+}
+
+.astro-ui-tone-warning {
+  --astro-accent: #9a5b00;
+  --astro-accent-bg: #ffddb3;
+  --astro-on-accent: #2f1500;
+}
+
+[data-theme='dark'] .astro-ui-root {
+  --astro-surface: var(--md-sys-color-surface-container-low, #18191c);
+  --astro-surface-muted: var(--md-sys-color-surface-container, #202125);
+}
+
+[data-theme='dark'] .astro-ui-tone-neutral {
+  --astro-accent: var(--md-sys-color-on-surface, #e3e3e3);
+  --astro-accent-bg: var(--md-sys-color-surface-container-high, #282a2f);
+  --astro-on-accent: var(--md-sys-color-on-surface-variant, #c4c7c5);
+}
+
+[data-theme='dark'] .astro-ui-tone-success {
+  --astro-accent: #6dd58c;
+  --astro-accent-bg: #0f5223;
+  --astro-on-accent: #c4eed0;
+}
+
+[data-theme='dark'] .astro-ui-tone-warning {
+  --astro-accent: #ffb95f;
+  --astro-accent-bg: #653b00;
+  --astro-on-accent: #ffddb3;
+}
+
+/* 排版密度 */
+.astro-ui-density-comfortable {
+  --astro-pad: 16px 20px;
+  --astro-gap: 10px;
+}
+
+.astro-ui-density-compact {
+  --astro-pad: 11px 14px;
+  --astro-gap: 6px;
+}
+
+/* Card Primitive */
+.astro-ui-card,
+.astro-ui-metrics-card,
+.astro-ui-steps,
+.astro-ui-checklist,
+.astro-ui-tabs {
+  padding: var(--astro-pad, 16px 20px);
+  border-radius: 14px;
+  border: 1px solid var(--astro-border);
+  background-color: var(--astro-surface);
+  display: flex;
+  flex-direction: column;
+  gap: var(--astro-gap, 10px);
+  box-sizing: border-box;
+}
+
+.astro-ui-badge {
+  display: inline-flex;
+  align-self: flex-start;
+  align-items: center;
+  padding: 2px 9px;
+  border-radius: 9999px;
+  background-color: var(--astro-accent-bg);
+  color: var(--astro-on-accent);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.astro-ui-eyebrow {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--astro-accent);
+  letter-spacing: 0.01em;
+}
+
+.astro-ui-card__title {
+  margin: 0 !important;
+  font-size: 1.06rem;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--md-sys-color-on-surface, var(--harness-text-primary));
+}
+
+.astro-ui-card__subtitle {
+  font-size: 0.82rem;
+  color: var(--md-sys-color-on-surface-variant, var(--harness-text-secondary));
+  line-height: 1.45;
+}
+
+.astro-ui-divider {
+  height: 1px;
+  background-color: var(--md-sys-color-outline-variant, var(--harness-border-subtle));
+  margin: 2px 0;
+}
+
+.astro-ui-card__body {
+  font-size: 0.89rem;
+  line-height: 1.62;
+  color: var(--md-sys-color-on-surface, var(--harness-text-primary));
+}
+
+.astro-ui-sublabel {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--md-sys-color-on-surface, var(--harness-text-primary));
+  margin-bottom: 4px;
+}
+
+.astro-ui-card__bullets ul {
+  margin: 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 0.86rem;
+  line-height: 1.55;
+  color: var(--md-sys-color-on-surface-variant, var(--harness-text-secondary));
+}
+
+.astro-ui-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+/* Metrics Primitive */
+.astro-ui-metrics-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--md-sys-color-outline-variant, var(--harness-border-subtle));
+}
+
+.astro-ui-metrics-section:first-child {
+  padding-top: 0;
+}
+
+.astro-ui-metrics-section:last-child {
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.astro-ui-metrics__heading {
+  font-size: 0.96rem;
+  font-weight: 600;
+  color: var(--md-sys-color-on-surface, var(--harness-text-primary));
+}
+
+.astro-ui-metrics__sub {
+  font-size: 0.8rem;
+  color: var(--md-sys-color-on-surface-variant, var(--harness-text-secondary));
+}
+
+.astro-ui-metrics__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 14px 20px;
+  margin: 4px 0;
+}
+
+.astro-ui-metric-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.astro-ui-metric-val {
+  font-size: 1.72rem;
+  font-weight: 700;
+  line-height: 1.18;
+  font-variant-numeric: tabular-nums;
+  color: var(--astro-accent);
+  letter-spacing: -0.02em;
+}
+
+.astro-ui-metric-label {
+  font-size: 0.81rem;
+  line-height: 1.45;
+  color: var(--md-sys-color-on-surface-variant, var(--harness-text-secondary));
+}
+
+.astro-ui-metric-note {
+  font-size: 0.74rem;
+  color: var(--md-sys-color-outline, var(--harness-text-tertiary));
+}
+
+.astro-ui-meta-line {
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: var(--md-sys-color-on-surface-variant, var(--harness-text-secondary));
+}
+
+.astro-ui-meta-line > span:first-child {
+  font-weight: 600;
+  color: var(--md-sys-color-on-surface, var(--harness-text-primary));
+}
+
+.astro-ui-meta-line--strong {
+  color: var(--md-sys-color-on-surface, var(--harness-text-primary));
+}
+
+.astro-ui-links-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-size: 0.8rem;
+}
+
+.astro-ui-ext-link {
+  color: var(--md-sys-color-primary, var(--harness-accent-blue));
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* Steps Primitive (垂直导览步骤) */
+.astro-ui-block-title {
+  font-size: 0.96rem;
+  font-weight: 600;
+  color: var(--md-sys-color-on-surface, var(--harness-text-primary));
+}
+
+.astro-ui-step-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.astro-ui-step-item {
+  display: flex;
+  align-items: stretch;
+  gap: 12px;
+}
+
+.astro-ui-step-rail {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 24px;
+  flex-shrink: 0;
+}
+
+.astro-ui-step-badge {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background-color: var(--astro-accent-bg);
+  color: var(--astro-on-accent);
+  font-size: 0.76rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.astro-ui-step-line {
+  width: 1.5px;
+  flex: 1;
+  min-height: 10px;
+  margin: 4px 0;
+  background-color: var(--md-sys-color-outline-variant, var(--harness-border-subtle));
+}
+
+.astro-ui-step-item:last-child .astro-ui-step-line {
+  display: none;
+}
+
+.astro-ui-step-content {
+  flex: 1;
+  min-width: 0;
+  padding-bottom: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.astro-ui-step-item:last-child .astro-ui-step-content {
+  padding-bottom: 0;
+}
+
+.astro-ui-step-title {
+  font-size: 0.91rem;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--md-sys-color-on-surface, var(--harness-text-primary));
+}
+
+.astro-ui-step-caption {
+  font-size: 0.77rem;
+  font-style: italic;
+  color: var(--md-sys-color-outline, var(--harness-text-tertiary));
+}
+
+.astro-ui-step-body {
+  font-size: 0.86rem;
+  line-height: 1.58;
+  color: var(--md-sys-color-on-surface-variant, var(--harness-text-secondary));
+}
+
+/* Checklist & Tabs Primitives */
+.astro-ui-chip-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.astro-ui-chip-tab {
+  padding: 5px 12px;
+  border-radius: 9999px;
+  border: 1px solid var(--md-sys-color-outline-variant, var(--harness-border-subtle));
+  background: transparent;
+  color: var(--md-sys-color-on-surface-variant, var(--harness-text-secondary));
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.14s ease, color 0.14s ease, border-color 0.14s ease;
+}
+
+.astro-ui-chip-tab:hover {
+  background-color: var(--md-sys-color-surface-container-low, var(--harness-bg-surface-hover));
+}
+
+.astro-ui-chip-tab.is-active {
+  background-color: var(--astro-accent-bg);
+  color: var(--astro-on-accent);
+  border-color: transparent;
+  font-weight: 600;
+}
+
+.astro-ui-check-group,
+.astro-ui-tab-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.astro-ui-check-group[hidden],
+.astro-ui-tab-panel[hidden] {
+  display: none !important;
+}
+
+.astro-ui-check-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  width: 100%;
+  padding: 6px 8px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--md-sys-color-on-surface, var(--harness-text-primary));
+  font-family: inherit;
+  font-size: 0.87rem;
+  line-height: 1.5;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.14s ease, opacity 0.14s ease;
+}
+
+.astro-ui-check-item:hover {
+  background-color: var(--md-sys-color-surface-container-low, var(--harness-bg-surface-hover));
+}
+
+.astro-ui-check-icon {
+  font-size: 18px;
+  color: var(--astro-accent);
+  margin-top: 1px;
+  flex-shrink: 0;
+}
+
+.astro-ui-check-item.is-checked .astro-ui-check-text {
+  text-decoration: line-through;
+  opacity: 0.58;
+}
+
+.astro-ui-tabs-body {
+  font-size: 0.88rem;
+  line-height: 1.62;
+  color: var(--md-sys-color-on-surface, var(--harness-text-primary));
+}
+
+/* Compare Primitive */
+.astro-ui-compare {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.astro-ui-compare-grid {
+  display: grid;
+  grid-template-columns: repeat(var(--astro-cols, 2), minmax(0, 1fr));
+  gap: 12px;
+}
+
+@media (max-width: 680px) {
+  .astro-ui-compare-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.astro-ui-compare-col {
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 1px solid var(--astro-border);
+  background-color: var(--astro-surface);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.astro-ui-compare-col__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.astro-ui-compare-col__title {
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--md-sys-color-on-surface, var(--harness-text-primary));
+}
+
+.astro-ui-compare-col__body {
+  font-size: 0.85rem;
+  line-height: 1.55;
+  color: var(--md-sys-color-on-surface-variant, var(--harness-text-secondary));
+}
+
+.astro-ui-compare-list {
+  margin: 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.84rem;
+  line-height: 1.5;
+  color: var(--md-sys-color-on-surface, var(--harness-text-primary));
+}
+
+/* Callout Primitive */
+.astro-ui-callout {
+  padding: 12px 16px;
+  border-radius: 10px;
+  border-left: 3px solid var(--astro-accent);
+  background-color: var(--astro-surface-muted);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.astro-ui-callout__title {
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: var(--astro-accent);
+}
+
+.astro-ui-callout__body {
+  font-size: 0.86rem;
+  line-height: 1.58;
+  color: var(--md-sys-color-on-surface, var(--harness-text-primary));
+}
+
+/* Grid & Stack */
+.astro-ui-grid {
+  display: grid;
+  grid-template-columns: repeat(var(--astro-cols, 2), minmax(0, 1fr));
+  gap: 12px;
+}
+
+@media (max-width: 680px) {
+  .astro-ui-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.astro-ui-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Streaming Skeleton Placeholder */
+.astro-ui-skeleton {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1px dashed var(--md-sys-color-outline-variant, var(--harness-border-subtle));
+  background-color: var(--md-sys-color-surface-container-low, var(--harness-bg-surface-hover));
+  font-size: 0.82rem;
+  color: var(--md-sys-color-on-surface-variant, var(--harness-text-secondary));
+}
+
+@keyframes astroUiSpin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.astro-ui-spin {
+  font-size: 16px;
+  color: var(--md-sys-color-primary, var(--harness-accent-blue));
+  animation: astroUiSpin 1s linear infinite;
+}
+
+/* ============================================================================
+ * Track B: AstroCanvas 交互沙箱卡片与独立工作台
+ * ============================================================================ */
+.astro-canvas-card {
+  margin: 12px 0;
+  border-radius: 16px;
+  border: 1px solid var(--md-sys-color-outline-variant, var(--harness-border-subtle));
+  background-color: var(--md-sys-color-surface-container-low, var(--harness-bg-surface-hover));
+  overflow: hidden;
+  transition: border-color 0.16s ease;
+}
+
+.astro-canvas-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+  flex-wrap: wrap;
+}
+
+.astro-canvas-card__meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  flex: 1;
+}
+
+.astro-canvas-card__icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background-color: var(--md-sys-color-primary-container, #d3e3fd);
+  color: var(--md-sys-color-on-primary-container, #041e49);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.astro-canvas-card__icon .material-symbols-outlined {
+  font-size: 20px;
+}
+
+.astro-canvas-card__titles {
+  min-width: 0;
+}
+
+.astro-canvas-card__title {
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--md-sys-color-on-surface, var(--harness-text-primary));
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.astro-canvas-card__sub {
+  font-size: 0.76rem;
+  color: var(--md-sys-color-on-surface-variant, var(--harness-text-secondary));
+  margin-top: 2px;
+}
+
+.astro-canvas-card__actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.astro-canvas-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 14px;
+  border-radius: 9999px;
+  border: none;
+  font-family: var(--harness-font-family);
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: filter 0.14s ease, background-color 0.14s ease;
+}
+
+.astro-canvas-btn .material-symbols-outlined {
+  font-size: 16px;
+}
+
+.astro-canvas-btn--tonal {
+  background-color: var(--md-sys-color-secondary-container, #e8def8);
+  color: var(--md-sys-color-on-secondary-container, #1d192b);
+}
+
+.astro-canvas-btn--filled {
+  background-color: var(--md-sys-color-primary, #00668b);
+  color: var(--md-sys-color-on-primary, #ffffff);
+}
+
+.astro-canvas-btn:hover {
+  filter: brightness(0.96);
+}
+
+.astro-canvas-inline-drawer {
+  border-top: 1px solid var(--md-sys-color-outline-variant, var(--harness-border-subtle));
+  background-color: var(--md-sys-color-surface, #ffffff);
+}
+
+.astro-canvas-inline-drawer[hidden] {
+  display: none !important;
+}
+
+.astro-canvas-inline-notice {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  background-color: var(--md-sys-color-surface-container, #f1f3f4);
+  font-size: 0.75rem;
+  color: var(--md-sys-color-on-surface-variant, var(--harness-text-secondary));
+}
+
+.astro-canvas-inline-notice .material-symbols-outlined {
+  font-size: 15px;
+  flex-shrink: 0;
+}
+
+.astro-canvas-inline-collapse {
+  margin-left: auto;
+  padding: 2px 9px;
+  border-radius: 9999px;
+  border: 1px solid var(--md-sys-color-outline-variant, var(--harness-border-subtle));
+  background: transparent;
+  color: inherit;
+  font-size: 0.73rem;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.astro-canvas-iframe-stage {
+  width: 100%;
+  height: 440px;
+}
+
+.astro-canvas-iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+  display: block;
+  background: transparent;
+}
+
+.astro-canvas-missing {
+  padding: 24px;
+  text-align: center;
+  font-size: 0.82rem;
+  color: var(--md-sys-color-on-surface-variant, var(--harness-text-secondary));
+}
+
+/* 右侧成果物 Canvas 全功能工作台 */
+.astro-canvas-workspace {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  min-height: 0;
+}
+
+.astro-canvas-workspace__bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--md-sys-color-outline-variant, var(--harness-border-subtle));
+  background-color: var(--md-sys-color-surface-container-low, var(--harness-bg-surface-hover));
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+.astro-canvas-workspace__info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.astro-canvas-workspace__title {
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: var(--md-sys-color-on-surface, var(--harness-text-primary));
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.astro-canvas-workspace__ver {
+  font-size: 0.72rem;
+  padding: 1px 7px;
+  border-radius: 9999px;
+  background-color: var(--md-sys-color-secondary-container, #e8def8);
+  color: var(--md-sys-color-on-secondary-container, #1d192b);
+  flex-shrink: 0;
+}
+
+.astro-canvas-workspace__controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.astro-canvas-tool-btn {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--md-sys-color-on-surface-variant, var(--harness-text-secondary));
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.astro-canvas-tool-btn:disabled {
+  opacity: 0.36;
+  cursor: not-allowed;
+}
+
+.astro-canvas-tool-btn:not(:disabled):hover {
+  background-color: var(--md-sys-color-surface-container, var(--harness-bg-surface-active));
+  color: var(--md-sys-color-on-surface, var(--harness-text-primary));
+}
+
+.astro-canvas-tool-btn .material-symbols-outlined {
+  font-size: 17px;
+}
+
+.astro-canvas-seg {
+  display: inline-flex;
+  padding: 2px;
+  border-radius: 9999px;
+  background-color: var(--md-sys-color-surface-container, var(--harness-bg-surface-active));
+}
+
+.astro-canvas-seg__btn {
+  padding: 3px 11px;
+  border-radius: 9999px;
+  border: none;
+  background: transparent;
+  font-family: inherit;
+  font-size: 0.76rem;
+  font-weight: 500;
+  color: var(--md-sys-color-on-surface-variant, var(--harness-text-secondary));
+  cursor: pointer;
+}
+
+.astro-canvas-seg__btn.is-active {
+  background-color: var(--md-sys-color-surface, #ffffff);
+  color: var(--md-sys-color-on-surface, var(--harness-text-primary));
+  box-shadow: var(--harness-shadow-sm);
+}
+
+.astro-canvas-workspace__stage {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  background-color: var(--md-sys-color-surface, #ffffff);
+}
+
+.astro-canvas-source-view {
+  margin: 0;
+  padding: 16px;
+  font-family: var(--harness-font-mono);
+  font-size: 0.78rem;
+  line-height: 1.55;
+  color: var(--md-sys-color-on-surface, var(--harness-text-primary));
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.astro-canvas-fullscreen-modal {
+  position: fixed;
+  inset: 0;
+  z-index: var(--layer-modal, 650);
+  background-color: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(4px);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.astro-canvas-fullscreen-dialog {
+  width: min(1160px, 95vw);
+  height: min(840px, 92vh);
+  border-radius: 16px;
+  overflow: hidden;
+  background-color: var(--md-sys-color-surface, #ffffff);
+  border: 1px solid var(--md-sys-color-outline-variant, var(--harness-border-subtle));
+  box-shadow: var(--harness-shadow-lg);
+  display: flex;
+  flex-direction: column;
+}
+
+.astro-canvas-fullscreen-body {
+  flex: 1;
+  min-height: 0;
+}
+
+[data-theme='dark'] .astro-canvas-seg__btn.is-active {
+  background-color: var(--md-sys-color-surface-container-highest, #32343a);
+}
+
+[data-theme='dark'] .astro-canvas-inline-drawer,
+[data-theme='dark'] .astro-canvas-workspace__stage,
+[data-theme='dark'] .astro-canvas-fullscreen-dialog {
+  background-color: var(--md-sys-color-surface, #131316);
+}

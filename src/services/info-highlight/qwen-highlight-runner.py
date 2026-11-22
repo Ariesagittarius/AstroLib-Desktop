@@ -41,9 +41,9 @@ _device = None
 _bos_logits_cache = None
 
 DEFAULT_LOCAL_PATHS = [
-    os.path.join(os.path.expanduser("~"), r".cache\modelscope\models\Qwen--Qwen3-0.6B-Base\snapshots\master"),
-    r"C:\Users\白羊欣存\.cache\modelscope\models\Qwen--Qwen3-0.6B-Base\snapshots\master",
-    os.path.join(os.path.expanduser("~"), r".cache\huggingface\hub\models--Qwen--Qwen3-0.6B-Base\snapshots\master"),
+    os.path.join(os.path.expanduser("~"), ".cache", "modelscope", "models", "Qwen--Qwen3-0.6B-Base", "snapshots", "master"),
+    os.path.join(os.path.expanduser("~"), ".cache", "huggingface", "hub", "models--Qwen--Qwen3-0.6B-Base", "snapshots", "master"),
+    os.path.join(os.path.expanduser("~"), ".cache", "huggingface", "hub", "models--Qwen--Qwen3-0.6B-Base"),
 ]
 
 
@@ -56,11 +56,6 @@ def resolve_model_path(custom_path: Optional[str] = None) -> str:
     for p in DEFAULT_LOCAL_PATHS:
         if os.path.exists(p):
             return p
-    # Fallback to local test project directory if present
-    alt = r"D:\Antigravity\project\test\InfoLens"
-    if os.path.exists(alt):
-        # Check inside InfoLens if cached
-        pass
     raise FileNotFoundError("Local Qwen3-0.6B-Base weights not found in local cache.")
 
 

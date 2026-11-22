@@ -1,0 +1,174 @@
+---
+/**
+ * src/components/desktop/SettingsIngestPanel.astro
+ * ============================================================================
+ * 全局设置中心面板：文献解析与研读 (标准 Material Design 3 + MD3 Expressive)
+ * ============================================================================
+ */
+---
+
+<section id="panel-ingest" class="hub-panel" data-panel-title="文献解析与研读">
+  <div class="panel-section-title">
+    <div>
+      <div>文献解析与研读设置</div>
+      <div class="panel-section-subtitle">
+        统一管理 MinerU 解析引擎、API Token、双栏文献排版与英语词典研判偏好
+      </div>
+    </div>
+  </div>
+
+  <!-- 卡片 1: 解析通道与 MinerU 服务鉴权 -->
+  <div class="hub-card" id="hub-ingest-token-section">
+    <div class="ft-section hub-ft-section">
+      <div class="ft-section-title">MinerU 解析通道与服务鉴权</div>
+      <div class="ft-stack">
+        <div class="ft-segment-wrapper">
+          <div class="ft-sub-label">默认解析引擎</div>
+          <m3e-segmented-button id="hub-ingest-engine-seg" hide-selection-indicator aria-label="选择文献解析通道">
+            <m3e-button-segment value="api" checked>官方云端 VLM</m3e-button-segment>
+            <m3e-button-segment value="agent">免密 Agent 通道</m3e-button-segment>
+            <m3e-button-segment value="local">本机硬件加速</m3e-button-segment>
+          </m3e-segmented-button>
+          <div class="ft-settings-hint-text" id="hub-ingest-engine-desc">
+            精准识别复杂跨页表格、行间公式与图文混排；上传 200 页以下文献直接静默后台解析，超过 200 页时将询问切片页码范围。
+          </div>
+        </div>
+
+        <div class="ft-segment-wrapper">
+          <div class="ingest-token-header">
+            <div class="ft-sub-label">MinerU API Token</div>
+            <span id="hub-mineru-token-status" class="status-indicator">
+              <span class="status-dot"></span>
+              <span class="status-text">检测中...</span>
+            </span>
+          </div>
+          <div class="ingest-token-row">
+            <md-outlined-text-field
+              id="hub-mineru-token-input"
+              class="ingest-token-field"
+              type="password"
+              label="MinerU API Token"
+              placeholder="输入矿石/MinerU 官方 API Token..."
+            ></md-outlined-text-field>
+            <md-icon-button id="hub-mineru-token-toggle" title="显示或隐藏 Token" aria-label="显示或隐藏 Token">
+              <span class="material-symbols-outlined">visibility</span>
+            </md-icon-button>
+            <md-filled-tonal-button id="hub-mineru-token-save">保存</md-filled-tonal-button>
+            <md-text-button id="hub-mineru-token-clear">清除</md-text-button>
+          </div>
+          <div class="ft-settings-hint-text">
+            密钥安全持久化于本地桌面配置与服务端凭证中；使用官方云端 VLM 通道解析 PDF 时必需配置此凭证。
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 卡片 2: 文献双栏排版偏好 -->
+  <div class="hub-card">
+    <div class="ft-section hub-ft-section">
+      <div class="ft-section-title">文献双栏排版偏好</div>
+      <div class="ft-stack">
+        <div class="ft-segment-wrapper">
+          <div class="ft-sub-label">文献正文字体</div>
+          <md-chip-set id="hub-paper-font-chips">
+            <md-filter-chip label="Latin Modern" data-paper-font="latin-modern" selected></md-filter-chip>
+            <md-filter-chip label="TeX Gyre Termes" data-paper-font="termes"></md-filter-chip>
+            <md-filter-chip label="Linux Libertine" data-paper-font="libertine"></md-filter-chip>
+            <md-filter-chip label="Noto Serif SC" data-paper-font="noto-serif"></md-filter-chip>
+            <md-filter-chip label="Modern Sans" data-paper-font="sans"></md-filter-chip>
+          </md-chip-set>
+          <div class="ingest-font-sample" id="hub-paper-font-preview">
+            Theorem 1.1. Let S = QK^T ∈ R^(N×N), then softmax(S) denotes the attention matrix.
+          </div>
+        </div>
+
+        <div class="ft-segment-wrapper">
+          <div class="ft-sub-label">文献标题字体</div>
+          <md-chip-set id="hub-paper-heading-font-chips">
+            <md-filter-chip label="现代黑体 (推荐)" data-paper-heading="default" selected></md-filter-chip>
+            <md-filter-chip label="跟随正文字体" data-paper-heading="inherit"></md-filter-chip>
+            <md-filter-chip label="Latin Modern" data-paper-heading="latin-modern"></md-filter-chip>
+            <md-filter-chip label="TeX Gyre Termes" data-paper-heading="termes"></md-filter-chip>
+            <md-filter-chip label="Linux Libertine" data-paper-heading="libertine"></md-filter-chip>
+            <md-filter-chip label="Noto Serif SC" data-paper-heading="noto-serif"></md-filter-chip>
+          </md-chip-set>
+          <div class="ingest-font-sample ingest-font-sample--heading" id="hub-paper-heading-preview">
+            2 Background, Gap, and Related Work
+          </div>
+        </div>
+
+        <div class="ingest-seg-grid">
+          <div class="ft-segment-wrapper">
+            <div class="ft-sub-label">正文行距</div>
+            <m3e-segmented-button id="hub-paper-lh-seg" hide-selection-indicator aria-label="文献正文行距">
+              <m3e-button-segment value="compact">紧凑 (1.48)</m3e-button-segment>
+              <m3e-button-segment value="standard" checked>标准 (1.72)</m3e-button-segment>
+              <m3e-button-segment value="spacious">宽裕 (2.0)</m3e-button-segment>
+            </m3e-segmented-button>
+          </div>
+
+          <div class="ft-segment-wrapper">
+            <div class="ft-sub-label">阅读字阶</div>
+            <m3e-segmented-button id="hub-paper-size-seg" hide-selection-indicator aria-label="文献阅读字阶">
+              <m3e-button-segment value="compact">紧凑 (14px)</m3e-button-segment>
+              <m3e-button-segment value="standard" checked>标准 (15.5px)</m3e-button-segment>
+              <m3e-button-segment value="spacious">宽裕 (17px)</m3e-button-segment>
+            </m3e-segmented-button>
+          </div>
+        </div>
+
+        <div class="ft-item-row">
+          <div class="ft-row-info">
+            <span class="ft-row-name">显示物理跨页虚线标尺 (Page Divider)</span>
+          </div>
+          <md-switch id="hub-toggle-page-dividers" aria-label="显示物理跨页虚线标尺" selected></md-switch>
+        </div>
+
+        <div class="ft-item-row">
+          <div class="ft-row-info">
+            <span class="ft-row-name">显示页外刊物与水印元注 (Page Meta)</span>
+          </div>
+          <md-switch id="hub-toggle-page-meta" aria-label="显示页外刊物与水印元注" selected></md-switch>
+        </div>
+
+        <div class="ft-item-row">
+          <div class="ft-row-info">
+            <span class="ft-row-name">PDF 换页柔和渐变动画</span>
+          </div>
+          <md-switch id="hub-toggle-pdf-transition" aria-label="PDF 换页柔和渐变动画" selected></md-switch>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 卡片 3: 英语文献即点即译与词典源 -->
+  <div class="hub-card">
+    <div class="ft-section hub-ft-section">
+      <div class="ft-section-title">双语研判与英语词典</div>
+      <div class="ft-stack">
+        <div class="ft-item-row">
+          <div class="ft-row-info">
+            <span class="ft-row-name">开启单词即点即译 (Click-to-Define)</span>
+          </div>
+          <md-switch id="hub-toggle-click-to-define" aria-label="开启单词即点即译" selected></md-switch>
+        </div>
+
+        <div class="ft-segment-wrapper">
+          <div class="ft-sub-label">查词字典服务源</div>
+          <md-chip-set id="hub-dict-provider-chips">
+            <md-filter-chip label="自动优选 (有道 + Google)" data-dict-val="auto" selected></md-filter-chip>
+            <md-filter-chip label="有道词典" data-dict-val="youdao"></md-filter-chip>
+            <md-filter-chip label="Google 字典" data-dict-val="google"></md-filter-chip>
+            <md-filter-chip label="Free Dictionary (英英)" data-dict-val="free"></md-filter-chip>
+          </md-chip-set>
+        </div>
+
+        <div class="ingest-trans-link-row">
+          <span class="ft-settings-hint-text">双语研判译文引擎复用全局「阅读设置 → 助读翻译服务商」配置。</span>
+          <md-text-button id="hub-btn-goto-trans-provider">前往配置翻译服务商</md-text-button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

@@ -29,7 +29,7 @@ import '../../../styles/desktop/library.css';
 
       <button type="button" class="subnav-item" data-kind="book" id="shelf-btn-books">
         <M3Icon name="menu_book" size={20} />
-        <span class="subnav-label">教材著作</span>
+        <span class="subnav-label">书籍读物</span>
         <span class="subnav-count" id="count-books">0</span>
       </button>
 
@@ -37,18 +37,6 @@ import '../../../styles/desktop/library.css';
         <M3Icon name="description" size={20} />
         <span class="subnav-label">文献论文</span>
         <span class="subnav-count" id="count-papers">0</span>
-      </button>
-
-      <button type="button" class="subnav-item subnav-item--disabled" data-kind="slide" title="幻灯片系统正在开发中">
-        <M3Icon name="slideshow" size={20} />
-        <span class="subnav-label">幻灯片课件</span>
-        <span class="subnav-badge">即将推出</span>
-      </button>
-
-      <button type="button" class="subnav-item subnav-item--disabled" data-kind="video" title="研讨视频系统正在开发中">
-        <M3Icon name="smart_display" size={20} />
-        <span class="subnav-label">研讨视频</span>
-        <span class="subnav-badge">即将推出</span>
       </button>
     </div>
 
@@ -99,24 +87,18 @@ import '../../../styles/desktop/library.css';
           <option value="title">名称排序</option>
         </select>
 
-        <!-- 文献研读工作台入口 (features/doc-ingestion) -->
-        <a href="/workspace/" class="library-token-btn" id="btn-goto-workspace" title="打开文献解析研读工作台" style="text-decoration: none;">
-          <M3Icon name="science" size={16} />
-          <span>文献工作台</span>
-        </a>
-
         <!-- 官方书库通道 (Mode A: GitHub Releases 在线获取 .abp) -->
         <button type="button" class="library-token-btn" id="btn-official-catalog" title="从官方 Release 获取教材 .abp">
           <M3Icon name="cloud_download" size={16} />
           <span>官方书库</span>
         </button>
 
-        <!-- 上传教材包按钮 (接受 .abp) -->
-        <button type="button" class="library-upload-btn" id="btn-library-upload">
-          <M3Icon name="upload" size={19} />
-          <span>安装教材包</span>
-        </button>
-        <input type="file" id="library-file-input" accept=".abp" style="display: none;" />
+        <!-- 统一多选导入入口 (同时支持 .abp 书籍包、.epub 电子书与 .pdf 文献) -->
+        <md-filled-button id="btn-library-upload" title="支持多选或拖放 .abp / .epub 书籍与 .pdf 文献">
+          <M3Icon name="upload" size={18} slot="icon" />
+          <span>导入书籍 / 文献</span>
+        </md-filled-button>
+        <input type="file" id="library-file-input" accept=".abp,.epub,.pdf" multiple style="display: none;" />
 
         <!-- 视图切换 (网格 vs 列表) -->
         <div class="library-view-toggle">
@@ -130,7 +112,7 @@ import '../../../styles/desktop/library.css';
       </div>
     </header>
 
-    <!-- 学科分类 Chip 筛选条 (Material 3 md-chip-set & md-filter-chip 规范 · 与研读视窗绝对对齐) -->
+    <!-- 学科与领域分类 Chip 筛选条 (Material 3 md-chip-set & md-filter-chip 规范) -->
     <div class="library-chips-row">
       <md-chip-set class="library-chip-set" id="library-chip-set">
         <md-filter-chip class="lib-filter-chip" label="全部领域" data-subject="all" selected></md-filter-chip>
@@ -138,6 +120,10 @@ import '../../../styles/desktop/library.css';
         <md-filter-chip class="lib-filter-chip" label="物理" data-subject="physics"></md-filter-chip>
         <md-filter-chip class="lib-filter-chip" label="计算机科学" data-subject="cs"></md-filter-chip>
         <md-filter-chip class="lib-filter-chip" label="通信工程" data-subject="telecom"></md-filter-chip>
+        <md-filter-chip class="lib-filter-chip" label="文学与文化" data-subject="literature"></md-filter-chip>
+        <md-filter-chip class="lib-filter-chip" label="轻小说与二次元" data-subject="acg"></md-filter-chip>
+        <md-filter-chip class="lib-filter-chip" label="艺术与美学" data-subject="aesthetics"></md-filter-chip>
+        <md-filter-chip class="lib-filter-chip" label="综合读物" data-subject="general"></md-filter-chip>
         <md-filter-chip class="lib-filter-chip" label="学术论文" data-subject="paper"></md-filter-chip>
       </md-chip-set>
     </div>
@@ -186,12 +172,56 @@ import '../../../styles/desktop/library.css';
       </div>
     </div>
   </div>
+
+  <!-- MinerU Token 缺失阻断提示对话框 (M3 Dialog) -->
+  <md-dialog id="dialog-mineru-token-required">
+    <div slot="headline">需要先配置 MinerU API Token</div>
+    <div slot="content" class="lib-dialog-body">
+      <div>当前文献解析通道为官方云端 MinerU，但未检测到有效的 API Token。以下 PDF 文献已阻断处理：</div>
+      <ul class="lib-dialog-file-list" id="token-dialog-blocked-files"></ul>
+      <div>如已上传 .abp 教材包，教材部分不受影响。请前往全局设置填写 Token 或切换解析通道。</div>
+    </div>
+    <div slot="actions">
+      <md-text-button id="btn-token-dialog-cancel">稍后配置</md-text-button>
+      <md-filled-button id="btn-token-dialog-goto-settings">前往全局设置填写</md-filled-button>
+    </div>
+  </md-dialog>
+
+  <!-- 超 200 页 PDF 页码范围选择对话框 (M3 Dialog) -->
+  <md-dialog id="dialog-pdf-page-range">
+    <div slot="headline">指定文献解析页码范围</div>
+    <div slot="content" class="lib-dialog-body">
+      <div>以下 PDF 文献总页数超过单次 MinerU 解析上限（200 页），请为每篇文献输入需要提取解析的页码范围：</div>
+      <div id="page-range-tasks-container"></div>
+    </div>
+    <div slot="actions">
+      <md-text-button id="btn-page-range-cancel">暂不解析</md-text-button>
+      <md-filled-button id="btn-page-range-confirm">确认并开始解析</md-filled-button>
+    </div>
+  </md-dialog>
 </div>
 
 <!-- 客户端书库控制器 -->
 <script>
+  import '@material/web/dialog/dialog.js';
+  import '@material/web/textfield/outlined-text-field.js';
+  import '@material/web/button/filled-button.js';
+  import '@material/web/button/filled-tonal-button.js';
+  import '@material/web/button/outlined-button.js';
+  import '@material/web/button/text-button.js';
+  import '@material/web/iconbutton/icon-button.js';
   import type { UnifiedReadingEntity, LibraryShelf } from '../../../types/library-entity';
   import { libraryClient } from '../core/library-client';
+  import {
+    handleMixedFileUploads,
+    reparseEntityTask,
+    type IngestPipelineCallbacks,
+  } from '../core/ingest-upload-pipeline';
+  import { promptOversizedPdfPageRanges, showMissingTokenDialog } from '../core/library-dialogs';
+  import {
+    buildAcademicDefaultCoverHtml,
+    getLocalCoverFallbackCandidates,
+  } from '../core/default-cover';
 
   class DesktopLibraryController {
     private entities: UnifiedReadingEntity[] = [];
@@ -202,8 +232,10 @@ import '../../../styles/desktop/library.css';
     private searchQuery: string = '';
     private sortKey: string = 'recent';
     private isListView: boolean = false;
+    private pollTimer: number | null = null;
 
     private gridEl: HTMLElement | null = null;
+    private scrollEl: HTMLElement | null = null;
     private searchInput: HTMLInputElement | null = null;
     private fileInput: HTMLInputElement | null = null;
     private bannerEl: HTMLElement | null = null;
@@ -211,6 +243,7 @@ import '../../../styles/desktop/library.css';
 
     constructor() {
       this.gridEl = document.getElementById('library-entities-grid');
+      this.scrollEl = document.getElementById('library-content-scroll');
       this.searchInput = document.getElementById('library-search-input') as HTMLInputElement;
       this.fileInput = document.getElementById('library-file-input') as HTMLInputElement;
       this.bannerEl = document.getElementById('library-status-banner');
@@ -218,6 +251,15 @@ import '../../../styles/desktop/library.css';
 
       this.initEventListeners();
       this.fetchData();
+    }
+
+    private getPipelineCallbacks(): IngestPipelineCallbacks {
+      return {
+        onStatus: (msg, autoHideMs = 0, isError = false) => this.showBanner(msg, autoHideMs, isError),
+        onRefreshLibrary: () => this.fetchData(true),
+        onMissingMineruToken: (blockedNames) => showMissingTokenDialog(blockedNames),
+        onPromptOversizedPages: (tasks) => promptOversizedPdfPageRanges(tasks),
+      };
     }
 
     private initEventListeners() {
@@ -232,7 +274,7 @@ import '../../../styles/desktop/library.css';
         });
       });
 
-      // 2. 学科 M3 Filter Chip 筛选 (与研读视窗规范一致)
+      // 2. 学科 M3 Filter Chip 筛选
       const filterChips = document.querySelectorAll('.lib-filter-chip');
       filterChips.forEach((chip: any) => {
         chip.addEventListener('click', () => {
@@ -271,7 +313,7 @@ import '../../../styles/desktop/library.css';
         this.render();
       });
 
-      // 6. 上传触发与官方书库触发
+      // 6. 多选上传触发、拖放导入与官方书库触发
       document.getElementById('btn-library-upload')?.addEventListener('click', () => {
         this.fileInput?.click();
       });
@@ -287,13 +329,36 @@ import '../../../styles/desktop/library.css';
       document.getElementById('official-catalog-modal')?.addEventListener('click', (e) => {
         if (e.target === e.currentTarget) this.closeOfficialCatalog();
       });
+
       this.fileInput?.addEventListener('change', (e: any) => {
-        const file = e.target.files?.[0];
-        if (file) {
-          this.handleFileUpload(file);
+        const files = e.target.files as FileList | null;
+        if (files && files.length > 0) {
+          void handleMixedFileUploads(files, this.getPipelineCallbacks());
         }
         this.fileInput!.value = '';
       });
+
+      if (this.scrollEl) {
+        this.scrollEl.addEventListener('dragover', (e) => {
+          if (e.dataTransfer?.types?.includes('Files')) {
+            e.preventDefault();
+            this.scrollEl!.classList.add('is-drag-over');
+          }
+        });
+        this.scrollEl.addEventListener('dragleave', (e) => {
+          if (e.target === this.scrollEl) {
+            this.scrollEl!.classList.remove('is-drag-over');
+          }
+        });
+        this.scrollEl.addEventListener('drop', (e) => {
+          this.scrollEl!.classList.remove('is-drag-over');
+          const files = e.dataTransfer?.files;
+          if (files && files.length > 0) {
+            e.preventDefault();
+            void handleMixedFileUploads(files, this.getPipelineCallbacks());
+          }
+        });
+      }
 
       // 7. 关闭横幅
       document.getElementById('btn-close-banner')?.addEventListener('click', () => {
@@ -309,32 +374,100 @@ import '../../../styles/desktop/library.css';
       });
 
       window.addEventListener('astrolib:library-updated', () => {
-        this.fetchData();
+        void this.fetchData(true);
       });
       window.addEventListener('message', (e) => {
         if (e.data?.type === 'ASTROLIB_LIBRARY_UPDATED') {
-          this.fetchData();
+          void this.fetchData(true);
         }
       });
     }
 
-    private async fetchData() {
+    private toThumbCoverUrl(cover?: string): string {
+      if (!cover) return '/favicon.png';
+      const match = cover.match(/^\/covers\/([^/?#]+)\.(jpg|jpeg|png|webp)$/i);
+      return match ? `/covers/thumbs/${match[1]}.webp` : cover;
+    }
+
+    private predecodedCoverUrls = new Set<string>();
+
+    private scheduleTopCoverPredecode() {
+      const urls: string[] = [];
+      for (const item of this.entities) {
+        if (item.kind !== 'book' || !item.cover) continue;
+        const thumbUrl = this.toThumbCoverUrl(item.cover);
+        if (!this.predecodedCoverUrls.has(thumbUrl)) {
+          this.predecodedCoverUrls.add(thumbUrl);
+          urls.push(thumbUrl);
+          if (urls.length >= 12) break;
+        }
+      }
+      if (urls.length === 0) return;
+
+      const run = () => {
+        for (const url of urls) {
+          const img = new Image();
+          img.decoding = 'async';
+          img.src = url;
+          if (typeof img.decode === 'function') {
+            img.decode().catch(() => {});
+          }
+        }
+      };
+
+      const w = window as any;
+      if (typeof w.requestIdleCallback === 'function') {
+        w.requestIdleCallback(run, { timeout: 900 });
+      } else {
+        setTimeout(run, 300);
+      }
+    }
+
+    private async fetchData(forceRefresh = false, silent = false) {
       try {
         const [entitiesRes, shelvesRes] = await Promise.all([
-          libraryClient.getEntities(),
+          libraryClient.getEntities(forceRefresh),
           libraryClient.getShelves(),
         ]);
 
+        const prevSig = this.entities
+          .map((e) => `${e.id}:${e.status}:${e.statusMessage || ''}`)
+          .join('|');
+        const nextSig = entitiesRes
+          .map((e) => `${e.id}:${e.status}:${e.statusMessage || ''}`)
+          .join('|');
+
         this.entities = entitiesRes;
         this.shelves = shelvesRes;
+        this.syncBackgroundPolling();
+
+        if (silent && prevSig === nextSig) {
+          return;
+        }
+
         this.updateCounts();
         this.renderShelves();
         this.render();
+        this.scheduleTopCoverPredecode();
       } catch (err) {
-        console.error('[FragmentLibrary] 获取书库失败:', err);
-        if (this.gridEl) {
-          this.gridEl.innerHTML = `<div class="library-empty">加载书库数据失败: ${err}</div>`;
+        if (!silent) {
+          console.error('[FragmentLibrary] 获取书库失败:', err);
+          if (this.gridEl) {
+            this.gridEl.innerHTML = `<div class="library-empty">加载书库数据失败: ${err}</div>`;
+          }
         }
+      }
+    }
+
+    private syncBackgroundPolling() {
+      const hasProcessing = this.entities.some((e) => e.status === 'processing');
+      if (hasProcessing && this.pollTimer === null) {
+        this.pollTimer = window.setInterval(() => {
+          void this.fetchData(true, true);
+        }, 2500);
+      } else if (!hasProcessing && this.pollTimer !== null) {
+        clearInterval(this.pollTimer);
+        this.pollTimer = null;
       }
     }
 
@@ -382,22 +515,16 @@ import '../../../styles/desktop/library.css';
       }
     }
 
-    private async handleFileUpload(file: File) {
-      const fileName = file.name;
-      this.showBanner(`正在上传安装: ${fileName}...`);
-
+    private async deletePaper(item: UnifiedReadingEntity) {
+      const taskId = item.metadata?.taskId;
+      if (!taskId) return;
       try {
-        if (fileName.endsWith('.abp')) {
-          const arrayBuffer = await file.arrayBuffer();
-          await libraryClient.installAbp(arrayBuffer);
-          this.showBanner(`《${fileName}》安装成功！`, 3000);
-          await this.fetchData();
-        } else {
-          alert('书库仅直接支持安装 .abp 教材包；文献解析请前往“文献工作台”(/workspace/)。');
-          this.hideBanner();
-        }
+        await libraryClient.deletePaperTask(taskId);
+        window.dispatchEvent(new CustomEvent('astrolib:entity-removed', { detail: { entityId: item.id } }));
+        this.showBanner(`已移除文献《${item.title}》`, 2500);
+        await this.fetchData(true);
       } catch (err: any) {
-        this.showBanner(`安装失败: ${err.message || err}`, 6000, true);
+        this.showBanner(`移除失败: ${err?.message || err}`, 5000, true);
       }
     }
 
@@ -433,7 +560,10 @@ import '../../../styles/desktop/library.css';
         }
         if (this.activeSubject !== 'all') {
           if (this.activeSubject === 'paper' && item.kind !== 'paper') return false;
-          if (this.activeSubject !== 'paper' && item.category !== this.activeSubject) return false;
+          if (this.activeSubject === 'physics' && item.category !== 'physics' && item.category !== 'science') return false;
+          if (this.activeSubject !== 'paper' && this.activeSubject !== 'physics' && item.category !== this.activeSubject) {
+            return false;
+          }
         }
         if (this.searchQuery) {
           const matchTitle = item.title.toLowerCase().includes(this.searchQuery);
@@ -461,15 +591,15 @@ import '../../../styles/desktop/library.css';
         this.gridEl.innerHTML = `
           <div class="library-empty">
             <span class="material-symbols-outlined" style="font-size: 48px; color: var(--md-sys-color-outline);">auto_stories</span>
-            <p>${isFirstLaunch ? '书库尚未安装教材' : '暂无符合条件的研读资源'}</p>
+            <p>${isFirstLaunch ? '书库尚未导入书籍' : '暂无符合条件的研读资源'}</p>
             <span class="empty-sub">${
               isFirstLaunch
-                ? '当前为精简安装壳，请从官方 Release 拉取教材包或导入本地 .abp 文件'
-                : '尝试切换筛选条件，或导入新的 .abp 教材包'
+                ? '当前为精简安装壳，请从官方书库获取教材，或导入本地 .abp / .epub 书籍与 .pdf 文献'
+                : '尝试切换筛选条件，或导入新的 .abp / .epub 书籍与 .pdf 学术文献'
             }</span>
             <div class="library-empty-actions">
-              <md-filled-button id="btn-empty-official-catalog">获取官方教材 (.abp)</md-filled-button>
-              <md-outlined-button id="btn-empty-upload">导入本地 .abp</md-outlined-button>
+              <md-filled-button id="btn-empty-official-catalog">获取官方书籍 (.abp)</md-filled-button>
+              <md-outlined-button id="btn-empty-upload">导入本地书籍 / 文献</md-outlined-button>
             </div>
           </div>
         `;
@@ -485,41 +615,129 @@ import '../../../styles/desktop/library.css';
       this.gridEl.className = this.isListView ? 'library-entities-list' : 'library-entities-grid';
       this.gridEl.innerHTML = '';
 
-      filtered.forEach((item) => {
+      filtered.forEach((item, idx) => {
         const card = document.createElement('div');
-        card.className = `library-card ${item.kind === 'paper' ? 'library-card--paper' : ''} ${item.status === 'processing' ? 'is-processing' : ''}`;
+        card.className = `library-card ${item.kind === 'paper' ? 'library-card--paper' : ''} ${item.status === 'processing' ? 'is-processing' : ''} ${item.status === 'error' ? 'is-error' : ''} ${item.status === 'idle' ? 'is-idle' : ''}`;
         card.setAttribute('data-id', item.id);
 
         const isPaper = item.kind === 'paper';
-        const kindBadge = isPaper ? '文献论文' : '大学教材';
+        const sourceFormat = item.metadata?.sourceFormat || 'abp';
+        const kindBadge = isPaper ? '文献论文' : sourceFormat === 'epub' ? 'EPUB' : 'ABP 书籍';
+        const rawCover = (item.cover || '').trim();
+        const hasValidCover = Boolean(!isPaper && rawCover && rawCover !== '/favicon.png');
+        const coverCandidates: string[] = [];
+        if (hasValidCover) {
+          const thumbUrl = this.toThumbCoverUrl(rawCover);
+          if (thumbUrl && thumbUrl !== '/favicon.png') coverCandidates.push(thumbUrl);
+          if (rawCover !== thumbUrl) coverCandidates.push(rawCover);
+          for (const localCand of getLocalCoverFallbackCandidates(item, coverCandidates)) {
+            coverCandidates.push(localCand);
+          }
+        } else if (!isPaper) {
+          // 即使 manifest 中未写 cover，也尝试本地同名缩略图候选，找不到再渲染学术极简默认封面
+          coverCandidates.push(...getLocalCoverFallbackCandidates(item));
+        }
+        const initialCoverSrc = coverCandidates[0] || '';
+
+        let overlayHtml = '';
+        if (item.status === 'processing') {
+          overlayHtml = `
+            <div class="processing-overlay">
+              <div class="lib-spinner"></div>
+              <span class="overlay-status-text">${item.statusMessage || 'MinerU 解析中...'}</span>
+            </div>
+          `;
+        } else if (item.status === 'error' || item.status === 'idle') {
+          const isErr = item.status === 'error';
+          const btnLabel = isErr ? '重新解析' : '开始解析';
+          const iconName = isErr ? 'error_outline' : 'pending';
+          overlayHtml = `
+            <div class="processing-overlay ${isErr ? 'is-error' : 'is-idle'}">
+              <span class="material-symbols-outlined overlay-status-icon">${iconName}</span>
+              <span class="overlay-status-text" title="${(item.statusMessage || '').replace(/"/g, '&quot;')}">${item.statusMessage || (isErr ? '解析失败' : '待解析')}</span>
+              <div class="overlay-actions-row">
+                <md-filled-tonal-button class="card-reparse-btn" type="button">${btnLabel}</md-filled-tonal-button>
+                <md-icon-button class="card-delete-btn" type="button" title="移除文献" aria-label="移除文献">
+                  <span class="material-symbols-outlined">delete_outline</span>
+                </md-icon-button>
+              </div>
+            </div>
+          `;
+        }
+
+        const listActionHtml =
+          item.status === 'error' || item.status === 'idle'
+            ? `
+              <div class="card-list-actions">
+                <span class="list-status-label ${item.status === 'error' ? 'is-error' : ''}">${item.statusMessage || ''}</span>
+                <md-filled-tonal-button class="card-reparse-btn" type="button">${item.status === 'error' ? '重新解析' : '开始解析'}</md-filled-tonal-button>
+                <md-icon-button class="card-delete-btn" type="button" title="移除文献" aria-label="移除文献">
+                  <span class="material-symbols-outlined">delete_outline</span>
+                </md-icon-button>
+              </div>
+            `
+            : item.status === 'processing'
+              ? `<div class="card-list-actions"><span class="list-status-label">${item.statusMessage || '解析中...'}</span></div>`
+              : '';
 
         card.innerHTML = `
           <div class="card-cover-box">
             ${
-              isPaper
-                ? `<div class="paper-cover-fallback">
-                     <span class="material-symbols-outlined paper-icon">article</span>
-                     <span class="paper-cover-tag">PDF 论文</span>
-                   </div>`
-                : `<img src="${item.cover || '/favicon.png'}" class="card-cover-img" alt="${item.title}" loading="lazy" />`
+              !initialCoverSrc
+                ? buildAcademicDefaultCoverHtml(item)
+                : `<img src="${initialCoverSrc.replace(/"/g, '&quot;')}" class="card-cover-img" alt="${item.title.replace(/"/g, '&quot;')}" width="360" height="480" decoding="async" loading="${idx < 12 ? 'eager' : 'lazy'}" fetchpriority="${idx < 6 ? 'high' : 'auto'}" />`
             }
             <span class="card-kind-pill">${kindBadge}</span>
-            ${
-              item.status === 'processing'
-                ? `<div class="processing-overlay">
-                     <div class="lib-spinner"></div>
-                     <span>${item.statusMessage || '解析中...'}</span>
-                   </div>`
-                : ''
-            }
+            ${overlayHtml}
           </div>
           <div class="card-meta">
-            <h3 class="card-title" title="${item.title}">${item.title}</h3>
-            <p class="card-author" title="${item.author || ''}">${item.author || item.publisher || 'AstroLib'}</p>
+            <h3 class="card-title" title="${item.title.replace(/"/g, '&quot;')}">${item.title}</h3>
+            <p class="card-author" title="${(item.author || '').replace(/"/g, '&quot;')}">${item.author || item.publisher || 'AstroLib'}</p>
           </div>
+          ${listActionHtml}
         `;
 
-        card.addEventListener('click', () => {
+        card.querySelectorAll('.card-reparse-btn').forEach((btn) => {
+          btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            void reparseEntityTask(item, this.getPipelineCallbacks());
+          });
+        });
+        card.querySelectorAll('.card-delete-btn').forEach((btn) => {
+          btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            void this.deletePaper(item);
+          });
+        });
+
+        const imgEl = card.querySelector<HTMLImageElement>('.card-cover-img');
+        if (imgEl) {
+          let candidateIndex = 0;
+          const tryNextFallback = () => {
+            candidateIndex += 1;
+            if (candidateIndex < coverCandidates.length) {
+              imgEl.src = coverCandidates[candidateIndex];
+              return;
+            }
+            const tpl = document.createElement('template');
+            tpl.innerHTML = buildAcademicDefaultCoverHtml(item);
+            const fallbackNode = tpl.content.firstElementChild;
+            if (fallbackNode) {
+              imgEl.replaceWith(fallbackNode);
+            } else {
+              imgEl.remove();
+            }
+          };
+          imgEl.addEventListener('error', tryNextFallback);
+          if (imgEl.complete && imgEl.naturalWidth === 0) {
+            tryNextFallback();
+          }
+        }
+
+        card.addEventListener('click', (e) => {
+          if ((e.target as HTMLElement).closest('.card-reparse-btn, .card-delete-btn')) {
+            return;
+          }
           window.dispatchEvent(
             new CustomEvent('astrolib:open-reading-entity', {
               detail: item,

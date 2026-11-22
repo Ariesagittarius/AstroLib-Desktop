@@ -2,7 +2,13 @@
 /**
  * src/pages/workspace/ingest.astro
  * ============================================================================
- * AstroLib MinerU 学术文献与切片解析全屏工作台 (Material 3 + Chrome 官方风格)
+ * AstroLib 纯净单文献双栏研读视窗 (Material Design 3 & MD3 Expressive)
+ * ============================================================================
+ * 规范：
+ * 1. 严格单文献阅读：无侧栏、无重复 Logo、无独立设置、无常驻解析按钮；
+ * 2. 所有文献统一由「研读书库」打开（?taskId=...）；
+ * 3. 全局设置同步驱动字体、行距、字阶、版面显示及即点即译；
+ * 4. 全部交互控件采用官方 @material/web 与 @m3e/web 组件。
  * ============================================================================
  */
 
@@ -17,7 +23,7 @@ import './ingest.css';
 
 import { collections } from '../../config/collections.config.ts';
 
-const siteTitle = 'MinerU 学术文献智能解析工作台 · AstroLib';
+const siteTitle = '学术文献双栏研读 · AstroLib';
 ---
 
 <!DOCTYPE html>
@@ -27,9 +33,6 @@ const siteTitle = 'MinerU 学术文献智能解析工作台 · AstroLib';
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{siteTitle}</title>
     <link rel="icon" href="/favicon.png" />
-
-    <!-- Google 官方 Material Symbols Outlined 图标库 -->
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
 
     <!-- 首屏免闪烁预注入 Material You 动态主题色与亮暗模式 -->
     <script is:inline>
@@ -66,414 +69,161 @@ const siteTitle = 'MinerU 学术文献智能解析工作台 · AstroLib';
       })();
     </script>
 
-    <!-- 预加载 PDF.js CDN -->
-    <script is:inline src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-    <script is:inline>
-      if (window.pdfjsLib) {
-        window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-      }
-    </script>
   </head>
   <body class="ingest-app-body">
-    <!-- 1. 左侧工作台侧栏 (Sidebar - 对齐 AstroLib 文献研读工作台风格) -->
-    <aside class="ingest-sidebar" id="ingest-sidebar">
-      <div class="sidebar-brand-header">
-        <a href="/desktop/" class="sidebar-logo" data-return-library>
-          <img src="/astrolib-logo.webp" class="sidebar-logo-img" alt="AstroLib" />
-          <span class="sidebar-brand-name">AstroLib</span>
-          <span class="sidebar-brand-badge">文献研读</span>
-        </a>
-        <button type="button" class="sidebar-collapse-btn m3-icon-btn" id="btn-close-sidebar" title="收起侧栏" aria-label="收起侧栏">
-          <span class="material-symbols-outlined" style="font-size: 20px;">first_page</span>
-        </button>
-      </div>
-
-      <!-- 新解析 FAB 胶囊按钮 -->
-      <div class="sidebar-action-area">
-        <button type="button" class="sidebar-new-parse-btn" id="btn-new-parse">
-          <span class="material-symbols-outlined" style="font-size: 20px;">add</span>
-          <span>新解析文档</span>
-        </button>
-        <input type="file" id="file-input-hidden" accept="application/pdf" style="display: none;" />
-      </div>
-
-      <!-- 任务历史列表 -->
-      <div class="sidebar-section-title">
-        <span>任务管理</span>
-      </div>
-      <div class="sidebar-task-list" id="sidebar-task-list">
-        <!-- 动态注入任务列表项 -->
-      </div>
-
-      <!-- 侧栏底部实用操作 -->
-      <div class="sidebar-footer">
-        <a href="/desktop/" class="sidebar-footer-btn" data-return-library title="返回 AstroLib 研读书库">
-          <span class="material-symbols-outlined" style="font-size: 18px;">auto_stories</span>
-          <span>返回研读书库</span>
-        </a>
-      </div>
-    </aside>
-
-    <!-- 2. 主工作区 (Main Workspace) -->
     <div class="ingest-workspace-root">
-      <!-- Chrome + MD3 顶栏 -->
+      <!-- 纯净单文献顶栏 -->
       <header class="ingest-topbar">
         <div class="topbar-left">
-          <button type="button" class="m3-icon-btn sidebar-toggle-trigger" id="btn-toggle-sidebar" title="展开/收起文献侧栏 (Ctrl+B)" aria-label="展开/收起文献侧栏">
-            <span class="material-symbols-outlined">dock_to_left</span>
-          </button>
           <div class="doc-name-badge">
-            <span class="doc-name-text" id="doc-name-text">未加载文档</span>
-            <span class="doc-engine-pill" id="doc-engine-pill">高精排版引擎</span>
+            <span class="material-symbols-outlined doc-title-icon">description</span>
+            <span class="doc-name-text" id="doc-name-text">正在加载文献...</span>
           </div>
         </div>
 
         <div class="topbar-center">
-          <!-- 视窗对齐模式切换 (M3 Segmented Button) -->
-          <div class="m3-segmented-group" role="radiogroup" aria-label="双栏视图模式">
-            <button type="button" class="m3-segment-btn active" id="view-structured" title="1:1 结构化块级对照，双栏标注同步聚焦">结构化对照</button>
-            <button type="button" class="m3-segment-btn" id="view-bilingual" title="开启双语研判，呈现学术级中文译文与保留公式">双语研判</button>
-            <button type="button" class="m3-segment-btn" id="view-continuous" title="流式原生长文排版，零选框开销">连续阅读</button>
-          </div>
+          <m3e-segmented-button id="view-mode-segmented" hide-selection-indicator aria-label="双栏视图模式">
+            <m3e-button-segment value="structured" checked>结构化对照</m3e-button-segment>
+            <m3e-button-segment value="bilingual">双语研判</m3e-button-segment>
+            <m3e-button-segment value="continuous">连续阅读</m3e-button-segment>
+          </m3e-segmented-button>
         </div>
 
-        <!-- 顶栏右侧：统一采用单个 Icon + Tooltip 规范，极简得体 (全部采用 Google 官方 Material Symbols) -->
         <div class="topbar-right">
-          <!-- 1. 统一设置入口 (Icon + Tooltip) -->
-          <button type="button" class="m3-icon-btn" id="btn-open-settings" title="解析通道与排版设置" aria-label="解析通道与排版设置">
-            <span class="material-symbols-outlined">settings</span>
-          </button>
-
-          <!-- 2. 下载清洗包 (Icon + Tooltip) -->
-          <button type="button" class="m3-icon-btn" id="btn-download-zip" style="display: none;" title="下载清洗包归档 (ZIP)" aria-label="下载清洗包归档 (ZIP)">
+          <md-icon-button id="btn-download-zip" style="display: none;" title="下载清洗包归档 (ZIP)" aria-label="下载清洗包归档 (ZIP)">
             <span class="material-symbols-outlined">download</span>
-          </button>
-
-          <!-- 3. 转入书籍库 (Icon + Tooltip) -->
-          <button type="button" class="m3-icon-btn" id="btn-export-book" style="display: none;" title="转入 AstroLib 书籍合集" aria-label="转入 AstroLib 书籍合集">
+          </md-icon-button>
+          <md-icon-button id="btn-export-book" style="display: none;" title="转入 AstroLib 书籍合集" aria-label="转入 AstroLib 书籍合集">
             <span class="material-symbols-outlined">auto_stories</span>
-          </button>
-
-          <!-- 4. 主解析按钮 (M3 Filled 胶囊按钮) -->
-          <button type="button" class="m3-btn-primary" id="btn-parse" title="开始全文献结构化深度解析" disabled>
-            <span class="material-symbols-outlined" style="font-size: 19px;">play_arrow</span>
-            <span id="btn-parse-text">开始解析</span>
-          </button>
+          </md-icon-button>
         </div>
       </header>
 
-      <!-- 细致顶部进度条 -->
-      <div class="m3-progress-line">
-        <div class="m3-progress-fill" id="m3-progress-fill"></div>
-      </div>
+      <!-- MD3 顶部进度条 -->
+      <md-linear-progress id="paper-linear-progress" class="paper-linear-progress" value="0" style="display: none;"></md-linear-progress>
 
-      <!-- 优雅 M3 错误提示横幅 (Banner) -->
+      <!-- 错误提示横幅 -->
       <div class="ingest-error-banner" id="ingest-error-banner" style="display: none;" role="alert">
         <div class="ingest-error-content">
           <span class="material-symbols-outlined" style="font-size: 20px; color: var(--md-sys-color-error, #ba1a1a);">error</span>
           <span class="ingest-error-text" id="ingest-error-text">解析出错</span>
         </div>
-        <button type="button" class="m3-icon-btn" id="btn-close-error-banner" title="关闭提示" aria-label="关闭提示">
-          <span class="material-symbols-outlined" style="font-size: 18px;">close</span>
-        </button>
+        <md-icon-button id="btn-close-error-banner" title="关闭提示" aria-label="关闭提示">
+          <span class="material-symbols-outlined">close</span>
+        </md-icon-button>
+      </div>
+
+      <!-- 无指定文献时的极简空状态 -->
+      <div class="paper-empty-stage" id="paper-empty-stage" style="display: none;">
+        <span class="material-symbols-outlined paper-empty-icon">description</span>
+        <h3 class="paper-empty-title">请从研读书库打开学术文献</h3>
+        <p class="paper-empty-desc">所有 PDF 文献均由「研读书库」统一上传解析并在对应卡片打开。</p>
+        <md-filled-tonal-button id="btn-empty-goto-library">返回研读书库</md-filled-tonal-button>
       </div>
 
       <!-- 双栏对照主体 -->
-      <main class="workspace-grid">
+      <main class="workspace-grid" id="paper-workspace-grid">
         <!-- 左栏：PDF 原文视图 -->
         <section class="pane-pdf">
-          <!-- PDF 控制条 (对齐 MinerU 截图 2) -->
           <div class="pdf-toolbar">
             <span class="pdf-toolbar-title">原文件</span>
 
-            <!-- 分页控制器 -->
             <div class="pdf-page-controls">
-              <button type="button" class="pdf-page-btn" id="pdf-page-prev" title="上一页 (Page Up)" aria-label="上一页">
-                <span class="material-symbols-outlined" style="font-size: 18px;">chevron_left</span>
-              </button>
+              <md-icon-button id="pdf-page-prev" title="上一页" aria-label="上一页">
+                <span class="material-symbols-outlined">chevron_left</span>
+              </md-icon-button>
               <input type="text" class="pdf-page-current-input" id="pdf-page-input" value="1" title="输入页码回车跳转" />
               <span class="pdf-page-total-text" id="pdf-page-total">/ 1</span>
-              <button type="button" class="pdf-page-btn" id="pdf-page-next" title="下一页 (Page Down)" aria-label="下一页">
-                <span class="material-symbols-outlined" style="font-size: 18px;">chevron_right</span>
-              </button>
+              <md-icon-button id="pdf-page-next" title="下一页" aria-label="下一页">
+                <span class="material-symbols-outlined">chevron_right</span>
+              </md-icon-button>
             </div>
 
-            <!-- 缩放控制 -->
             <div class="pdf-zoom-controls">
-              <button type="button" class="pdf-zoom-btn" id="pdf-zoom-out" title="缩小" aria-label="缩小">
-                <span class="material-symbols-outlined" style="font-size: 16px;">remove</span>
-              </button>
-              <span class="pdf-zoom-btn" id="pdf-zoom-val" style="cursor: default; font-weight: 600;">100%</span>
-              <button type="button" class="pdf-zoom-btn" id="pdf-zoom-in" title="放大" aria-label="放大">
-                <span class="material-symbols-outlined" style="font-size: 16px;">add</span>
-              </button>
-              <button type="button" class="pdf-zoom-btn" id="pdf-zoom-fit" title="适应页面宽度" aria-label="适应页面宽度">
-                <span class="material-symbols-outlined" style="font-size: 16px;">fit_screen</span>
-                <span>适应宽度</span>
-              </button>
+              <md-icon-button id="pdf-zoom-out" title="缩小" aria-label="缩小">
+                <span class="material-symbols-outlined">remove</span>
+              </md-icon-button>
+              <span class="pdf-zoom-val" id="pdf-zoom-val">100%</span>
+              <md-icon-button id="pdf-zoom-in" title="放大" aria-label="放大">
+                <span class="material-symbols-outlined">add</span>
+              </md-icon-button>
+              <md-text-button id="pdf-zoom-fit" title="适应页面宽度">适应宽度</md-text-button>
             </div>
           </div>
 
-          <!-- PDF 画布与标注叠加滚动视窗 -->
-          <div class="pdf-canvas-scroll-area" id="pdf-canvas-scroll-area">
-            <!-- 动态注入单页 PDF 矢量画布与精确叠加标注层 -->
-          </div>
+          <div class="pdf-canvas-scroll-area" id="pdf-canvas-scroll-area"></div>
         </section>
 
         <!-- 右栏：结构化内容与阅读视窗 -->
         <section class="pane-markdown" id="pane-markdown">
-          <!-- 右栏 Tab 条 (Markdown vs JSON + 快捷学术排版控制器) -->
           <div class="content-toolbar">
-            <div class="content-tab-group">
-              <button type="button" class="content-tab-btn active" id="tab-markdown">Markdown</button>
-              <button type="button" class="content-tab-btn" id="tab-json">JSON</button>
-            </div>
+            <m3e-segmented-button id="content-tab-segmented" hide-selection-indicator class="content-tab-segmented" aria-label="解析视图格式">
+              <m3e-button-segment value="markdown" checked>Markdown</m3e-button-segment>
+              <m3e-button-segment value="json">JSON</m3e-button-segment>
+            </m3e-segmented-button>
 
-            <!-- 快捷学术排版微调控制器 (字体与行距直接调节) -->
-            <div style="display: flex; align-items: center; gap: 0.75rem;">
-              <div class="quick-typography-controls" style="display: flex; align-items: center; gap: 0.4rem; flex-shrink: 0;">
-                <select class="m3-select-compact" id="quick-font-select" title="选用贴近原文质感的正文学术字体" style="max-width: 150px; font-size: 0.76rem; padding: 0.25rem 0.5rem;">
-                  <option value="latin-modern">正文: Latin Modern</option>
-                  <option value="termes">正文: TeX Gyre Termes</option>
-                  <option value="libertine">正文: Linux Libertine</option>
-                  <option value="noto-serif">正文: Noto Serif SC</option>
-                  <option value="sans">正文: Modern Sans</option>
-                </select>
-                <select class="m3-select-compact" id="quick-heading-font-select" title="选用标题学术排版字体" style="max-width: 150px; font-size: 0.76rem; padding: 0.25rem 0.5rem;">
-                  <option value="default">标题: 现代黑体 (推荐)</option>
-                  <option value="inherit">标题: 跟随正文字体</option>
-                  <option value="latin-modern">标题: Latin Modern</option>
-                  <option value="termes">标题: TeX Gyre Termes</option>
-                  <option value="libertine">标题: Linux Libertine</option>
-                  <option value="noto-serif">标题: Noto Serif SC</option>
-                </select>
-                <select class="m3-select-compact" id="quick-lh-select" title="选用正文排版行距" style="max-width: 105px; font-size: 0.76rem; padding: 0.25rem 0.5rem;">
-                  <option value="compact">行距: 紧凑</option>
-                  <option value="standard" selected>行距: 标准</option>
-                  <option value="spacious">行距: 宽松</option>
-                </select>
+            <div class="content-toolbar-right">
+              <div class="bilingual-batch-controls" id="bilingual-batch-controls" style="display: none;">
+                <md-filled-tonal-button id="btn-batch-translate-current" title="批量研判当前可视页">研判当前页</md-filled-tonal-button>
+                <md-outlined-button id="btn-batch-translate-all" title="全篇自动批量研判">全篇研判</md-outlined-button>
               </div>
-
-              <button type="button" class="m3-icon-btn" id="btn-copy-content" title="复制内容" aria-label="复制内容">
-                <span class="material-symbols-outlined" style="font-size: 18px;">content_copy</span>
-              </button>
+              <md-icon-button id="btn-copy-content" title="复制全文内容" aria-label="复制全文内容">
+                <span class="material-symbols-outlined">content_copy</span>
+              </md-icon-button>
             </div>
           </div>
 
           <div class="content-scroll-area" id="content-scroll-area">
-            <!-- 结构化块级卡片视窗 -->
             <div class="structured-blocks-container" id="structured-blocks-container"></div>
-            <!-- 连续流式长文视窗 -->
             <article class="continuous-reading-flow" id="continuous-reading-container" style="display: none;"></article>
-            <!-- 原生 JSON 结构视窗 -->
             <pre class="pane-json-container" id="json-view-container" style="display: none;"></pre>
           </div>
         </section>
       </main>
     </div>
 
-    <!-- 统一 M3 解析与排版设置对话框 (Unified Settings Dialog) -->
-    <div class="m3-modal-backdrop" id="settings-modal" style="display: none;">
-      <div class="m3-modal-card">
-        <div class="m3-modal-header">
-          <h3 class="m3-modal-title">解析与排版设置</h3>
-          <button type="button" class="m3-icon-btn" id="btn-close-settings" title="关闭设置" aria-label="关闭设置">
-            <span class="material-symbols-outlined" style="font-size: 20px;">close</span>
-          </button>
-        </div>
-
-        <!-- 分组 1：正文学术排版字体选用 -->
-        <div class="m3-settings-group">
-          <label class="m3-settings-label">正文学术排版字体</label>
-          <p class="m3-settings-desc">选用贴近原生 LaTeX 论文印制质感的经典学术字体栈，与 KaTeX 衬线数学公式浑然一体。</p>
-          <div class="m3-chip-selector" id="font-family-chips">
-            <button type="button" class="m3-chip-item active" data-font="latin-modern">Latin Modern (Computer Modern)</button>
-            <button type="button" class="m3-chip-item" data-font="termes">TeX Gyre Termes (Nimbus / Times)</button>
-            <button type="button" class="m3-chip-item" data-font="libertine">Linux Libertine (典雅书系)</button>
-            <button type="button" class="m3-chip-item" data-font="noto-serif">Noto Serif SC (思源学术宋体)</button>
-            <button type="button" class="m3-chip-item" data-font="sans">Modern Sans (屏幕高清晰黑体)</button>
-          </div>
-          <div class="font-preview-sample" id="font-preview-sample" style="font-family: var(--font-tex-latin-modern);">
-            Sample: Theorem 1.1. Let S = QK^T ∈ R^(N×N), then softmax(S) denotes the attention matrix.
-          </div>
-        </div>
-
-        <!-- 分组 1.2：标题学术排版字体选用 (可变字重微调，告别死重) -->
-        <div class="m3-settings-group">
-          <label class="m3-settings-label">标题学术排版字体</label>
-          <p class="m3-settings-desc">支持独立定制论文各级标题字体与可变字重，保留现代几何无衬线质感或选用古典论文衬线体，拒绝死重。</p>
-          <div class="m3-chip-selector" id="heading-font-chips">
-            <button type="button" class="m3-chip-item active" data-font="default">Google Sans / 现代黑体 (推荐)</button>
-            <button type="button" class="m3-chip-item" data-font="inherit">跟随正文字体</button>
-            <button type="button" class="m3-chip-item" data-font="latin-modern">Latin Modern (Computer Modern)</button>
-            <button type="button" class="m3-chip-item" data-font="termes">TeX Gyre Termes (Times)</button>
-            <button type="button" class="m3-chip-item" data-font="libertine">Linux Libertine</button>
-            <button type="button" class="m3-chip-item" data-font="noto-serif">Noto Serif SC (思源宋体)</button>
-          </div>
-          <div class="font-preview-sample" id="heading-font-preview-sample" style="font-family: var(--font-heading-default); font-weight: var(--ingest-heading-weight-h2); font-variation-settings: var(--ingest-heading-variation-h2); font-size: 1.08rem; letter-spacing: var(--ingest-heading-letter-spacing-h2);">
-            Sample: 2 Background, Gap, and Related Work
-          </div>
-        </div>
-
-        <!-- 分组 2：阅读行距与字阶 -->
-        <div class="m3-settings-group">
-          <label class="m3-settings-label">文字行距调整</label>
-          <p class="m3-settings-desc">针对数理公式密集型论文与长文阅读场景，自主调节文字行距。</p>
-          <div class="m3-chip-selector" id="dialog-line-height-chips">
-            <button type="button" class="m3-chip-item" data-lh="compact">紧凑 (1.48)</button>
-            <button type="button" class="m3-chip-item active" data-lh="standard">标准出版 (1.72)</button>
-            <button type="button" class="m3-chip-item" data-lh="spacious">宽裕 (2.0)</button>
-          </div>
-        </div>
-
-        <div class="m3-settings-group">
-          <label class="m3-settings-label">阅读字阶大小</label>
-          <div class="m3-chip-selector" id="dialog-font-size-chips">
-            <button type="button" class="m3-chip-item" data-size="compact">紧凑 (14px)</button>
-            <button type="button" class="m3-chip-item active" data-size="standard">标准 (15.5px)</button>
-            <button type="button" class="m3-chip-item" data-size="spacious">宽裕 (17px)</button>
-          </div>
-        </div>
-
-        <!-- 分组 2.5：物理版面与结构化元素显示 -->
-        <div class="m3-settings-group">
-          <label class="m3-settings-label">物理版面与结构化元素显示</label>
-          <p class="m3-settings-desc">自由控制跨页虚线标尺与页外刊物元信息的呈现状态，专注沉浸式研读。</p>
-          <div style="display: flex; flex-direction: column; gap: 0.65rem; margin-top: 0.35rem;">
-            <label style="display: flex; align-items: center; justify-content: space-between; font-size: 0.84rem; cursor: pointer;">
-              <span>显示物理跨页虚线标尺 (Page Divider)</span>
-              <input type="checkbox" id="toggle-show-page-dividers" checked style="accent-color: var(--md3-primary); width: 16px; height: 16px; cursor: pointer;" />
-            </label>
-            <label style="display: flex; align-items: center; justify-content: space-between; font-size: 0.84rem; cursor: pointer;">
-              <span>显示页外刊物与水印元注 (Page Meta Badge)</span>
-              <input type="checkbox" id="toggle-show-page-meta" checked style="accent-color: var(--md3-primary); width: 16px; height: 16px; cursor: pointer;" />
-            </label>
-            <label style="display: flex; align-items: center; justify-content: space-between; font-size: 0.84rem; cursor: pointer;">
-              <span>PDF 自动换页柔和渐变动画 (Smooth Page Fade)</span>
-              <input type="checkbox" id="toggle-pdf-page-transition" checked style="accent-color: var(--md3-primary); width: 16px; height: 16px; cursor: pointer;" />
-            </label>
-          </div>
-        </div>
-
-        <!-- 分组 3：解析通道与算力 -->
-        <div class="m3-settings-group">
-          <label class="m3-settings-label">解析通道与引擎</label>
-          <div class="m3-radio-tile-group" id="settings-engine-group">
-            <div class="m3-radio-tile selected" data-engine="api">
-              <input type="radio" name="settings-engine" value="api" checked />
-              <div>
-                <div class="m3-radio-tile-title">官方高精度云端 VLM 3.4.x</div>
-                <div class="m3-radio-tile-desc">精准识别复杂跨页表格、行间多行公式与图文绕排，每日免费 1000 页配额</div>
-              </div>
-            </div>
-            <div class="m3-radio-tile" data-engine="agent">
-              <input type="radio" name="settings-engine" value="agent" />
-              <div>
-                <div class="m3-radio-tile-title">免密 Agent 工作流通道</div>
-                <div class="m3-radio-tile-desc">零 Token 极速解析，适合快速抓取纯文字与基础版式</div>
-              </div>
-            </div>
-            <div class="m3-radio-tile" data-engine="local">
-              <input type="radio" name="settings-engine" value="local" />
-              <div>
-                <div class="m3-radio-tile-title">本机硬件加速推理 (RTX 5060)</div>
-                <div class="m3-radio-tile-desc">本地显卡离线推理，数据不出本机，速度快且无网络依赖</div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- 分组 4：切片页码范围 -->
-        <div class="m3-settings-group">
-          <label class="m3-settings-label">切片解析页码范围</label>
-          <p class="m3-settings-desc">留空默认解析整本文献；输入如 <code>1-10</code> 或 <code>3,5,7-9</code> 仅提取指定切片以节约配额。</p>
-          <input type="text" class="m3-input-field" id="settings-page-range" placeholder="如 1-15 (留空表示全本解析)" />
-        </div>
-
-        <!-- 分组 5：学术研判与翻译引擎 -->
-        <div class="m3-settings-group">
-          <label class="m3-settings-label">双语研判与学术翻译服务</label>
-          <select class="m3-select-field" id="settings-translate-provider">
-            <option value="google">Google 翻译 (极速免费，保留数学公式语法)</option>
-            <option value="gemini">Gemini 1.5 Pro / Flash 学术增强</option>
-            <option value="bupt">北京邮电大学 DeepSeek 校内大模型</option>
-            <option value="zhipu">智谱 GLM-4 学术翻译引擎</option>
-          </select>
-          <div style="display: flex; gap: 0.65rem; margin-top: 0.45rem;">
-            <button type="button" class="m3-btn-tonal" id="btn-batch-translate-current" title="批量研判当前可视页">
-              <span class="material-symbols-outlined" style="font-size: 18px;">translate</span>
-              <span>批量研判当前页</span>
-            </button>
-            <button type="button" class="m3-btn-outlined" id="btn-batch-translate-all" title="全篇自动批量研判">
-              <span class="material-symbols-outlined" style="font-size: 18px;">sync</span>
-              <span>全篇自动研判</span>
-            </button>
-          </div>
-          <label style="display: flex; align-items: center; justify-content: space-between; font-size: 0.84rem; cursor: pointer; margin-top: 0.65rem;">
-            <span>开启单词即点即译 (Click-to-Define 英语研读)</span>
-            <input type="checkbox" id="toggle-click-to-define" checked style="accent-color: var(--md3-primary); width: 16px; height: 16px; cursor: pointer;" />
-          </label>
-          <div style="margin-top: 0.5rem; display: flex; align-items: center; justify-content: space-between; font-size: 0.82rem;">
-            <span>查词字典服务源</span>
-            <select class="m3-select-compact" id="settings-dict-provider" style="font-size: 0.78rem; padding: 2px 8px; max-width: 200px;">
-              <option value="auto">自动优选 (有道高精 + 谷歌双擎)</option>
-              <option value="youdao">有道词典 (国内极速直连)</option>
-              <option value="google">Google 字典 (经典国际源)</option>
-              <option value="free">Free Dictionary (英英学术源)</option>
-            </select>
-          </div>
-        </div>
-
-        <!-- 分组 6：服务鉴权 Token -->
-        <div class="m3-settings-group">
-          <label class="m3-settings-label">服务鉴权 Token</label>
-          <p class="m3-settings-desc">用于高精度 API 通道，密钥仅安全存储于本地浏览器缓存中。</p>
-          <input type="password" class="m3-input-field" id="settings-token-input" placeholder="输入 MinerU API Token..." />
-        </div>
-
-        <div class="m3-dialog-footer">
-          <button type="button" class="m3-btn-primary" id="btn-save-settings">完成设置</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- 转入 AstroLib 书籍合集弹窗 -->
-    <div class="m3-modal-backdrop" id="export-modal" style="display: none;">
-      <div class="m3-modal-card">
-        <h3 style="margin: 0; font-size: 1.15rem; font-weight: 600;">转入 AstroLib 书籍合集</h3>
-        <p style="font-size: 0.82rem; color: var(--ingest-text-muted); margin: 0;">自动清洗解析成果为合法 MDX 并注入全书侧边栏与阅读器。</p>
-        <div>
-          <label style="font-size: 0.78rem; font-weight: 500; display: block; margin-bottom: 0.3rem;">所属学科合集</label>
-          <select class="m3-select-compact" style="width: 100%;" id="export-collection-select">
-            {collections.map((c) => (
-              <option value={c.slug}>{c.title} ({c.slug})</option>
+    <!-- 转入 AstroLib 书籍合集弹窗 (标准 MD3 Dialog) -->
+    <md-dialog id="export-modal">
+      <div slot="headline">转入 AstroLib 书籍合集</div>
+      <div slot="content" class="export-dialog-body">
+        <p class="export-dialog-desc">将解析成果规整为规范 MDX 章节并注入全书目录与阅读器。</p>
+        <div class="export-field-group">
+          <span class="export-field-label">所属学科合集</span>
+          <md-chip-set id="export-collection-chips">
+            {collections.map((c, idx) => (
+              <md-filter-chip label={`${c.title} (${c.slug})`} data-col-slug={c.slug} selected={idx === 0 ? true : undefined}></md-filter-chip>
             ))}
-          </select>
+          </md-chip-set>
         </div>
-        <div>
-          <label style="font-size: 0.78rem; font-weight: 500; display: block; margin-bottom: 0.3rem;">书籍/论文 Slug</label>
-          <input type="text" class="m3-input-pill" style="width: 100%; border-radius: 6px;" id="export-slug-input" placeholder="如 my-paper-2026" />
-        </div>
-        <div>
-          <label style="font-size: 0.78rem; font-weight: 500; display: block; margin-bottom: 0.3rem;">显示书名/文献标题</label>
-          <input type="text" class="m3-input-pill" style="width: 100%; border-radius: 6px;" id="export-title-input" placeholder="文献完整标题" />
-        </div>
-        <div style="display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 0.5rem;">
-          <button type="button" class="m3-btn-outlined" id="btn-close-export">取消</button>
-          <button type="button" class="m3-btn-primary" id="btn-confirm-export">确认入库</button>
-        </div>
+        <md-outlined-text-field id="export-slug-input" label="书籍 / 论文 Slug" placeholder="例如 my-paper-2026"></md-outlined-text-field>
+        <md-outlined-text-field id="export-title-input" label="显示书名 / 文献标题" placeholder="输入完整标题"></md-outlined-text-field>
       </div>
-    </div>
+      <div slot="actions">
+        <md-text-button id="btn-close-export">取消</md-text-button>
+        <md-filled-button id="btn-confirm-export">确认入库</md-filled-button>
+      </div>
+    </md-dialog>
 
-    <!-- 单例脚注悬停微浮窗 (Footnote Popover) -->
+    <!-- 单例脚注悬停微浮窗 -->
     <div class="doc-footnote-popover" id="doc-footnote-popover"></div>
 
-    <!-- 单例 M3 单词即点即译浮动卡片 (M3 Word Definition Popover) -->
+    <!-- 单例 M3 单词即点即译浮动卡片 -->
     <div class="m3-word-popover" id="m3-word-popover" role="dialog" aria-hidden="true" style="display: none;"></div>
 
-    <!-- 客户端核心控制器 -->
+    <!-- 客户端核心控制器与标准组件注册 -->
     <script>
-      import { initIngestWorkspace } from '../../features/doc-ingestion/ingest-controller';
+      import '@material/web/button/filled-button.js';
+      import '@material/web/button/filled-tonal-button.js';
+      import '@material/web/button/outlined-button.js';
+      import '@material/web/button/text-button.js';
+      import '@material/web/iconbutton/icon-button.js';
+      import '@material/web/progress/linear-progress.js';
+      import '@material/web/dialog/dialog.js';
+      import '@material/web/textfield/outlined-text-field.js';
+      import '@material/web/chips/chip-set.js';
+      import '@material/web/chips/filter-chip.js';
+      import '@m3e/web/segmented-button';
+      import { initPaperReader } from '../../features/doc-ingestion/paper-reader-controller';
       import { initColorEngine, applyThemeColor } from '../../themes/material-you/color-engine';
 
       initColorEngine();
@@ -491,9 +241,12 @@ const siteTitle = 'MinerU 学术文献智能解析工作台 · AstroLib';
           document.head.appendChild(styleEl);
         } else if (e.key === 'starlight-theme') {
           const themeVal = e.newValue;
-          const effective = themeVal === 'dark' || themeVal === 'light'
-            ? themeVal
-            : (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+          const effective =
+            themeVal === 'dark' || themeVal === 'light'
+              ? themeVal
+              : window.matchMedia('(prefers-color-scheme: dark)').matches
+                ? 'dark'
+                : 'light';
           document.documentElement.dataset.theme = effective;
           document.documentElement.style.colorScheme = effective;
         }
@@ -502,11 +255,14 @@ const siteTitle = 'MinerU 学术文献智能解析工作台 · AstroLib';
       window.addEventListener('message', (e) => {
         if (e.data && e.data.type === 'M3_THEME_COLOR_CHANGED') {
           if (e.data.theme || e.data.resolvedTheme) {
-            const effective = e.data.resolvedTheme === 'dark' || e.data.resolvedTheme === 'light'
-              ? e.data.resolvedTheme
-              : e.data.theme === 'dark' || e.data.theme === 'light'
-                ? e.data.theme
-                : (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            const effective =
+              e.data.resolvedTheme === 'dark' || e.data.resolvedTheme === 'light'
+                ? e.data.resolvedTheme
+                : e.data.theme === 'dark' || e.data.theme === 'light'
+                  ? e.data.theme
+                  : window.matchMedia('(prefers-color-scheme: dark)').matches
+                    ? 'dark'
+                    : 'light';
             document.documentElement.dataset.theme = effective;
             document.documentElement.style.colorScheme = effective;
           }
@@ -525,16 +281,7 @@ const siteTitle = 'MinerU 学术文献智能解析工作台 · AstroLib';
         }
       });
 
-      document.querySelectorAll('[data-return-library]').forEach((el) => {
-        el.addEventListener('click', (e) => {
-          if (window.parent && window.parent !== window) {
-            e.preventDefault();
-            window.parent.dispatchEvent(new CustomEvent('astrolib:switch-fragment', { detail: 'library' }));
-          }
-        });
-      });
-
-      initIngestWorkspace();
+      initPaperReader();
     </script>
   </body>
 </html>

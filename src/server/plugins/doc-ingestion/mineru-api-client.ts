@@ -15,10 +15,65 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
-import { execFile } from 'node:child_process';
-import { promisify } from 'node:util';
+import { ZipArchive } from '../../../core/book-formats/zip-reader.ts';
 
-const execFileAsync = promisify(execFile);
+const MAX_MINERU_ZIP_BYTES = 100 * 1024 * 1024;
+const MAX_MINERU_EXTRACTED_BYTES = 256 * 1024 * 1024;
+
+function isInsideTargetDir(baseDir: string, targetPath: string): boolean {
+  const resolvedBase = path.resolve(baseDir);
+  const resolvedTarget = path.resolve(targetPath);
+  const rel = path.relative(resolvedBase, resolvedTarget);
+  return Boolean(rel) && !rel.startsWith('..') && !path.isAbsolute(rel);
+}
+
+function assertSafeDownloadUrl(rawUrl: string): string {
+  let parsed: URL;
+  try {
+    parsed = new URL(rawUrl);
+  } catch {
+    throw new Error(`非法的下载 URL: ${rawUrl}`);
+  }
+  const isHttps = parsed.protocol === 'https:';
+  const isLoopbackHttp =
+    parsed.protocol === 'http:' &&
+    (parsed.hostname === '127.0.0.1' || parsed.hostname === 'localhost');
+  if (!isHttps && !isLoopbackHttp) {
+    throw new Error(`不支持的非安全下载协议 (${parsed.protocol}): ${rawUrl}`);
+  }
+  return parsed.toString();
+}
+
+export async function extractZipSafely(
+  zipBuffer: Buffer | Uint8Array,
+  targetDir: string,
+  maxExtractedBytes = MAX_MINERU_EXTRACTED_BYTES
+): Promise<string[]> {
+  const resolvedRoot = path.resolve(targetDir);
+  fs.mkdirSync(resolvedRoot, { recursive: true });
+
+  const archive = ZipArchive.fromBytes(zipBuffer, { strictSafePaths: true });
+  const entries = archive.listEntries();
+  const extractedFiles: string[] = [];
+  let totalBytes = 0;
+
+  for (const entryName of entries) {
+    const destPath = path.resolve(resolvedRoot, entryName);
+    if (!isInsideTargetDir(resolvedRoot, destPath)) {
+      throw new Error(`检测到危险 ZIP 路径穿越条目 (ZipSlip): ${entryName}`);
+    }
+    const content = await archive.readEntryBytes(entryName);
+    totalBytes += content.byteLength;
+    if (totalBytes > maxExtractedBytes) {
+      throw new Error(`ZIP 解压总大小超出安全上限 (${maxExtractedBytes} bytes)`);
+    }
+    fs.mkdirSync(path.dirname(destPath), { recursive: true });
+    fs.writeFileSync(destPath, content);
+    extractedFiles.push(entryName);
+  }
+
+  return extractedFiles;
+}
 
 export interface MineruBatchFileRequest {
   name: string;
@@ -62,15 +117,41 @@ export class MineruApiClient {
    * 自动探测与读取系统中的 MinerU API Token
    */
   public resolveToken(): string | null {
-    if (process.env.MINERU_API_TOKEN) {
+    if (process.env.MINERU_API_TOKEN && process.env.MINERU_API_TOKEN.trim()) {
       return process.env.MINERU_API_TOKEN.trim();
+    }
+
+    const userDataDir = process.env.ASTROLIB_USER_DATA_DIR;
+    if (userDataDir) {
+      const userTokenFile = path.join(userDataDir, 'mineru-token.json');
+      try {
+        if (fs.existsSync(userTokenFile)) {
+          const parsed = JSON.parse(fs.readFileSync(userTokenFile, 'utf-8'));
+          if (parsed?.explicitlyCleared) {
+            return null;
+          }
+          if (typeof parsed?.token === 'string' && parsed.token.trim()) {
+            return parsed.token.trim();
+          }
+        }
+      } catch {}
+
+      const prefsFile = path.join(userDataDir, 'user_preferences.json');
+      try {
+        if (fs.existsSync(prefsFile)) {
+          const prefs = JSON.parse(fs.readFileSync(prefsFile, 'utf-8'));
+          if (typeof prefs?.mineru_api_token === 'string' && prefs.mineru_api_token.trim()) {
+            return prefs.mineru_api_token.trim();
+          }
+        }
+      } catch {}
     }
 
     const homeDir = os.homedir();
     const candidateFiles = [
+      path.join(process.cwd(), '.mineru.json'),
       path.join(homeDir, 'MinerU', 'config.json'),
       path.join(homeDir, '.mineru', 'config.json'),
-      path.join(process.cwd(), '.mineru.json'),
     ];
 
     for (const f of candidateFiles) {
@@ -78,6 +159,9 @@ export class MineruApiClient {
         if (fs.existsSync(f)) {
           const raw = fs.readFileSync(f, 'utf-8');
           const parsed = JSON.parse(raw);
+          if (parsed?.explicitlyCleared) {
+            return null;
+          }
           if (typeof parsed.config === 'string') {
             try {
               const nested = JSON.parse(parsed.config);
@@ -89,7 +173,7 @@ export class MineruApiClient {
             }
           }
           if (parsed.client_api_token) return String(parsed.client_api_token).trim();
-          if (parsed.token) return String(parsed.token).trim();
+          if (parsed.token && String(parsed.token).trim()) return String(parsed.token).trim();
         }
       } catch {
         // continue
@@ -100,11 +184,40 @@ export class MineruApiClient {
   }
 
   public getToken(): string | null {
+    if (this.token) return this.token;
+    const resolved = this.resolveToken();
+    if (resolved) this.token = resolved;
     return this.token;
   }
 
   public setToken(token: string) {
-    this.token = token.trim();
+    const cleaned = (token || '').trim();
+    this.token = cleaned || null;
+  }
+
+  public persistToken(token: string): void {
+    const cleaned = (token || '').trim();
+    this.setToken(cleaned);
+
+    const payload = cleaned
+      ? { token: cleaned, explicitlyCleared: false, updatedAt: Date.now() }
+      : { token: '', explicitlyCleared: true, updatedAt: Date.now() };
+
+    const userDataDir = process.env.ASTROLIB_USER_DATA_DIR;
+    if (userDataDir) {
+      try {
+        fs.mkdirSync(userDataDir, { recursive: true });
+        fs.writeFileSync(path.join(userDataDir, 'mineru-token.json'), JSON.stringify(payload, null, 2), 'utf-8');
+      } catch {}
+    }
+
+    // 开发态若工作目录可写则同步更新 .mineru.json；打包安装目录不可写时静默跳过
+    try {
+      const cwdTokenPath = path.join(process.cwd(), '.mineru.json');
+      if (!userDataDir || fs.existsSync(cwdTokenPath)) {
+        fs.writeFileSync(cwdTokenPath, JSON.stringify(payload, null, 2), 'utf-8');
+      }
+    } catch {}
   }
 
   /**
@@ -257,33 +370,32 @@ export class MineruApiClient {
    * 4. 下载结果 ZIP 并解包到目标目录
    */
   public async downloadAndExtractZip(zipUrl: string, targetDir: string): Promise<string> {
+    const safeUrl = assertSafeDownloadUrl(zipUrl);
     if (!fs.existsSync(targetDir)) {
       fs.mkdirSync(targetDir, { recursive: true });
     }
 
     const zipTempPath = path.join(targetDir, 'result_archive.zip');
 
-    // 下载 ZIP
-    const res = await fetch(zipUrl);
+    // 下载 ZIP 并执行纯 Node 流式大小守卫
+    const res = await fetch(safeUrl);
     if (!res.ok) {
       throw new Error(`下载结果 ZIP 失败 (HTTP ${res.status})`);
     }
+    const contentLen = Number(res.headers.get('content-length') || 0);
+    if (Number.isFinite(contentLen) && contentLen > MAX_MINERU_ZIP_BYTES) {
+      throw new Error(`MinerU 结果 ZIP 超出体积限制 (${contentLen} > ${MAX_MINERU_ZIP_BYTES} bytes)`);
+    }
 
     const arrayBuffer = await res.arrayBuffer();
-    fs.writeFileSync(zipTempPath, Buffer.from(arrayBuffer));
-
-    // 使用系统自带 tar.exe 解压
-    try {
-      await execFileAsync('tar', ['-xf', zipTempPath, '-C', targetDir]);
-    } catch (tarErr) {
-      // 若系统 tar 出现异常，使用 PowerShell Expand-Archive 作为后备保障
-      try {
-        const psCommand = `Expand-Archive -LiteralPath '${zipTempPath}' -DestinationPath '${targetDir}' -Force`;
-        await execFileAsync('powershell', ['-NoProfile', '-Command', psCommand]);
-      } catch (psErr) {
-        throw new Error(`解压结果 ZIP 失败: ${tarErr instanceof Error ? tarErr.message : String(tarErr)}`);
-      }
+    const zipBuffer = Buffer.from(arrayBuffer);
+    if (zipBuffer.byteLength > MAX_MINERU_ZIP_BYTES) {
+      throw new Error(`MinerU 结果 ZIP 超出体积限制 (${zipBuffer.byteLength} > ${MAX_MINERU_ZIP_BYTES} bytes)`);
     }
+    fs.writeFileSync(zipTempPath, zipBuffer);
+
+    // 使用纯 Node 内置 ZIP 解析与 ZipSlip 防护解压，绝不拼接 shell 命令
+    await extractZipSafely(zipBuffer, targetDir, MAX_MINERU_EXTRACTED_BYTES);
 
     return targetDir;
   }

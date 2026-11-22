@@ -14,4 +14,20 @@ export const app = {
   },
 };
 
-export default { app };
+export const safeStorage = {
+  isEncryptionAvailable(): boolean {
+    return true;
+  },
+  encryptString(plainText: string): Buffer {
+    return Buffer.from(`mock-enc:${plainText}`, 'utf8');
+  },
+  decryptString(encrypted: Buffer): string {
+    const raw = encrypted.toString('utf8');
+    if (raw.startsWith('mock-enc:')) {
+      return raw.slice('mock-enc:'.length);
+    }
+    return raw;
+  },
+};
+
+export default { app, safeStorage };

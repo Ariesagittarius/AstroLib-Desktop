@@ -92,10 +92,10 @@ export function buildGlobalBlockIndex(colSlug, bookSlug, force = false) {
           if (fmTitle) chapterTitle = fmTitle[1].trim();
         }
 
-        const tagRegex = /<(Example|Variant|Knowledge|Summary|Method|Conclusion|Block|Exercise|Solution)\s+title=["'](.*?)["']/g;
+        const tagRegex = /<(Example|Variant|Knowledge|Summary|Method|Conclusion|Block|Exercise|Solution|Algorithm|Note)\s+[^>]*?\btitle\s*=\s*(?:"((?:\\.|[^"\\])*)"|'((?:\\.|[^'\\])*)')/g;
         let match;
         while ((match = tagRegex.exec(fileContent)) !== null) {
-          const rawTitle = match[2].trim();
+          const rawTitle = (match[2] ?? match[3] ?? '').replace(/\\(["'])/g, '$1').trim();
           const details = parseTitleDetails(rawTitle);
 
           const cleanId = encodeURIComponent(details.cleanTitle.replace(/\s+/g, '-'));

@@ -22,8 +22,18 @@ import fs from 'node:fs';
 import path from 'node:path';
 import type { AstroBookManifest, AstroBookChapterPayload } from '../../src/types/content-package.ts';
 import { renderTitleHtml } from '../../src/utils/render-title.ts';
+import { sanitizeAcademicHtml } from '../../src/core/security/html-sanitizer.ts';
 import { getCatalogCollections } from '../../src/config/collections.config.ts';
 import { resolveAbpArtifactsDir } from '../../src/core/catalog/content-paths.ts';
+import {
+  buildAnnotationsHeaderButtonsHtml,
+  buildAnnotationsSideloadPanelHtml,
+  buildReaderAnnotationsAddonHtml,
+} from './reader-annotations-addon.ts';
+import {
+  buildReaderLayoutHeaderButtonHtml,
+  buildReaderLayoutAddonHtml,
+} from './reader-layout-addon.ts';
 
 function escapeHtml(str?: string | null): string {
   return String(str ?? '')
@@ -218,13 +228,19 @@ function buildStructuredTocHtml(
   }
 
   const items: TocItem[] = [];
+  const seenIds = new Set<string>();
 
-  // 1. 匹配正文中的所有 H2, H3, H4 标题
-  const headingRe = /<h([2-4])\s+id="([^"]+)"[^>]*>([\s\S]*?)<\/h\1>/gi;
+  // 1. 匹配正文中的所有 H2, H3, H4 标题（不依赖属性顺序）
+  const headingRe = /<h([2-4])\b([^>]*)>([\s\S]*?)<\/h\1>/gi;
   let match: RegExpExecArray | null;
   while ((match = headingRe.exec(contentHtml)) !== null) {
     const level = parseInt(match[1], 10);
-    const id = match[2];
+    const attrText = match[2] || '';
+    const idMatch = attrText.match(/\bid\s*=\s*(?:"([^"]+)"|'([^']+)')/i);
+    const id = (idMatch?.[1] ?? idMatch?.[2] ?? '').trim();
+    if (!id || seenIds.has(id)) continue;
+    seenIds.add(id);
+
     const fullInner = match[3];
     const cleanInner = fullInner
       .replace(/<a[^>]*class="anchor-link"[\s\S]*?<\/a>/gi, '')
@@ -266,20 +282,23 @@ function buildStructuredTocHtml(
     });
   }
 
-  // 兜底：若 DOM 中未提取到任何 heading，使用 payload.headings 补充
-  if (items.filter((i) => i.kind === 'heading').length === 0 && headings.length > 0) {
-    headings.forEach((h, i) => {
-      const cleanHeading = h.text.replace(/<[^>]+>/g, '').trim();
-      items.push({
-        kind: 'heading',
-        level: h.depth,
-        id: h.id,
-        text: cleanHeading,
-        rawTitle: cleanHeading,
-        pos: i * 10,
-      });
+  // 合并 payload.headings 中未被 H2~H4 捕获的锚点（例如 EPUB NAV 子锚点 #toc-1）
+  headings.forEach((h, i) => {
+    if (!h.id || seenIds.has(h.id)) return;
+    seenIds.add(h.id);
+    const cleanHeading = h.text.replace(/<[^>]+>/g, '').trim();
+    if (!cleanHeading) return;
+    let pos = contentHtml.indexOf(`id="${h.id}"`);
+    if (pos < 0) pos = contentHtml.indexOf(`id='${h.id}'`);
+    items.push({
+      kind: 'heading',
+      level: h.depth || 2,
+      id: h.id,
+      text: cleanHeading,
+      rawTitle: cleanHeading,
+      pos: pos >= 0 ? pos : contentHtml.length + i * 10,
     });
-  }
+  });
 
   items.sort((a, b) => a.pos - b.pos);
 
@@ -387,9 +406,15 @@ export function renderReaderPageHtml(
   const currentChapterSlug = payload.chapterSlug;
   const colSlug = manifest.colSlug;
   const bookSlug = manifest.slug;
+  const sourceFormat = manifest.sourceFormat || 'abp';
+  const defaultProfile = manifest.readingProfile || (sourceFormat === 'epub' ? 'literary' : 'academic');
+  const chapterKind = payload.chapterKind || 'body';
+  const stylesheets = Array.from(new Set([...(manifest.stylesheets || []), ...(payload.stylesheets || [])]));
+  const hasStylesheets = stylesheets.length > 0;
+  const hasEmbeddedFonts = Boolean(manifest.hasEmbeddedFonts);
   const pageTitle = `${payload.title} - ${manifest.title} - AstroLib`;
 
-  // 确保 HTML 根节点包含桌面端避让类名、思源黑体默认偏好、两字缩进与 Material You 主题
+  // 确保 HTML 根节点包含桌面端避让类名、思源黑体默认偏好、两字缩进、阅读体裁与 Material You 主题
   html = html.replace(
     /<html([^>]*)>/i,
     (_m, attrs) => {
@@ -409,6 +434,21 @@ export function renderReaderPageHtml(
       if (!cleanAttrs.includes('data-paragraph-indent')) {
         cleanAttrs += ' data-paragraph-indent="true"';
       }
+      if (!cleanAttrs.includes('data-source-format')) {
+        cleanAttrs += ` data-source-format="${escapeHtmlAttr(sourceFormat)}"`;
+      }
+      if (!cleanAttrs.includes('data-reading-profile')) {
+        cleanAttrs += ` data-reading-profile="${escapeHtmlAttr(defaultProfile)}"`;
+      }
+      if (!cleanAttrs.includes('data-style-mode')) {
+        cleanAttrs += ' data-style-mode="harmonized"';
+      }
+      if (!cleanAttrs.includes('data-use-book-fonts')) {
+        cleanAttrs += ' data-use-book-fonts="true"';
+      }
+      if (!cleanAttrs.includes('data-chapter-kind')) {
+        cleanAttrs += ` data-chapter-kind="${escapeHtmlAttr(chapterKind)}"`;
+      }
       return `<html${cleanAttrs}>`;
     }
   );
@@ -420,7 +460,7 @@ export function renderReaderPageHtml(
   html = html.replace(/<meta\s+property="og:description"\s+content="[^"]*"/i, () => `<meta property="og:description" content="${escapeHtml(manifest.description || payload.title)}"`);
   html = html.replace(/<meta\s+name="twitter:title"\s+content="[^"]*"/i, () => `<meta name="twitter:title" content="${escapeHtml(pageTitle)}"`);
 
-  // 3. 提取章节用于全局毫秒级瞬时搜索
+  // 3. 仅保留当前图书章节索引用于同书内快速检索，避免每页遍历读取全站 13 本书 Manifest 推高渲染耗能
   const searchCatalog: Array<{
     col: string;
     book: string;
@@ -430,23 +470,17 @@ export function renderReaderPageHtml(
     url: string;
   }> = [];
 
-  for (const col of getCatalogCollections()) {
-    for (const b of (col.books || [])) {
-      const isCurrent = col.slug === colSlug && b.slug === bookSlug;
-      const bManifest = isCurrent ? manifest : getBookManifestCached(col.slug, b.slug, distDir);
-      if (bManifest?.sections) {
-        for (const sec of bManifest.sections) {
-          for (const ch of sec.chapters) {
-            searchCatalog.push({
-              col: col.slug,
-              book: b.slug,
-              bookTitle: b.title || bManifest.title,
-              chapterSlug: ch.slug,
-              chapterTitle: ch.title,
-              url: `/collections/${col.slug}/${b.slug}/${ch.slug}/`,
-            });
-          }
-        }
+  if (manifest.sections) {
+    for (const sec of manifest.sections) {
+      for (const ch of (sec.chapters || [])) {
+        searchCatalog.push({
+          col: colSlug,
+          book: bookSlug,
+          bookTitle: manifest.title,
+          chapterSlug: ch.slug,
+          chapterTitle: ch.title,
+          url: `/collections/${colSlug}/${bookSlug}/${ch.slug}/`,
+        });
       }
     }
   }
@@ -538,10 +572,20 @@ export function renderReaderPageHtml(
     .filter(Boolean)
     .join(' · ');
 
+  const isIllustrationChapter = chapterKind === 'cover' || chapterKind === 'illustration';
+  const hasInlineH1 = /<h1\b/i.test(payload.html || '');
+  const chapterHeaderClasses = [
+    'chapter-header',
+    hasInlineH1 ? 'has-inline-h1' : '',
+    isIllustrationChapter ? 'is-illustration-header' : '',
+  ]
+    .filter(Boolean)
+    .join(' ');
+
   const chapterHeaderHtml = `
-<header class="chapter-header">
+<header class="${chapterHeaderClasses}">
   <h1 id="_top" class="chapter-title astro-ev5clelh">${renderTitleHtml(payload.title)}</h1>
-  <div class="chapter-meta-container" role="region" aria-label="教材出版信息">
+  <div class="chapter-meta-container" role="region" aria-label="图书出版信息">
     <md-chip-set class="chapter-meta-chip-set" role="list" aria-label="教材元数据">
       ${manifest.author ? `
         <md-assist-chip label="${escapeHtml(manifest.author)}" has-icon>
@@ -588,10 +632,21 @@ export function renderReaderPageHtml(
 </header>
 `;
 
+  const chapterIntroHtml = payload.chapterIntro
+    ? `
+<section class="academic-chapter-intro" data-intro-slug="${escapeHtmlAttr(payload.chapterIntro.slug)}" aria-label="章节导语">
+  <div class="chapter-intro-label">${renderTitleHtml(payload.chapterIntro.title)}</div>
+  <div class="chapter-intro-body">${sanitizeAcademicHtml(payload.chapterIntro.html || '')}</div>
+</section>
+`
+    : '';
+
+  const combinedTopHeaderHtml = `${chapterIntroHtml}${chapterHeaderHtml}`;
+
   if (html.includes('id="_top" class="chapter-title astro-ev5clelh"')) {
-    html = html.replace(/<h1 id="_top" class="chapter-title astro-ev5clelh">[\s\S]*?<\/h1>/i, () => chapterHeaderHtml);
+    html = html.replace(/<h1 id="_top" class="chapter-title astro-ev5clelh">[\s\S]*?<\/h1>/i, () => combinedTopHeaderHtml);
   } else {
-    html = html.replace(/(<article class="sl-markdown-content")/i, (_m, p1) => `${chapterHeaderHtml}\n${p1}`);
+    html = html.replace(/(<article class="sl-markdown-content")/i, (_m, p1) => `${combinedTopHeaderHtml}\n${p1}`);
   }
 
   // 6. 计算并构建「上一节」与「下一节」翻页导航
@@ -629,15 +684,38 @@ export function renderReaderPageHtml(
     `;
   }
 
-  // 7. 注入章节正文与翻页导航
-  const contentBodyHtml = `<div class="astrolib-chapter-content">${payload.html}\n${paginationHtml}</div>`;
+  // 7. 注入章节正文与翻页导航 (挂载当前章节权威元数据供 ViewTransitions 软切章实时感知)
+  const safeClassTokens = (list?: string[]) =>
+    (list || [])
+      .map((c) => c.replace(/[^a-zA-Z0-9_-]/g, ''))
+      .filter(Boolean)
+      .join(' ');
+  const htmlCls = safeClassTokens(payload.htmlClasses);
+  const bodyCls = safeClassTokens(payload.bodyClasses);
+  const needsBookScopeWrap =
+    sourceFormat === 'epub' || hasStylesheets || Boolean(htmlCls) || Boolean(bodyCls);
+
+  const sanitizedPayloadHtml = sanitizeAcademicHtml(payload.html || '');
+  const innerContentHtml = needsBookScopeWrap
+    ? `<div class="astrolib-epub-html ${htmlCls}"><div class="astrolib-epub-body ${bodyCls}">${sanitizedPayloadHtml}</div></div>`
+    : sanitizedPayloadHtml;
+
+  const contentWrapClasses = [
+    'astrolib-chapter-content',
+    needsBookScopeWrap ? 'astrolib-book-scope' : '',
+    isIllustrationChapter ? 'is-illustration-chapter' : '',
+  ]
+    .filter(Boolean)
+    .join(' ');
+
+  const contentBodyHtml = `<div class="${contentWrapClasses}" data-col-slug="${escapeHtmlAttr(colSlug)}" data-book-slug="${escapeHtmlAttr(bookSlug)}" data-chapter-slug="${escapeHtmlAttr(currentChapterSlug)}" data-chapter-title="${escapeHtmlAttr(payload.title)}" data-source-format="${escapeHtmlAttr(sourceFormat)}">${innerContentHtml}\n${paginationHtml}</div>`;
   if (html.includes('<div id="reader-shell-mount-point"></div>')) {
     html = html.replace('<div id="reader-shell-mount-point"></div>', () => contentBodyHtml);
   } else {
     html = html.replace(/(<article class="sl-markdown-content"[^>]*>)/i, (_m, p1) => `${p1}\n${contentBodyHtml}`);
   }
 
-  // 8. 更新右侧 Sideload Dock 属性与本节大纲 (TOC)
+  // 8. 更新右侧 Sideload Dock 属性与本节大纲 (TOC)，剔除 manifest.assets 减小内嵌 HTML 体积
   const clientBookConfig = {
     title: manifest.title,
     slug: manifest.slug,
@@ -645,7 +723,8 @@ export function renderReaderPageHtml(
     modules: manifest.modules || {},
     trackClasses: manifest.trackClasses || [],
   };
-  const manifestScriptHtml = `<script id="__book_manifest__" type="application/json">${JSON.stringify(manifest).replace(/<\/script>/gi, '<\\/script>')}</script>`;
+  const { assets: _omitAssets, ...slimManifest } = manifest;
+  const manifestScriptHtml = `<script id="__book_manifest__" type="application/json">${JSON.stringify(slimManifest).replace(/<\/script>/gi, '<\\/script>')}</script>`;
 
   html = html.replace(
     /<aside class="astrolib-sideload-dock custom-page-sidebar" id="astrolib-sideload-dock"[^>]*>/i,
@@ -653,10 +732,13 @@ export function renderReaderPageHtml(
   );
 
   const tocHtml = buildStructuredTocHtml(payload.html, payload.headings || [], manifest.modules || {});
-  html = html.replace(/<ul id="custom-toc-list" class="toc-list">[\s\S]*?<\/ul>/i, () => `<ul id="custom-toc-list" class="toc-list">${tocHtml}</ul>`);
-  html = html.replace(/<ul id="vp-local-nav-toc-list" class="toc-list">[\s\S]*?<\/ul>/i, () => `<ul id="vp-local-nav-toc-list" class="toc-list">${tocHtml}</ul>`);
+  const ssrTocAttrs = tocHtml.trim().length > 0
+    ? ` data-ssr-toc="true" data-ssr-chapter="${escapeHtmlAttr(currentChapterSlug)}"`
+    : '';
+  html = html.replace(/<ul id="custom-toc-list" class="toc-list"[^>]*>[\s\S]*?<\/ul>/i, () => `<ul id="custom-toc-list" class="toc-list"${ssrTocAttrs}>${tocHtml}</ul>`);
+  html = html.replace(/<ul id="vp-local-nav-toc-list" class="toc-list"[^>]*>[\s\S]*?<\/ul>/i, () => `<ul id="vp-local-nav-toc-list" class="toc-list"${ssrTocAttrs}>${tocHtml}</ul>`);
 
-  // 9. 确保顶部包含关注点透镜 (Alt+I) 按钮
+  // 9. 确保顶部包含关注点透镜 (Alt+I) 与批注手写按钮 (Alt+N / Alt+P)
   if (!html.includes('id="vp-focus-btn"')) {
     const focusBtnHtml = `
       <button
@@ -672,6 +754,22 @@ export function renderReaderPageHtml(
       </button>
     `;
     html = html.replace(/(<button[^>]*id="vp-translate-btn"[^>]*>[\s\S]*?<\/button>)/i, (_m, p1) => `${p1}\n${focusBtnHtml}`);
+  }
+  if (!html.includes('id="vp-annotations-btn"')) {
+    const annHeaderBtns = buildAnnotationsHeaderButtonsHtml();
+    if (html.includes('id="vp-focus-btn"')) {
+      html = html.replace(/(<button[^>]*id="vp-focus-btn"[^>]*>[\s\S]*?<\/button>)/i, (_m, p1) => `${p1}\n${annHeaderBtns}`);
+    } else {
+      html = html.replace(/(<button[^>]*id="vp-translate-btn"[^>]*>[\s\S]*?<\/button>)/i, (_m, p1) => `${p1}\n${annHeaderBtns}`);
+    }
+  }
+  if (!html.includes('id="vp-reading-layout-btn"')) {
+    const layoutBtnHtml = buildReaderLayoutHeaderButtonHtml();
+    if (html.includes('id="vp-annotations-btn"')) {
+      html = html.replace(/(<button[^>]*id="vp-annotations-btn"[^>]*>[\s\S]*?<\/button>)/i, (_m, p1) => `${p1}\n${layoutBtnHtml}`);
+    } else if (html.includes('id="vp-focus-btn"')) {
+      html = html.replace(/(<button[^>]*id="vp-focus-btn"[^>]*>[\s\S]*?<\/button>)/i, (_m, p1) => `${p1}\n${layoutBtnHtml}`);
+    }
   }
 
   // 10. 确保侧载栏包含关注点透镜侧载面板
@@ -778,11 +876,18 @@ export function renderReaderPageHtml(
     `;
     html = html.replace(/(<\/aside>)/i, (_m, p1) => `${focusPanelHtml}\n${p1}`);
   }
+  if (!html.includes('data-panel-id="annotations"')) {
+    const annPanelHtml = buildAnnotationsSideloadPanelHtml();
+    html = html.replace(/(<\/aside>)/i, (_m, p1) => `${annPanelHtml}\n${p1}`);
+  }
 
-  // 10.5 净化顶栏：彻底移除单一正文视窗中冗余的全局元素（徽标、主题切换、全站设置、独立工作台、GitHub）
-  html = html.replace(/<a\s+href="\/"\s+class="[^"]*brand-link[^"]*"[^>]*>[\s\S]*?<\/a>/gi, '');
-  html = html.replace(/<a\s+href="\/"\s+class="[^"]*m3-brand-link[^"]*"[^>]*>[\s\S]*?<\/a>/gi, '');
-  html = html.replace(/<a[^>]*id="vp-blank-doc-btn"[^>]*>[\s\S]*?<\/a>/gi, '');
+  // 10.5 净化顶栏：彻底移除单一正文视窗中冗余的全局元素（徽标、导航链接、主题切换、全站设置、独立工作台、GitHub），同时保留左侧目录折叠按钮
+  html = html.replace(/<a\s+href="\/"\s+class="[^"]*(?:m3-brand|vp-brand|brand-link)[^"]*"[^>]*>([\s\S]*?)<\/a>/gi, (_match, inner) => {
+    const toggleMatch = inner.match(/<div class="[^"]*(?:m3-brand-wrapper|vp-brand-wrapper)[^"]*"[^>]*>[\s\S]*?<\/div>|<button[^>]*id="vp-sidebar-toggle-btn"[^>]*>[\s\S]*?<\/button>/i);
+    return toggleMatch ? toggleMatch[0] : '';
+  });
+  html = html.replace(/<nav\s+class="[^"]*(?:m3-nav-links|vp-nav-links)[^"]*"[^>]*>[\s\S]*?<\/nav>/gi, '');
+  html = html.replace(/<div\s+class="[^"]*(?:m3-nav-divider|vp-nav-divider)[^"]*"[^>]*><\/div>/gi, '');
 
   // 11. 联动 AI 书内智能问答 FAB 标题
   html = html.replace(/(<ai-ask[^>]*data-book-title=)"[^"]*"/i, (_m, p1) => `${p1}"${escapeHtmlAttr(manifest.title)}"`);
@@ -792,15 +897,38 @@ export function renderReaderPageHtml(
   html = html.replace(/<[^>]*>网站地图<\/[^>]*>/gi, '');
   html = html.replace(/网站地图/g, '');
 
+  const chapterFootnotes: Record<string, any> = {
+    ...(payload.footnotes || {}),
+  };
+  if (manifest.footnotes) {
+    const fnRefRe = /data-astrolib-footnote="([^"]+)"/gi;
+    let fm: RegExpExecArray | null;
+    while ((fm = fnRefRe.exec(payload.html || '')) !== null) {
+      const noteId = fm[1];
+      if (noteId && manifest.footnotes[noteId] && !chapterFootnotes[noteId]) {
+        chapterFootnotes[noteId] = manifest.footnotes[noteId];
+      }
+    }
+  }
+  const bookStylesLinksHtml = stylesheets
+    .map((s) => `<link rel="stylesheet" href="/collections/${colSlug}/${bookSlug}/${encodeURI(s)}" />`)
+    .join('\n  ');
+  const footnotesJson = JSON.stringify(chapterFootnotes).replace(/<\//g, '<\\/');
+  const footnotesScriptHtml = `<script id="__book_footnotes__" type="application/json">${footnotesJson}</script>`;
+
   // 13. 注入全局设置持久化、交叉引用链接器、全局瞬时搜索与 WikiNotice 交互客户端脚本
   const headInjection = `
+  ${bookStylesLinksHtml}
   <style id="astrolib-wiki-notice-styles">
-    /* 彻底隐藏单一正文视窗中冗余的全局控制区（徽标、独立工作台、工具与设置、主题开关、GitHub） */
+    /* 彻底隐藏单一正文视窗中冗余的全局控制区（徽标、导航链接、独立工作台、工具与设置、主题开关、GitHub） */
     .m3-brand-link, .vp-brand-link,
-    #vp-blank-doc-btn, .vp-blank-doc-btn,
-    #vp-tools-wrapper, .vp-tools-wrapper,
+    .m3-brand__logo-wrap, .vp-logo-wrap,
+    .m3-brand__title, .vp-site-name,
+    .m3-nav-links, .vp-nav-links,
+    .m3-nav-divider, .vp-nav-divider,
     .vp-header-theme-group,
-    .vp-social-group { display: none !important; }
+    .vp-social-group,
+    #m3-hamburger-btn, .m3-hamburger, .vp-hamburger { display: none !important; }
     .astrolib-notice-framework { max-width: 62rem; width: 100%; margin: 0 auto 1.15rem auto; box-sizing: border-box; display: flex; flex-direction: column; }
     .astrolib-notice-card.astrolib-notice-wiki { position: relative; display: flex; flex-direction: column; align-items: stretch; background-color: var(--md-sys-color-surface-container-low, #f9f9fb); border: 1px solid var(--md-sys-color-outline-variant, rgba(0, 0, 0, 0.08)); border-left: 4.5px solid #ea580c; border-top-right-radius: 8px; border-bottom-right-radius: 8px; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02); margin-bottom: 0.65rem; transition: background-color 0.2s ease, border-color 0.2s ease; overflow: hidden; }
     [data-theme='dark'] .astrolib-notice-card.astrolib-notice-wiki { background-color: var(--md-sys-color-surface-container, #1e1f20); border-color: rgba(255, 255, 255, 0.1); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25); }
@@ -824,18 +952,21 @@ export function renderReaderPageHtml(
     .wiki-list-item { display: flex; align-items: baseline; gap: 0.45rem; font-size: 0.8rem; line-height: 1.45; color: var(--md-sys-color-on-surface-variant, #444746); }
     [data-theme='dark'] .wiki-list-item { color: #c4c7c5; }
     .fill-in-blank { display: inline-block; min-width: 4em; border-bottom: 1.5px solid currentColor; margin: 0 0.35em; text-align: center; vertical-align: baseline; }
-    /* 研读视窗运行于桌面多Fragment框架内，系统三键位于桌面主框架顶栏，正文视窗右侧不预留 140px，避免分屏错位 */
+    /* 研读视窗运行于桌面多Fragment框架内，系统三键位于桌面主框架顶栏，正文视窗右侧不预留 140px，且顶栏全宽贴边消除左右大边距 */
+    html.is-electron-app .m3-app-bar__container, html.is-electron .m3-app-bar__container, html.is-electron-app .vp-nav-container, html.is-electron .vp-nav-container { max-width: 100% !important; width: 100% !important; padding-left: 0.75rem !important; padding-right: 0.75rem !important; }
     html.is-electron-app .m3-right-group, html.is-electron .m3-right-group, html.is-electron-app .m3-app-bar__actions, html.is-electron .m3-app-bar__actions, html.is-electron-app .vp-right-group, html.is-electron .vp-right-group, html.is-electron-app .vp-nav-actions, html.is-electron .vp-nav-actions { padding-right: 0.25rem !important; }
     html[data-sideload-active='focus'] .sideload-panel-view[data-panel-id='focus'],
     .custom-page-sidebar.has-focus-active .sideload-panel-view[data-panel-id='focus'] { display: flex !important; }
 
-    /* 左侧书目与大纲完整对齐 Web 端规约并提供舒适物理边距 (Issue 3) */
+    /* 左侧书目与大纲完整对齐 Web 端规约并提供舒适物理边距与顶部呼吸空隙 (Issue 3) */
     html.is-electron, html.is-electron-app {
-      --sl-sidebar-width: 19rem !important;
+      --sl-sidebar-width: 19rem;
     }
     #starlight__sidebar, .sidebar-pane, .sidebar-content, sl-sidebar-state-persist {
+      padding-top: 0.85rem !important;
       padding-left: 0.75rem !important;
       padding-right: 0.5rem !important;
+      padding-bottom: 2rem !important;
       box-sizing: border-box !important;
       margin-left: 0 !important;
       width: var(--sl-sidebar-width, 19rem) !important;
@@ -872,49 +1003,24 @@ export function renderReaderPageHtml(
     .gdocs-outline-link[aria-current='page'], .gdocs-outline-link.is-active { font-weight: 600; color: var(--sl-color-text-invert, #131316) !important; background-color: var(--sl-color-text-accent, #6366f1) !important; border-radius: 9999px; }
     .gdocs-link-text { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-    /* 顶栏折叠大纲浮层规范化间距与阴影 (Issue 4) */
-    .m3-local-nav-items,
-    .vp-local-nav-items {
-      top: calc(var(--sl-nav-height, 3.5rem) + 0.75rem) !important;
-      max-width: 26rem !important;
-      width: min(26rem, 90vw) !important;
-      border-radius: var(--md-shape-corner-large, 16px) !important;
-      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.4), 0 0 0 1px var(--sl-color-hairline, rgba(255, 255, 255, 0.12)) !important;
-      background-color: var(--sl-color-bg-sidebar, #1e1f20) !important;
-      padding: 0 !important;
-      overflow: hidden !important;
-    }
-    .m3-local-nav-header,
-    .vp-local-nav-header {
-      padding: 0.6rem 0.85rem !important;
-      border-bottom: 1px solid var(--sl-color-hairline, rgba(255, 255, 255, 0.08)) !important;
-      display: flex !important;
-      align-items: center !important;
-      justify-content: space-between !important;
-    }
-    .m3-local-nav-outline,
-    .vp-local-nav-outline {
-      padding: 0.75rem 0.85rem 1rem 0.85rem !important;
-      max-height: calc(80vh - var(--sl-nav-height, 3.5rem)) !important;
-      overflow-y: auto !important;
-    }
+    /* 顶栏折叠大纲浮层内边距与列表节奏微调（显隐与定位统一由 custom.css / theme.css 管理） */
     .m3-local-nav-outline .toc-list,
     .vp-local-nav-outline .toc-list {
-      display: flex !important;
-      flex-direction: column !important;
-      gap: 0.25rem !important;
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
     }
     .m3-local-nav-outline .toc-link,
     .vp-local-nav-outline .toc-link {
-      padding: 0.35rem 0.65rem !important;
-      border-radius: 6px !important;
-      line-height: 1.45 !important;
-      font-size: 0.84rem !important;
-      transition: background-color 0.15s ease, color 0.15s ease !important;
+      padding: 0.35rem 0.65rem;
+      border-radius: 6px;
+      line-height: 1.45;
+      font-size: 0.84rem;
+      transition: background-color 0.15s ease, color 0.15s ease;
     }
     .m3-local-nav-outline .toc-link:hover,
     .vp-local-nav-outline .toc-link:hover {
-      background-color: var(--md-sys-color-surface-container-highest, rgba(255, 255, 255, 0.08)) !important;
+      background-color: var(--md-sys-color-surface-container-highest, rgba(255, 255, 255, 0.08));
     }
 
     /* 彻底去除【解】卡片右侧的多余箭头 (Issue 5) */
@@ -968,13 +1074,15 @@ export function renderReaderPageHtml(
       width: 100% !important;
       max-width: 100% !important;
     }
-    html.is-electron .right-sidebar-container,
-    html.is-electron-app .right-sidebar-container,
-    html.is-electron .right-sidebar,
-    html.is-electron-app .right-sidebar {
-      right: 0 !important;
-      margin-right: 0 !important;
-      width: var(--sl-sideload-width, 16.5rem) !important;
+    @media (min-width: 72rem) {
+      html.is-electron .right-sidebar-container,
+      html.is-electron-app .right-sidebar-container,
+      html.is-electron .right-sidebar,
+      html.is-electron-app .right-sidebar {
+        right: 0 !important;
+        margin-right: 0 !important;
+        width: var(--sl-sideload-width, 16.5rem) !important;
+      }
     }
 
     /* 底部上一节/下一节分页卡片 */
@@ -1055,6 +1163,16 @@ export function renderReaderPageHtml(
     .card-ref-flash {
       animation: refFlash 1.6s cubic-bezier(0.2, 0, 0, 1) !important;
     }
+
+    /* 屏幕阅读长章节屏外虚拟化 containment：大幅降低四分屏初始布局与绘制开销 */
+    @media screen {
+      body:not(.cv-export-mode) .astrolib-chapter-content > :nth-child(n+6),
+      body:not(.cv-export-mode) .astrolib-chapter-content .academic-card:nth-of-type(n+3),
+      body:not(.cv-export-mode) .astrolib-chapter-content details.solution-details {
+        content-visibility: auto;
+        contain-intrinsic-size: auto 260px;
+      }
+    }
   </style>
   <script>
     (function initDesktopSync() {
@@ -1065,7 +1183,7 @@ export function renderReaderPageHtml(
         var savedPanel = localStorage.getItem('astrolib_sideload_active_panel');
         if (savedPanel && savedPanel !== 'none') {
           document.documentElement.dataset.sideloadActive = savedPanel;
-          if (savedPanel === 'ai' || savedPanel === 'exercises' || savedPanel === 'translate') {
+          if (savedPanel === 'ai' || savedPanel === 'exercises' || savedPanel === 'translate' || savedPanel === 'annotations') {
             document.documentElement.style.setProperty('--sl-sideload-width', 'clamp(20rem, 28vw, 25.5rem)');
           } else if (savedPanel === 'focus') {
             document.documentElement.style.setProperty('--sl-sideload-width', '22rem');
@@ -1080,14 +1198,24 @@ export function renderReaderPageHtml(
       window.__currentBookTitle = ${JSON.stringify(manifest.title)};
       window.__allBooksCatalog = ${JSON.stringify(searchCatalog)};
       window.__bookCrossRefIndex = null;
+      var __crossRefPromise = null;
 
-      // 异步预热当前图书的跨页引用索引库
-      fetch('/data/cross-ref/' + encodeURIComponent(${JSON.stringify(colSlug)}) + '-' + encodeURIComponent(${JSON.stringify(bookSlug)}) + '.json')
-        .then(function(res) { return res.ok ? res.json() : null; })
-        .then(function(data) {
-          if (data) window.__bookCrossRefIndex = data;
-        })
-        .catch(function() {});
+      // 按需加载当前图书的跨页引用索引库（首次点击交叉引用徽章时才发起请求）
+      function ensureCrossRefIndex() {
+        if (window.__bookCrossRefIndex) {
+          return Promise.resolve(window.__bookCrossRefIndex);
+        }
+        if (!__crossRefPromise) {
+          __crossRefPromise = fetch('/data/cross-ref/' + encodeURIComponent(${JSON.stringify(colSlug)}) + '-' + encodeURIComponent(${JSON.stringify(bookSlug)}) + '.json')
+            .then(function(res) { return res.ok ? res.json() : null; })
+            .then(function(data) {
+              if (data) window.__bookCrossRefIndex = data;
+              return data;
+            })
+            .catch(function() { return null; });
+        }
+        return __crossRefPromise;
+      }
 
       // 2. 桌面端持久化配置代理与双向同步
       var bridge = window.astrolib || window.astrolibDesktop;
@@ -1119,8 +1247,19 @@ export function renderReaderPageHtml(
         } catch(e) {}
       }
 
-      // 3. 客户端交叉引用扫描与交互绑定 (Issue 7)
+      // 3. 客户端交叉引用扫描与交互绑定 (Issue 7，文学排版下跳过学术正则角标)
       function scanAndLinkRefs() {
+        if (!window.__astrolibRefProfileBound) {
+          window.__astrolibRefProfileBound = true;
+          window.addEventListener('astrolib:reading-profile-change', function(ev) {
+            if (ev && ev.detail && ev.detail.readingProfile === 'academic') {
+              scanAndLinkRefs();
+            }
+          });
+        }
+        if (document.documentElement.dataset.readingProfile === 'literary') {
+          return;
+        }
         var content = document.querySelector('.astrolib-chapter-content');
         if (!content || content.__refsLinked) return;
         content.__refsLinked = true;
@@ -1148,7 +1287,20 @@ export function renderReaderPageHtml(
           if (node.nodeType === 1) {
             var el = node;
             var tag = el.tagName ? el.tagName.toLowerCase() : '';
-            if (tag === 'script' || tag === 'style' || tag === 'svg' || tag === 'pre' || tag === 'code' || tag === 'a' || el.classList.contains('katex') || el.classList.contains('interactive-badge')) {
+            if (
+              tag === 'script' ||
+              tag === 'style' ||
+              tag === 'svg' ||
+              tag === 'pre' ||
+              tag === 'code' ||
+              tag === 'a' ||
+              el.classList.contains('katex') ||
+              el.classList.contains('interactive-badge') ||
+              el.classList.contains('academic-algorithm') ||
+              el.classList.contains('astrolib-code-block') ||
+              el.classList.contains('academic-fn-ref') ||
+              el.classList.contains('algorithm-caption')
+            ) {
               return;
             }
             var kids = Array.from(el.childNodes);
@@ -1171,9 +1323,13 @@ export function renderReaderPageHtml(
           document.querySelector('[id*="' + targetId + '"]');
         if (targetEl) {
           setTimeout(function() {
-            targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            targetEl.classList.add('card-ref-flash');
-            setTimeout(function() { targetEl.classList.remove('card-ref-flash'); }, 1800);
+            if (window.__readerViewport && typeof window.__readerViewport.scrollToElement === 'function') {
+              window.__readerViewport.scrollToElement(targetEl, { behavior: 'smooth', block: 'center', flash: true });
+            } else {
+              targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              targetEl.classList.add('card-ref-flash');
+              setTimeout(function() { targetEl.classList.remove('card-ref-flash'); }, 1800);
+            }
           }, 150);
         }
       }
@@ -1199,35 +1355,39 @@ export function renderReaderPageHtml(
           });
 
           if (match) {
-            match.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            match.classList.add('card-ref-flash');
-            setTimeout(function() { match.classList.remove('card-ref-flash'); }, 1800);
+            if (window.__readerViewport && typeof window.__readerViewport.scrollToElement === 'function') {
+              window.__readerViewport.scrollToElement(match, { behavior: 'smooth', block: 'center', flash: true });
+            } else {
+              match.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              match.classList.add('card-ref-flash');
+              setTimeout(function() { match.classList.remove('card-ref-flash'); }, 1800);
+            }
             return;
           }
 
-          // 5.2 从全局跨页引用索引精准定位跳转
-          var idx = window.__bookCrossRefIndex;
-          if (idx) {
-            var candList = idx[queryTargetAlt] || idx[queryTarget] || idx[num];
-            if (candList && candList.length > 0) {
-              var targetUrl = candList[0].url;
-              if (targetUrl) {
-                window.location.href = targetUrl;
-                return;
+          // 5.2 从全局跨页引用索引精准定位跳转（首次点击按需加载索引）
+          ensureCrossRefIndex().then(function(idx) {
+            if (idx) {
+              var candList = idx[queryTargetAlt] || idx[queryTarget] || idx[num];
+              if (candList && candList.length > 0) {
+                var targetUrl = candList[0].url;
+                if (targetUrl) {
+                  window.location.href = targetUrl;
+                  return;
+                }
               }
             }
-          }
-
-          // 5.3 兜底：从全书目录模糊定位
-          if (window.__allBooksCatalog) {
-            var foundCh = window.__allBooksCatalog.find(function(item) {
-              return item.chapterTitle.includes(num);
-            });
-            if (foundCh) {
-              window.location.href = foundCh.url;
-              return;
+            // 5.3 兜底：从当前书目目录模糊定位
+            if (window.__allBooksCatalog) {
+              var foundCh = window.__allBooksCatalog.find(function(item) {
+                return item.chapterTitle.includes(num);
+              });
+              if (foundCh) {
+                window.location.href = foundCh.url;
+              }
             }
-          }
+          });
+          return;
         }
 
         // 关注点透镜触发
@@ -1280,6 +1440,28 @@ export function renderReaderPageHtml(
           return;
         }
 
+        // 代码块一键复制
+        var codeCopyBtn = target.closest('.code-block-copy-btn');
+        if (codeCopyBtn) {
+          e.preventDefault();
+          var blockEl = codeCopyBtn.closest('.astrolib-code-block');
+          var codeEl = blockEl ? blockEl.querySelector('pre code') : null;
+          var codeText = codeEl ? (codeEl.textContent || '') : '';
+          if (codeText && navigator.clipboard) {
+            navigator.clipboard.writeText(codeText).then(function() {
+              var lbl = codeCopyBtn.querySelector('span');
+              var prevText = lbl ? lbl.textContent : '';
+              if (lbl) lbl.textContent = '已复制';
+              codeCopyBtn.classList.add('is-copied');
+              setTimeout(function() {
+                if (lbl) lbl.textContent = prevText || '复制';
+                codeCopyBtn.classList.remove('is-copied');
+              }, 1800);
+            }).catch(function() {});
+          }
+          return;
+        }
+
         // 大纲折叠/展开按钮触发
         var collapseBtn = target.closest('.toc-collapse-btn');
         if (collapseBtn) {
@@ -1303,7 +1485,11 @@ export function renderReaderPageHtml(
             var el = document.getElementById(targetId);
             if (el) {
               e.preventDefault();
-              el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              if (window.__readerViewport && typeof window.__readerViewport.scrollToElement === 'function') {
+                window.__readerViewport.scrollToElement(el, { behavior: 'smooth', block: 'start' });
+              } else {
+                el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              }
               history.replaceState(null, '', href);
             }
           }
@@ -1326,8 +1512,13 @@ export function renderReaderPageHtml(
 
       function onReady() {
         bindNoticeToggles();
-        scanAndLinkRefs();
         checkUrlHashLanding();
+        var runScan = function() { scanAndLinkRefs(); };
+        if (typeof window.requestIdleCallback === 'function') {
+          window.requestIdleCallback(runScan, { timeout: 600 });
+        } else {
+          setTimeout(runScan, 120);
+        }
       }
 
       window.addEventListener('hashchange', checkUrlHashLanding);
@@ -1339,6 +1530,23 @@ export function renderReaderPageHtml(
       }
     })();
   </script>
+  ${footnotesScriptHtml}
+  ${buildReaderLayoutAddonHtml({
+    colSlug,
+    bookSlug,
+    chapterSlug: currentChapterSlug,
+    sourceFormat,
+    defaultProfile,
+    chapterKind,
+    hasStylesheets,
+    hasEmbeddedFonts,
+  })}
+  ${buildReaderAnnotationsAddonHtml({
+    colSlug,
+    bookSlug,
+    chapterSlug: currentChapterSlug,
+    chapterTitle: payload.title,
+  })}
   `;
 
   // 14. 移除失效的禁用属性并注入全局 head 增强脚本
@@ -1390,21 +1598,35 @@ function renderFallbackShellHtml(
     `)
     .join('');
 
+  const sourceFormat = manifest.sourceFormat || 'abp';
+  const defaultProfile = manifest.readingProfile || (sourceFormat === 'epub' ? 'literary' : 'academic');
+  const stylesheets = Array.from(new Set([...(manifest.stylesheets || []), ...(payload.stylesheets || [])]));
+  const bookStylesLinksHtml = stylesheets
+    .map((s) => `<link rel="stylesheet" href="/collections/${manifest.colSlug}/${manifest.slug}/${encodeURI(s)}" />`)
+    .join('\n  ');
+  const sanitizedSimpleHtml = sanitizeAcademicHtml(payload.html || '');
+  const scopedContentHtml =
+    sourceFormat === 'epub'
+      ? `<div class="astrolib-book-scope" data-source-format="epub"><div class="astrolib-epub-html"><div class="astrolib-epub-body">${sanitizedSimpleHtml}</div></div></div>`
+      : `<div class="astrolib-book-scope" data-source-format="${escapeHtmlAttr(sourceFormat)}">${sanitizedSimpleHtml}</div>`;
+
   return `<!DOCTYPE html>
-<html lang="zh-CN" data-site-theme="material-you">
+<html lang="zh-CN" data-site-theme="material-you" data-source-format="${escapeHtmlAttr(sourceFormat)}" data-reading-profile="${escapeHtmlAttr(defaultProfile)}" data-style-mode="harmonized" data-use-book-fonts="true">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>${escapeHtml(payload.title)} · ${escapeHtml(manifest.title)} · AstroLib</title>
   <link rel="icon" type="image/png" href="/favicon.png" />
   <link rel="stylesheet" href="/_astro/theme.css" />
+  ${bookStylesLinksHtml}
 </head>
 <body>
   <div class="abp-layout">
     <aside class="abp-sidebar">${sidebarSectionsHtml}</aside>
     <main class="abp-main-content">
+      ${payload.chapterIntro ? `<section class="academic-chapter-intro" data-intro-slug="${escapeHtmlAttr(payload.chapterIntro.slug)}"><div class="chapter-intro-label">${renderTitleHtml(payload.chapterIntro.title)}</div><div class="chapter-intro-body">${sanitizeAcademicHtml(payload.chapterIntro.html || '')}</div></section>` : ''}
       <h1 class="abp-chapter-title">${renderTitleHtml(payload.title)}</h1>
-      <article class="astrolib-chapter-content">${payload.html}</article>
+      <article class="astrolib-chapter-content">${scopedContentHtml}</article>
     </main>
     <aside class="abp-toc"><ul>${tocHtml}</ul></aside>
   </div>

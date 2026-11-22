@@ -4,7 +4,7 @@ import path from 'node:path';
 import os from 'node:os';
 import { execSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { stripContentByExtension } from './lib/comment-stripper.mjs';
+import { stripContentForFile } from './lib/comment-stripper.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -108,18 +108,17 @@ function getRepoInfo() {
 
 // 4. 执行私有仓库推送（完整注释版）
 async function pushPrivate(options, repoInfo) {
-  console.log('\n🔒 [1/2] 正在准备推送【私有完整注释版】...');
+  console.log('\n[private-push] [1/2] Preparing full-comment push to private remote...');
   const targetBranch = options.branch || repoInfo.branch;
   const privateRemote = options.privateRemote;
 
   if (!repoInfo.remotes.includes(privateRemote)) {
-    console.warn(`\n⚠️  未检测到私有远程仓库配置: '${privateRemote}'`);
-    console.warn(`   如需使用私有备份功能，请先运行以下命令添加您的私有仓库地址：`);
-    console.warn(`   git remote add ${privateRemote} <您的私有仓库URL>\n`);
+    console.warn(`\n[private-push] Remote '${privateRemote}' is not configured.`);
+    console.warn(`   git remote add ${privateRemote} <private-repo-url>\n`);
     if (options.mode === 'private') {
       process.exit(1);
     }
-    console.log('⏩ 跳过私有推送，继续执行公共仓库推送...');
+    console.log('[private-push] Skipping private remote push; continuing public push...');
     return false;
   }
 
@@ -127,24 +126,24 @@ async function pushPrivate(options, repoInfo) {
   const pushCmd = `push ${privateRemote} ${repoInfo.branch}:${targetBranch}${forceFlag}`;
 
   if (options.dryRun) {
-    console.log(`🔎 [Dry Run] 将执行命令: git ${pushCmd}`);
+    console.log(`[private-push] [Dry Run] Would execute: git ${pushCmd}`);
   } else {
-    console.log(`🚀 正在推送到私有仓库 ${privateRemote}/${targetBranch} ...`);
+    console.log(`[private-push] Pushing full history to ${privateRemote}/${targetBranch}...`);
     runGit(pushCmd, PROJECT_ROOT, { stdio: 'inherit' });
-    console.log(`✅ 私有仓库推送成功（保留全部注释与历史）！`);
+    console.log('[private-push] Private repository push completed.');
   }
   return true;
 }
 
 // 5. 执行公共仓库推送（剥离注释版，基于 Git Worktree 隔离沙箱）
 async function pushClean(options, repoInfo) {
-  console.log('\n🧹 [2/2] 正在准备推送【公共无注释版】...');
+  console.log('\n[clean-push] [2/2] Preparing comment-stripped push to public remote...');
   const targetBranch = options.branch || repoInfo.branch;
   const remote = options.remote || (repoInfo.remotes.includes('origin') ? 'origin' : '');
 
   if (!remote || !repoInfo.remotes.includes(remote)) {
     throw new Error(
-      `未找到可用的公共远程仓库 '${options.remote || 'origin'}'（当前 remotes: ${repoInfo.remotes.join(', ') || '无'}）。请先配置 origin 公开桌面仓，或使用 --remote <name> 显式指定。`
+      `Public remote '${options.remote || 'origin'}' not found (remotes: ${repoInfo.remotes.join(', ') || 'none'}).`
     );
   }
 
@@ -152,21 +151,42 @@ async function pushClean(options, repoInfo) {
   const tempDir = path.join(PROJECT_ROOT, 'node_modules', '.cache', `_git_clean_${Date.now()}`);
   fs.mkdirSync(path.dirname(tempDir), { recursive: true });
 
-  console.log(`📦 创建临时 Worktree 沙箱: ${path.basename(tempDir)}`);
+  console.log(`[clean-push] Creating temporary worktree: ${path.basename(tempDir)}`);
   try {
     // 创建 detached worktree，指向当前 HEAD
     runGit(`worktree add --detach "${tempDir}" HEAD`);
 
-    // 获取沙箱中所有被 Git 追踪的文件
-    const trackedFiles = runGit('ls-files', tempDir)
+    // 获取沙箱中所有被 Git 追踪的文件（禁用路径转义以确保中文路径正确剥离）
+    const trackedFiles = runGit('-c core.quotePath=false ls-files', tempDir)
       .split(/\r?\n/)
       .map(f => f.trim())
       .filter(Boolean);
 
-    // 净化沙箱：移除任何 Agent/Skill 目录、本地 Windows 脚本、构建衍生数据与孤儿文件
-    const bannedPrefixes = ['.agents', '.dsh', '.codex', '.gemini', '.antigravity', '.backups', 'dist-electron', 'release'];
+    // 净化沙箱：移除任何 Agent/Skill 目录、秘钥配置、本地脚本、构建衍生数据与孤儿文件
+    const bannedPrefixes = [
+      '.agents',
+      '.dsh',
+      '.codex',
+      '.gemini',
+      '.antigravity',
+      '.backups',
+      '.venv',
+      '.venv-agent',
+      'dist-electron',
+      'release',
+      'task',
+      'backup',
+      'workspace',
+      'test/data',
+      'test/output',
+    ];
     const bannedExact = new Set([
       'CLAUDE.md',
+      '.mineru.json',
+      '.env',
+      '.env.local',
+      '.env.production',
+      '.env.development',
       'academic-semantic-hierarchy-audit.md',
       'academic-typography-audit.md',
       'performance-baseline.md',
@@ -188,8 +208,10 @@ async function pushClean(options, repoInfo) {
 
     function isBannedFile(relPath) {
       const normalized = relPath.replace(/\\/g, '/');
+      const baseName = path.basename(normalized);
       if (bannedPrefixes.some(p => normalized === p || normalized.startsWith(p + '/'))) return true;
-      if (bannedExact.has(normalized)) return true;
+      if (bannedExact.has(normalized) || bannedExact.has(baseName)) return true;
+      if (baseName.startsWith('.env.') && baseName !== '.env.example') return true;
       if (bannedSubstrings.some(sub => normalized.startsWith(sub) || normalized.includes('/' + sub))) return true;
       if (normalized.endsWith('.cmd') || normalized.endsWith('.bak')) return true;
       if (normalized.startsWith('scripts/_test-') || normalized.startsWith('scripts/rollback_')) return true;
@@ -208,31 +230,46 @@ async function pushClean(options, repoInfo) {
     }
     if (agentCleanedCount > 0) {
       runGit('add -u', tempDir);
-      console.log(`🧹 已从发布沙箱中剔除 ${agentCleanedCount} 个本地配置、衍生数据或历史冗余文件`);
+      console.log(`[clean-push] Excluded ${agentCleanedCount} banned local/secret/derived files from public worktree`);
     }
 
-    console.log(`🔍 正在扫描并剥离代码注释 (共 ${trackedFiles.length} 个被追踪文件)...`);
+    console.log(`[clean-push] Scanning and stripping comments across ${trackedFiles.length} tracked files...`);
     let strippedCount = 0;
     const processExtensions = new Set([
-      '.js', '.mjs', '.cjs', '.ts', '.mts', '.cts', '.jsonc',
+      '.js', '.mjs', '.cjs', '.ts', '.mts', '.cts', '.jsx', '.tsx', '.json', '.jsonc',
       '.css', '.scss', '.less',
       '.astro',
       '.md', '.mdx',
       '.py',
       '.yml', '.yaml',
       '.sh', '.bash', '.ps1',
-      '.html', '.svg',
+      '.html', '.xml', '.xhtml', '.svg', '.plist',
+      '.typ', '.tex', '.sty', '.cls',
+      '.toml', '.ini', '.conf', '.cfg', '.env',
+      '.sql', '.bat', '.cmd',
+    ]);
+    const processBasenames = new Set([
+      '.gitignore',
+      '.gitattributes',
+      '.editorconfig',
+      '.dockerignore',
+      '.npmrc',
+      '.prettierignore',
+      '.eslintignore',
+      '.env.example',
     ]);
 
     for (const relPath of trackedFiles) {
+      if (isBannedFile(relPath)) continue;
+      const baseName = path.basename(relPath).toLowerCase();
       const ext = path.extname(relPath).toLowerCase();
-      if (!processExtensions.has(ext)) continue;
+      if (!processExtensions.has(ext) && !processBasenames.has(baseName)) continue;
 
       const fullPath = path.join(tempDir, relPath);
       if (!fs.existsSync(fullPath)) continue;
 
       const original = fs.readFileSync(fullPath, 'utf8');
-      const stripped = stripContentByExtension(original, ext);
+      const stripped = stripContentForFile(original, relPath);
 
       if (original !== stripped) {
         fs.writeFileSync(fullPath, stripped, 'utf8');
@@ -240,19 +277,22 @@ async function pushClean(options, repoInfo) {
       }
     }
 
-    console.log(`✨ 已成功剥离 ${strippedCount} 个文件中的注释！`);
+    console.log(`[clean-push] Stripped comments from ${strippedCount} files`);
 
-    // 运行语法校验 (scan-mdx)
-    console.log('🧪 正在对无注释沙箱执行 MDX 语法健康校验...');
-    try {
+    // 校验剥离后沙箱的关键 JS 入口与 MDX 章节语法健康
+    console.log('[clean-push] Verifying syntax in stripped worktree...');
+    for (const checkTarget of ['bin/astrolib-cli.mjs', 'bin/astrolib-mcp.mjs', 'scripts/pack-book-abp.mjs']) {
+      if (fs.existsSync(path.join(tempDir, checkTarget))) {
+        execSync(`node --check "${checkTarget}"`, { cwd: tempDir, stdio: 'pipe' });
+      }
+    }
+    if (fs.existsSync(path.join(tempDir, 'scripts/scan-mdx.mjs'))) {
       execSync('node scripts/scan-mdx.mjs content-sources/collections/math/math_analysis', {
         cwd: tempDir,
         stdio: 'ignore',
       });
-      console.log('✅ MDX 语法校验通过！');
-    } catch {
-      console.warn('⚠️  快速语法抽检跳过或提示警告');
     }
+    console.log('[clean-push] Stripped worktree syntax and MDX checks passed');
 
     // 检查沙箱是否有修改
     const status = runGit('status --porcelain', tempDir).trim();
@@ -264,9 +304,9 @@ async function pushClean(options, repoInfo) {
       const cleanCommitMsg = `release(distribution): strip code annotations for public repository${isSkipCi ? ' [skip ci]' : ''}`;
       runGit(`commit -m "${cleanCommitMsg.replace(/"/g, '\\"')}"`, tempDir);
       strippedCommit = runGit('rev-parse HEAD', tempDir).trim();
-      console.log(`📝 生成纯净无注释提交: ${strippedCommit.slice(0, 8)}`);
+      console.log(`[clean-push] Created clean commit ${strippedCommit.slice(0, 8)}`);
     } else {
-      console.log(`ℹ️  未产生注释差异，直接使用当前提交: ${strippedCommit.slice(0, 8)}`);
+      console.log(`[clean-push] No comment diffs; using current commit ${strippedCommit.slice(0, 8)}`);
     }
 
     // 推送到远程公共仓库（纯净镜像分支需 --force 覆盖发布）
@@ -274,17 +314,17 @@ async function pushClean(options, repoInfo) {
     const pushCmd = `push ${remote} ${strippedCommit}:refs/heads/${targetBranch}${forceFlag}`;
 
     if (options.dryRun) {
-      console.log(`🔎 [Dry Run] 将执行命令: git ${pushCmd}`);
-      console.log(`🔎 [Dry Run] 演练成功，未真正推送到远程。`);
+      console.log(`[clean-push] [Dry Run] Would execute: git ${pushCmd}`);
+      console.log(`[clean-push] [Dry Run] Verification succeeded without pushing.`);
     } else {
-      console.log(`🚀 正在推送无注释版本到公共仓库 ${remote}/${targetBranch} ...`);
+      console.log(`[clean-push] Pushing comment-stripped snapshot to ${remote}/${targetBranch}...`);
       runGit(pushCmd, tempDir, { stdio: 'inherit' });
-      console.log(`🎉 公共仓库推送成功（已完全剥离注释，Agent读取零干扰）！`);
+      console.log(`[clean-push] Public repository push completed.`);
     }
   } finally {
     // 清理 Worktree
     try {
-      console.log('🧹 正在清理临时 Worktree 沙箱...');
+      console.log('[clean-push] Cleaning up temporary worktree...');
       runGit(`worktree remove --force "${tempDir}"`, PROJECT_ROOT);
       runGit('worktree prune', PROJECT_ROOT);
       if (fs.existsSync(tempDir)) {
@@ -305,7 +345,7 @@ async function main() {
   }
 
   const repoInfo = getRepoInfo();
-  console.log(`📌 当前分支: ${repoInfo.branch} | 提交: ${repoInfo.commit.slice(0, 8)}`);
+  console.log(`[clean-push] Branch: ${repoInfo.branch} | Commit: ${repoInfo.commit.slice(0, 8)}`);
 
   if (options.mode === 'private') {
     await pushPrivate(options, repoInfo);
@@ -316,10 +356,10 @@ async function main() {
     await pushClean(options, repoInfo);
   }
 
-  console.log('\n💯 全部操作完成！本地工作区与全部注释完好保留。\n');
+  console.log('\n[clean-push] All operations complete; local workspace comments preserved.\n');
 }
 
 main().catch(err => {
-  console.error('\n❌ 推送执行失败:', err.message);
+  console.error('\n[clean-push] Push failed:', err.message);
   process.exit(1);
 });

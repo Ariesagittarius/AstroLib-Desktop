@@ -18,6 +18,8 @@ interface Props {
   currentPath?: string;
   siteTitle?: string;
   showSearch?: boolean;
+  showNavLinks?: boolean;
+  showBrand?: boolean;
   showThemeToggle?: boolean;
   showHubButton?: boolean;
   showGithubLink?: boolean;
@@ -28,6 +30,8 @@ const {
   currentPath = '/',
   siteTitle = 'AstroLib',
   showSearch = true,
+  showNavLinks = true,
+  showBrand = true,
   showThemeToggle = true,
   showHubButton = true,
   showGithubLink = true,
@@ -38,24 +42,26 @@ const {
 <header class:list={['m3-app-bar', 'vp-nav', className]} id="m3-main-app-bar">
   <div class="m3-app-bar__container vp-nav-container">
     <!-- Brand Logo & Title -->
-    <a href="/" class="m3-brand vp-brand" aria-label={`${siteTitle} 首页`}>
-      <div class="m3-brand__logo-wrap vp-logo-wrap" aria-hidden="true">
-        <img src="/astrolib-logo.webp" class="m3-brand__logo vp-logo-img" alt={`${siteTitle} 徽标`} width="31" height="24" />
-      </div>
-      <div class="m3-brand__text-wrap vp-brand-text">
-        <span class="m3-brand__title vp-site-name">{siteTitle}</span>
-        <slot name="brand-extra" />
-      </div>
-    </a>
+    {showBrand && (
+      <a href="/" class="m3-brand vp-brand" aria-label={`${siteTitle} 首页`}>
+        <div class="m3-brand__logo-wrap vp-logo-wrap" aria-hidden="true">
+          <img src="/astrolib-logo.webp" class="m3-brand__logo vp-logo-img" alt={`${siteTitle} 徽标`} width="31" height="24" />
+        </div>
+        <div class="m3-brand__text-wrap vp-brand-text">
+          <span class="m3-brand__title vp-site-name">{siteTitle}</span>
+          <slot name="brand-extra" />
+        </div>
+      </a>
+    )}
 
     <!-- Quick Search Trigger (Chrome Omnibox Pill Style) -->
     {showSearch && (
       <div class="m3-search-pill vp-search-wrap">
         <slot name="search">
-          <a href="/library/?focus=search" class="m3-omnibox-trigger vp-nav-search-btn" title="检索书目 (快捷键 / 或 ⌘K)">
+          <a href="/desktop/" class="m3-omnibox-trigger vp-nav-search-btn" title="检索书目 (快捷键 / 或 Ctrl+K)">
             <M3Icon name="search" size={18} class="m3-search-icon" />
             <span class="m3-search-placeholder">Search / 检索书目...</span>
-            <kbd class="m3-search-kbd">⌘K</kbd>
+            <kbd class="m3-search-kbd">Ctrl+K</kbd>
           </a>
         </slot>
       </div>
@@ -64,19 +70,16 @@ const {
     <!-- Navigation Actions Group -->
     <div class="m3-app-bar__actions vp-nav-actions">
       <!-- Desktop Navigation Links -->
-      <nav class="m3-nav-links vp-nav-links" aria-label="主要导航">
-        <slot name="nav-links">
-          <a href="/library/" class:list={['m3-nav-link', 'vp-nav-link', { active: currentPath.startsWith('/library') }]}>
-            书目检索
-          </a>
-          <a href="/dev/" class:list={['m3-nav-link', 'vp-nav-link', { active: currentPath.startsWith('/dev') }]}>
-            开发文档
-          </a>
-        </slot>
-      </nav>
-
-      <!-- Vertical Divider -->
-      <div class="m3-nav-divider vp-nav-divider" aria-hidden="true"></div>
+      {showNavLinks && (
+        <nav class="m3-nav-links vp-nav-links" aria-label="主要导航">
+          <slot name="nav-links">
+            <a href="/desktop/" class:list={['m3-nav-link', 'vp-nav-link', { active: currentPath.startsWith('/desktop') }]}>
+              桌面工作台
+            </a>
+          </slot>
+        </nav>
+        <div class="m3-nav-divider vp-nav-divider" aria-hidden="true"></div>
+      )}
 
       <!-- Action Slots / Extra Controls -->
       <slot name="actions" />
@@ -154,8 +157,7 @@ const {
   <div class="m3-mobile-drawer vp-mobile-menu" id="m3-mobile-drawer">
     <div class="m3-mobile-links vp-mobile-links">
       <slot name="mobile-links">
-        <a href="/library/" class="m3-mobile-link vp-mobile-link">书目检索与分类</a>
-        <a href="/dev/" class="m3-mobile-link vp-mobile-link">项目开发文档</a>
+        <a href="/desktop/" class="m3-mobile-link vp-mobile-link">桌面工作台</a>
         <a href="https://github.com/Ariesagittarius/AstroLib" target="_blank" rel="noopener noreferrer" class="m3-mobile-link vp-mobile-link">GitHub 仓库</a>
       </slot>
     </div>
@@ -179,14 +181,14 @@ const {
       });
     }
 
-    // 2. Hub button secondary window trigger
+    // 2. Hub button overlay trigger
     const hubBtn = document.getElementById('m3-hub-btn') || document.getElementById('vp-nav-hub-btn');
     if (hubBtn) {
       hubBtn.addEventListener('click', () => {
-        if ((window as any).electronAPI?.openHubWindow) {
-          (window as any).electronAPI.openHubWindow();
+        if ((window as any).astrolib?.openHubWindow) {
+          (window as any).astrolib.openHubWindow();
         } else {
-          window.location.href = '/hub/';
+          window.dispatchEvent(new CustomEvent('astrolib:open-settings-hub'));
         }
       });
     }
@@ -236,7 +238,7 @@ const {
     left: 0;
     right: 0;
     z-index: var(--layer-sticky, 100);
-    height: var(--sl-nav-height, 3rem);
+    height: var(--sl-nav-height, 2.5rem);
     background-color: var(--md-sys-color-surface, #ffffff);
     border-bottom: 1px solid var(--md-sys-color-outline-variant, #e0e3e7);
     transition: border-color 0.2s ease, background-color 0.2s ease;
@@ -248,10 +250,11 @@ const {
   }
 
   .m3-app-bar__container {
-    max-width: 1376px;
+    max-width: 100%;
+    width: 100%;
     height: 100%;
     margin: 0 auto;
-    padding: 0 1.25rem;
+    padding: 0 0.85rem;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -315,7 +318,7 @@ const {
     align-items: center;
     gap: 0.5rem;
     width: 100%;
-    height: 2.25rem;
+    height: 1.875rem;
     padding: 0 0.85rem;
     background-color: var(--md-sys-color-surface-container-high, #e8eaed);
     border: 1px solid transparent;

@@ -5,15 +5,10 @@
 import EditLink from 'virtual:starlight/components/EditLink';
 import LastUpdated from 'virtual:starlight/components/LastUpdated';
 import Pagination from 'virtual:starlight/components/Pagination';
-import EditorMode from '../features/mdx-editor/ui/EditorMode.astro';
-import ModuleInspector from './ModuleInspector.astro';
 import AIAsk from './AIAsk.astro';
-import BookRelationGraph from './BookRelationGraph.astro';
-import FeedbackMode from './FeedbackMode.astro';
 import ExerciseModal from './exercises/ExerciseModal.astro';
 import ChapterExportModal from './publishing/ChapterExportModal.astro';
 import { features } from '../config/features.config.ts';
-const isDev = import.meta.env.DEV;
 ---
 
 <footer class="sl-flex">
@@ -26,15 +21,7 @@ const isDev = import.meta.env.DEV;
   <Pagination />
 </footer>
 
-{isDev && features.editor.enabled && <EditorMode />}
-
-{features.feedback?.enabled && <FeedbackMode />}
-
-{features.inspector.enabled && <ModuleInspector />}
-
 {features.aiAsk.enabled && <AIAsk />}
-
-{features.relationGraph.enabled && <BookRelationGraph />}
 
 {features.exercises?.enabled && <ExerciseModal />}
 

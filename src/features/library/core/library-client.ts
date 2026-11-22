@@ -32,10 +32,12 @@ export interface OfficialCatalog {
 
 export interface ILibraryClient {
   isElectron(): boolean;
-  getEntities(): Promise<UnifiedReadingEntity[]>;
+  getEntities(forceRefresh?: boolean): Promise<UnifiedReadingEntity[]>;
   getShelves(): Promise<LibraryShelf[]>;
   createShelf(name: string): Promise<LibraryShelf>;
   installAbp(buffer: ArrayBuffer): Promise<void>;
+  installBookFile(fileName: string, buffer: ArrayBuffer): Promise<void>;
+  deletePaperTask(taskId: string): Promise<void>;
   fetchOfficialCatalog(): Promise<OfficialCatalog>;
   getInstalledBooks(): Promise<any[]>;
   installOfficialBook(entry: OfficialCatalogBook): Promise<void>;
@@ -53,10 +55,10 @@ export class LibraryClient implements ILibraryClient {
     return Boolean(this.getBridge());
   }
 
-  public async getEntities(): Promise<UnifiedReadingEntity[]> {
+  public async getEntities(forceRefresh = false): Promise<UnifiedReadingEntity[]> {
     const bridge = this.getBridge();
     if (bridge && typeof bridge.getLibraryEntities === 'function') {
-      return bridge.getLibraryEntities();
+      return bridge.getLibraryEntities(forceRefresh);
     }
     const res = await fetch('/api/library/entities');
     if (!res.ok) {
@@ -109,16 +111,58 @@ export class LibraryClient implements ILibraryClient {
       await bridge.installBookFromAbp(buffer);
       return;
     }
+    if (bridge && typeof bridge.installBookFromFile === 'function') {
+      await bridge.installBookFromFile('book.abp', buffer);
+      return;
+    }
     const res = await fetch('/api/library/upload-abp', {
       method: 'POST',
       body: buffer,
     });
     if (!res.ok) {
-      throw new Error(`HTTP ${res.status}: Failed to upload ABP package`);
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.error || `HTTP ${res.status}: Failed to upload ABP package`);
     }
     const data = await res.json();
     if (!data.success) {
       throw new Error(data.error || 'Failed to install ABP package');
+    }
+  }
+
+  public async installBookFile(fileName: string, buffer: ArrayBuffer): Promise<void> {
+    const safeName = (fileName || 'book.abp').trim();
+    if (safeName.toLowerCase().endsWith('.abp')) {
+      return this.installAbp(buffer);
+    }
+    const bridge = this.getBridge();
+    if (bridge && typeof bridge.installBookFromFile === 'function') {
+      await bridge.installBookFromFile(safeName, buffer);
+      return;
+    }
+    const res = await fetch('/api/library/upload-book', {
+      method: 'POST',
+      headers: {
+        'x-file-name': encodeURIComponent(safeName),
+      },
+      body: buffer,
+    });
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.error || `HTTP ${res.status}: 上传书籍文件失败`);
+    }
+    const data = await res.json();
+    if (!data.success) {
+      throw new Error(data.error || '安装书籍文件失败');
+    }
+  }
+
+  public async deletePaperTask(taskId: string): Promise<void> {
+    const res = await fetch(`/api/ingest/task?taskId=${encodeURIComponent(taskId)}`, {
+      method: 'DELETE',
+    });
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.error || `HTTP ${res.status}: 删除文献失败`);
     }
   }
 

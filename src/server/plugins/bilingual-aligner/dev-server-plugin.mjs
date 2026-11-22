@@ -6,15 +6,13 @@
  */
 
 import { BilingualOnnxEngine } from './onnx-engine.ts';
+import { QwenEngine } from './qwen-engine.ts';
 
 const BILINGUAL_PATH_PREFIX = '/__bilingual__';
 
 function sendJson(res, statusCode, data) {
   res.writeHead(statusCode, {
     'Content-Type': 'application/json; charset=utf-8',
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-    'Access-Control-Allow-Headers': '*',
     'Cache-Control': 'no-cache, no-store, must-revalidate',
   });
   res.end(JSON.stringify(data));
@@ -40,13 +38,9 @@ export function bilingualDevServerPlugin() {
           return next();
         }
 
-        // 1. CORS 预检
         if (req.method === 'OPTIONS') {
           res.writeHead(204, {
-            'Access-Control-Allow-Origin': '*',
-            'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-            'Access-Control-Allow-Headers': '*',
-            'Access-Control-Max-Age': '86400',
+            'Cache-Control': 'no-store',
           });
           return res.end();
         }
@@ -57,12 +51,27 @@ export function bilingualDevServerPlugin() {
           // 2. 健康探活 /__bilingual__/health
           if (req.method === 'GET' && path === `${BILINGUAL_PATH_PREFIX}/health`) {
             const engine = BilingualOnnxEngine.getInstance();
+            const qwenEngine = QwenEngine.getInstance();
             const models = await engine.getAvailableModels();
             return sendJson(res, 200, {
               status: 'ok',
               engine: 'onnxruntime-node',
               models,
+              runtime: [engine.getRuntimeInfo(), qwenEngine.getRuntimeInfo()],
               timestamp: Date.now(),
+            });
+          }
+
+          // 2.0 手动释放双语对齐模型（Qwen3 + MiniLM）/__bilingual__/unload
+          if (req.method === 'POST' && path === `${BILINGUAL_PATH_PREFIX}/unload`) {
+            QwenEngine.getInstance().destroy();
+            await BilingualOnnxEngine.getInstance().dispose();
+            return sendJson(res, 200, {
+              ok: true,
+              runtime: [
+                BilingualOnnxEngine.getInstance().getRuntimeInfo(),
+                QwenEngine.getInstance().getRuntimeInfo(),
+              ],
             });
           }
 

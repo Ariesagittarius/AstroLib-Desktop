@@ -152,16 +152,14 @@ export class EnvDetector {
       candidateSet.add(process.env.PYTHON_PATH);
     }
 
-    // 2. 本项目及常用工作区虚拟环境 (绝对与相对路径)
+    // 2. 本项目及常见虚拟环境 (基于 projectRoot 与用户目录相对探测)
     const localCandidates = [
       path.join(projectRoot, '.venv', pyExe),
-      path.resolve(projectRoot, '..', 'practice', '.venv', pyExe),
-      'D:\\Antigravity\\project\\practice\\.venv\\Scripts\\python.exe',
-      'D:\\Antigravity\\project\\AstroLib\\.venv\\Scripts\\python.exe',
-      isWin ? 'C:\\Program Files\\PyManager\\python.exe' : null,
-      isWin ? path.join(os.homedir(), 'AppData\\Local\\Programs\\Python\\Python312\\python.exe') : null,
-      isWin ? path.join(os.homedir(), 'AppData\\Local\\Programs\\Python\\Python311\\python.exe') : null,
-      isWin ? path.join(os.homedir(), 'AppData\\Local\\Programs\\Python\\Python310\\python.exe') : null,
+      path.join(projectRoot, '.venv-agent', pyExe),
+      path.resolve(projectRoot, '..', '.venv', pyExe),
+      isWin ? path.join(os.homedir(), 'AppData', 'Local', 'Programs', 'Python', 'Python312', 'python.exe') : null,
+      isWin ? path.join(os.homedir(), 'AppData', 'Local', 'Programs', 'Python', 'Python311', 'python.exe') : null,
+      isWin ? path.join(os.homedir(), 'AppData', 'Local', 'Programs', 'Python', 'Python310', 'python.exe') : null,
     ];
 
     for (const p of localCandidates) {

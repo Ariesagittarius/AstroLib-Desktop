@@ -116,20 +116,6 @@ const featureDefs: Record<string, FeatureManifest<any>> = {
     config: { refs: 'interactive' },
   }),
 
-  prewarm: defineFeature({
-    id: 'prewarm',
-    cat: 'reader',
-    label: '章节后台预加载',
-    desc: '页面加载后空闲期预先加载相邻章节以实现瞬间换页（默认 1 为前后各 1 页）',
-    enabled: true,
-    devOnly: false,
-    ui: true,
-    config: {
-      defaultPages: 1,
-      sidebarHover: true,
-    },
-  }),
-
   imageBlur: defineFeature({
     id: 'imageBlur',
     cat: 'reader',
@@ -140,37 +126,14 @@ const featureDefs: Record<string, FeatureManifest<any>> = {
     ui: false,
   }),
 
-  relationGraph: defineFeature({
-    id: 'relationGraph',
-    cat: 'extra',
-    label: '章节关系图谱',
-    desc: '全书章节内联引用拓扑图与知识导图（ECharts 可视化）',
-    enabled: true,
-    devOnly: false,
-    ui: true,
-  }),
-
   mermaid: defineFeature({
     id: 'mermaid',
     cat: 'extra',
     label: 'Mermaid 图表',
-    desc: 'MDX 代码块及 `<Mermaid>` 组件渲染 Sequence/Flowchart 流程图',
+    desc: 'MDX 代码块及流程图渲染',
     enabled: true,
     devOnly: false,
     ui: true,
-  }),
-
-  epub: defineFeature({
-    id: 'epub',
-    cat: 'extra',
-    label: 'EPUB 下载',
-    desc: '全书离线 EPUB 下载（支持本地生成与 GitHub Releases 托管）',
-    enabled: true,
-    devOnly: false,
-    ui: true,
-    config: {
-      releaseBaseUrl: 'https://github.com/Ariesagittarius/AstroLib/releases/latest/download',
-    },
   }),
 
   chapterExport: defineFeature({
@@ -188,26 +151,6 @@ const featureDefs: Record<string, FeatureManifest<any>> = {
     cat: 'reader',
     label: 'M3 加载动画风格',
     desc: '在 M3 灵动形变指示器与官方原生圆环 (@material/web) 之间自由切换',
-    enabled: true,
-    devOnly: false,
-    ui: true,
-  }),
-
-  editor: defineFeature({
-    id: 'editor',
-    cat: 'dev',
-    label: '在线精修工具',
-    desc: 'dev 下点渲染页改 MDX 并写回（dev-only）',
-    enabled: true,
-    devOnly: true,
-    ui: false,
-  }),
-
-  inspector: defineFeature({
-    id: 'inspector',
-    cat: 'extra',
-    label: '模块索引与速查',
-    desc: '全书卡片模块索引速查、分类筛选与跨章检索定位（同章冲突与结构审查仅开发期可见）',
     enabled: true,
     devOnly: false,
     ui: true,
@@ -246,16 +189,6 @@ const featureDefs: Record<string, FeatureManifest<any>> = {
       defaultProvider: 'google',
       defaultDisplayMode: 'sidebar',
     },
-  }),
-
-  blankDocument: defineFeature({
-    id: 'blankDocument',
-    cat: 'reader',
-    label: '空白文档与学术工作台',
-    desc: '阅览任意文章时随时打开独立空白文档，自主编辑元数据与正文，具备公式/Mermaid实时渲染、双语助读与PDF导出能力',
-    enabled: true,
-    devOnly: false,
-    ui: true,
   }),
 
   bilingualComparison: defineFeature({
@@ -308,94 +241,17 @@ const featureDefs: Record<string, FeatureManifest<any>> = {
     },
   }),
 
-
-  feedback: defineFeature({
-    id: 'feedback',
-    cat: 'reader',
-    label: '读者勘误反馈',
-    desc: '读者按 Alt+F 或点击按钮选段提交结构化 GitHub 勘误 Issue',
-    enabled: true,
-    devOnly: false,
-    ui: true,
-    config: {
-      githubRepo: 'Ariesagittarius/AstroLib',
-      issueLabels: ['errata', 'community-feedback'],
-      shortcutKey: 'Alt+f',
-      botEndpoint: 'https://astrolib-feedback-bot.2477252192.workers.dev',
-    },
-  }),
-
-  analytics: defineFeature({
-    id: 'analytics',
-    cat: 'extra',
-    label: '用户体验与访问分析',
-    desc: '全站访客洞察、热力图、录屏回放与高价值交互统计（基于 Microsoft Clarity）',
-    enabled: true,
-    devOnly: false,
-    ui: false,
-    config: {
-      provider: 'clarity',
-      clarityProjectId: 'y9on8roaw3',
-      productionOnly: true,
-      filterBots: true,
-      excludePaths: ['/dev/', '/print'],
-      trackHighValueEvents: true,
-    },
-  }),
-
   exercises: defineFeature({
     id: 'exercises',
     cat: 'reader',
     label: '章节习题与真题自测',
-    desc: '章节课后习题与《大邮数学集》（CC协议）历年真题独立交互做题、整卷试卷刷题、AI 社区题解共享与纠错系统',
+    desc: '章节课后习题与《大邮数学集》（CC协议）历年真题独立交互做题、整卷试卷刷题',
     enabled: true,
     devOnly: false,
     ui: true,
     config: {
       defaultMode: 'practice',
       communitySolutions: true,
-      cloudDb: {
-        apiBaseUrl: '/api/exercise',
-        supabaseUrl: '',
-        supabaseAnonKey: '',
-      },
-      devSourceEditor: true,
-    },
-  }),
-
-  seo: defineFeature({
-    id: 'seo',
-    cat: 'extra',
-    label: 'SEO 与搜索引擎优化',
-    desc: 'Web 站专用：自动化 Canonical、Sitemap、结构化数据及 IndexNow（桌面仓默认关闭，归属 AstroLib-Web）',
-    enabled: false,
-    devOnly: false,
-    ui: false,
-    config: {
-      siteUrl: (typeof process !== 'undefined' && process.env?.SITE_URL) || 'https://astrolib.cloud',
-      siteTitle: 'AstroLib',
-      defaultDescription: 'AstroLib 是面向高校师生与自学者的大学理工科教材与学术数字化阅读系统，提供高清数学排版、推导过程、离线 EPUB 与课后真题练习。',
-      googleSiteVerification: (typeof process !== 'undefined' && process.env?.GOOGLE_SITE_VERIFICATION) || '',
-      bingSiteVerification: (typeof process !== 'undefined' && process.env?.BING_SITE_VERIFICATION) || '',
-      indexNowKey: (typeof process !== 'undefined' && process.env?.INDEXNOW_KEY) || '',
-    },
-  }),
-
-  pwa: defineFeature({
-    id: 'pwa',
-    cat: 'extra',
-    label: '独立应用与离线 (PWA)',
-    desc: 'Web 站专用：Service Worker 与离线缓存包（桌面仓默认关闭，归属 AstroLib-Web）',
-    enabled: false,
-    devOnly: false,
-    ui: false,
-    config: {
-      releaseBaseUrl: 'https://github.com/Ariesagittarius/AstroLib/releases/latest/download',
-      packFileName: 'astrolib-offline-pack.json',
-      mirrors: [
-        'https://github.com/Ariesagittarius/AstroLib/releases/latest/download/astrolib-offline-pack.json',
-        'https://fastly.jsdelivr.net/gh/Ariesagittarius/AstroLib-Assets@main/offline-packs/astrolib-offline-pack.json',
-      ],
     },
   }),
 };

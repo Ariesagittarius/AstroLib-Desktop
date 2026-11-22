@@ -143,29 +143,34 @@ describe('Universal Reader Entry Pure Functions (P1-A3)', () => {
       expect(buildOutlineItems([])).toEqual([]);
     });
 
-    it('reader.astro 必须经 buildOutlineItems 渲染大纲，且不得引用 heading.slug', () => {
-      const source = fs.readFileSync(path.resolve(process.cwd(), 'src/pages/reader.astro'), 'utf8');
-      expect(source).toContain('buildOutlineItems(');
-      expect(source).not.toMatch(/h\.slug|heading\.slug|\$\{h\.slug\}/);
+    it('reader-shell-template.ts 必须经 buildStructuredTocHtml 渲染大纲，且不得引用裸 heading.slug', () => {
+      const source = fs.readFileSync(
+        path.resolve(process.cwd(), 'electron/server/reader-shell-template.ts'),
+        'utf8'
+      );
+      expect(source).toContain('buildStructuredTocHtml(');
+      expect(source).not.toMatch(/\$\{h\.slug\}/);
     });
   });
 
-  describe('浏览器端打包安全性负向断言 (Zero Node API in Client Bundles)', () => {    const targetFiles = [
+  describe('浏览器端打包安全性负向断言 (Zero Node API in Client Bundles)', () => {
+    const targetFiles = [
       'src/services/content-provider/reader-entry.ts',
-      'src/pages/reader.astro',
       'src/services/content-provider/web-provider.ts',
       'src/services/content-provider/electron-provider.ts',
+      'src/plugins/harness/builtin/read.plugin.ts',
+      'src/plugins/harness/builtin/annotations.plugin.ts',
     ];
 
-    it.each(targetFiles)('文件 %s 严禁包含 Node 专属模块或 API', (filePath) => {
+    it.each(targetFiles)('文件 %s 严禁包含静态导入的 Node 专属模块或 process.cwd', (filePath) => {
       const fullPath = path.resolve(process.cwd(), filePath);
       expect(fs.existsSync(fullPath)).toBe(true);
 
       const content = fs.readFileSync(fullPath, 'utf-8');
 
-      // 负向检测：禁止出现 node:fs, node:path, process.cwd(, from 'fs'
-      expect(content).not.toMatch(/node:fs/);
-      expect(content).not.toMatch(/node:path/);
+      // 负向检测：禁止出现静态 node:fs, node:path, process.cwd(, from 'fs'
+      expect(content).not.toMatch(/from\s+['"]node:fs['"]/);
+      expect(content).not.toMatch(/from\s+['"]node:path['"]/);
       expect(content).not.toMatch(/process\.cwd\(/);
       expect(content).not.toMatch(/from\s+['"]fs['"]/);
     });

@@ -16,6 +16,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { renderReaderPageHtml } from './reader-shell-template.ts';
+import { renderCanvasWorkspaceHtml } from './canvas-workspace-template.ts';
 import { resolveAbpArtifactsDir } from '../../src/core/catalog/content-paths.ts';
 import type { AstroBookManifest, AstroBookSection } from '../../src/types/content-package.ts';
 
@@ -246,6 +247,19 @@ function renderAcademic404Html(
       </a>
     </div>
   </div>
+  <script>
+    if (typeof window !== 'undefined' && window.parent && window.parent !== window) {
+      try {
+        window.parent.postMessage({
+          type: 'astrolib:chapter-not-found',
+          colSlug: ${JSON.stringify(safeCol)},
+          bookSlug: ${JSON.stringify(safeBook)},
+          chapterSlug: ${JSON.stringify(safeChap)},
+          reason: ${JSON.stringify(safeReason)}
+        }, '*');
+      } catch {}
+    }
+  </script>
 </body>
 </html>`;
 }
@@ -255,13 +269,46 @@ export class StaticHandler {
   private userAbpDir?: string;
   private projectRoot?: string;
   private memoryCache = new Map<string, MemoryCacheEntry>();
-  private readonly MAX_CACHE_FILE_SIZE = 5 * 1024 * 1024; // 5 MB 以内的资源全部驻留内存
-  private readonly MAX_CACHE_ENTRIES = 500; // 最多缓存 500 个静态页面与样式资源
+  private inFlightAbp = new Map<string, Promise<string | null>>();
+  private currentCacheBytes = 0;
+  private readonly MAX_CACHE_FILE_SIZE = 4 * 1024 * 1024; // 单文件最大缓存 4 MB
+  private readonly MAX_CACHE_BYTES = 32 * 1024 * 1024; // 内存静态缓存总字节上限 32 MB
 
   constructor(distDir: string, userAbpDir?: string, projectRoot?: string) {
+    this.projectRoot = projectRoot;
     this.distDir = distDir;
     this.userAbpDir = userAbpDir;
-    this.projectRoot = projectRoot;
+  }
+
+  public getMemoryCacheStats(): { entries: number; bytes: number; maxBytes: number } {
+    return {
+      entries: this.memoryCache.size,
+      bytes: this.currentCacheBytes,
+      maxBytes: this.MAX_CACHE_BYTES,
+    };
+  }
+
+  private setMemoryCacheEntry(filePath: string, entry: MemoryCacheEntry): void {
+    const existing = this.memoryCache.get(filePath);
+    if (existing) {
+      this.currentCacheBytes = Math.max(0, this.currentCacheBytes - existing.size);
+      this.memoryCache.delete(filePath);
+    }
+
+    while (this.currentCacheBytes + entry.size > this.MAX_CACHE_BYTES && this.memoryCache.size > 0) {
+      const oldestKey = this.memoryCache.keys().next().value;
+      if (!oldestKey) break;
+      const oldest = this.memoryCache.get(oldestKey);
+      this.memoryCache.delete(oldestKey);
+      if (oldest) {
+        this.currentCacheBytes = Math.max(0, this.currentCacheBytes - oldest.size);
+      }
+    }
+
+    if (entry.size <= this.MAX_CACHE_BYTES) {
+      this.memoryCache.set(filePath, entry);
+      this.currentCacheBytes += entry.size;
+    }
   }
 
   /**
@@ -289,10 +336,132 @@ export class StaticHandler {
       return true;
     }
 
-    // 0. 特别处理 /collections/ 章节与书本根路由（排除静态配图资产）
+    // 0.0 防御性兼容：若收到 /astrolib:/* 或 /astrolib://* 的请求，严格校验片段后重定向至 /collections/ 路由
+    const astrolibPathMatch = safePath.match(/^\/?astrolib:\/{1,3}([^\/]+)\/([^\/]+)(?:\/(.+?))?\/?$/i);
+    if (astrolibPathMatch) {
+      const col = astrolibPathMatch[1];
+      const book = astrolibPathMatch[2];
+      const chapRaw = astrolibPathMatch[3] ? astrolibPathMatch[3].replace(/\/+$/, '') : '';
+      const isSafeSeg = (s: string) =>
+        Boolean(s) && !s.includes('..') && !s.includes('\\') && !/[<>'"`:]/.test(s);
+      const isChapSafe =
+        !chapRaw || chapRaw.split('/').every((seg) => Boolean(seg) && seg !== '.' && isSafeSeg(seg));
+      if (!isSafeSeg(col) || !isSafeSeg(book) || !isChapSafe) {
+        res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
+        res.end('Invalid astrolib redirect path');
+        return true;
+      }
+      const chap = chapRaw ? `${chapRaw}/` : '';
+      const redirectUrl = `/collections/${col}/${book}/${chap}`;
+      const encodedTarget = encodeURI(redirectUrl);
+      const escapedTarget = escapeHtml(encodedTarget);
+      res.writeHead(302, {
+        Location: encodedTarget,
+        'Content-Type': 'text/html; charset=utf-8',
+      });
+      res.end(
+        `<!DOCTYPE html><html><head><meta http-equiv="refresh" content="0;url=${escapedTarget}"></head><body>Redirecting to <a href="${escapedTarget}">${escapeHtml(redirectUrl)}</a></body></html>`
+      );
+      return true;
+    }
+
+    // 0.0b 防御性兼容：若收到 /workspace 或 /workspace/ 或 /workspace/ingest 请求，规范 302 重定向至 /workspace/ingest/，杜绝 404
+    if (safePath === '/workspace' || safePath === '/workspace/' || safePath === '/workspace/ingest') {
+      const redirectUrl = '/workspace/ingest/';
+      res.writeHead(302, {
+        Location: redirectUrl,
+        'Content-Type': 'text/html; charset=utf-8',
+      });
+      res.end(`<!DOCTYPE html><html><head><meta http-equiv="refresh" content="0;url=${redirectUrl}"></head><body>Redirecting to <a href="${redirectUrl}">${redirectUrl}</a></body></html>`);
+      return true;
+    }
+
+    // 0.0c 章节自由画布工作台动态合成 (/workspace/canvas/?col=...&book=...&chapter=...)
+    if (safePath === '/workspace/canvas' || safePath === '/workspace/canvas/') {
+      const parsedQuery = new URL(rawUrl, 'http://127.0.0.1').searchParams;
+      const colSlug = parsedQuery.get('col') || 'math';
+      const bookSlug = parsedQuery.get('book') || 'math_analysis';
+      const chapterSlug = parsedQuery.get('chapter') || '01_内容简介';
+      const bookTitle = parsedQuery.get('bookTitle') || bookSlug;
+      const chapterTitle = parsedQuery.get('chapterTitle') || chapterSlug;
+      const exportMode = parsedQuery.get('exportMode') || '';
+
+      const html = renderCanvasWorkspaceHtml({
+        colSlug,
+        bookSlug,
+        chapterSlug,
+        bookTitle,
+        chapterTitle,
+        exportMode,
+      });
+      const buf = Buffer.from(html, 'utf8');
+      res.writeHead(200, {
+        'Content-Type': 'text/html; charset=utf-8',
+        'Content-Length': buf.byteLength,
+        'Cache-Control': 'no-cache, must-revalidate',
+      });
+      if (req.method === 'HEAD') {
+        res.end();
+        return true;
+      }
+      res.end(buf);
+      return true;
+    }
+
+    // 0.0d 动态合成 /abp-packs/catalog.json (打包桌面端无预置 artifacts 时，自动聚合 userAbpDir 已安装书目供 Ctrl+K 搜索使用)
+    if (safePath === '/abp-packs/catalog.json') {
+      const diskCatalog = this.resolveFilePath(safePath);
+      if (diskCatalog && fs.existsSync(diskCatalog)) {
+        return await this.serveFile(req, res, diskCatalog, pathname);
+      }
+      const booksMap = new Map<string, { id: string; colSlug: string; slug: string; title: string }>();
+      for (const baseDir of [this.userAbpDir, this.projectRoot ? resolveAbpArtifactsDir(this.projectRoot) : '']) {
+        if (!baseDir || !fs.existsSync(baseDir)) continue;
+        try {
+          for (const entry of fs.readdirSync(baseDir, { withFileTypes: true })) {
+            if (!entry.isDirectory()) continue;
+            const manifestPath = path.join(baseDir, entry.name, 'manifest.json');
+            if (!fs.existsSync(manifestPath)) continue;
+            try {
+              const m = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+              if (m?.colSlug && m?.slug && !booksMap.has(`${m.colSlug}-${m.slug}`)) {
+                booksMap.set(`${m.colSlug}-${m.slug}`, {
+                  id: m.id || `${m.colSlug}-${m.slug}`,
+                  colSlug: m.colSlug,
+                  slug: m.slug,
+                  title: m.title || m.slug,
+                });
+              }
+            } catch {}
+          }
+        } catch {}
+      }
+      const payload = JSON.stringify({
+        generatedAt: new Date().toISOString(),
+        totalBooks: booksMap.size,
+        books: Array.from(booksMap.values()),
+      });
+      const buf = Buffer.from(payload, 'utf8');
+      res.writeHead(200, {
+        'Content-Type': 'application/json; charset=utf-8',
+        'Content-Length': buf.byteLength,
+        'Cache-Control': 'no-cache, must-revalidate',
+      });
+      if (req.method === 'HEAD') {
+        res.end();
+        return true;
+      }
+      res.end(buf);
+      return true;
+    }
+
+    // 0. 特别处理 /collections/ 章节与书本根路由（排除静态配图、内嵌样式、字体等资产）
     // 章节 slug 允许包含多级路径（如 zh-wp/001_books-and-algorithms），以支持官方多卷本目录结构
-    const isImageRequest = safePath.includes('/images/') || /\.(png|jpe?g|gif|svg|webp|ico|woff2?|ttf|otf)$/i.test(safePath);
-    const collectionsMatch = isImageRequest
+    const isStaticBookAsset =
+      safePath.includes('/images/') ||
+      /^\/?collections\/[^/]+\/[^/]+\/(?:assets|styles|fonts|source)\//i.test(safePath) ||
+      /\.(png|jpe?g|gif|svg|webp|ico|woff2?|ttf|otf|css|js|mjs)$/i.test(safePath);
+    const collectionsMatch = isStaticBookAsset
       ? null
       : safePath.match(/^\/?collections\/([^/]+)\/([^/]+)(?:\/(.+?))?\/?$/);
     if (collectionsMatch) {
@@ -341,35 +510,36 @@ export class StaticHandler {
     pathname: string
   ): Promise<boolean> {
     const candidateDirs = this.getBookCandidateDirs(colSlug, bookSlug);
-    let abpDir: string | null = null;
-    let manifestFile: string | null = null;
+    const validCandidates: { dir: string; manifestFile: string; manifest: AstroBookManifest }[] = [];
 
     for (const dir of candidateDirs) {
       const mf = path.join(dir, 'manifest.json');
       if (fs.existsSync(mf)) {
-        abpDir = dir;
-        manifestFile = mf;
-        break;
+        try {
+          const manifest = JSON.parse(await fs.promises.readFile(mf, 'utf8')) as AstroBookManifest;
+          validCandidates.push({ dir, manifestFile: mf, manifest });
+        } catch {}
       }
     }
 
-    if (!abpDir || !manifestFile) {
+    if (validCandidates.length === 0) {
       this.sendAcademic404(req, res, colSlug, bookSlug, rawChapterSlug || '', '书籍未安装或不存在');
       return true;
     }
 
-    let manifest: AstroBookManifest;
-    try {
-      manifest = JSON.parse(await fs.promises.readFile(manifestFile, 'utf8')) as AstroBookManifest;
-    } catch {
-      this.sendAcademic404(req, res, colSlug, bookSlug, rawChapterSlug || '', '书籍清单数据损坏');
-      return true;
-    }
+    // 按 updatedAt 降序排序，使最新构建的内容包版本优先命中
+    validCandidates.sort((a, b) => {
+      const tA = a.manifest.updatedAt ? Date.parse(a.manifest.updatedAt) : 0;
+      const tB = b.manifest.updatedAt ? Date.parse(b.manifest.updatedAt) : 0;
+      return tB - tA;
+    });
+
+    const primaryManifest = validCandidates[0].manifest;
 
     // 1. 若请求未指定章节 (形如 /collections/:col/:book/ 或 /collections/:col/:book)
     // 302 临时重定向至书籍默认入口章节
     if (!rawChapterSlug) {
-      const entryPoint = manifest.entryPoint || 'chapter-01';
+      const entryPoint = primaryManifest.entryPoint || 'chapter-01';
       const redirectUrl = `/collections/${colSlug}/${bookSlug}/${entryPoint}/`;
       res.writeHead(302, {
         Location: encodeURI(redirectUrl),
@@ -383,50 +553,55 @@ export class StaticHandler {
       return true;
     }
 
-    // 2. 第一级检查：Canonical Slug 直接物理命中
-    const defaultChapterUrl = manifest && manifest.entryPoint
-      ? `/collections/${colSlug}/${bookSlug}/${manifest.entryPoint}/`
+    const defaultChapterUrl = primaryManifest && primaryManifest.entryPoint
+      ? `/collections/${colSlug}/${bookSlug}/${primaryManifest.entryPoint}/`
       : '/desktop/';
 
-    const directChapJson = path.join(abpDir, 'chapters', `${rawChapterSlug}.json`);
-    if (fs.existsSync(directChapJson)) {
-      const cachedHtmlFile = this.synthesizeAbpHtml(abpDir, manifestFile, directChapJson, rawChapterSlug);
-      if (!cachedHtmlFile || !fs.existsSync(cachedHtmlFile)) {
-        this.sendAcademic404(req, res, colSlug, bookSlug, rawChapterSlug, '章节合成失败', defaultChapterUrl);
-        return true;
-      }
-      return await this.serveFile(req, res, cachedHtmlFile, pathname);
-    }
-
-    // 3. 第二级检查：显式单项查表检索 legacySlug 别名映射
-    const sections: AstroBookSection[] = Array.isArray(manifest.sections) ? manifest.sections : [];
-    let matchedCanonicalSlug: string | null = null;
-    for (const sec of sections) {
-      for (const ch of (sec.chapters || [])) {
-        if (ch.legacySlug === rawChapterSlug) {
-          matchedCanonicalSlug = ch.slug;
-          break;
+    // 2. 依次在候选版本目录中检查：第一级物理命中 Canonical Slug，第二级命中 legacySlug
+    for (const candidate of validCandidates) {
+      const directChapJson = path.join(candidate.dir, 'chapters', `${rawChapterSlug}.json`);
+      if (fs.existsSync(directChapJson)) {
+        const cachedHtmlFile = await this.synthesizeAbpHtmlAsync(
+          candidate.dir,
+          candidate.manifestFile,
+          directChapJson,
+          rawChapterSlug
+        );
+        if (cachedHtmlFile && fs.existsSync(cachedHtmlFile)) {
+          return await this.serveFile(req, res, cachedHtmlFile, pathname);
         }
       }
-      if (matchedCanonicalSlug) break;
-    }
 
-    if (matchedCanonicalSlug) {
-      // 命中历史别名：301 永久重定向至规范化 Canonical URL
-      const canonicalUrl = `/collections/${colSlug}/${bookSlug}/${matchedCanonicalSlug}/`;
-      res.writeHead(301, {
-        Location: encodeURI(canonicalUrl),
-        'Content-Type': 'text/html; charset=utf-8',
-      });
-      if (req.method === 'HEAD') {
-        res.end();
+      // 第二级检查：显式检索 legacySlug 别名映射
+      const sections: AstroBookSection[] = Array.isArray(candidate.manifest.sections) ? candidate.manifest.sections : [];
+      let matchedCanonicalSlug: string | null = null;
+      for (const sec of sections) {
+        for (const ch of (sec.chapters || [])) {
+          if (ch.legacySlug === rawChapterSlug) {
+            matchedCanonicalSlug = ch.slug;
+            break;
+          }
+        }
+        if (matchedCanonicalSlug) break;
+      }
+
+      if (matchedCanonicalSlug) {
+        // 命中历史别名：301 永久重定向至规范化 Canonical URL
+        const canonicalUrl = `/collections/${colSlug}/${bookSlug}/${matchedCanonicalSlug}/`;
+        res.writeHead(301, {
+          Location: encodeURI(canonicalUrl),
+          'Content-Type': 'text/html; charset=utf-8',
+        });
+        if (req.method === 'HEAD') {
+          res.end();
+          return true;
+        }
+        res.end(`<!DOCTYPE html><html><head><meta http-equiv="refresh" content="0;url=${encodeURI(canonicalUrl)}"><title>301 Moved Permanently</title></head><body>Moved to <a href="${encodeURI(canonicalUrl)}">${matchedCanonicalSlug}</a></body></html>`);
         return true;
       }
-      res.end(`<!DOCTYPE html><html><head><meta http-equiv="refresh" content="0;url=${encodeURI(canonicalUrl)}"><title>301 Moved Permanently</title></head><body>Moved to <a href="${encodeURI(canonicalUrl)}">${matchedCanonicalSlug}</a></body></html>`);
-      return true;
     }
 
-    // 4. 两级均未命中：绝不进行模糊猜测，直接输出 404 学术视窗
+    // 两级均未命中任何候选版本：如实输出 404 学术视窗，由上层宿主通过 Snackbar 明确告知，不作静默篡改
     this.sendAcademic404(req, res, colSlug, bookSlug, rawChapterSlug, '章节不存在或链接已失效', defaultChapterUrl);
     return true;
   }
@@ -502,22 +677,20 @@ export class StaticHandler {
         return true;
       }
 
-      // 命中内存缓存：直接纳秒级输出 Buffer
+      // 命中内存缓存：更新 LRU 访问序后直接输出 Buffer
       const cached = this.memoryCache.get(filePath);
       if (cached && cached.mtimeMs === stat.mtimeMs && cached.size === stat.size) {
+        this.memoryCache.delete(filePath);
+        this.memoryCache.set(filePath, cached);
         res.writeHead(200, headers);
         res.end(cached.buffer);
         return true;
       }
 
-      // 小文件写入内存缓存
+      // 小文件写入按字节封顶的 LRU 内存缓存
       if (stat.size <= this.MAX_CACHE_FILE_SIZE) {
         const fileBuf = await fs.promises.readFile(filePath);
-        if (this.memoryCache.size >= this.MAX_CACHE_ENTRIES) {
-          const firstKey = this.memoryCache.keys().next().value;
-          if (firstKey) this.memoryCache.delete(firstKey);
-        }
-        this.memoryCache.set(filePath, {
+        this.setMemoryCacheEntry(filePath, {
           buffer: fileBuf,
           contentType,
           etag,
@@ -567,15 +740,17 @@ export class StaticHandler {
         if (fs.existsSync(artifactDirectPath) && fs.statSync(artifactDirectPath).isFile()) {
           return artifactDirectPath;
         }
+        const devPackDirectPath = path.join(this.projectRoot, '.tmp', 'dev-abp-packs', relAbp);
+        if (fs.existsSync(devPackDirectPath) && fs.statSync(devPackDirectPath).isFile()) {
+          return devPackDirectPath;
+        }
       }
     }
 
     // 1.1b 自包含辅助数据路由：优先从 userAbpDir 已解包的对应书籍包读取，开发期回退 artifacts/
     const auxRouteMap: Array<{ prefix: string; internalFile: string; artifactDir: string }> = [
       { prefix: '/ai-index/', internalFile: 'ai-index.json', artifactDir: 'ai-index' },
-      { prefix: '/relation-graphs/', internalFile: 'relation-graph.json', artifactDir: 'relation-graphs' },
       { prefix: '/data/cross-ref/', internalFile: 'cross-refs.json', artifactDir: 'cross-ref' },
-      { prefix: '/inspector-data/', internalFile: 'inspector-data.json', artifactDir: 'inspector-data' },
     ];
     for (const rule of auxRouteMap) {
       if (cleanPath.startsWith(rule.prefix) && cleanPath.endsWith('.json')) {
@@ -647,6 +822,29 @@ export class StaticHandler {
       return htmlPath;
     }
 
+    // 4.1 统一书籍内嵌静态资产路由 (/collections/:col/:book/(assets|styles|fonts)/<relPath>)
+    const bookAssetMatch = cleanPath.match(/^\/?collections\/([^/]+)\/([^/]+)\/(assets|styles|fonts)\/(.+)$/i);
+    if (bookAssetMatch) {
+      const colSlug = bookAssetMatch[1];
+      const bookSlug = bookAssetMatch[2];
+      const assetType = bookAssetMatch[3].toLowerCase();
+      const relSub = bookAssetMatch[4].replace(/\\/g, '/').replace(/^\/+/, '');
+      if (!relSub.includes('..') && !relSub.includes(':')) {
+        const relWithType = `${assetType}/${relSub}`;
+        const candidateDirs = this.getBookCandidateDirs(colSlug, bookSlug);
+        if (this.projectRoot) {
+          candidateDirs.push(path.join(this.projectRoot, '.tmp', 'dev-abp-packs', `${colSlug}-${bookSlug}`));
+        }
+        for (const dir of candidateDirs) {
+          const candidate = path.resolve(dir, relWithType);
+          const resolvedDir = path.resolve(dir);
+          if (candidate.startsWith(resolvedDir + path.sep) && fs.existsSync(candidate) && fs.statSync(candidate).isFile()) {
+            return candidate;
+          }
+        }
+      }
+    }
+
     // 4. ABP 章节配图资产回退 (/collections/:col/:book/images/:image 或 /collections/:col/:book/:chapter/images/:image 或 /images/:image)
     const imgMatch = cleanPath.match(/(?:^|\/)collections\/([^/]+)\/([^/]+)(?:\/[^/]+)?\/images\/(.+)$/) ||
                      cleanPath.match(/(?:^|\/)images\/(.+)$/);
@@ -693,56 +891,80 @@ export class StaticHandler {
   }
 
   /**
-   * 将 ABP 预编译章节数据即时合成并缓存为标准 HTML
+   * 异步将 ABP 预编译章节数据即时合成并缓存为标准 HTML（含并发请求去重）
    */
-  private synthesizeAbpHtml(abpDir: string, manifestFile: string, chapJsonFile: string, chapterSlug: string): string | null {
-    try {
-      const cacheDir = this.userAbpDir
-        ? path.join(this.userAbpDir, '.cache', path.basename(abpDir))
-        : path.join(abpDir, '.cache');
-      fs.mkdirSync(cacheDir, { recursive: true });
-      const cachedHtmlFile = path.join(cacheDir, `${chapterSlug}.html`);
-      // 多级章节 slug（如 zh-wp/001_x）会形成嵌套缓存目录，需递归创建
-      fs.mkdirSync(path.dirname(cachedHtmlFile), { recursive: true });
+  private synthesizeAbpHtmlAsync(
+    abpDir: string,
+    manifestFile: string,
+    chapJsonFile: string,
+    chapterSlug: string
+  ): Promise<string | null> {
+    const cacheDir = this.userAbpDir
+      ? path.join(this.userAbpDir, '.cache', path.basename(abpDir))
+      : path.join(abpDir, '.cache');
+    const cachedHtmlFile = path.join(cacheDir, `${chapterSlug}.html`);
 
-      const manifestStat = fs.statSync(manifestFile);
-      const chapStat = fs.statSync(chapJsonFile);
+    const existingPromise = this.inFlightAbp.get(cachedHtmlFile);
+    if (existingPromise) {
+      return existingPromise;
+    }
 
-      // 跟踪 Starlight Master Shell 模板与引擎更新，确保应用构建升级时秒级刷新缓存
-      const masterTemplateFile = path.join(this.distDir, 'reader-shell', 'index.html');
-      let templateMtime = 0;
-      if (fs.existsSync(masterTemplateFile)) {
-        templateMtime = fs.statSync(masterTemplateFile).mtimeMs;
-      }
-      let engineMtime = 0;
-      const engineCandidates = [
-        path.join(currentDir, 'main.mjs'),
-        path.join(currentDir, '..', 'dist-electron', 'main.mjs'),
-        path.join(process.cwd(), 'dist-electron', 'main.mjs'),
-      ];
-      for (const e of engineCandidates) {
-        if (fs.existsSync(e)) {
-          engineMtime = Math.max(engineMtime, fs.statSync(e).mtimeMs);
+    const job = (async (): Promise<string | null> => {
+      try {
+        await fs.promises.mkdir(path.dirname(cachedHtmlFile), { recursive: true });
+
+        const [manifestStat, chapStat] = await Promise.all([
+          fs.promises.stat(manifestFile),
+          fs.promises.stat(chapJsonFile),
+        ]);
+
+        // 跟踪 Master Shell 模板与引擎更新，确保构建升级时刷新缓存
+        const masterTemplateFile = path.join(this.distDir, 'reader-shell', 'index.html');
+        const engineCandidates = [
+          masterTemplateFile,
+          path.join(currentDir, 'main.mjs'),
+          path.join(currentDir, 'reader-shell-template.ts'),
+          path.join(currentDir, 'reader-annotations-addon.ts'),
+          path.join(currentDir, 'reader-layout-addon.ts'),
+          path.join(currentDir, '..', 'dist-electron', 'main.mjs'),
+          path.join(process.cwd(), 'dist-electron', 'main.mjs'),
+        ];
+
+        const engineStats = await Promise.all(
+          engineCandidates.map((candidate) => fs.promises.stat(candidate).catch(() => null))
+        );
+        let newestDependencyMtime = Math.max(manifestStat.mtimeMs, chapStat.mtimeMs);
+        for (const st of engineStats) {
+          if (st && st.mtimeMs > newestDependencyMtime) {
+            newestDependencyMtime = st.mtimeMs;
+          }
         }
-      }
 
-      if (fs.existsSync(cachedHtmlFile)) {
-        const cacheStat = fs.statSync(cachedHtmlFile);
-        if (cacheStat.mtimeMs >= Math.max(manifestStat.mtimeMs, chapStat.mtimeMs, templateMtime, engineMtime)) {
+        const cacheStat = await fs.promises.stat(cachedHtmlFile).catch(() => null);
+        if (cacheStat && cacheStat.mtimeMs >= newestDependencyMtime) {
           return cachedHtmlFile;
         }
+
+        const [manifestRaw, chapRaw] = await Promise.all([
+          fs.promises.readFile(manifestFile, 'utf8'),
+          fs.promises.readFile(chapJsonFile, 'utf8'),
+        ]);
+        const manifest = JSON.parse(manifestRaw);
+        const payload = JSON.parse(chapRaw);
+        const html = renderReaderPageHtml(manifest, payload, this.distDir);
+
+        await fs.promises.writeFile(cachedHtmlFile, html, 'utf8');
+        return cachedHtmlFile;
+      } catch (err) {
+        console.warn('[StaticHandler] 合成 ABP HTML 失败:', err);
+        return null;
+      } finally {
+        this.inFlightAbp.delete(cachedHtmlFile);
       }
+    })();
 
-      const manifest = JSON.parse(fs.readFileSync(manifestFile, 'utf8'));
-      const payload = JSON.parse(fs.readFileSync(chapJsonFile, 'utf8'));
-      const html = renderReaderPageHtml(manifest, payload, this.distDir);
-
-      fs.writeFileSync(cachedHtmlFile, html, 'utf8');
-      return cachedHtmlFile;
-    } catch (err) {
-      console.warn('[StaticHandler] 合成 ABP HTML 失败:', err);
-      return null;
-    }
+    this.inFlightAbp.set(cachedHtmlFile, job);
+    return job;
   }
 
   /**

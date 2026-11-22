@@ -9,10 +9,8 @@
 //
 // 字体选择器（FontSelectOverride）作为兄弟组件一并输出：桌面端出现在 header 右侧
 // 动作区，移动端出现在左侧抽屉底部（MobileMenuFooter 复用本组件），无需额外布线。
-// 仅当 features.fonts.enabled（字体系统启用）时渲染，关闭字体功能即不打包/不显示。
 //
-// 设置按钮：以标准 M3 空心齿轮图标直连全局控制中心与设置路由 (/hub/)。
-import { features } from '../config/features.config.ts';
+// 设置按钮：以标准 M3 空心齿轮图标直连全局控制中心。
 ---
 
 <script is:inline>

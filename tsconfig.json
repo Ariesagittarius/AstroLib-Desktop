@@ -8,5 +8,5 @@
     }
   },
   "include": [".astro/types.d.ts", "src/**/*", "scripts/**/*", "tests/**/*", "api/**/*", "electron/**/*"],
-  "exclude": ["dist", "node_modules"]
+  "exclude": ["dist", "node_modules", "**/node_modules/*"]
 }

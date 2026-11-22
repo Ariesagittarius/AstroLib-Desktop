@@ -2,23 +2,80 @@ declare global {
   interface Window {
     __vpLocalNavClickHandler?: ((e: MouseEvent) => void) | null;
     __mobileTocKeyHandler?: ((e: KeyboardEvent) => void) | null;
+    __mobileTocWheelLock?: ((e: WheelEvent) => void) | null;
+    __mobileTocTouchLock?: ((e: TouchEvent) => void) | null;
+  }
+}
+
+function attachBackdropScrollLock(): void {
+  if (!window.__mobileTocWheelLock) {
+    window.__mobileTocWheelLock = (e: WheelEvent) => {
+      if (!document.body.classList.contains('mobile-toc-open')) return;
+      const outline = (e.target as HTMLElement | null)?.closest('.vp-local-nav-outline') as HTMLElement | null;
+      if (!outline) {
+        e.preventDefault();
+        return;
+      }
+      const atTop = outline.scrollTop <= 0 && e.deltaY < 0;
+      const atBottom = outline.scrollTop + outline.clientHeight >= outline.scrollHeight - 1 && e.deltaY > 0;
+      if (outline.scrollHeight <= outline.clientHeight || atTop || atBottom) {
+        e.preventDefault();
+      }
+    };
+    document.addEventListener('wheel', window.__mobileTocWheelLock, { passive: false });
+  }
+  if (!window.__mobileTocTouchLock) {
+    window.__mobileTocTouchLock = (e: TouchEvent) => {
+      if (!document.body.classList.contains('mobile-toc-open')) return;
+      const outline = (e.target as HTMLElement | null)?.closest('.vp-local-nav-outline') as HTMLElement | null;
+      if (!outline || outline.scrollHeight <= outline.clientHeight) {
+        e.preventDefault();
+      }
+    };
+    document.addEventListener('touchmove', window.__mobileTocTouchLock, { passive: false });
+  }
+}
+
+function detachBackdropScrollLock(): void {
+  if (window.__mobileTocWheelLock) {
+    document.removeEventListener('wheel', window.__mobileTocWheelLock);
+    window.__mobileTocWheelLock = null;
+  }
+  if (window.__mobileTocTouchLock) {
+    document.removeEventListener('touchmove', window.__mobileTocTouchLock);
+    window.__mobileTocTouchLock = null;
   }
 }
 
 /**
  * 移动端大纲 popup 开关（以 <body> 上的 .mobile-toc-open 类为唯一状态源）
+ * 注意：绝不通过 body { overflow: hidden } 锁滚动，以免触发 scrollbar-gutter 重排；改用非侵入式事件拦截防穿透。
  */
 export function setMobileTocOpen(open: boolean): void {
   document.body.classList.toggle('mobile-toc-open', open);
+  if (open) {
+    attachBackdropScrollLock();
+  } else {
+    detachBackdropScrollLock();
+  }
   const nav = document.querySelector('.vp-local-nav');
   if (!nav) return;
   const btn = nav.querySelector('.vp-local-nav-btn');
   const items = nav.querySelector('.vp-local-nav-items');
   if (btn) btn.setAttribute('aria-expanded', String(open));
   if (items) items.setAttribute('aria-hidden', String(!open));
-  if (open) {
-    const activeLink = items && items.querySelector('.toc-link.active');
-    if (activeLink) activeLink.scrollIntoView({ block: 'nearest' });
+  if (open && items) {
+    const outline = items.querySelector('.vp-local-nav-outline') as HTMLElement | null;
+    const activeLink = items.querySelector('.toc-link.active') as HTMLElement | null;
+    if (outline && activeLink) {
+      const linkTop = activeLink.offsetTop;
+      const linkBottom = linkTop + activeLink.offsetHeight;
+      if (linkTop < outline.scrollTop) {
+        outline.scrollTop = Math.max(0, linkTop - 8);
+      } else if (linkBottom > outline.scrollTop + outline.clientHeight) {
+        outline.scrollTop = Math.max(0, linkBottom - outline.clientHeight + 8);
+      }
+    }
   }
 }
 
@@ -55,7 +112,7 @@ export function setupVPLocalNav(): void {
   if (btn.dataset.bound === 'true') return;
   btn.dataset.bound = 'true';
 
-  const navHeight = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--sl-nav-height')) || 64;
+  const navHeight = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--sl-nav-height')) || 40;
   btn.addEventListener('click', (e) => {
     e.stopPropagation();
     const vh = window.innerHeight + Math.min(window.scrollY - navHeight, 0);
@@ -102,7 +159,7 @@ export function setupVPLocalNav(): void {
     setMobileTocOpen(false);
   });
 
-  nav.querySelectorAll('[data-exercise-trigger], [data-inspector-trigger], [data-open-relation-graph], [data-feedback-trigger], [data-chapter-export-trigger]').forEach((btn) => {
+  nav.querySelectorAll('[data-exercise-trigger], [data-chapter-export-trigger]').forEach((btn) => {
     btn.addEventListener('click', () => {
       setMobileTocOpen(false);
     });

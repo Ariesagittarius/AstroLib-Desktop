@@ -21,9 +21,6 @@ const DICT_PATH_PREFIX = '/api/dict';
 function sendJson(res, statusCode, data) {
   res.writeHead(statusCode, {
     'Content-Type': 'application/json; charset=utf-8',
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-    'Access-Control-Allow-Headers': '*',
     'Cache-Control': 'no-cache, no-store, must-revalidate',
   });
   res.end(JSON.stringify(data));
@@ -49,13 +46,9 @@ export function translationDevServerPlugin() {
           return next();
         }
 
-        // 1. CORS 预检
         if (req.method === 'OPTIONS') {
           res.writeHead(204, {
-            'Access-Control-Allow-Origin': '*',
-            'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-            'Access-Control-Allow-Headers': '*',
-            'Access-Control-Max-Age': '86400',
+            'Cache-Control': 'no-store',
           });
           return res.end();
         }

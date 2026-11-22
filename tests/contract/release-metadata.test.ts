@@ -5,7 +5,7 @@ import { AppUpdater } from '../../electron/services/updater.ts';
 
 describe('Release Metadata and Update Contract Tests', () => {
   const ROOT = path.resolve(__dirname, '../..');
-  const evidencePath = path.join(ROOT, 'docs', 'architecture', 'evidence', 'p0-final-evidence.json');
+  const evidencePath = path.join(ROOT, 'docs', 'archive', 'evidence', 'p0-final-evidence.json');
 
   it('package.json 必须固定 NSIS 与 Portable 安装包命名模板，严禁包含空格', () => {
     const pkg = JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf8'));

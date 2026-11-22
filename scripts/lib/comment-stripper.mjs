@@ -1,44 +1,88 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
+function isPreservedJsDirective(commentText) {
+  const trimmed = commentText.trim();
+  return (
+    /^\/\/\/\s*<reference\b/i.test(trimmed) ||
+    /^\/\/\s*@ts-(?:ignore|expect-error|nocheck|check)\b/.test(trimmed) ||
+    /^\/\*\s*(?:@vite-ignore|c8\s+ignore|v8\s+ignore)\b/.test(trimmed)
+  );
+}
+
 /**
- * 语法状态机：剥离 JavaScript / TypeScript / JSONC 格式中的注释
- * 精确处理单双引号、模板字符串（支持多层 ${...} 嵌套）、正则表达式字面量
+ * State machine stripping JS/TS/JSX/TSX/JSONC/Typst comments while preserving
+ * string literals, nested template literals, regex literals, and compiler/bundler directives.
  */
-export function stripJsTsComments(code) {
+export function stripJsTsComments(code, options = {}) {
+  const preserveDirectives = options.preserveDirectives ?? true;
+  const nestedBlockComments = options.nestedBlockComments ?? false;
   let output = '';
   const len = code.length;
   let i = 0;
+
+  if (code.startsWith('#!')) {
+    while (i < len && code[i] !== '\n' && code[i] !== '\r') {
+      output += code[i];
+      i++;
+    }
+  }
 
   const stateStack = [];
 
   while (i < len) {
     const ch = code[i];
     const next = i + 1 < len ? code[i + 1] : '';
-
     const currentState = stateStack.length > 0 ? stateStack[stateStack.length - 1] : 'DEFAULT';
 
     if (currentState === 'DEFAULT' || currentState === 'TEMPLATE_EXPR') {
-      // 1. 单行注释 //
+      // Optional JSX empty expression block comment: {/* ... */}
+      if (ch === '{' && code.slice(i, i + 3) === '{/*') {
+        const end = code.indexOf('*/}', i + 3);
+        if (end >= 0) {
+          i = end + 3;
+          continue;
+        }
+      }
+
+      // 1. Single-line comment //
       if (ch === '/' && next === '/') {
+        const start = i;
         i += 2;
         while (i < len && code[i] !== '\n' && code[i] !== '\r') {
           i++;
         }
-        continue;
-      }
-
-      // 2. 多行注释 /* ... */
-      if (ch === '/' && next === '*') {
-        i += 2;
-        while (i < len && !(code[i] === '*' && i + 1 < len && code[i + 1] === '/')) {
-          i++;
+        const rawComment = code.slice(start, i);
+        if (preserveDirectives && isPreservedJsDirective(rawComment)) {
+          output += rawComment;
         }
-        i += 2;
         continue;
       }
 
-      // 3. 单引号字符串
+      // 2. Multi-line comment /* ... */
+      if (ch === '/' && next === '*') {
+        const start = i;
+        i += 2;
+        let depth = 1;
+        while (i < len && depth > 0) {
+          if (nestedBlockComments && code[i] === '/' && code[i + 1] === '*') {
+            depth++;
+            i += 2;
+          } else if (code[i] === '*' && code[i + 1] === '/') {
+            depth--;
+            i += 2;
+          } else {
+            i++;
+          }
+        }
+        const rawComment = code.slice(start, i);
+        if (preserveDirectives && isPreservedJsDirective(rawComment)) {
+          output += rawComment;
+        }
+        continue;
+      }
+
+      // 3. Single-quoted string
       if (ch === "'") {
         output += ch;
         i++;
@@ -57,7 +101,7 @@ export function stripJsTsComments(code) {
         continue;
       }
 
-      // 4. 双引号字符串
+      // 4. Double-quoted string
       if (ch === '"') {
         output += ch;
         i++;
@@ -76,7 +120,7 @@ export function stripJsTsComments(code) {
         continue;
       }
 
-      // 5. 模板字符串 `...`
+      // 5. Template literal `...`
       if (ch === '`') {
         output += ch;
         i++;
@@ -84,7 +128,7 @@ export function stripJsTsComments(code) {
         continue;
       }
 
-      // 6. 正则表达式判断
+      // 6. RegExp literal vs division operator
       if (ch === '/') {
         if (isRegExpStart(output)) {
           output += ch;
@@ -114,7 +158,6 @@ export function stripJsTsComments(code) {
         }
       }
 
-      // 7. 处理模板表达式花括号闭合
       if (currentState === 'TEMPLATE_EXPR' && ch === '}') {
         stateStack.pop();
         output += ch;
@@ -147,7 +190,7 @@ export function stripJsTsComments(code) {
 }
 
 function isRegExpStart(prevOutput) {
-  let trimmed = prevOutput.trimEnd();
+  const trimmed = prevOutput.trimEnd();
   if (!trimmed) return true;
   const lastChar = trimmed[trimmed.length - 1];
 
@@ -156,7 +199,7 @@ function isRegExpStart(prevOutput) {
   }
 
   const match = trimmed.match(/\b(return|typeof|instanceof|case|yield|await|throw|void|delete|else|in|of)$/);
-  return !!match;
+  return Boolean(match);
 }
 
 export function stripCssComments(css) {
@@ -203,8 +246,12 @@ export function stripCssComments(css) {
   return cleanEmptyLines(output);
 }
 
+export function stripScssLessComments(code) {
+  return stripJsTsComments(code, { preserveDirectives: false });
+}
+
 export function stripHtmlComments(html) {
-  return html.replace(/<!--[\s\S]*?-->/g, '');
+  return cleanEmptyLines(html.replace(/<!--(?!\s*\[if\b)[\s\S]*?-->/gi, ''));
 }
 
 export function stripAstroComments(content) {
@@ -217,16 +264,22 @@ export function stripAstroComments(content) {
     result = `---\n${strippedFm.trim()}\n---` + result.slice(fmMatch[0].length);
   }
 
+  const placeholders = [];
   result = result.replace(/(<style(?:\s[^>]*)?>)([\s\S]*?)(<\/style>)/gi, (_, open, body, close) => {
-    return open + stripCssComments(body) + close;
+    const token = `___ASTRO_STRIP_BLOCK_${placeholders.length}___`;
+    placeholders.push(open + stripCssComments(body) + close);
+    return token;
   });
 
   result = result.replace(/(<script(?:\s[^>]*)?>)([\s\S]*?)(<\/script>)/gi, (_, open, body, close) => {
-    return open + stripJsTsComments(body) + close;
+    const token = `___ASTRO_STRIP_BLOCK_${placeholders.length}___`;
+    placeholders.push(open + stripJsTsComments(body) + close);
+    return token;
   });
 
   result = result.replace(/\{\/\*[\s\S]*?\*\/\}/g, '');
-  result = stripHtmlComments(result);
+  result = result.replace(/<!--[\s\S]*?-->/g, '');
+  result = result.replace(/___ASTRO_STRIP_BLOCK_(\d+)___/g, (_, idx) => placeholders[Number(idx)] ?? '');
 
   return cleanEmptyLines(result);
 }
@@ -238,8 +291,7 @@ export function stripMdxComments(content) {
   let match;
 
   while ((match = codeBlockRegex.exec(content)) !== null) {
-    const textBefore = content.slice(lastIndex, match.index);
-    parts.push({ type: 'text', content: textBefore });
+    parts.push({ type: 'text', content: content.slice(lastIndex, match.index) });
     parts.push({ type: 'code', content: match[0] });
     lastIndex = codeBlockRegex.lastIndex;
   }
@@ -247,7 +299,7 @@ export function stripMdxComments(content) {
     parts.push({ type: 'text', content: content.slice(lastIndex) });
   }
 
-  const processed = parts.map(part => {
+  const processed = parts.map((part) => {
     if (part.type === 'code') {
       return part.content;
     }
@@ -255,12 +307,11 @@ export function stripMdxComments(content) {
 
     const fmMatch = text.match(/^---\r?\n([\s\S]*?)\r?\n---/);
     if (fmMatch) {
-      const rawFm = fmMatch[1];
-      const strippedFm = stripYamlComments(rawFm);
+      const strippedFm = stripYamlComments(fmMatch[1]);
       text = `---\n${strippedFm.trim()}\n---` + text.slice(fmMatch[0].length);
     }
 
-    text = stripHtmlComments(text);
+    text = text.replace(/<!--[\s\S]*?-->/g, '');
     text = text.replace(/\{\/\*[\s\S]*?\*\/\}/g, '');
 
     return text;
@@ -317,13 +368,21 @@ export function stripPythonComments(code) {
     }
 
     if (ch === '#') {
-      if (i === 0 && code.slice(0, 2) === '#!') {
+      const lineStart = output.lastIndexOf('\n') + 1;
+      const currentLine = code.slice(lineStart, code.indexOf('\n', i) === -1 ? len : code.indexOf('\n', i));
+      const isShebang = i === 0 && code.slice(0, 2) === '#!';
+      const isEncodingCookie =
+        (lineStart === 0 || code.slice(0, lineStart).split(/\r?\n/).length <= 2) &&
+        /^#.*coding[:=]\s*[-\w.]+/i.test(currentLine);
+
+      if (isShebang || isEncodingCookie) {
         while (i < len && code[i] !== '\n' && code[i] !== '\r') {
           output += code[i];
           i++;
         }
         continue;
       }
+
       while (i < len && code[i] !== '\n' && code[i] !== '\r') {
         i++;
       }
@@ -339,40 +398,249 @@ export function stripPythonComments(code) {
 
 export function stripYamlComments(yaml) {
   const lines = yaml.split(/\r?\n/);
-  const resultLines = lines.map(line => {
-    if (line.includes('"') || line.includes("'")) {
-      let inSingle = false;
-      let inDouble = false;
-      let cutIndex = -1;
-      for (let j = 0; j < line.length; j++) {
-        const c = line[j];
-        if (c === "'" && !inDouble) inSingle = !inSingle;
-        else if (c === '"' && !inSingle) inDouble = !inDouble;
-        else if (c === '#' && !inSingle && !inDouble) {
+  const resultLines = [];
+
+  for (const line of lines) {
+    let inSingle = false;
+    let inDouble = false;
+    let cutIndex = -1;
+
+    for (let j = 0; j < line.length; j++) {
+      const c = line[j];
+      if (inDouble && c === '\\' && j + 1 < line.length) {
+        j++;
+        continue;
+      }
+      if (c === "'" && !inDouble) {
+        if (inSingle && line[j + 1] === "'") {
+          j++;
+          continue;
+        }
+        inSingle = !inSingle;
+      } else if (c === '"' && !inSingle) {
+        inDouble = !inDouble;
+      } else if (c === '#' && !inSingle && !inDouble) {
+        if (j === 0 || line[j - 1] === ' ' || line[j - 1] === '\t') {
           cutIndex = j;
           break;
         }
       }
-      return cutIndex >= 0 ? line.slice(0, cutIndex).trimEnd() : line;
     }
-    const hashIndex = line.indexOf('#');
-    return hashIndex >= 0 ? line.slice(0, hashIndex).trimEnd() : line;
-  }).filter(line => line.trim().length > 0 || line === '');
+
+    if (cutIndex === 0) {
+      continue;
+    }
+    const cleaned = cutIndex > 0 ? line.slice(0, cutIndex).trimEnd() : line;
+    resultLines.push(cleaned);
+  }
 
   return cleanEmptyLines(resultLines.join('\n'));
 }
 
 export function stripShellPsComments(code) {
   let cleaned = code.replace(/<#[\s\S]*?#>/g, '');
-  return stripPythonComments(cleaned);
+  const lines = cleaned.split(/\r?\n/);
+  const resultLines = [];
+
+  for (let idx = 0; idx < lines.length; idx++) {
+    const line = lines[idx];
+    if (idx === 0 && line.startsWith('#!')) {
+      resultLines.push(line);
+      continue;
+    }
+
+    let inSingle = false;
+    let inDouble = false;
+    let cutIndex = -1;
+
+    for (let j = 0; j < line.length; j++) {
+      const c = line[j];
+      if ((inDouble || (!inSingle && !inDouble)) && c === '\\' && j + 1 < line.length) {
+        j++;
+        continue;
+      }
+      if (c === "'" && !inDouble) {
+        inSingle = !inSingle;
+      } else if (c === '"' && !inSingle) {
+        inDouble = !inDouble;
+      } else if (c === '#' && !inSingle && !inDouble) {
+        if (j === 0 || line[j - 1] === ' ' || line[j - 1] === '\t') {
+          cutIndex = j;
+          break;
+        }
+      }
+    }
+
+    if (cutIndex === 0) {
+      continue;
+    }
+    resultLines.push(cutIndex > 0 ? line.slice(0, cutIndex).trimEnd() : line);
+  }
+
+  return cleanEmptyLines(resultLines.join('\n'));
+}
+
+export function stripTexComments(code) {
+  const lines = code.split(/\r?\n/);
+  const out = [];
+
+  for (const line of lines) {
+    let cutIndex = -1;
+    for (let j = 0; j < line.length; j++) {
+      if (line[j] === '%') {
+        let backslashes = 0;
+        let k = j - 1;
+        while (k >= 0 && line[k] === '\\') {
+          backslashes++;
+          k--;
+        }
+        if (backslashes % 2 === 0) {
+          cutIndex = j;
+          break;
+        }
+      }
+    }
+    if (cutIndex === 0) {
+      continue;
+    }
+    out.push(cutIndex > 0 ? line.slice(0, cutIndex).trimEnd() : line);
+  }
+
+  return cleanEmptyLines(out.join('\n'));
+}
+
+export function stripTypstComments(code) {
+  return stripJsTsComments(code, { preserveDirectives: false, nestedBlockComments: true });
+}
+
+export function stripHashConfigComments(code, allowSemicolon = false) {
+  const lines = code.split(/\r?\n/);
+  const out = [];
+
+  for (let idx = 0; idx < lines.length; idx++) {
+    const line = lines[idx];
+    if (idx === 0 && line.startsWith('#!')) {
+      out.push(line);
+      continue;
+    }
+
+    let inSingle = false;
+    let inDouble = false;
+    let cutIndex = -1;
+
+    for (let j = 0; j < line.length; j++) {
+      const c = line[j];
+      if (inDouble && c === '\\' && j + 1 < line.length) {
+        j++;
+        continue;
+      }
+      if (c === "'" && !inDouble) {
+        inSingle = !inSingle;
+      } else if (c === '"' && !inSingle) {
+        inDouble = !inDouble;
+      } else if ((c === '#' || (allowSemicolon && c === ';')) && !inSingle && !inDouble) {
+        if (j === 0 || line[j - 1] === ' ' || line[j - 1] === '\t') {
+          cutIndex = j;
+          break;
+        }
+      }
+    }
+
+    if (cutIndex === 0) {
+      continue;
+    }
+    out.push(cutIndex > 0 ? line.slice(0, cutIndex).trimEnd() : line);
+  }
+
+  return cleanEmptyLines(out.join('\n'));
+}
+
+export function stripSqlComments(code) {
+  let output = '';
+  const len = code.length;
+  let i = 0;
+
+  while (i < len) {
+    const ch = code[i];
+    const next = i + 1 < len ? code[i + 1] : '';
+
+    if (ch === "'" || ch === '"') {
+      const quote = ch;
+      output += quote;
+      i++;
+      while (i < len) {
+        const c = code[i];
+        output += c;
+        if (c === quote && code[i + 1] === quote) {
+          i++;
+          output += code[i];
+        } else if (c === '\\' && i + 1 < len) {
+          i++;
+          output += code[i];
+        } else if (c === quote) {
+          i++;
+          break;
+        }
+        i++;
+      }
+      continue;
+    }
+
+    if (ch === '-' && next === '-') {
+      i += 2;
+      while (i < len && code[i] !== '\n' && code[i] !== '\r') {
+        i++;
+      }
+      continue;
+    }
+
+    if (ch === '/' && next === '*') {
+      i += 2;
+      while (i < len && !(code[i] === '*' && code[i + 1] === '/')) {
+        i++;
+      }
+      i += 2;
+      continue;
+    }
+
+    output += ch;
+    i++;
+  }
+
+  return cleanEmptyLines(output);
+}
+
+export function stripBatComments(code) {
+  const lines = code.split(/\r?\n/);
+  const out = [];
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (/^@?REM(?:\s|$)/i.test(trimmed) || trimmed.startsWith('::')) {
+      continue;
+    }
+    out.push(line);
+  }
+  return cleanEmptyLines(out.join('\n'));
 }
 
 function cleanEmptyLines(text) {
-  return text
+  const cleaned = text
     .replace(/[ \t]+$/gm, '')
     .replace(/(\r?\n){3,}/g, '\n\n')
-    .trim() + '\n';
+    .trim();
+  return cleaned ? `${cleaned}\n` : '';
 }
+
+const HASH_CONFIG_BASENAMES = new Set([
+  '.gitignore',
+  '.gitattributes',
+  '.editorconfig',
+  '.dockerignore',
+  '.npmrc',
+  '.prettierignore',
+  '.eslintignore',
+  '.env.example',
+]);
 
 export function stripContentByExtension(content, ext) {
   const normalizedExt = ext.toLowerCase().replace(/^\./, '');
@@ -384,13 +652,27 @@ export function stripContentByExtension(content, ext) {
     case 'ts':
     case 'mts':
     case 'cts':
+    case 'jsx':
+    case 'tsx':
+      return stripJsTsComments(content, { preserveDirectives: true });
+
     case 'jsonc':
-      return stripJsTsComments(content);
+      return stripJsTsComments(content, { preserveDirectives: false });
+
+    case 'json':
+      try {
+        JSON.parse(content);
+        return content;
+      } catch {
+        return stripJsTsComments(content, { preserveDirectives: false });
+      }
 
     case 'css':
+      return stripCssComments(content);
+
     case 'scss':
     case 'less':
-      return stripCssComments(content);
+      return stripScssLessComments(content);
 
     case 'astro':
       return stripAstroComments(content);
@@ -412,18 +694,61 @@ export function stripContentByExtension(content, ext) {
       return stripShellPsComments(content);
 
     case 'html':
+    case 'xml':
+    case 'xhtml':
     case 'svg':
+    case 'plist':
       return stripHtmlComments(content);
+
+    case 'typ':
+      return stripTypstComments(content);
+
+    case 'tex':
+    case 'sty':
+    case 'cls':
+      return stripTexComments(content);
+
+    case 'toml':
+    case 'conf':
+    case 'gitignore':
+    case 'dockerignore':
+    case 'npmrc':
+    case 'env':
+      return stripHashConfigComments(content, false);
+
+    case 'ini':
+    case 'cfg':
+    case 'editorconfig':
+      return stripHashConfigComments(content, true);
+
+    case 'sql':
+      return stripSqlComments(content);
+
+    case 'bat':
+    case 'cmd':
+      return stripBatComments(content);
 
     default:
       return content;
   }
 }
 
+export function stripContentForFile(content, filePath) {
+  const baseName = path.basename(filePath).toLowerCase();
+  if (HASH_CONFIG_BASENAMES.has(baseName)) {
+    const allowSemicolon = baseName === '.editorconfig';
+    return stripHashConfigComments(content, allowSemicolon);
+  }
+  const ext = path.extname(baseName);
+  if (!ext) {
+    return content;
+  }
+  return stripContentByExtension(content, ext);
+}
+
 export function stripFile(filePath) {
-  const ext = path.extname(filePath);
   const original = fs.readFileSync(filePath, 'utf8');
-  const stripped = stripContentByExtension(original, ext);
+  const stripped = stripContentForFile(original, filePath);
   if (original !== stripped) {
     fs.writeFileSync(filePath, stripped, 'utf8');
     return true;

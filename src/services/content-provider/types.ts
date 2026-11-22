@@ -61,6 +61,15 @@ export interface IContentProvider {
   ): Promise<InstalledBookMeta>;
 
   /**
+   * 导入并安装任意受支持格式的书籍文件 (.abp / .epub 等)
+   */
+  installBookFromFile?(
+    fileName: string,
+    fileData: ArrayBuffer | Uint8Array,
+    onProgress?: (percent: number, stageText: string) => void
+  ): Promise<InstalledBookMeta>;
+
+  /**
    * 卸载/删除已安装的书籍
    */
   removeBook(colSlug: string, bookSlug: string): Promise<boolean>;

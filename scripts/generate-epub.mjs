@@ -11,7 +11,6 @@ import crypto from 'node:crypto';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { createZip } from './epub/zip.mjs';
 import { renderChapter, renderTitleMath, plainTitle } from './epub/mdx-pipeline.mjs';
-import { features } from '../src/config/features.config.ts';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '..');
@@ -329,11 +328,6 @@ ${body}
 
 // ---------------------------------------------------------------- 主流程
 async function main() {
-  if (!features.epub.enabled) {
-    // 功能开关统一在 src/config/features.config.ts：关闭 EPUB 则不生成（节省构建时间/体积）。
-    console.log('[epub] 已跳过：EPUB 功能关闭（features.config.ts 中 epub.enabled=false）。');
-    return;
-  }
   const meta = await loadBookMeta();
   const books = scanBooks();
   console.log(`发现 ${books.length} 本图书`);

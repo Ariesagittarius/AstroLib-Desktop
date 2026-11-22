@@ -8,6 +8,7 @@ import { SearchRecEngine } from '../core/engine.ts';
 import type { AcademicChunk, CandidateItem } from '../types/candidate.ts';
 import type { SearchMode } from '../types/search.ts';
 import type { UserLearningContext } from '../types/recommendation.ts';
+import { escapeHtml, escapeHtmlAttr } from '../../../core/security/html-escape.ts';
 
 declare global {
   interface Window {
@@ -200,13 +201,21 @@ export function initSearchModalClient(): void {
 
   async function loadAllPacks() {
     try {
+      let books: Array<{ colSlug: string; slug: string; title?: string }> = [];
       const catRes = await fetch('/abp-packs/catalog.json');
-      if (!catRes.ok) {
+      if (catRes.ok) {
+        const cat = await catRes.json();
+        books = cat.books || [];
+      } else if ((window as any).astrolib?.getInstalledBooks) {
+        const installed = await (window as any).astrolib.getInstalledBooks();
+        books = (installed || []).map((b: any) => ({
+          colSlug: b.manifest?.colSlug || b.colSlug,
+          slug: b.manifest?.slug || b.slug,
+          title: b.manifest?.title || b.title,
+        })).filter((b: any) => b.colSlug && b.slug);
+      } else {
         throw new Error(`catalog response: ${catRes.status}`);
       }
-
-      const cat = await catRes.json();
-      const books: Array<{ colSlug: string; slug: string; title?: string }> = cat.books || [];
       fillBookSelect(books);
 
       const slots = new Array<BookPackPayload | null>(books.length);
@@ -360,18 +369,47 @@ export function initSearchModalClient(): void {
     }
   }
 
-  // 高亮检索词辅助函数 (转义正则特殊字符，避免异常)
-  function highlightKeywords(text: string, queryStr: string): string {
-    if (!queryStr || !text) return text;
-    const terms = queryStr.toLowerCase().split(/\s+/).filter(Boolean);
-    let result = text;
-    for (const term of terms) {
-      const escaped = term.split('').map((c) => ('-[]{}()*+?.,\\^$|#'.indexOf(c) >= 0 ? `\\${c}` : c)).join('');
-      try {
-        result = result.replace(new RegExp(`(${escaped})`, 'gi'), '<mark>$1</mark>');
-      } catch {}
+  function isSafeNavigationUrl(rawUrl: string): string {
+    const trimmed = String(rawUrl || '').trim();
+    if (!trimmed) return '#';
+    const compact = trimmed.replace(/[\u0000-\u0020\u007f]+/g, '');
+    if (compact.startsWith('/') && !compact.startsWith('//')) {
+      return trimmed;
     }
-    return result;
+    if (/^(?:https?:|astrolib:)/i.test(compact)) {
+      return trimmed;
+    }
+    return '#';
+  }
+
+  // 高亮检索词辅助函数 (HTML 转义后再包裹 <mark>，消除 XSS 注入)
+  function highlightKeywords(text: string, queryStr: string): string {
+    if (!text) return '';
+    if (!queryStr) return escapeHtml(text);
+    const terms = queryStr.toLowerCase().split(/\s+/).filter(Boolean);
+    if (terms.length === 0) return escapeHtml(text);
+    const pattern = terms
+      .map((term) => term.split('').map((c) => ('-[]{}()*+?.,\\^$|#'.indexOf(c) >= 0 ? `\\${c}` : c)).join(''))
+      .join('|');
+    try {
+      const re = new RegExp(`(${pattern})`, 'gi');
+      let out = '';
+      let lastIndex = 0;
+      let match: RegExpExecArray | null;
+      while ((match = re.exec(text)) !== null) {
+        if (match[0].length === 0) {
+          re.lastIndex++;
+          continue;
+        }
+        out += escapeHtml(text.slice(lastIndex, match.index));
+        out += `<mark>${escapeHtml(match[0])}</mark>`;
+        lastIndex = match.index + match[0].length;
+      }
+      out += escapeHtml(text.slice(lastIndex));
+      return out;
+    } catch {
+      return escapeHtml(text);
+    }
   }
 
   // 渲染卡片流 (严格遵循极端减法原则：纯净学术片段)
@@ -388,23 +426,24 @@ export function initSearchModalClient(): void {
 
     const html = `
       <div class="astrolib-search-section-title">
-        <span>${headerTitle}</span>
+        <span>${escapeHtml(headerTitle)}</span>
         <span style="font-size: 0.6875rem; font-weight: normal; opacity: 0.75;">共 ${items.length} 条</span>
       </div>
       ${items
         .map((item, idx) => {
           const c = item.chunk;
-          const typeBadge = c.type ? `<span class="astrolib-card-type-chip">${c.type}</span>` : '';
-          const reasonBadge = item.recommendReason ? `<span class="astrolib-card-reason">${item.recommendReason}</span>` : '';
+          const typeBadge = c.type ? `<span class="astrolib-card-type-chip">${escapeHtml(c.type)}</span>` : '';
+          const reasonBadge = item.recommendReason ? `<span class="astrolib-card-reason">${escapeHtml(item.recommendReason)}</span>` : '';
           const highlightedTitle = highlightKeywords(c.title || c.chapterTitle, queryHighlight);
           const snippetText = c.text && c.text !== c.title ? highlightKeywords(c.text, queryHighlight) : '';
+          const safeHref = escapeHtmlAttr(isSafeNavigationUrl(c.url));
 
           return `
-            <a href="${c.url}" class="astrolib-search-card ${idx === selectedIdx ? 'is-selected' : ''}" data-index="${idx}">
+            <a href="${safeHref}" class="astrolib-search-card ${idx === selectedIdx ? 'is-selected' : ''}" data-index="${idx}">
               <div class="astrolib-card-meta">
-                <span class="astrolib-card-book">《${c.bookTitle}》</span>
+                <span class="astrolib-card-book">《${escapeHtml(c.bookTitle)}》</span>
                 <span>/</span>
-                <span>${c.chapterTitle}</span>
+                <span>${escapeHtml(c.chapterTitle)}</span>
                 ${typeBadge}
                 ${reasonBadge}
               </div>

@@ -1,0 +1,931 @@
+/* src/components/harness/pdf2abp/pdf2abp.css */
+
+/* ============================================================================
+   1. Launcher Dialog (Preserved M3 Form Styles)
+   ============================================================================ */
+.pdf2abp-m3-dialog {
+  --md-dialog-container-color: var(--md-sys-color-surface, #ffffff);
+  min-width: min(560px, 92vw);
+  max-width: 640px;
+}
+
+.pdf2abp-dialog-headline {
+  font-size: 1.08rem;
+  font-weight: 600;
+  color: var(--md-sys-color-on-surface, #0f172a);
+}
+
+.pdf2abp-dialog-content {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding-top: 6px;
+}
+
+.pdf2abp-health-line {
+  font-size: 0.78rem;
+  color: var(--md-sys-color-on-surface-variant, #475569);
+  padding: 6px 10px;
+  border-radius: 8px;
+  background-color: var(--md-sys-color-surface-container-low, #f8fafc);
+  border: 1px solid var(--md-sys-color-outline-variant, rgba(148, 163, 184, 0.28));
+}
+
+.pdf2abp-path-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.pdf2abp-path-input {
+  flex: 1 1 auto;
+}
+
+.pdf2abp-full-width {
+  width: 100%;
+}
+
+.pdf2abp-field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.pdf2abp-field-label {
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--md-sys-color-on-surface-variant, #475569);
+}
+
+.pdf2abp-concurrency-input {
+  width: 220px;
+}
+
+.pdf2abp-dialog-error {
+  font-size: 0.78rem;
+  color: var(--md-sys-color-error, #b91c1c);
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid color-mix(in srgb, var(--md-sys-color-error, #b91c1c) 35%, transparent);
+  background-color: color-mix(in srgb, var(--md-sys-color-error-container, #fee2e2) 45%, transparent);
+  overflow-wrap: anywhere;
+}
+
+/* ============================================================================
+   2. PDF2ABP Workshop Inspector Shell (Zero Clipping, Full-Height Flex)
+   ============================================================================ */
+.pdf2abp-panel {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  font-size: 0.82rem;
+  color: var(--harness-text-primary, var(--md-sys-color-on-surface, #1f1f1f));
+  background-color: var(--harness-bg-window, var(--md-sys-color-surface, #ffffff));
+}
+
+.pdf2abp-muted {
+  font-size: 0.74rem;
+  color: var(--harness-text-secondary, var(--md-sys-color-on-surface-variant, #5f6368));
+}
+
+.pdf2abp-mono {
+  font-family: var(--harness-font-mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace);
+}
+
+/* Fixed Top Chrome */
+.pdf2abp-top-chrome {
+  flex-shrink: 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 14px 0 14px;
+  border-bottom: 1px solid var(--md-sys-color-outline-variant, var(--harness-border-subtle, #e2e8f0));
+  background-color: var(--harness-bg-window, var(--md-sys-color-surface, #ffffff));
+}
+
+.pdf2abp-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+}
+
+.pdf2abp-header-titles {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.pdf2abp-panel-title {
+  font-size: 0.94rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pdf2abp-job-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.pdf2abp-job-select {
+  flex: 1 1 0%;
+  width: 0;
+  min-width: 0;
+  height: 32px;
+  padding: 0 10px;
+  border-radius: 8px;
+  border: 1px solid var(--md-sys-color-outline-variant, rgba(125, 125, 125, 0.35));
+  background-color: var(--md-sys-color-surface-container-lowest, var(--harness-bg-surface, #f8fafc));
+  color: inherit;
+  font: inherit;
+  font-size: 0.78rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.pdf2abp-compact-btn {
+  flex-shrink: 0;
+  height: 30px;
+  padding: 0 10px;
+  border-radius: 8px;
+  border: 1px solid var(--md-sys-color-outline-variant, rgba(125, 125, 125, 0.32));
+  background: transparent;
+  color: var(--md-sys-color-on-surface, inherit);
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color 0.14s ease, border-color 0.14s ease;
+}
+
+.pdf2abp-compact-btn:hover {
+  background-color: var(--md-sys-color-surface-container, rgba(125, 125, 125, 0.09));
+}
+
+.pdf2abp-compact-btn.is-primary {
+  background-color: var(--md-sys-color-primary, #0b57d0);
+  border-color: var(--md-sys-color-primary, #0b57d0);
+  color: var(--md-sys-color-on-primary, #ffffff);
+}
+
+.pdf2abp-compact-btn.is-danger {
+  color: var(--md-sys-color-error, #b3261e);
+  border-color: color-mix(in srgb, var(--md-sys-color-error, #b3261e) 40%, transparent);
+}
+
+.pdf2abp-job-meta-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--md-sys-color-outline-variant, rgba(125, 125, 125, 0.22));
+  background-color: var(--md-sys-color-surface-container-low, rgba(125, 125, 125, 0.05));
+  min-width: 0;
+}
+
+.pdf2abp-job-badges {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  flex: 1 1 180px;
+}
+
+.pdf2abp-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  white-space: nowrap;
+  background-color: var(--md-sys-color-surface-container-high, rgba(125, 125, 125, 0.14));
+  color: var(--md-sys-color-on-surface, inherit);
+}
+
+.pdf2abp-status-pill.is-running {
+  background-color: color-mix(in srgb, var(--md-sys-color-primary, #0b57d0) 14%, transparent);
+  color: var(--md-sys-color-primary, #0b57d0);
+}
+
+.pdf2abp-status-pill.is-completed {
+  background-color: rgba(22, 163, 74, 0.14);
+  color: #15803d;
+}
+
+.pdf2abp-status-pill.is-failed {
+  background-color: color-mix(in srgb, var(--md-sys-color-error, #b3261e) 14%, transparent);
+  color: var(--md-sys-color-error, #b3261e);
+}
+
+[data-theme='dark'] .pdf2abp-status-pill.is-completed {
+  color: #86efac;
+}
+
+.pdf2abp-status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.pdf2abp-meta-stat {
+  font-size: 0.73rem;
+  color: var(--harness-text-secondary, #5f6368);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.pdf2abp-job-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.pdf2abp-reader-link {
+  display: inline-flex;
+  align-items: center;
+  height: 30px;
+  padding: 0 10px;
+  border-radius: 8px;
+  background-color: var(--md-sys-color-primary, #0b57d0);
+  color: var(--md-sys-color-on-primary, #ffffff);
+  font-size: 0.74rem;
+  font-weight: 500;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+/* ============================================================================
+   3. Accessible Single-Row 3-Tab Switcher (Compliant with M3 & web.dev Tabs)
+   ============================================================================ */
+.pdf2abp-tablist {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 4px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  margin-top: 2px;
+}
+
+.pdf2abp-tablist::-webkit-scrollbar {
+  display: none;
+}
+
+.pdf2abp-tab {
+  position: relative;
+  flex-shrink: 0;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px 9px;
+  border: none;
+  background: transparent;
+  color: var(--harness-text-secondary, var(--md-sys-color-on-surface-variant, #5f6368));
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 500;
+  cursor: pointer;
+  border-radius: 6px 6px 0 0;
+  transition: color 0.14s ease, background-color 0.14s ease;
+}
+
+.pdf2abp-tab:hover {
+  color: var(--md-sys-color-on-surface, inherit);
+  background-color: var(--md-sys-color-surface-container-low, rgba(125, 125, 125, 0.06));
+}
+
+.pdf2abp-tab[aria-selected='true'] {
+  color: var(--md-sys-color-primary, #0b57d0);
+  font-weight: 600;
+}
+
+.pdf2abp-tab[aria-selected='true']::after {
+  content: '';
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  bottom: 0;
+  height: 2px;
+  border-radius: 2px 2px 0 0;
+  background-color: var(--md-sys-color-primary, #0b57d0);
+}
+
+.pdf2abp-tab-count {
+  font-size: 0.68rem;
+  font-variant-numeric: tabular-nums;
+  padding: 1px 5px;
+  border-radius: 999px;
+  background-color: var(--md-sys-color-surface-container, rgba(125, 125, 125, 0.12));
+  color: var(--harness-text-secondary, #5f6368);
+}
+
+/* Scrollable Tab Panels Area */
+.pdf2abp-tabpanel-host {
+  flex: 1 1 0%;
+  min-height: 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.pdf2abp-tabpanel {
+  flex: 1 1 0%;
+  min-height: 0;
+  min-width: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 12px 14px 20px;
+  box-sizing: border-box;
+}
+
+.pdf2abp-tabpanel[hidden] {
+  display: none;
+}
+
+/* ============================================================================
+   4. GitHub Issue-Style Linear Milestone Guide (过程导览)
+   ============================================================================ */
+.pdf2abp-timeline-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.pdf2abp-stage-row {
+  display: flex;
+  align-items: stretch;
+  gap: 10px;
+  min-width: 0;
+}
+
+/* Left Rail + Node Icon */
+.pdf2abp-rail-col {
+  width: 24px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.pdf2abp-node-badge {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 0.68rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  border: 1.5px solid var(--md-sys-color-outline-variant, #cbd5e1);
+  background-color: var(--harness-bg-window, #ffffff);
+  color: var(--harness-text-secondary, #64748b);
+  box-sizing: border-box;
+}
+
+.pdf2abp-stage-row.is-completed .pdf2abp-node-badge {
+  background-color: #16a34a;
+  border-color: #16a34a;
+  color: #ffffff;
+}
+
+.pdf2abp-stage-row.is-skipped .pdf2abp-node-badge {
+  background-color: var(--md-sys-color-surface-container, #e2e8f0);
+  border-color: var(--md-sys-color-outline-variant, #cbd5e1);
+  color: var(--harness-text-secondary, #64748b);
+}
+
+.pdf2abp-stage-row.is-running .pdf2abp-node-badge {
+  border-color: var(--md-sys-color-primary, #0b57d0);
+  background-color: color-mix(in srgb, var(--md-sys-color-primary, #0b57d0) 12%, transparent);
+  color: var(--md-sys-color-primary, #0b57d0);
+}
+
+.pdf2abp-stage-row.is-failed .pdf2abp-node-badge {
+  background-color: var(--md-sys-color-error, #b3261e);
+  border-color: var(--md-sys-color-error, #b3261e);
+  color: #ffffff;
+}
+
+.pdf2abp-node-active-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--md-sys-color-primary, #0b57d0);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .pdf2abp-stage-row.is-running .pdf2abp-node-badge {
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--md-sys-color-primary, #0b57d0) 16%, transparent);
+  }
+  .pdf2abp-node-active-dot {
+    animation: pdf2abpNodePulse 1.6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  }
+  .pdf2abp-status-pill.is-running .pdf2abp-status-dot {
+    animation: pdf2abpNodePulse 1.6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  }
+}
+
+@keyframes pdf2abpNodePulse {
+  0%, 100% {
+    transform: scale(0.92);
+    opacity: 0.72;
+  }
+  50% {
+    transform: scale(1.16);
+    opacity: 1;
+  }
+}
+
+.pdf2abp-rail-line {
+  width: 2px;
+  flex: 1 1 auto;
+  min-height: 14px;
+  margin: 3px 0;
+  border-radius: 1px;
+  background-color: var(--md-sys-color-outline-variant, rgba(148, 163, 184, 0.35));
+}
+
+.pdf2abp-stage-row.is-completed .pdf2abp-rail-line {
+  background-color: rgba(22, 163, 74, 0.45);
+}
+
+.pdf2abp-stage-row:last-child .pdf2abp-rail-line {
+  display: none;
+}
+
+/* Stage Card Body */
+.pdf2abp-stage-card {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin-bottom: 10px;
+  padding: 9px 11px;
+  border-radius: 10px;
+  border: 1px solid var(--md-sys-color-outline-variant, rgba(125, 125, 125, 0.22));
+  background-color: var(--md-sys-color-surface-container-lowest, var(--harness-bg-window, #ffffff));
+  box-sizing: border-box;
+}
+
+.pdf2abp-stage-row.is-running .pdf2abp-stage-card {
+  border-color: color-mix(in srgb, var(--md-sys-color-primary, #0b57d0) 48%, transparent);
+  background-color: color-mix(in srgb, var(--md-sys-color-primary, #0b57d0) 4%, var(--harness-bg-window, #ffffff));
+}
+
+.pdf2abp-stage-row.is-pending .pdf2abp-stage-card {
+  opacity: 0.76;
+  background-color: transparent;
+}
+
+.pdf2abp-stage-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+}
+
+.pdf2abp-stage-title {
+  font-size: 0.81rem;
+  font-weight: 600;
+  color: var(--md-sys-color-on-surface, inherit);
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.pdf2abp-stage-time {
+  font-size: 0.7rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--harness-text-secondary, #64748b);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.pdf2abp-stage-summary {
+  margin: 4px 0 0;
+  font-size: 0.76rem;
+  line-height: 1.48;
+  color: var(--harness-text-secondary, #475569);
+  overflow-wrap: anywhere;
+}
+
+.pdf2abp-stage-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 6px;
+}
+
+.pdf2abp-info-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 6px;
+  border-radius: 6px;
+  font-size: 0.69rem;
+  font-variant-numeric: tabular-nums;
+  border: 1px solid var(--md-sys-color-outline-variant, rgba(125, 125, 125, 0.25));
+  background-color: var(--md-sys-color-surface-container-low, rgba(125, 125, 125, 0.05));
+  color: var(--harness-text-secondary, #475569);
+}
+
+/* Subagent Proofreading Block Inside Stage 5 */
+.pdf2abp-subagent-block {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--md-sys-color-outline-variant, rgba(125, 125, 125, 0.28));
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pdf2abp-progress-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.pdf2abp-progress-label-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.71rem;
+  color: var(--harness-text-secondary, #64748b);
+  font-variant-numeric: tabular-nums;
+}
+
+.pdf2abp-progress-track {
+  width: 100%;
+  height: 5px;
+  border-radius: 999px;
+  background-color: var(--md-sys-color-surface-container-highest, rgba(125, 125, 125, 0.18));
+  overflow: hidden;
+}
+
+.pdf2abp-progress-fill {
+  height: 100%;
+  background-color: var(--md-sys-color-primary, #0b57d0);
+  transition: width 0.25s cubic-bezier(0.2, 0, 0, 1);
+}
+
+.pdf2abp-active-workers {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.pdf2abp-worker-card {
+  padding: 7px 9px;
+  border-radius: 8px;
+  border: 1px solid color-mix(in srgb, var(--md-sys-color-primary, #0b57d0) 26%, transparent);
+  background-color: var(--md-sys-color-surface, #ffffff);
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+[data-theme='dark'] .pdf2abp-worker-card {
+  background-color: rgba(255, 255, 255, 0.03);
+}
+
+.pdf2abp-worker-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  min-width: 0;
+}
+
+.pdf2abp-worker-id {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--md-sys-color-primary, #0b57d0);
+  white-space: nowrap;
+}
+
+.pdf2abp-worker-title {
+  font-size: 0.74rem;
+  font-weight: 500;
+  color: var(--md-sys-color-on-surface, inherit);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pdf2abp-worker-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  font-size: 0.69rem;
+  color: var(--harness-text-secondary, #64748b);
+}
+
+.pdf2abp-tool-pill {
+  font-family: var(--harness-font-mono, monospace);
+  font-size: 0.67rem;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background-color: color-mix(in srgb, var(--md-sys-color-secondary-container, #d3e3fd) 65%, transparent);
+  color: var(--md-sys-color-on-secondary-container, #041e49);
+  max-width: 170px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Vision Strip */
+.pdf2abp-vision-strip {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding: 4px 0 2px;
+  margin-top: 6px;
+}
+
+.pdf2abp-vision-thumb {
+  flex-shrink: 0;
+  width: 68px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  border: 1px solid var(--md-sys-color-outline-variant, rgba(125, 125, 125, 0.3));
+  border-radius: 6px;
+  padding: 2px;
+  background: transparent;
+  cursor: pointer;
+  color: inherit;
+  text-align: center;
+}
+
+.pdf2abp-vision-thumb img {
+  width: 100%;
+  height: 48px;
+  object-fit: cover;
+  border-radius: 4px;
+  display: block;
+}
+
+.pdf2abp-vision-thumb span {
+  font-size: 0.64rem;
+  color: var(--harness-text-secondary, #64748b);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Collapsible Details & Tables */
+.pdf2abp-subdetails {
+  margin-top: 6px;
+}
+
+.pdf2abp-subdetails summary {
+  cursor: pointer;
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--md-sys-color-primary, #0b57d0);
+  user-select: none;
+}
+
+.pdf2abp-filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 6px 0;
+}
+
+.pdf2abp-filter-pill {
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--md-sys-color-outline-variant, rgba(125, 125, 125, 0.3));
+  background: transparent;
+  color: var(--harness-text-secondary, #5f6368);
+  font-size: 0.7rem;
+  cursor: pointer;
+}
+
+.pdf2abp-filter-pill.is-active {
+  background-color: var(--md-sys-color-secondary-container, #d3e3fd);
+  color: var(--md-sys-color-on-secondary-container, #041e49);
+  border-color: transparent;
+  font-weight: 600;
+}
+
+.pdf2abp-matrix-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 240px;
+  overflow-y: auto;
+  margin-top: 4px;
+}
+
+.pdf2abp-matrix-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 4px 6px;
+  border-radius: 6px;
+  border: 1px solid var(--md-sys-color-outline-variant, rgba(125, 125, 125, 0.18));
+  font-size: 0.72rem;
+  min-width: 0;
+}
+
+.pdf2abp-matrix-main {
+  min-width: 0;
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pdf2abp-matrix-title {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pdf2abp-matrix-link {
+  border: none;
+  background: transparent;
+  color: var(--md-sys-color-primary, #0b57d0);
+  font-size: 0.69rem;
+  cursor: pointer;
+  white-space: nowrap;
+  padding: 1px 4px;
+}
+
+.pdf2abp-matrix-link:hover {
+  text-decoration: underline;
+}
+
+.pdf2abp-highlight-list {
+  list-style: none;
+  margin: 5px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.pdf2abp-highlight-item {
+  font-size: 0.71rem;
+  line-height: 1.4;
+  color: var(--harness-text-secondary, #5f6368);
+  overflow-wrap: anywhere;
+}
+
+.pdf2abp-highlight-item.is-error {
+  color: var(--md-sys-color-error, #b3261e);
+}
+
+/* ============================================================================
+   5. Grouped Artifacts Browser & Inline Preview (产物浏览)
+   ============================================================================ */
+.pdf2abp-file-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pdf2abp-file-group summary {
+  cursor: pointer;
+  font-size: 0.76rem;
+  font-weight: 600;
+  padding: 3px 0;
+  color: var(--md-sys-color-on-surface, inherit);
+}
+
+.pdf2abp-files-list {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-top: 4px;
+}
+
+.pdf2abp-file-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 5px 8px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+  font-size: 0.74rem;
+  min-width: 0;
+}
+
+.pdf2abp-file-btn > span:first-child {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pdf2abp-file-btn:hover,
+.pdf2abp-file-btn.active {
+  background-color: var(--md-sys-color-surface-container, rgba(148, 163, 184, 0.14));
+  border-color: var(--md-sys-color-outline-variant, rgba(148, 163, 184, 0.3));
+}
+
+.pdf2abp-file-preview {
+  margin-top: 12px;
+  border: 1px solid var(--md-sys-color-outline-variant, rgba(148, 163, 184, 0.28));
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.pdf2abp-preview-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 5px 10px;
+  background-color: var(--md-sys-color-surface-container, rgba(148, 163, 184, 0.1));
+  border-bottom: 1px solid var(--md-sys-color-outline-variant, rgba(148, 163, 184, 0.22));
+}
+
+.pdf2abp-preview-title {
+  font-size: 0.72rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pdf2abp-preview-code {
+  margin: 0;
+  padding: 10px;
+  max-height: 320px;
+  overflow: auto;
+  font-family: var(--harness-font-mono, ui-monospace, monospace);
+  font-size: 0.73rem;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.pdf2abp-preview-img {
+  display: block;
+  max-width: 100%;
+  max-height: 320px;
+  margin: 8px auto;
+}
+
+/* ============================================================================
+   6. Raw Event Stream (原始事件)
+   ============================================================================ */
+.pdf2abp-event-log {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.pdf2abp-log-line {
+  padding: 4px 6px;
+  border-radius: 6px;
+  background-color: var(--md-sys-color-surface-container-low, rgba(125, 125, 125, 0.05));
+  font-size: 0.72rem;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.pdf2abp-log-line.is-error {
+  background-color: color-mix(in srgb, var(--md-sys-color-error-container, #fee2e2) 45%, transparent);
+}
+
+.pdf2abp-empty-note {
+  padding: 28px 14px;
+  text-align: center;
+  line-height: 1.6;
+  color: var(--harness-text-secondary, #64748b);
+}
