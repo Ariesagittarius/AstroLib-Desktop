@@ -1,10 +1,3 @@
-/**
- * src/services/translation/client/translation-drawer-view.ts
- * ============================================================================
- * Settings & Export Drawer View Controller for Translation Dock
- * ============================================================================
- */
-
 import type { ParagraphUnit, TranslationProviderId, TranslationDisplayMode, TranslationExportFormat } from '../types';
 import { TranslationExporter } from '../export/translation-exporter';
 import { TranslationStorage } from '../storage/translation-storage';

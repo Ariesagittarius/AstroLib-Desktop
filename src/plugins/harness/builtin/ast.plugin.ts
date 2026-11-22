@@ -1,10 +1,3 @@
-/**
- * src/plugins/harness/builtin/ast.plugin.ts
- * ============================================================================
- * AstroLib 章节 AST 与学术卡片插件 (/ast & /cards) - 统一协议与 M3 极简学术规范
- * ============================================================================
- */
-
 import type { HarnessPlugin, PluginContext } from '../types.ts';
 import { UniversalLocatorResolver } from '../../../core/content-api/content-locator.ts';
 
@@ -60,9 +53,6 @@ function renderAstTreeToContextText(nodes: any[], indent = '', maxDepth = 4): st
   return lines;
 }
 
-/**
- * 清理行内截断可能导致的未闭合 TeX 定界符，确保 KaTeX 渲染不出错
- */
 function sanitizePreviewText(raw: string, maxLen = 100): string {
   const s = (raw || '').replace(/\s+/g, ' ').trim();
   if (s.length <= maxLen) return s;
@@ -78,9 +68,6 @@ function sanitizePreviewText(raw: string, maxLen = 100): string {
   return sliced + '…';
 }
 
-/**
- * 极简学术风格的层次化 AST 树视图 (无彩虹标签，遵守 Material You 单色层次与语义留白)
- */
 function renderAstTreeToHtml(nodes: any[], depth = 0): string {
   const listClass = depth === 0 ? 'harness-ast-tree harness-ast-tree--root' : 'harness-ast-tree';
   let html = `<ul class="${listClass}">`;

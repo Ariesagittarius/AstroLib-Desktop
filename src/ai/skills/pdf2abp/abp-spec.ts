@@ -1,10 +1,3 @@
-/**
- * src/ai/skills/pdf2abp/abp-spec.ts
- * ============================================================================
- * Skill 1: AstroBook Package (ABP 1.0.0) 完整能力与规范手册
- * ============================================================================
- */
-
 import type { SkillDocument } from './types.ts';
 
 export const abpSpecSkill: SkillDocument = {

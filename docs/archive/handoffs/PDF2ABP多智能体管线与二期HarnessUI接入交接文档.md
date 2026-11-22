@@ -1,7 +1,7 @@
 # AstroLib 自动化 PDF2ABP 多智能体管线与二期 Harness UI 接入交接文档
 
-**版本**: Phase 1 Closed · Phase 2 UI Handoff  
-**日期**: 2026-11-21  
+**版本**: Phase 1 Closed · Phase 2 UI Handoff
+**日期**: 2026-11-21
 **前置依赖基线**: `ADR-UI-SURFACE-CONTRACT-2026-11-13.md`、`P1_FINAL_SIGNOFF_2026-11-14.md`、`AGENTS.md` §5–§8
 
 ---
@@ -66,8 +66,8 @@
 - 现有客户端控制器：[harness-controller.ts](file:///d:/Antigravity/project/AstroLib/src/components/harness/harness-controller.ts)
 
 > [!IMPORTANT]
-> **强制工程约束（防止 God Controller 膨胀反弹）**：  
-> `harness-controller.ts` 当前已达 **2,596 行**。二期 **严禁** 将 PDF2ABP 面板的 DOM 渲染、SSE 订阅状态机、工作区文件浏览器逻辑继续堆入 `harness-controller.ts`！  
+> **强制工程约束（防止 God Controller 膨胀反弹）**：
+> `harness-controller.ts` 当前已达 **2,596 行**。二期 **严禁** 将 PDF2ABP 面板的 DOM 渲染、SSE 订阅状态机、工作区文件浏览器逻辑继续堆入 `harness-controller.ts`！
 > 必须遵循“单边界高内聚模块”原则，新增独立前端组件/控制器目录：
 > - `src/components/harness/pdf2abp/pdf2abp-store.ts`（纯 TypeScript 状态机，无 DOM 依赖，可独立单测）
 > - `src/components/harness/pdf2abp/pdf2abp-artifacts-panel.ts`（管理 `#harness-pane-artifacts` 内的实时面板渲染、SSE 连接与文件预览）

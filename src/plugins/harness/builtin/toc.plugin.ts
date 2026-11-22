@@ -1,10 +1,3 @@
-/**
- * src/plugins/harness/builtin/toc.plugin.ts
- * ============================================================================
- * AstroLib 章节大纲目录插件 (/toc) - 统一协议驱动
- * ============================================================================
- */
-
 import type { HarnessPlugin, PluginContext } from '../types.ts';
 import { UniversalLocatorResolver } from '../../../core/content-api/content-locator.ts';
 

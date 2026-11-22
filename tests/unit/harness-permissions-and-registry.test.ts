@@ -1,10 +1,3 @@
-/**
- * tests/unit/harness-permissions-and-registry.test.ts
- * ============================================================================
- * Agent Harness 三档权限矩阵、可扩展工具注册表快照与多态成果物仓单元测试
- * ============================================================================
- */
-
 import { describe, it, expect, beforeEach } from 'vitest';
 import { PluginEnvironment } from '../../src/plugins/harness/plugin-environment.ts';
 import { ArtifactStore } from '../../src/features/harness/artifact-store.ts';
@@ -154,7 +147,6 @@ describe('Harness Permissions, Tool Registry & Artifact Store Suite', () => {
       const redoItem = store.stepCanvasVersion('canvas-euler', 1);
       expect(redoItem?.code).toBe('<div>v2</div>');
 
-      // 四种类型均共存于 items 中
       const kinds = new Set(store.getState().items.map((i) => i.kind));
       expect(kinds.has('pdf2abp')).toBe(true);
       expect(kinds.has('ast')).toBe(true);

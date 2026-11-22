@@ -1,10 +1,3 @@
-/**
- * tests/unit/electron-services.test.ts
- * ============================================================================
- * AstroLib 桌面端服务单元与契约测试
- * ============================================================================
- */
-
 import { describe, it, expect } from 'vitest';
 import path from 'node:path';
 import fs from 'node:fs';
@@ -59,7 +52,7 @@ describe('Electron Services & Infrastructure Unit Tests', () => {
 
   it('StaticHandler 应具备准确的 Clean URLs 路由解析逻辑', () => {
     const handler = new StaticHandler(path.join(projectRoot, 'public'));
-    // 验证实例正常创建
+
     expect(handler).toBeDefined();
     expect(typeof (handler as any).resolveFilePath).toBe('function');
   });
@@ -103,24 +96,20 @@ describe('Electron Services & Infrastructure Unit Tests', () => {
 
     const gzipped = zlib.gzipSync(Buffer.from(JSON.stringify(bundle), 'utf8'));
 
-    // 1. 安装
     const meta = await manager.installBookFromAbp(gzipped);
     expect(meta.manifest.id).toBe('telecom-test_circuit');
     expect(meta.manifest.title).toBe('电路测试教材');
 
-    // 2. 检索已安装列表
     const installed = await manager.getInstalledBooks();
     expect(installed.length).toBe(1);
     expect(installed[0].manifest.slug).toBe('test_circuit');
 
-    // 3. 读取 Manifest 与章节
     const retrievedManifest = await manager.getBookManifest('telecom', 'test_circuit');
     expect(retrievedManifest?.title).toBe('电路测试教材');
 
     const retrievedPayload = await manager.getChapterPayload('telecom', 'test_circuit', '01_intro');
     expect(retrievedPayload?.html).toContain('基尔霍夫定律');
 
-    // 4. StaticHandler 联动验证 (userAbpDir 动态合成)
     const handler = new StaticHandler(path.join(projectRoot, 'dist'), tmpStorage);
     const req: any = {
       method: 'GET',
@@ -136,13 +125,11 @@ describe('Electron Services & Infrastructure Unit Tests', () => {
     expect(handled).toBe(true);
     expect(statusCode).toBe(200);
 
-    // 5. 卸载
     const removed = await manager.removeBook('telecom', 'test_circuit');
     expect(removed).toBe(true);
     const afterRemoved = await manager.getInstalledBooks();
     expect(afterRemoved.length).toBe(0);
 
-    // 6. clearAllBooks 清空验证
     await manager.installBookFromAbp(gzipped);
     expect((await manager.getInstalledBooks()).length).toBe(1);
     await manager.clearAllBooks();
@@ -184,17 +171,14 @@ describe('Electron Services & Infrastructure Unit Tests', () => {
 
     expect(() => validateAbpBundle(baseBundle)).not.toThrow();
 
-    // 1. 错误 schemaVersion
     expect(() =>
       validateAbpBundle({ ...baseBundle, manifest: { ...baseBundle.manifest, schemaVersion: '9.9.9' } })
     ).toThrow(/schemaVersion/);
 
-    // 2. 入口章节不在 chapters 中
     expect(() =>
       validateAbpBundle({ ...baseBundle, manifest: { ...baseBundle.manifest, entryPoint: '99_missing' } })
     ).toThrow(/入口章节/);
 
-    // 3. section 引用了不存在的章节
     expect(() =>
       validateAbpBundle({
         ...baseBundle,
@@ -241,14 +225,12 @@ describe('Electron Services & Infrastructure Unit Tests', () => {
         return zlib.gzipSync(Buffer.from(JSON.stringify(bundle), 'utf8'));
       };
 
-      // 1. 首次安装与重复覆盖安装
       await manager.installBookFromAbp(makeAbp('V1'));
       await manager.installBookFromAbp(makeAbp('V2'));
       const books = await manager.getInstalledBooks();
       expect(books).toHaveLength(1);
       expect(books[0].manifest.title).toBe('V2');
 
-      // 2. 模拟元数据文件写入失败（将 installed_books.json 替换为目录触发 rename 失败），验证 bookDir 完整回滚回 V2
       const metaPath = path.join(tmpStorage, 'installed_books.json');
       const savedMeta = fs.readFileSync(metaPath, 'utf8');
       fs.rmSync(metaPath, { force: true });
@@ -261,7 +243,6 @@ describe('Electron Services & Infrastructure Unit Tests', () => {
       );
       expect(manifestAfterRollback.title).toBe('V2');
 
-      // 恢复文件以便清理
       fs.rmSync(metaPath, { recursive: true, force: true });
       fs.writeFileSync(metaPath, savedMeta, 'utf8');
     } finally {
@@ -274,13 +255,11 @@ describe('Electron Services & Infrastructure Unit Tests', () => {
     try {
       const manager = new DesktopBookManager(tmpStorage);
 
-      // 1. 损坏包（缺 manifest）
       const badBundle = { invalid: true };
       const badGzip = zlib.gzipSync(Buffer.from(JSON.stringify(badBundle), 'utf8'));
       await expect(manager.installBookFromAbp(badGzip)).rejects.toThrow();
       expect(fs.readdirSync(tmpStorage).filter((f) => !f.startsWith('.'))).toHaveLength(0);
 
-      // 2. 路径逃逸包 (colSlug: ../escape)
       const escapeBundle = {
         manifest: {
           schemaVersion: ABP_SCHEMA_VERSION,
@@ -365,17 +344,14 @@ describe('Electron Services & Infrastructure Unit Tests', () => {
 
       const bookDir = path.join(tmpStorage, 'cs-downgrade_demo');
 
-      // 1. 初次安装：c1, c2
       await manager.installBookFromAbp(makeBundle(['c1', 'c2']));
       expect(fs.existsSync(path.join(bookDir, 'chapters/c1.json'))).toBe(true);
       expect(fs.existsSync(path.join(bookDir, 'chapters/c2.json'))).toBe(true);
 
-      // 2. 降级安装：仅 c1。c2 必须被物理清除
       await manager.installBookFromAbp(makeBundle(['c1']));
       expect(fs.existsSync(path.join(bookDir, 'chapters/c1.json'))).toBe(true);
       expect(fs.existsSync(path.join(bookDir, 'chapters/c2.json'))).toBe(false);
 
-      // 3. 卸载操作：目录、缓存彻底删除，零残留
       await manager.removeBook('cs', 'downgrade_demo');
       expect(fs.existsSync(bookDir)).toBe(false);
       expect(await manager.getInstalledBooks()).toHaveLength(0);

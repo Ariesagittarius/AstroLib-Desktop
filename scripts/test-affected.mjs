@@ -1,8 +1,4 @@
 #!/usr/bin/env node
-/**
- * scripts/test-affected.mjs
- * Compute changed files from Git and execute the targeted Vitest projects / suites.
- */
 
 import fs from 'node:fs';
 import path from 'node:path';
@@ -67,7 +63,7 @@ function getGitChangedFiles(opts) {
         if (clean) changed.add(clean);
       }
     } catch {
-      // Fallback when HEAD or merge-base is unavailable (e.g. initial commit)
+
     }
   }
 
@@ -83,7 +79,7 @@ function getGitChangedFiles(opts) {
         if (clean) changed.add(clean);
       }
     } catch {
-      // ignore
+
     }
   }
 

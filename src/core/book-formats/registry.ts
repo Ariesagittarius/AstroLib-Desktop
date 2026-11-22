@@ -1,13 +1,3 @@
-/**
- * src/core/book-formats/registry.ts
- * ============================================================================
- * 格式无关书籍适配器注册表 (Book Format Registry)
- * ============================================================================
- * 对外唯一入口：根据文件扩展名或二进制特征分派给对应 IBookFormatAdapter，
- * 将所有格式统一归一化为标准内容包 (NormalizedBookResult)。
- * ============================================================================
- */
-
 import { AbpFormatAdapter } from './abp-adapter.ts';
 import { EpubFormatAdapter } from './epub-adapter.ts';
 import type { BookNormalizeOptions, IBookFormatAdapter, NormalizedBookResult } from './types.ts';

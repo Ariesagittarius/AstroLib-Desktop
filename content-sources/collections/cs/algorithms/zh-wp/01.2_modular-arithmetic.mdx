@@ -30,7 +30,7 @@ $$
 
 理解模运算的一种方法是认为模运算将所有的整数限定在一个预先定义好的范围 $\{0,1,\dots,N - 1\}$ 内，一旦离开这个范围时，您会发现您又绕了回来——跟表盘上的指针很相似(如图1-3所示)。
 
-![](../images/d4a9742690d61ea3a7f7fa17ce483d58da004c61b1b5855dc363b852d08a9775.jpg)  
+![](../images/d4a9742690d61ea3a7f7fa17ce483d58da004c61b1b5855dc363b852d08a9775.jpg)
 图 1-3 加法模 8 运算
 
 模运算的另一种解释是模运算虽然处理所有的整数，但却将它们划分成 $N$ 个等价类(equivalence class)，每个等价类的形式是 $\{i + kN:k\in \mathbb{Z}\}$ ，其中 $i$ 在0到 $N - 1$ 之间取值。例如，模3运算就有3个等价类：
@@ -121,11 +121,11 @@ $$
 <div class="mineru-algorithm">
 function modexp(x, y, N)
 Input: Two n-bit integers x and N, an integer exponent y
-Output:  $x^{y} \mod N$ 
+Output:  $x^{y} \mod N$
 if y = 0: return 1
     z = modexp(x, [y/2], N)
     if y is even:
-    return  $z^{2} \mod N$ 
+    return  $z^{2} \mod N$
     else:
     return  $x \cdot z^{2} \mod N$
 </div>
@@ -150,9 +150,9 @@ $$
 
 Euclid 算法采用了以下的简单计算公式。
 
-![](../images/19fe72277edd65441a6db37b3c799f1730382d8d89066483520ae0f42672a2dd.jpg)  
+![](../images/19fe72277edd65441a6db37b3c799f1730382d8d89066483520ae0f42672a2dd.jpg)
 Euclid of Alexandria
-BC 325-265  
+BC 325-265
 Euclid 规则 如果 $x$ 和 $y$ 是正整数，且有 $x \geqslant y$ ，那么 $\gcd(x, y) = \gcd(x \mod y, y)$ 。
 
 © Corbis
@@ -161,7 +161,7 @@ Euclid 规则 如果 $x$ 和 $y$ 是正整数，且有 $x \geqslant y$ ，那么
 
 以下是关于 $\gcd(x, y) = \gcd(x - y, y)$ 的证明。任何能够整除 $x$ 和 $y$ 的整数一定也可以整除 $x - y$ ，所以有 $\gcd(x, y) \leqslant \gcd(x - y, y)$ 成立。同理，任何能够整除 $x - y$ 和 $y$ 的整数一定也可以整除 $x$ 和 $y$ ，所以有 $\gcd(x, y) \geqslant \gcd(x - y, y)$ 成立，从而得证 $\gcd(x, y) = \gcd(x - y, y)$ 。
 
-![](../images/ef5b3b1ac96e8bfd3166f8b6948a29d3eca53a0c7d4614f19fd9264d400edc19.jpg)  
+![](../images/ef5b3b1ac96e8bfd3166f8b6948a29d3eca53a0c7d4614f19fd9264d400edc19.jpg)
 图1-5Euclid的求两数的最大公因数算法
 
 基于 Euclid 规则的思想，我们可以写出一个精妙的递归算法(如图 1-5 所示)，算法的正确性可由规则直接保证。为了估计算法的运行时间，我们需要了解参数(a, b)随着每次递归调用而减小的速度有多快。在每次递归调用中，参数(a, b)变成了(b, a mod b)，a 和 b 的次序发生了交换，两者中的大者 a，减少至 a mod b。这是一个显著的简化。
@@ -188,10 +188,10 @@ Euclid 规则 如果 $x$ 和 $y$ 是正整数，且有 $x \geqslant y$ ，那么
 
 <div class="mineru-algorithm">
 function extended-Euclid(a,b)
-Input: Two positive integers a and b with  $a \geq b \geq 0$ 
-Output: Integers x, y, d such that  $d = \gcd(a, b)$  and  $ax + by = d$ 
+Input: Two positive integers a and b with  $a \geq b \geq 0$
+Output: Integers x, y, d such that  $d = \gcd(a, b)$  and  $ax + by = d$
 if b = 0: return (1, 0, a)
- $(x', y', d) = \text{extended-Euclid}(b, a \mod b)$ 
+ $(x', y', d) = \text{extended-Euclid}(b, a \mod b)$
 return  $(y', x' - \lfloor a/b \rfloor y', d)$
 </div>
 

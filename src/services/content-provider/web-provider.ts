@@ -1,10 +1,3 @@
-/**
- * src/services/content-provider/web-provider.ts
- * ============================================================================
- * Web 浏览器端内容提供者实现 (PWA / IndexedDB / DecompressionStream)
- * ============================================================================
- */
-
 import {
   type AbpBundlePayload,
   type AstroBookManifest,
@@ -26,9 +19,6 @@ const STORE_MANIFESTS = 'manifests';
 const STORE_CHAPTERS = 'chapters';
 const STORE_ASSETS = 'assets';
 
-/**
- * 极简 Promise 封装的 IndexedDB 客户端 (零外部依赖)
- */
 class BrowserBookDb {
   private dbPromise: Promise<IDBDatabase> | null = null;
   private static memoryFallback: {
@@ -61,11 +51,11 @@ class BrowserBookDb {
           db.createObjectStore(STORE_MANIFESTS, { keyPath: 'id' });
         }
         if (!db.objectStoreNames.contains(STORE_CHAPTERS)) {
-          // 键形如: 'math-linear_algebra:01_intro'
+
           db.createObjectStore(STORE_CHAPTERS, { keyPath: 'key' });
         }
         if (!db.objectStoreNames.contains(STORE_ASSETS)) {
-          // 键形如: 'math-linear_algebra:images/fig_1.png'
+
           db.createObjectStore(STORE_ASSETS, { keyPath: 'key' });
         }
       };
@@ -244,9 +234,6 @@ class BrowserBookDb {
   }
 }
 
-/**
- * 原生 DecompressionStream / Node 兼容 Gzip 解压
- */
 async function decompressGzip(data: ArrayBuffer | Uint8Array): Promise<string> {
   const buffer = data instanceof Uint8Array ? data : new Uint8Array(data);
 
@@ -256,7 +243,6 @@ async function decompressGzip(data: ArrayBuffer | Uint8Array): Promise<string> {
     return await new Response(decompressedStream).text();
   }
 
-  // Node 环境兼容回退
   try {
     const modName = 'node:zlib';
     const zlib: any = await import(/* @vite-ignore */ modName);
@@ -366,7 +352,6 @@ export class WebContentProvider implements IContentProvider {
       );
     }
 
-    // 统一安装校验入口 (P1-C1)
     const bundle = validateInstallPayload(rawJson);
     return await this.installNormalizedBundle(bundle, onProgress);
   }
@@ -386,8 +371,6 @@ export class WebContentProvider implements IContentProvider {
       sourceType: 'local-file',
     };
 
-    // 逆序提交原子安装 (P1-C2)：
-    // 先写章节与静态资源 → 全部成功后再写 manifest；中途任何异常立即触发 deleteBook 回滚
     try {
       if (onProgress) onProgress(60, '持久化章节数据...');
 
@@ -417,7 +400,6 @@ export class WebContentProvider implements IContentProvider {
       if (onProgress) onProgress(94, '清理过时章节...');
       await this.db.cleanStaleChapters(manifest.id, new Set(Object.keys(chapters)));
 
-      // 同时从内存缓存中剔除不再存在的过时章节 (P1-C3 降级安装彻底清理)
       const validSlugs = new Set(Object.keys(chapters));
       for (const k of Array.from(this.memoryCache.keys())) {
         if (k.startsWith(`chapter:${manifest.id}:`)) {
@@ -433,7 +415,7 @@ export class WebContentProvider implements IContentProvider {
       if (onProgress) onProgress(100, '安装完成！');
       return meta;
     } catch (err: any) {
-      // 异常自动回滚：清理可能已写入的孤立章节，确保书库无半残状态
+
       try {
         await this.db.deleteBook(manifest.id);
         this.memoryCache.delete(`manifest:${manifest.id}`);

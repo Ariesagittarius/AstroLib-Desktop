@@ -1,17 +1,3 @@
-/**
- * src/components/harness/harness-controller.ts
- * ============================================================================
- * AstroLib Agent Harness 前端全功能交互控制器 (Interactive Client Controller)
- * ============================================================================
- * 规范：
- * 1. 基于 StructuredTurn + Metro 线性导览图彻底重构流式执行状态机；
- * 2. 思维链与工具调用严格按发生时序独立落节点，杜绝内容混杂与卡片撑爆；
- * 3. 原生支持实时中断 (Stop/Abort)、三档权限确认、/pdf2abp 独立内联卡片、
- *    AstroBlocks 内联声明式排版、AstroCanvas 双模沙箱及多态成果物历史仓；
- * 4. 统一接入 HarnessSettingsStore 与全局设置中心「Agent 与工具」。
- * ============================================================================
- */
-
 import type { Terminal } from '@xterm/xterm';
 import type { FitAddon } from '@xterm/addon-fit';
 import { mdToHtml } from '../../ai/client/chat-markdown.ts';
@@ -383,7 +369,6 @@ export class HarnessController {
       reader.readAsDataURL(file);
     });
 
-    // 若为 SVG 或小于 900KB 直接使用原 DataURL；大图自动适度缩放至最长边 1600px 以适配各网关负载
     if (file.type === 'image/svg+xml' || rawDataUrl.length <= 1_200_000) {
       return {
         id: `img-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
@@ -1138,7 +1123,6 @@ export class HarnessController {
       this.turnViews.set(msg.id, view);
       view.sync(msg.turn);
 
-      // 若旧版/斜杠直出存在 widgetsHtml 且尚无对应的 widget block，补充挂在末尾
       const hasInlineWidgetsInBlocks = (msg.turn.blocks || []).some((b) => b.kind === 'widget');
       if (msg.widgetsHtml && !hasInlineWidgetsInBlocks) {
         const wSlot = document.createElement('div');
@@ -1223,9 +1207,6 @@ export class HarnessController {
     });
   }
 
-  /**
-   * 使用 DOM TreeWalker 安全转换裸斜杠指令为交互胶囊，绝不破坏已有 HTML 属性
-   */
   private decorateInlineSlashCommands(rootEl: HTMLElement): void {
     const body = rootEl.querySelector('.harness-content-body') || rootEl;
     if (!body) return;
@@ -1700,7 +1681,6 @@ export class HarnessController {
       return;
     }
 
-    // 1. 追加用户气泡
     this.appendUserMessage(trimmed, attachedImages);
 
     if (active && active.title.startsWith('新会话')) {
@@ -1708,7 +1688,6 @@ export class HarnessController {
       this.renderSidebarSessions();
     }
 
-    // 2. 动态通过插件环境提取指令
     const inlineCmds = this.pluginEnv.extractInlineCommands(trimmed);
     const isPureCommand =
       attachedImages.length === 0 &&
@@ -1812,7 +1791,6 @@ export class HarnessController {
       this.switchInspectorTab(targetTab);
     }
 
-    // /pdf2abp 独立内联卡片（不写进 LLM 上下文）
     if (res.inlineWidget?.type === 'pdf2abp_launcher') {
       const placeholder = renderPdf2AbpInlineCardPlaceholder(res.inlineWidget.prefillPdfPath || '');
       this.appendSimpleAssistantHtml(placeholder, '');
@@ -2158,9 +2136,6 @@ export class HarnessController {
     };
   }
 
-  /**
-   * 统一全双工流式对话与交错时间流状态机 (自然序 Think/Tool/Text/Widget + 长程探索闭环)
-   */
   private async streamChatConversation(
     prompt: string,
     preSteps: ToolCallStep[] = [],
@@ -2301,7 +2276,6 @@ export class HarnessController {
     this.activeAbortController = abortController;
     this.setGeneratingUi(true);
 
-    // 轻量时钟刷新（不重绘 DOM，只驱动 TurnStreamView 原地更新毫秒计数器）
     const timerInterval = window.setInterval(() => {
       if (turn.status === 'streaming' && (turn.blocks?.length || 0) > 0) {
         turnView.sync(turn);
@@ -2526,7 +2500,6 @@ export class HarnessController {
           break;
         }
 
-        // 进入工具调用前封存当前文字块，保持自然穿插顺序
         closeActiveText();
         lastRoundHadTools = true;
 
@@ -2791,7 +2764,6 @@ export class HarnessController {
           }
         }
 
-        // 倒数第二轮提醒收束，避免死耗轮次后空手退出
         if (round === maxRounds - 1) {
           historyMessages.push({
             role: 'user',
@@ -2801,7 +2773,6 @@ export class HarnessController {
         }
       }
 
-      // 若耗尽全部 MAX_ROUNDS 仍停留在工具返回，强制执行一次 tool_choice: 'none' 的纯总结收敛请求
       if (lastRoundHadTools && !abortController.signal.aborted && activeProvider.id !== 'antigravity-cli') {
         const currentSettings = this.settingsStore.getState();
         const modelOpt = activeProvider.models.find((m) => m.id === currentSettings.currentModelId);
@@ -2956,7 +2927,6 @@ export class HarnessController {
         this.saveConversations();
       }
 
-      // 仅当本轮顺利完成时自动出队下一条用户追问
       if (turn.status === 'completed' && this.pendingMessageQueue.length > 0) {
         const nextQueued = this.pendingMessageQueue.shift();
         this.renderFollowupQueue();

@@ -1,8 +1,3 @@
-/**
- * src/scripts/navigation/spa-engine.ts
- * SPA 极速导航引擎：不可变内存缓存、全书空闲预热、乐观 UI、Scoped 优雅内容微动效
- */
-
 import { preprocessPage } from '../../utils/page-preprocess';
 
 declare global {
@@ -19,25 +14,20 @@ export function initSpaNavigationEngine(): void {
   }
   window.__spaNavInstalled = true;
 
-  // 不可变页面缓存：保存预解析清洗的母版 DOM 字符串，导航时按需取用，采用受控 LRU 淘汰策略
-  const pageCache = new Map<string, any>(); // key -> { title: string, mainHtml: string, rightHtml: string, sidebarHtml: string, headLinks, headStyles, textSnippet }
-  const inFlightRequests = new Map<string, Promise<any>>(); // key -> Promise<{ ... }>
+  const pageCache = new Map<string, any>();
+  const inFlightRequests = new Map<string, Promise<any>>();
   let navToken = 0;
 
-  /**
-   * 读取页面内存缓存上限（由用户独立配置，控制 LRU 淘汰池大小）
-   * 3: 极简节能 (3页) | 5: 标准平衡 (5页，默认) | 10: 充裕内存 (10页) | 20: 超大缓存 (20页) | -1: 不限
-   */
   function getMaxPageCacheSize(): number {
     try {
       if (localStorage.getItem('astrolib_lite_mode') === 'true') {
-        return 0; // 低性能模式下坚决不缓存历史页面 DOM，彻底释放内存
+        return 0;
       }
       const saved = localStorage.getItem('astrolib_max_page_cache');
       if (saved !== null && saved !== undefined && saved !== '') {
         const val = parseInt(saved, 10);
-        if (val === -1) return Infinity; // 不限制缓存上限
-        if (val === 0) return 0; // 完全不缓存
+        if (val === -1) return Infinity;
+        if (val === 0) return 0;
         if (!isNaN(val) && val > 0) return val;
       }
     } catch {}
@@ -45,10 +35,6 @@ export function initSpaNavigationEngine(): void {
     return isEmbeddedIframe ? 2 : 5;
   }
 
-  /**
-   * LRU 缓存裁剪与内存深度释放
-   * 当超过最大配额时，丢弃最早的预加载页面，保留最近访问的页面，并主动断开 DOM/HTML 字符串引用协助 V8 GC 回收
-   */
   function prunePageCache(): void {
     const max = getMaxPageCacheSize();
     if (max === 0) {
@@ -85,7 +71,6 @@ export function initSpaNavigationEngine(): void {
 
   let currentPathname = normPath(location.pathname);
 
-  // 顶栏极简微光进度条
   let progressBarEl: HTMLElement | null = null;
   let progressTimer = 0;
   let progressFinishTimer = 0;
@@ -102,7 +87,7 @@ export function initSpaNavigationEngine(): void {
   function startProgressBar(): void {
     clearTimeout(progressTimer);
     clearTimeout(progressFinishTimer);
-    // 仅对超过 60ms 的网络慢请求展示进度条，本地秒开缓存零闪烁
+
     progressTimer = window.setTimeout(() => {
       const bar = ensureProgressBar();
       bar.classList.add('is-active');
@@ -157,14 +142,13 @@ export function initSpaNavigationEngine(): void {
     root.querySelectorAll('script').forEach((s) => s.remove());
   }
 
-  // 解析与清洗 HTML，构建不可变母版缓存项（严格维护 LRU 顺序与内存回收）
   function parseAndCache(key: string, htmlText: string): any {
     const doc = new DOMParser().parseFromString(htmlText, 'text/html');
     const mainPane = doc.querySelector('.main-pane');
     if (!mainPane) throw new Error('main-pane not found in response');
 
     stripScripts(mainPane);
-    // 清除离屏 main-pane 中将被 Portal 到 body 的多余重复组件外壳，保持母版 DOM 纯净
+
     mainPane.querySelectorAll('#dsh-chat-root').forEach((el) => el.remove());
 
     const rightSidebar = doc.querySelector('.right-sidebar-container');
@@ -173,15 +157,12 @@ export function initSpaNavigationEngine(): void {
     if (sidebar) stripScripts(sidebar);
     const title = doc.title || '';
 
-    // 预先将 H1 中的数学公式完成 KaTeX 转换，杜绝 DOM 上树后的闪烁
     if (typeof window.__renderCustomMath === 'function') {
       window.__renderCustomMath(mainPane);
     }
 
-    // 离屏预处理：在缓存前对离屏 DOM 执行所有会引起 layout shift 的同步突变
     preprocessPage(mainPane as HTMLElement);
 
-    // 提取 head 中的额外样式表 link[rel="stylesheet"] 与 style 标签 (涵盖 dev HMR 样式与 prod scoped styles)
     const headLinks = Array.from(doc.querySelectorAll('head link[rel="stylesheet"]'))
       .map((l) => l.getAttribute('href'))
       .filter(Boolean);
@@ -197,7 +178,6 @@ export function initSpaNavigationEngine(): void {
       }))
       .filter((s) => s.content.trim().length > 0 || s.id);
 
-    // 性能突破：缓存序列化后的 HTML 字符串与文本切片，杜绝脱体 DOM 节点在 Blink C++ 内存中常驻
     const record = {
       title,
       mainHtml: mainPane.outerHTML,
@@ -225,7 +205,7 @@ export function initSpaNavigationEngine(): void {
     const key = normPath(url.pathname);
     if (pageCache.has(key)) {
       const cached = pageCache.get(key);
-      // 真 LRU 保鲜：在命中读取时重新移至 Map 队列末端，确保最近使用的页面不会被意外淘汰
+
       pageCache.delete(key);
       pageCache.set(key, cached);
       return Promise.resolve(cached);
@@ -252,7 +232,6 @@ export function initSpaNavigationEngine(): void {
     return p;
   }
 
-  // 从不可变 HTML 字符串缓存中反序列化 DOM 节点供当前页面挂载（按需即时生成，杜绝脱体 DOM 泄漏）
   function getPageNodes(record: any): {
     title: string;
     mainPane: Element | null;
@@ -305,7 +284,6 @@ export function initSpaNavigationEngine(): void {
       }
     }
 
-    // 若未记录过滚动条位置（如首次直接访问该 URL），自动将当前章节滚动到可视区域中央
     const active = scroller.querySelector('a[aria-current="page"]');
     if (active) {
       active.scrollIntoView({ block: 'center', behavior: 'instant' });
@@ -317,14 +295,12 @@ export function initSpaNavigationEngine(): void {
     if (!scroller || scroller.__hasScrollTracker) return;
     scroller.__hasScrollTracker = true;
 
-    // 实时记录左栏滚动偏好
     let scrollTimer = 0;
     scroller.addEventListener('scroll', () => {
       clearTimeout(scrollTimer);
       scrollTimer = window.setTimeout(saveSidebarScroll, 50);
     }, { passive: true });
 
-    // 点击章节链接前立即精准记录
     scroller.addEventListener('click', (e: MouseEvent) => {
       const target = e.target;
       if (target instanceof Element && target.closest('a[href]')) {
@@ -333,7 +309,6 @@ export function initSpaNavigationEngine(): void {
     }, { capture: true });
   }
 
-  // 更新左侧栏当前页高亮，并展开所属分组
   function updateSidebarActive(pathname: string): void {
     const sidebar = document.querySelector('nav.sidebar, .sidebar');
     if (!sidebar) return;
@@ -364,7 +339,6 @@ export function initSpaNavigationEngine(): void {
     }
   }
 
-  // 移动端：点击侧边栏链接后收起菜单遮罩
   function closeMobileMenu(): void {
     const btn = document.querySelector<HTMLButtonElement>('starlight-menu-button button');
     if (btn && document.body.hasAttribute('data-mobile-menu-expanded')) btn.click();
@@ -372,7 +346,6 @@ export function initSpaNavigationEngine(): void {
     document.getElementById('vp-sidebar-toggle-btn')?.setAttribute('aria-expanded', 'false');
   }
 
-  // 移动端左侧抽屉：点击抽屉外区域关闭
   document.addEventListener('click', (e) => {
     if (!document.body.hasAttribute('data-mobile-menu-expanded')) return;
     const target = e.target;
@@ -395,7 +368,6 @@ export function initSpaNavigationEngine(): void {
     closeMobileMenu();
   });
 
-  // 字体内存预热缓存：已就绪字符集缓存，杜绝 FOUT 与字体替换重排跳变
   const warmedFontsCache = new Set<string>();
 
   async function warmPageFonts(text: string | null | undefined, timeoutMs = 80): Promise<void> {
@@ -426,18 +398,17 @@ export function initSpaNavigationEngine(): void {
         await Promise.allSettled(promises);
       }
     } catch {
-      // 忽略字体加载异常
+
     }
   }
 
-  // 核心页面切换执行器：Scoped 作用域受控微动效与 0ms 本地瞬切
   async function loadPage(url: URL, { restoreScroll = false }: { restoreScroll?: boolean } = {}): Promise<void> {
     const token = ++navToken;
     startProgressBar();
 
     try {
       const pageData = await fetchPage(url);
-      if (token !== navToken) return; // 已被最新导航取代
+      if (token !== navToken) return;
 
       const { title, mainPane, rightSidebar, sidebar: newSidebar } = getPageNodes(pageData);
       const currentMain = document.querySelector('.main-pane');
@@ -446,19 +417,16 @@ export function initSpaNavigationEngine(): void {
       const currentRight = document.querySelector('.right-sidebar-container');
       const currentSidebar = document.querySelector('nav.sidebar, .sidebar-pane, .sidebar');
 
-      // 异步非阻塞预热字体：正文 DOM 立即 0ms 上屏，杜绝切章人为停顿
       void warmPageFonts(mainPane ? mainPane.textContent : '', 0);
 
       document.title = title || document.title;
 
-      // 0. 在 DOM 置换前派发全站页面卸载生命周期，通知各控制器析构旧页面资源、断开观察器并解除脱体引用
       try {
         document.dispatchEvent(new CustomEvent('astrolib:page-unload'));
       } catch (e) {
         console.warn('[SPA] page-unload error:', e);
       }
 
-      // 1. 跨图书切换时若侧边栏结构不同则同步替换侧边栏（同书导航保留侧边栏 DOM 避免滚动条弹回顶部）
       const currentBookKey = currentPathname.match(/\/collections\/([^/]+)\/([^/]+)/)?.[0];
       const targetBookKey = normPath(url.pathname).match(/\/collections\/([^/]+)\/([^/]+)/)?.[0];
       const isSameBook = Boolean(currentBookKey && targetBookKey && currentBookKey === targetBookKey);
@@ -469,7 +437,6 @@ export function initSpaNavigationEngine(): void {
         restoreSidebarScroll();
       }
 
-      // 2. 正文与右侧大纲置换
       if (mainPane) {
         currentMain.replaceWith(mainPane);
       }
@@ -480,7 +447,6 @@ export function initSpaNavigationEngine(): void {
         currentRight.remove();
       }
 
-      // 同步 head 中的新增样式表与内联 style (保障含有专属组件的页面通过 SPA 瞬切时样式完整)
       if (pageData.headLinks && pageData.headLinks.length > 0) {
         pageData.headLinks.forEach((href: string) => {
           if (!document.querySelector(`head link[href="${href}"]`)) {
@@ -516,7 +482,6 @@ export function initSpaNavigationEngine(): void {
       updateSidebarActive(url.pathname);
       closeMobileMenu();
 
-      // 3. 滚动位置恢复与目标定位
       if (url.hash) {
         const targetId = decodeURIComponent(url.hash.slice(1));
         const el = document.getElementById(targetId) || document.querySelector(`[data-src-line="${targetId.replace(/^L/, '')}"]`);
@@ -534,9 +499,8 @@ export function initSpaNavigationEngine(): void {
         window.scrollTo(0, y);
       }
 
-      // 4. 触发平滑作用域入场微动效（Scoped Micro-Transition，零层级遮挡）
       document.body.classList.remove('vp-page-entering');
-      // 强制重绘以重置动画
+
       void document.body.offsetWidth;
       document.body.classList.add('vp-page-entering');
       setTimeout(() => {
@@ -545,7 +509,6 @@ export function initSpaNavigationEngine(): void {
 
       finishProgressBar();
 
-      // 5. 立即触发既有初始化管线（大纲重建、公式交互、图文联动等，直接在真实 live DOM 上初始化，零闪烁）
       document.dispatchEvent(new CustomEvent('astro:page-load'));
 
     } catch (err) {
@@ -555,12 +518,10 @@ export function initSpaNavigationEngine(): void {
     }
   }
 
-  // 全局统一编程式 SPA 导航 API
   window.__spaNavigate = function spaNavigate(targetUrl: string | URL, { replace = false }: { replace?: boolean } = {}): Promise<void> {
     const url = typeof targetUrl === 'string' ? new URL(targetUrl, location.href) : targetUrl;
     const targetPath = normPath(url.pathname);
 
-    // 同页跳转：直接滚动 + 同步地址栏，绝不触发全量换页与重绘
     if (targetPath === currentPathname) {
       if (url.hash) {
         const targetId = decodeURIComponent(url.hash.slice(1));
@@ -579,7 +540,6 @@ export function initSpaNavigationEngine(): void {
       return Promise.resolve();
     }
 
-    // 跨页跳转：执行极速 SPA 导航
     updateSidebarActive(url.pathname);
     if (replace) {
       history.replaceState({ ...(history.state || {}), scrollY: window.scrollY }, '', url.href);
@@ -591,7 +551,6 @@ export function initSpaNavigationEngine(): void {
     return loadPage(url);
   };
 
-  // 拦截全站内部导航链接
   document.addEventListener('click', (e) => {
     const target = e.target;
     if (!(target instanceof Element)) return;
@@ -603,7 +562,7 @@ export function initSpaNavigationEngine(): void {
     const targetPath = normPath(url.pathname);
 
     if (targetPath === currentPathname) {
-      // 同页锚点或返回顶部
+
       e.preventDefault();
       if (url.hash) {
         const targetId = decodeURIComponent(url.hash.slice(1));
@@ -622,10 +581,9 @@ export function initSpaNavigationEngine(): void {
     window.__spaNavigate?.(url);
   });
 
-  // 悬停/触碰即时预取：Hover-Intent 防抖与在途请求取消
   let hoverPrefetchTimer = 0;
   let hoverAbortController: AbortController | null = null;
-  const HOVER_INTENT_DELAY = 65; // 65ms 意图识别：快速划过目录不发起请求，停留超 65ms 确认意图后才预加载
+  const HOVER_INTENT_DELAY = 65;
 
   let isSidebarHoverEnabled = true;
   function updateSidebarHoverPref(): void {
@@ -651,19 +609,16 @@ export function initSpaNavigationEngine(): void {
     const a = target.closest('a[href]') as HTMLAnchorElement | null;
     if (!a || !isNavLink(a) || !isPrefetchable(a)) return;
 
-    // 若用户设置关闭预加载 (0)，完全不执行任何预取
     if (getMaxPageCacheSize() === 0) return;
 
     const url = new URL(a.getAttribute('href') || '', location.href);
     const key = normPath(url.pathname);
     if (key === normPath(location.pathname) || pageCache.has(key)) return;
 
-    // 清除上一个悬停等待定时器
     clearTimeout(hoverPrefetchTimer);
 
-    // 启动 65ms 意图防抖：快速滑过不发起网络与 DOM 解析
     hoverPrefetchTimer = window.setTimeout(() => {
-      // 中止前一个悬停在途请求，避免无效并发堆叠
+
       if (hoverAbortController) {
         hoverAbortController.abort();
       }
@@ -674,7 +629,6 @@ export function initSpaNavigationEngine(): void {
     }, HOVER_INTENT_DELAY);
   }, { passive: true });
 
-  // 指针移出链接：若停留时间不足 65ms，立刻撤销预加载计时器
   document.addEventListener('pointerout', (e) => {
     const target = e.target;
     if (target instanceof Element && target.closest('a[href]')) {
@@ -695,11 +649,10 @@ export function initSpaNavigationEngine(): void {
     fetchPage(url).catch(() => {});
   }, { passive: true });
 
-  // 浏览器前进/后退处理：精确区分同页 hash 变化与跨页换页
   window.addEventListener('popstate', () => {
     const targetPath = normPath(location.pathname);
     if (targetPath === currentPathname) {
-      // 同页历史回退（如锚点定位）：平滑滚动定位，不重新加载页面
+
       if (location.hash) {
         const targetId = decodeURIComponent(location.hash.slice(1));
         const el = document.getElementById(targetId) || document.querySelector(`[data-src-line="${targetId.replace(/^L/, '')}"]`);
@@ -719,12 +672,10 @@ export function initSpaNavigationEngine(): void {
     });
   });
 
-  // 监听用户在偏好设置中实时调整页面缓存上限
   window.addEventListener('cache:config-change', () => {
     prunePageCache();
   });
 
-  // 监听用户在偏好设置中实时调整左侧栏悬停预加载开关
   window.addEventListener('sidebar-prefetch:config-change', (e: any) => {
     if (e && e.detail && typeof e.detail.enabled === 'boolean') {
       isSidebarHoverEnabled = e.detail.enabled;
@@ -739,11 +690,10 @@ export function initSpaNavigationEngine(): void {
     }
   });
 
-  // 监听全站【低性能模式】切换事件并深度释放缓存
   window.addEventListener('astrolib:lite-mode-change', (e: any) => {
     const isLite = e && e.detail && typeof e.detail.enabled === 'boolean' ? e.detail.enabled : false;
     if (isLite) {
-      // 立即彻底清空并断开页面内存缓存中的全部母版字符串引用
+
       for (const [, rec] of pageCache) {
         if (rec) {
           rec.mainHtml = null;
@@ -760,7 +710,6 @@ export function initSpaNavigationEngine(): void {
     }
   });
 
-  // 侧边栏滚动位置持久化：初始化绑定与视口恢复
   bindSidebarScrollTracker();
   restoreSidebarScroll();
 

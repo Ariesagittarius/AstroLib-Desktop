@@ -132,7 +132,7 @@ if y is even:
     return 2z
 else:
     return x + 2z
-```  
+```
 图 1-1 à la Français 乘法
 
 能否改进？感觉似乎 $n^2$ 次位操作是难免的，因为乘法需要对输入中的某个乘数的 $\pmb{n}$ 个倍数相加，而每次加法操作的运行时间又都是线性的。然而令人惊讶的是，在第2章我们将发现，我们完全可以做的更好！
@@ -141,7 +141,7 @@ else:
 
 <div class="mineru-algorithm">
 function divide(x,y)
-Input: Two n-bit integers x and y, where  $y \geq 1$ 
+Input: Two n-bit integers x and y, where  $y \geq 1$
 Output: The quotient and remainder of x divided by y
 if x = 0: return (q, r) = (0, 0)
 (q, r) = divide( $\lfloor x/2 \rfloor$ , y)

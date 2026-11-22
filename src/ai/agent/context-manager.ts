@@ -1,19 +1,3 @@
-/**
- * src/ai/agent/context-manager.ts
- * ============================================================================
- * AstroLib 通用 Agent 上下文管理器、单图滚动视觉槽与 Turn-Group 原子压缩引擎
- * ============================================================================
- * 核心职责：
- * 1. 按模型/网关声明能力矩阵（maxContextTokens、safeInputBudget、maxImagesPerRequest、
- *    defaultMaxOutputTokens、strictSystemPosition）；
- * 2. 严格执行 Rolling Vision Slot（默认 Youlabber 网关全对话最多 1 张图）：
- *    自动保留最新 N 张 image_url，将历史旧图替换为轻量文本面包屑并释放 Base64 内存；
- * 3. Token 预算守卫：采用 gpt-tokenizer 精确估算文本 + 工具 JSON + 视觉槽开销；
- *    超限时按「陈旧工具结果截断 → 原子 Turn-Group 滑动摘要压缩 → 紧急裁切」逐级退避，
- *    绝不破坏 assistant(tool_calls) <-> tool 配对关系，且不向对话中部注入 role:'system'。
- * ============================================================================
- */
-
 import { encode } from 'gpt-tokenizer';
 
 export interface ChatTextPart {
@@ -54,9 +38,9 @@ export interface ChatMessage {
   name?: string;
   tool_calls?: ChatToolCall[];
   tool_call_id?: string;
-  /** 模型思维链（仅记录或追踪，默认不强制回传以遵循网关标准且省上下文） */
+
   reasoning_content?: string;
-  /** 运行时内部元数据，序列化发送前自动剥离 */
+
   meta?: ChatMessageMeta;
 }
 
@@ -100,13 +84,6 @@ export interface ContextManagerOptions {
   tokensPerImageEstimate?: number;
 }
 
-/**
- * 解析各模型网关的能力边界。
- * 针对实测后的 Youlabber (baigong / ybg-youlaber-ds4f) 给出严格契约：
- * - 262,144 max_model_len
- * - maxImagesPerRequest = 1 (跨整个 messages[] 生效)
- * - max_tokens >= 16384 以防 reasoning_tokens 耗尽最终输出
- */
 function applyCapabilityOverrides(
   base: ProviderCapabilities,
   overrides?: ProviderCapabilityOverrides
@@ -134,14 +111,6 @@ function applyCapabilityOverrides(
   return next;
 }
 
-/**
- * 解析各模型网关的能力边界。
- * 针对实测后的 Youlabber (baigong / ybg-youlaber-ds4f) 给出严格契约：
- * - 262,144 max_model_len
- * - maxImagesPerRequest = 1 (跨整个 messages[] 生效)
- * - max_tokens >= 16384 以防 reasoning_tokens 耗尽最终输出
- * 针对 DeepSeek 等纯文本接口默认禁用 image_url（maxImagesPerRequest = 0）。
- */
 export function resolveProviderCapabilities(
   providerId: string,
   modelId = '',
@@ -380,7 +349,7 @@ export class AgentContextManager {
   }
 
   public estimateMessageTokens(msg: ChatMessage): number {
-    let tokens = 6; // role + wrapper overhead
+    let tokens = 6;
     if (typeof msg.content === 'string') {
       tokens += safeCountTokens(msg.content);
     } else if (Array.isArray(msg.content)) {
@@ -388,7 +357,7 @@ export class AgentContextManager {
         if (part.type === 'text') {
           tokens += safeCountTokens(part.text);
         } else if (part.type === 'image_url') {
-          // Base64 字符串本身不按纯字符 tokenizer 计，而是按视觉分辨率固定预算估算
+
           tokens += this.tokensPerImageEstimate;
         }
       }
@@ -420,12 +389,6 @@ export class AgentContextManager {
     return total;
   }
 
-  /**
-   * 滚动视觉槽 (Rolling Vision Slot)：
-   * 从尾到头扫描整个消息队列，仅保留最新 `maxImages` 张 `image_url`。
-   * 较旧图片原地替换为简洁文本提示，彻底规避单图网关 HTTP 400 并释放内存。
-   * 同时强制剥离任何误放在 role:'tool' 中的 image_url（OpenAI/vLLM 协议禁止 tool 带图）。
-   */
   public enforceVisionSlot(
     messages: ChatMessage[],
     maxImages = this.capabilities.maxImagesPerRequest
@@ -441,7 +404,6 @@ export class AgentContextManager {
       const updatedParts: ChatContentPart[] = [];
       let changed = false;
 
-      // tool 消息禁止保留图片，一律转为占位文本
       const disallowInThisRole = msg.role === 'tool' || msg.role === 'assistant';
 
       for (let pIdx = msg.content.length - 1; pIdx >= 0; pIdx--) {
@@ -479,11 +441,6 @@ export class AgentContextManager {
     return { messages: next, evictedCount };
   }
 
-  /**
-   * 将非前置 system 消息切分为原子 Turn-Group：
-   * `[assistant(tool_calls), tool..., optional synthetic vision user msg]` 永不拆散，
-   * 确保压缩后不会出现孤立 tool_call_id 导致 400 Bad Request。
-   */
   public splitIntoAtomicGroups(messages: ChatMessage[]): {
     leadingSystems: ChatMessage[];
     initialUserGoal: ChatMessage | null;
@@ -521,7 +478,6 @@ export class AgentContextManager {
         continue;
       }
 
-      // 防御性清理：若意外存在孤立 tool 消息，丢弃或单独归组（后续配对修复会处理）
       groups.push([msg]);
       cursor++;
     }
@@ -529,9 +485,6 @@ export class AgentContextManager {
     return { leadingSystems, initialUserGoal, groups };
   }
 
-  /**
-   * 构造被折叠轮次的紧凑摘要文本（用于合并进首条 system 消息）
-   */
   private summarizeDroppedGroups(droppedGroups: ChatMessage[][]): string {
     const actions: string[] = [];
     for (const group of droppedGroups) {
@@ -555,15 +508,12 @@ export class AgentContextManager {
     return `Omitted ${droppedGroups.length} earlier turn groups to fit context budget.\nTimeline: ${trimmedActions.join(' -> ')}`;
   }
 
-  /**
-   * 执行全链路上下文整理（既返回可继续保存在 session 里的干净消息，也返回可直接 POST 给 API 的 wireMessages）。
-   */
   public prepareContext(rawMessages: ChatMessage[]): {
     compactedHistory: ChatMessage[];
     wireMessages: ChatMessage[];
     stats: ContextPreparationStats;
   } {
-    // 1. 强制 Rolling Vision Slot（同时消除已滑出的 Base64 膨胀）
+
     const visionPass = this.enforceVisionSlot(
       rawMessages,
       this.capabilities.maxImagesPerRequest
@@ -580,7 +530,6 @@ export class AgentContextManager {
       compacted = true;
       const { leadingSystems, initialUserGoal, groups } = this.splitIntoAtomicGroups(working);
 
-      // Phase A: 对非最近 N 个 Turn-Group 中的超长 tool 返回进行温和截断
       const tailBoundary = Math.max(0, groups.length - this.keepRecentTailGroups);
       for (let gIdx = 0; gIdx < tailBoundary; gIdx++) {
         for (const msg of groups[gIdx]) {
@@ -611,7 +560,6 @@ export class AgentContextManager {
       working = rebuild(leadingSystems, initialUserGoal, groups);
       currentTokens = this.estimateMessagesTokens(working);
 
-      // Phase B: 若仍超预算，逐组丢弃最老的非 tail Turn-Group，并合并摘要到 leading system
       if (currentTokens > budget && groups.length > 2) {
         const droppedGroups: ChatMessage[][] = [];
         const keptGroups = [...groups];
@@ -645,7 +593,6 @@ export class AgentContextManager {
         }
       }
 
-      // Phase C: 极端情况下即使剩最近 2 组仍超限，对其中的 tool 输出进行硬截断（保最后一组最后条除外）
       if (currentTokens > budget) {
         for (let i = 0; i < working.length - 2; i++) {
           const msg = working[i];
@@ -657,15 +604,12 @@ export class AgentContextManager {
       }
     }
 
-    // 最终完整性修复与 Wire 剥离：
-    // 1. 再次确保图片数量严格 <= maxImagesPerRequest（防止 initialUserGoal 带旧图）
     const finalVision = this.enforceVisionSlot(
       working,
       this.capabilities.maxImagesPerRequest
     );
     const cleanHistory = finalVision.messages;
 
-    // 2. 修复潜在的孤立 role:'tool' 并剥离内部 meta/reasoning_content 生成 wireMessages
     const wireMessages: ChatMessage[] = [];
     const activeToolCallIds = new Set<string>();
 
@@ -693,7 +637,7 @@ export class AgentContextManager {
 
       if (msg.role === 'tool') {
         if (msg.tool_call_id && !activeToolCallIds.has(msg.tool_call_id)) {
-          // 跳过已失去配对 assistant(tool_calls) 的孤立 tool 消息，防止网关报 400
+
           continue;
         }
         wireMessages.push({
@@ -708,7 +652,7 @@ export class AgentContextManager {
       }
 
       if (msg.role === 'system' || msg.role === 'user') {
-        // user/system 开始新话轮时清空未配对 tool_call_id 状态
+
         if (msg.role === 'user' && !isSyntheticVisionMessage(msg)) {
           activeToolCallIds.clear();
         }

@@ -1,16 +1,3 @@
-/**
- * src/features/library/core/entity-status.ts
- * ============================================================================
- * 学术文献状态映射器与 MinerU 页码阈值校验器 (Shared Domain Helper)
- * ============================================================================
- * 规范：
- * 1. Electron LibraryManager 与 Dev Server Library Plugin 共同依赖此单一映射器，
- *    禁止双份拷贝；
- * 2. 区分 idle（待解析）、active processing（真正在途解析）、interrupted（僵尸中断）与 error；
- * 3. 统一定义 MinerU 单次处理页数阈值 (200 页) 与页码范围解析校验逻辑。
- * ============================================================================
- */
-
 import type { EntityStatus } from '../../../types/library-entity';
 
 export const MINERU_MAX_PAGES_PER_PARSE = 200;
@@ -78,7 +65,7 @@ export function mapIngestTaskToEntityStatus(
         statusMessage: `MinerU 解析中 ${pct}%`,
       };
     }
-    // 进程已重启或任务异常脱管：绝不永久卡在 "解析中 0%"
+
     return {
       status: 'error',
       statusMessage: '上次解析已中断，可点击重新解析',
@@ -98,10 +85,6 @@ export interface PageRangeValidationResult {
   error?: string;
 }
 
-/**
- * 解析并校验页码范围字符串（例如 "1-50", "3, 5, 7-20"）
- * - 自动校验格式、边界 (1..totalPages) 及去重后的总页数是否 <= maxPages
- */
 export function validatePageRanges(
   raw: string,
   totalPages: number,

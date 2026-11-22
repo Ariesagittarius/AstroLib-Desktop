@@ -1,15 +1,8 @@
-/* ============================================================================
- * src/styles/desktop/chrome.css
- * ============================================================================
- * 桌面端 28px 紧凑自定义顶栏、自绘 Windows 三键、56px 可收纳主侧栏与 F11 全屏样式
- * ============================================================================ */
-
 :root {
   --desktop-titlebar-height: 28px;
   --desktop-rail-width: 56px;
 }
 
-/* 28px 极简桌面主顶栏 */
 .desktop-titlebar-drag-region {
   height: var(--desktop-titlebar-height);
   background-color: var(--md-sys-color-surface, #ffffff);
@@ -83,7 +76,6 @@
   line-height: 1;
 }
 
-/* 自绘 Windows 11 紧凑三键 */
 .titlebar-win-controls {
   display: flex;
   align-items: stretch;
@@ -137,7 +129,6 @@ html[data-window-maximized='true'] .win-icon-restore {
   display: block;
 }
 
-/* 主侧栏收纳状态 */
 html[data-nav-rail-collapsed='true'] .desktop-nav-rail {
   width: 0;
   min-width: 0;
@@ -149,7 +140,6 @@ html[data-nav-rail-collapsed='true'] .desktop-nav-rail {
   pointer-events: none;
 }
 
-/* F11 沉浸全屏：隐藏桌面顶栏、主侧栏与底部标签栏，展示完整正文 */
 html[data-desktop-fullscreen='true'] {
   --desktop-titlebar-height: 0px;
 }
@@ -163,7 +153,6 @@ html[data-desktop-fullscreen='true'] .desktop-shell-root {
   height: 100vh;
 }
 
-/* 全屏模式顶部边缘唤出条 */
 .fullscreen-hover-zone {
   display: none;
   position: fixed;

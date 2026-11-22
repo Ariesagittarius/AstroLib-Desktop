@@ -1,7 +1,3 @@
-/**
- * src/ai/client/chat-dock.ts
- * AI Chat 侧载/浮窗停靠与恢复逻辑封装
- */
 import { sideloadManager } from '../../components/sideload/sideload-manager';
 import { getAiSideloadRefChapter } from '../ai-config';
 

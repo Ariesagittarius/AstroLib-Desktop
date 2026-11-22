@@ -1,18 +1,3 @@
-/**
- * src/server/plugins/content-api/agent-tools-handler.ts
- * ============================================================================
- * AstroLib 首屏 Agent 扩展工具后端端点处理器 (/api/v1/content/agent-tools/*)
- * ============================================================================
- * 提供：
- * - run_python（隔离沙箱执行 + 自动捕获新增图像产物）
- * - fs/list, fs/read, fs/write（分层沙箱与作用域标定：workspace / project / local）
- * - search-library（基于 @vscode/ripgrep 的全库毫秒检索，附带纯 Node 兜底）
- * - pdf/inspect, pdf/render（复用 MuPDF 高清页渲染与结构探测）
- * - mdx/validate（复用 AST/KaTeX 五大学术防线质检）
- * - source, reveal（开发者只读源码检视器与白名单文件定位）
- * ============================================================================
- */
-
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -120,7 +105,6 @@ export function resolvePathScope(targetPath: string): {
     return { absPath: sandbox, scope: 'workspace', relPath: '.' };
   }
 
-  // 若传入非绝对路径：优先检查项目目录，其次视为工作区内路径
   let absPath: string;
   if (path.isAbsolute(raw)) {
     absPath = path.resolve(raw);
@@ -282,7 +266,7 @@ export async function handleAgentToolsRoute(
   }
 
   try {
-    // 1. GET /agent-tools/workspace-file?path=...
+
     if (req.method === 'GET' && subPath === '/agent-tools/workspace-file') {
       const relPath = (parsedUrl.searchParams.get('path') || '').trim();
       const sandbox = getAgentSandboxRoot();
@@ -307,7 +291,6 @@ export async function handleAgentToolsRoute(
       return true;
     }
 
-    // 2. GET /agent-tools/source?file=...
     if (req.method === 'GET' && subPath === '/agent-tools/source') {
       const file = parsedUrl.searchParams.get('file') || '';
       const check = validateWhitelistedSourceFile(file);
@@ -328,7 +311,6 @@ export async function handleAgentToolsRoute(
       return true;
     }
 
-    // 3. POST /agent-tools/reveal
     if (req.method === 'POST' && subPath === '/agent-tools/reveal') {
       const body = await readJsonBody(req);
       const check = validateWhitelistedSourceFile(String(body.file || ''));
@@ -343,7 +325,6 @@ export async function handleAgentToolsRoute(
       return true;
     }
 
-    // 4. POST /agent-tools/python
     if (req.method === 'POST' && subPath === '/agent-tools/python') {
       const body = await readJsonBody(req);
       const code = typeof body.code === 'string' ? body.code : '';
@@ -446,7 +427,6 @@ export async function handleAgentToolsRoute(
       return true;
     }
 
-    // 5. POST /agent-tools/fs/list
     if (req.method === 'POST' && subPath === '/agent-tools/fs/list') {
       const body = await readJsonBody(req);
       const { absPath, scope, relPath } = resolvePathScope(String(body.dirPath || ''));
@@ -499,7 +479,6 @@ export async function handleAgentToolsRoute(
       return true;
     }
 
-    // 6. POST /agent-tools/fs/read
     if (req.method === 'POST' && subPath === '/agent-tools/fs/read') {
       const body = await readJsonBody(req);
       const rawPath = String(body.filePath || '').trim();
@@ -557,7 +536,6 @@ export async function handleAgentToolsRoute(
       return true;
     }
 
-    // 7. POST /agent-tools/fs/write (STRICTLY inside sandboxRoot)
     if (req.method === 'POST' && subPath === '/agent-tools/fs/write') {
       const body = await readJsonBody(req);
       const relPath = String(body.relPath || '').trim();
@@ -586,7 +564,6 @@ export async function handleAgentToolsRoute(
       return true;
     }
 
-    // 8. POST /agent-tools/search-library
     if (req.method === 'POST' && subPath === '/agent-tools/search-library') {
       const body = await readJsonBody(req);
       const query = String(body.query || '').trim();
@@ -740,7 +717,6 @@ export async function handleAgentToolsRoute(
         usedEngine = 'knowledge-registry';
       }
 
-      // 联合检索 pdf2abp 书籍、EPUB 电子书与 MinerU 学术文献
       if (hits.length < limit) {
         const regHits = KnowledgeRegistry.getInstance().searchAll(query, {
           kind: body.kind || 'all',
@@ -780,7 +756,6 @@ export async function handleAgentToolsRoute(
       return true;
     }
 
-    // 9. POST /agent-tools/pdf/inspect
     if (req.method === 'POST' && subPath === '/agent-tools/pdf/inspect') {
       const body = await readJsonBody(req);
       const pdfPath = String(body.pdfPath || '').trim();
@@ -798,7 +773,6 @@ export async function handleAgentToolsRoute(
       return true;
     }
 
-    // 10. POST /agent-tools/pdf/render
     if (req.method === 'POST' && subPath === '/agent-tools/pdf/render') {
       const body = await readJsonBody(req);
       const pdfPath = String(body.pdfPath || '').trim();
@@ -834,7 +808,6 @@ export async function handleAgentToolsRoute(
       return true;
     }
 
-    // 11. POST /agent-tools/mdx/validate
     if (req.method === 'POST' && subPath === '/agent-tools/mdx/validate') {
       const body = await readJsonBody(req);
       let targetAbs = '';
@@ -871,7 +844,6 @@ export async function handleAgentToolsRoute(
       return true;
     }
 
-    // 12. GET /agent-tools/python/env - 查询独立 Agent Python 沙箱及已安装包列表
     if (req.method === 'GET' && subPath === '/agent-tools/python/env') {
       const force = parsedUrl.searchParams.get('force') === '1';
       const customPath = parsedUrl.searchParams.get('pythonPath') || undefined;
@@ -880,7 +852,6 @@ export async function handleAgentToolsRoute(
       return true;
     }
 
-    // 13. POST /agent-tools/python/packages/install - 在隔离 .venv-agent 沙箱安装纯二进制科学包
     if (req.method === 'POST' && subPath === '/agent-tools/python/packages/install') {
       const body = await readJsonBody(req);
       const rawList = Array.isArray(body.packages)
@@ -913,7 +884,6 @@ export async function handleAgentToolsRoute(
       let envInfo = await getAgentPythonEnvInfo(customPy, false);
       let targetExe = envInfo.pythonPath;
 
-      // 若尚无独立 .venv-agent，尝试基于基础 Python 现场创建，避免污染主环境
       if (!envInfo.isolated) {
         const basePy = await findBestPythonExecutable();
         if (!basePy) {
@@ -984,7 +954,6 @@ export async function handleAgentToolsRoute(
       return true;
     }
 
-    // 14. POST /agent-tools/python/packages/uninstall - 卸载非核心沙箱包
     if (req.method === 'POST' && subPath === '/agent-tools/python/packages/uninstall') {
       const body = await readJsonBody(req);
       const pkg = String(body.package || '').trim();
@@ -1024,7 +993,6 @@ export async function handleAgentToolsRoute(
       return true;
     }
 
-    // 15. POST /agent-tools/canvas/capture - Electron 离屏渲染并抓取 Canvas 截图与 DOM 遥测
     if (req.method === 'POST' && subPath === '/agent-tools/canvas/capture') {
       const body = await readJsonBody(req);
       const html = typeof body.html === 'string' ? body.html : '';
@@ -1059,7 +1027,6 @@ export async function handleAgentToolsRoute(
       return true;
     }
 
-    // 16. POST /agent-tools/image/read - 读取工作区/本地安全作用域图像，转为有限体积 Base64 DataURL
     if (req.method === 'POST' && subPath === '/agent-tools/image/read') {
       const body = await readJsonBody(req);
       let rawPath = String(body.path || '').trim();
@@ -1068,7 +1035,6 @@ export async function handleAgentToolsRoute(
         return true;
       }
 
-      // 兼容直接传入 /api/v1/content/agent-tools/workspace-file?path=... URL
       if (rawPath.includes('/workspace-file?')) {
         try {
           const parsedApi = new URL(rawPath, 'http://127.0.0.1');
@@ -1124,7 +1090,6 @@ export async function handleAgentToolsRoute(
       return true;
     }
 
-    // 17. POST /agent-tools/web-search & /web-search/test - 可选联网搜索代理
     if (
       req.method === 'POST' &&
       (subPath === '/agent-tools/web-search' || subPath === '/agent-tools/web-search/test')

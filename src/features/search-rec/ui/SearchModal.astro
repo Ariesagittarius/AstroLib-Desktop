@@ -1,14 +1,9 @@
 ---
-/**
- * src/features/search-rec/ui/SearchModal.astro
- * 官方覆盖 Starlight 默认搜索组件：AstroLib 跨书知识整合与三模态推荐系统
- * 严格遵循学术克制规约，去除一切 Emoji，采用 Material 3 纯净学术交互
- */
 import './search-modal.css';
 ---
 
 <site-search class="astrolib-search-root">
-  <!-- 1. 顶栏触发器 (Google Drive 胶囊药丸风格) -->
+
   <button
     type="button"
     class="astrolib-search-trigger vp-nav-search-btn"
@@ -27,10 +22,9 @@ import './search-modal.css';
     </span>
   </button>
 
-  <!-- 2. 全站统一 Material 3 搜索与推荐模态框 -->
   <dialog class="astrolib-search-dialog" id="astrolib-search-dialog" aria-modal="true" aria-label="全站图书知识整合检索">
     <div class="astrolib-search-dialog-inner">
-      <!-- 头部：输入框 -->
+
       <div class="astrolib-search-header">
         <div class="astrolib-search-input-box">
           <svg class="search-input-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -53,7 +47,6 @@ import './search-modal.css';
           </button>
         </div>
 
-        <!-- 范围筛选行 (Material 3 Filter Chips) -->
         <div class="astrolib-search-scope-bar" role="radiogroup" aria-label="检索范围">
           <span class="astrolib-scope-label">范围：</span>
           <div class="astrolib-scope-chips" id="astrolib-scope-chips">
@@ -65,7 +58,6 @@ import './search-modal.css';
           </div>
         </div>
 
-        <!-- 模式切换 Chip-Set (纯文本，学术克制，严禁 Emoji) -->
         <div class="astrolib-search-chips" id="astrolib-mode-chips">
           <button type="button" class="astrolib-mode-chip is-active" data-mode="neural">
             <span>语义推荐</span>
@@ -80,12 +72,10 @@ import './search-modal.css';
         </div>
       </div>
 
-      <!-- 中间：知识卡片探索流容器 -->
       <div class="astrolib-search-results" id="astrolib-search-results">
-        <!-- 动态由 search-modal-client.ts 渲染 -->
+
       </div>
 
-      <!-- 底部：键盘操作指引与统计 -->
       <div class="astrolib-search-footer">
         <div class="astrolib-footer-keys">
           <span><kbd>↑</kbd><kbd>↓</kbd> 切换</span>
@@ -102,8 +92,7 @@ import './search-modal.css';
   </dialog>
 </site-search>
 
-<script>
-  import { initSearchModalClient } from './search-modal-client.ts';
+<script>import { initSearchModalClient } from './search-modal-client.ts';
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initSearchModalClient);
@@ -111,6 +100,5 @@ import './search-modal.css';
     initSearchModalClient();
   }
 
-  // 兼容 Astro 视图转换
   document.addEventListener('astro:page-load', initSearchModalClient);
 </script>

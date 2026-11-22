@@ -1,10 +1,3 @@
-/**
- * src/features/harness/quote-selector.ts
- * ============================================================================
- * 正文选区浮动「引用提问」胶囊控制器 (Message Selection Quote Pill)
- * ============================================================================
- */
-
 import type { QuoteSnippet } from './types.ts';
 
 export function bindQuoteSelector(options: {
@@ -58,7 +51,6 @@ export function bindQuoteSelector(options: {
       return;
     }
 
-    // 仅限助手正文块（避开按钮、输入框或工具栏）
     const assistantMsg = commonEl.closest<HTMLElement>('.harness-message--assistant');
     if (!assistantMsg || commonEl.closest('button, input, textarea')) {
       hidePill();

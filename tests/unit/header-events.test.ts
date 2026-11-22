@@ -34,7 +34,6 @@ describe('Header Events & Shared Contract Suite (P1-D2)', () => {
     const vpNavFile = path.join(srcDir, 'components', 'VpNav.astro');
     expect(fs.existsSync(vpNavFile)).toBe(false);
 
-    // 检查是否有任何文件仍然引用 VpNav
     const scanDir = (dir: string): string[] => {
       let results: string[] = [];
       const list = fs.readdirSync(dir);

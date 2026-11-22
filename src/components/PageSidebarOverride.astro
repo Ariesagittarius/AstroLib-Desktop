@@ -1,18 +1,14 @@
 ---
-// 自定义右侧侧边栏组件 - 替代 Starlight 的 PageSidebar.astro
-// 模块化架构：逻辑解耦至 src/components/sidebar/ 与 src/core/indexing/cross-ref-indexer.mjs
 import { collections } from '../config/collections.config.ts';
 import { features, crossRefRefs } from '../config/features.config.ts';
 import '../styles/components/page-sidebar.css';
 import '../styles/components/translation-dock.css';
 import '../styles/components/info-highlight.css';
 
-// 引用联动模式：'interactive'（默认，可点击/跨页联动）| 'static'（统一静态 chip）。
 const refsMode = crossRefRefs() === 'static' ? 'static' : 'interactive';
 
 const pathname = Astro.url.pathname;
 
-// 1. 深度遍历两级结构，感知当前路由所属的图书及其 TOC 规则
 let currentBook = null;
 let currentCol = null;
 for (const col of collections) {
@@ -24,7 +20,6 @@ for (const col of collections) {
   }
 }
 
-// 2. 备用安全降级方案
 if (!currentBook) {
   currentCol = collections[0] || null;
   currentBook = collections[0]?.books?.[0] || null;
@@ -33,10 +28,9 @@ const bookConfigJson = JSON.stringify(currentBook || {});
 ---
 
 <aside class="astrolib-sideload-dock custom-page-sidebar" id="astrolib-sideload-dock" data-book-key={`${currentCol?.slug || 'math'}/${currentBook?.slug || 'linear_algebra_geometry'}`} data-refs-mode={refsMode} data-book-config={bookConfigJson}>
-  <!-- VitePress outline-marker：跟随滚动高亮项的 2px 品牌色指示条（JS 更新 top） -->
+
   <div class="outline-marker" aria-hidden="true"></div>
 
-  <!-- 面板 1: 本章大纲 (默认常驻) -->
   <section class="sideload-panel-view" data-panel-id="toc" aria-hidden="false">
     <div class="toc-container">
       <div class="toc-header-block">
@@ -51,12 +45,11 @@ const bookConfigJson = JSON.stringify(currentBook || {});
     </div>
   </section>
 
-  <!-- 面板 2: 课后习题专属右侧抽屉面板 -->
   <section class="sideload-panel-view" data-panel-id="exercises" aria-hidden="true">
     <div class="exercise-sidebar-panel" id="exercise-sidebar-panel" aria-hidden="true">
       <div class="ex-sidebar-header">
         <div class="ex-sidebar-title-group">
-          <!-- 返回本章大纲快捷按钮 -->
+
           <button
             type="button"
             class="sideload-back-btn"
@@ -91,24 +84,22 @@ const bookConfigJson = JSON.stringify(currentBook || {});
         </div>
       </div>
       <div class="ex-sidebar-content" id="ex-sidebar-content">
-        <!-- 动态渲染轻量题目卡片 -->
+
       </div>
     </div>
   </section>
 
-  <!-- 面板 3: AI 书内智能问答专属侧载面板 -->
   <section class="sideload-panel-view" data-panel-id="ai" aria-hidden="true">
     <div class="ai-sidebar-panel" id="ai-sidebar-panel" aria-hidden="true">
-      <!-- 侧载激活时由 chat-controller 将聊天主面板挂载于此 -->
+
     </div>
   </section>
 
-  <!-- 面板 4: 双语助读与章节翻译专属侧载面板 -->
   <section class="sideload-panel-view" data-panel-id="translate" aria-hidden="true">
     <div class="trans-sidebar-panel" id="trans-sidebar-panel" aria-hidden="true">
       <div class="trans-sidebar-header">
         <div class="trans-sidebar-title-group">
-          <!-- 返回本章大纲快捷按钮 -->
+
           <button
             type="button"
             class="sideload-back-btn"
@@ -162,7 +153,6 @@ const bookConfigJson = JSON.stringify(currentBook || {});
         </div>
       </div>
 
-      <!-- 提供商选择栏 (M3 Filter Chips: Google 翻译默认 / Gemini 可选 / DeepSeek 北邮校内) -->
       <div class="trans-provider-bar">
         <span class="trans-provider-label">接口:</span>
         <div class="trans-provider-chips" role="radiogroup" aria-label="选择翻译服务商">
@@ -185,7 +175,6 @@ const bookConfigJson = JSON.stringify(currentBook || {});
         </div>
       </div>
 
-      <!-- 翻译设置折叠抽屉 (API Key 配置与说明) -->
       <div class="trans-settings-drawer" id="trans-settings-drawer" style="display: none;" aria-hidden="true">
         <div class="trans-settings-inner">
           <div class="trans-settings-header-row">
@@ -199,7 +188,7 @@ const bookConfigJson = JSON.stringify(currentBook || {});
           </div>
 
           <div class="trans-settings-content">
-            <!-- 译文呈现方式选择 (侧边栏对照 vs 段落下方显示) -->
+
             <div class="trans-settings-field">
               <div class="trans-field-label-row">
                 <label class="trans-field-label">译文显示类别</label>
@@ -259,7 +248,6 @@ const bookConfigJson = JSON.stringify(currentBook || {});
         </div>
       </div>
 
-      <!-- 译文导出折叠抽屉 (支持双语 Markdown / 中文 Markdown / 文本 / JSON) -->
       <div class="trans-export-drawer" id="trans-export-drawer" style="display: none;" aria-hidden="true">
         <div class="trans-export-inner">
           <div class="trans-export-header-row">
@@ -270,7 +258,7 @@ const bookConfigJson = JSON.stringify(currentBook || {});
           </div>
 
           <div class="trans-export-content">
-            <!-- 格式选择 -->
+
             <div class="trans-export-field">
               <span class="trans-export-label">导出格式</span>
               <div class="trans-export-chips" id="trans-export-fmt-group">
@@ -289,7 +277,6 @@ const bookConfigJson = JSON.stringify(currentBook || {});
               </div>
             </div>
 
-            <!-- 范围选择 -->
             <div class="trans-export-field">
               <span class="trans-export-label">导出范围</span>
               <div class="trans-export-chips" id="trans-export-scope-group">
@@ -315,24 +302,21 @@ const bookConfigJson = JSON.stringify(currentBook || {});
         </div>
       </div>
 
-      <!-- 翻译进度条 -->
       <div class="trans-progress-bar" id="trans-progress-bar" style="display: none;">
         <div class="trans-progress-fill" id="trans-progress-fill"></div>
       </div>
 
-      <!-- 段落卡片流容器 (严格 1:1 双向对应正文段落) -->
       <div class="trans-sidebar-content" id="trans-sidebar-content">
-        <!-- 动态注入段落对照卡片 -->
+
       </div>
     </div>
   </section>
 
-  <!-- 面板 5: 关注点透镜与信息高亮专属侧载面板 -->
   <section class="sideload-panel-view" data-panel-id="focus" aria-hidden="true">
     <div class="focus-sidebar-panel" id="focus-sidebar-panel" aria-hidden="true">
       <div class="focus-sidebar-header">
         <div class="focus-sidebar-title-group">
-          <!-- 返回本章大纲快捷按钮 -->
+
           <button
             type="button"
             class="sideload-back-btn"
@@ -359,12 +343,11 @@ const bookConfigJson = JSON.stringify(currentBook || {});
       </div>
 
       <div class="focus-sidebar-content">
-        <!-- 状态指示 -->
+
         <div class="focus-status-card">
           <span class="focus-status" id="focus-status-text">就绪</span>
         </div>
 
-        <!-- 模式切换 -->
         <div>
           <div class="focus-section-label">渲染模式</div>
           <div class="focus-mode-chips" role="radiogroup" aria-label="选择透镜高亮模式">
@@ -380,7 +363,6 @@ const bookConfigJson = JSON.stringify(currentBook || {});
           </div>
         </div>
 
-        <!-- 过滤阈值滑块 -->
         <div class="focus-slider-block">
           <div class="focus-slider-header">
             <span>信息密度过滤阈值 (CI)</span>
@@ -398,7 +380,6 @@ const bookConfigJson = JSON.stringify(currentBook || {});
           />
         </div>
 
-        <!-- 操作按钮 -->
         <div class="focus-btn-group">
           <button type="button" class="focus-analyze-btn" id="focus-analyze-btn" title="分析当前章节并高亮关注点">
             <md-icon class="focus-btn-icon" aria-hidden="true">auto_awesome</md-icon>
@@ -409,7 +390,6 @@ const bookConfigJson = JSON.stringify(currentBook || {});
           </button>
         </div>
 
-        <!-- 遥测监控卡片 -->
         <div class="focus-telemetry-box" id="focus-telemetry-box" style="display: none;">
           <div class="focus-stat-item">
             <span class="focus-stat-label">推理延迟</span>
@@ -429,7 +409,6 @@ const bookConfigJson = JSON.stringify(currentBook || {});
           </div>
         </div>
 
-        <!-- 提取的核心关键词 -->
         <div>
           <div class="focus-section-label">高惊异度实体提取</div>
           <div class="focus-keywords-container" id="focus-keywords-list">
@@ -441,7 +420,6 @@ const bookConfigJson = JSON.stringify(currentBook || {});
   </section>
 </aside>
 
-<!-- 移动端本地导航 M3LocalNav（Material 3 规范：顶部 sticky 条 + 大纲 popup 下拉面板） -->
 <div class="m3-local-nav vp-local-nav" data-vp-local-nav>
   <div class="vp-local-nav-container">
     <button class="vp-local-nav-btn" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="vp-local-nav-panel" aria-label="本章大纲" title="本章大纲">
@@ -485,9 +463,7 @@ const bookConfigJson = JSON.stringify(currentBook || {});
   </div>
 </div>
 
-
-<script>
-  import '@material/web/icon/icon.js';
+<script>import '@material/web/icon/icon.js';
   import { initPageSidebar } from './sidebar/toc-generator';
   import { setupVPLocalNav } from './sidebar/local-nav';
   import { initMermaid, setupMermaidThemeListener } from './sidebar/mermaid-loader';
@@ -551,14 +527,12 @@ const bookConfigJson = JSON.stringify(currentBook || {});
       void ensureTranslationDockLoaded();
     }
 
-    // 绑定关注点透镜侧载面板控制与返回大纲
     const focusBack = document.getElementById('focus-back-to-toc');
     const focusClose = document.getElementById('focus-sidebar-close');
     focusBack?.addEventListener('click', () => sideloadManager.switchToDefault());
     focusClose?.addEventListener('click', () => sideloadManager.switchToDefault());
     infoHighlightClient.bindUi();
 
-    // 全局数据属性触发器
     document.querySelectorAll('[data-focus-trigger]').forEach((el) => {
       if (!(el as any).__focusBound) {
         (el as any).__focusBound = true;
@@ -569,7 +543,6 @@ const bookConfigJson = JSON.stringify(currentBook || {});
       }
     });
 
-    // 绑定侧载抽屉遮罩点击关闭
     const scrim = document.getElementById('astrolib-sideload-scrim');
     if (scrim && !(scrim as any).__sideloadBound) {
       (scrim as any).__sideloadBound = true;

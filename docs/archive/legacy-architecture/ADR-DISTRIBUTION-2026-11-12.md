@@ -1,8 +1,8 @@
 # ADR-DISTRIBUTION-2026-11-12：AstroLib 桌面端书籍内容发行契约决策
 
-**文档编号**：ADR-DISTRIBUTION-2026-11-12  
-**状态**：`ACCEPTED`（Gate G0 负责人决策拍板，2026-11-12）  
-**适用范围**：`AstroLib` Electron 桌面端仓库（分支 `electron/main`）  
+**文档编号**：ADR-DISTRIBUTION-2026-11-12
+**状态**：`ACCEPTED`（Gate G0 负责人决策拍板，2026-11-12）
+**适用范围**：`AstroLib` Electron 桌面端仓库（分支 `electron/main`）
 **关联文档**：
 - [STAGE_REVIEW_AND_EXECUTION_GATES_2026-11-12.md](./STAGE_REVIEW_AND_EXECUTION_GATES_2026-11-12.md)（Gate G0 / G1 / G2 / G3 / G4 / G5 门禁规范）
 - [PROJECT_ARCHITECTURE_AUDIT_2026-11-12.md](./PROJECT_ARCHITECTURE_AUDIT_2026-11-12.md)

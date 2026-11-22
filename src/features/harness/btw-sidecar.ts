@@ -1,16 +1,3 @@
-/**
- * src/features/harness/btw-sidecar.ts
- * ============================================================================
- * 侧载快速旁问悬浮窗 (/btw Floating Sidecar · KV Prefix Cache Preserving)
- * ============================================================================
- * 设计原则：
- * 1. 不中断主对话流，不向主历史 `activeConv.messages` 写入噪音；
- * 2. 请求严格保持 `[system, ...mainHistoryPrefix]` 字节一致 + 携带相同 `tools` Schema
- *    + `tool_choice: 'none'`，最大化命中 LLM 网关 KV Prefix Cache；
- * 3. 采用克制的 M3 悬浮卡 UI，支持实时流式、KaTeX 渲染、复制回答与 Esc 关闭。
- * ============================================================================
- */
-
 import { mdToHtml } from '../../ai/client/chat-markdown.ts';
 import type { ChatMessage as AgentChatMessage } from '../../ai/agent/context-manager.ts';
 import type { ProviderConfig } from './types.ts';
@@ -102,7 +89,6 @@ export class BtwSidecarController {
     this.abortController = abortCtrl;
     this.lastAnswerMarkdown = '';
 
-    // 严格拼接在 prefixMessages 尾部（保持 system + 前缀历史字节一致以命中 KV Cache）
     const basePrefix: AgentChatMessage[] =
       params.prefixMessages.length > 0
         ? [...params.prefixMessages]

@@ -1,13 +1,3 @@
-/**
- * src/plugins/harness/builtin/web-search.plugin.ts
- * ============================================================================
- * AstroLib 可选联网检索插件 (Optional Web Search Plugin)
- * ============================================================================
- * 仅当用户在设置中心显式开启并配置有效搜索接口时，才由 PluginEnvironment
- * 注入模型的 tools[] 与系统提示词；未开启时对模型完全隐身，零误触、零报错。
- * ============================================================================
- */
-
 import type { HarnessPlugin, PluginContext } from '../types.ts';
 
 const SOURCE_FILE = 'src/plugins/harness/builtin/web-search.plugin.ts';

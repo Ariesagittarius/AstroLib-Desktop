@@ -1,16 +1,3 @@
-/**
- * src/features/reader-host/workspace-state.ts
- * ============================================================================
- * 研读视窗纯 TypeScript 状态机 (Zero-DOM Workspace & Split-Pane State Machine)
- * ============================================================================
- * 职责：
- * 1. 清晰分离「底栏全部已展示标签 (Visible Tabs)」与「当前焦点窗格 (Focused Pane)」；
- * 2. 规范多屏模式下的开书/切标签落位策略（优先填空窗格，满屏则替换焦点窗格）；
- * 3. 支持 3 种可配置的关闭标签行为：自动补位 (backfill)、自动降级 (collapse)、保留空槽 (keep-empty)；
- * 4. 彻底根治全部标签关闭后多屏死锁空白问题。
- * ============================================================================
- */
-
 import type { ReadingEntityKind, SplitLayoutMode, TabItem } from '../../types/library-entity';
 
 export type SplitClosePolicy = 'backfill' | 'collapse' | 'keep-empty';
@@ -171,19 +158,16 @@ export class ReaderWorkspaceStateMachine {
     const maxPanes = this.getMaxPanes();
     const focused = this.state.focusedPaneIndex;
 
-    // 1. 优先确认当前焦点窗格本身是否为空槽
     if (focused >= 0 && focused < maxPanes && !this.isValidTabId(this.state.paneBindings[focused])) {
       return focused;
     }
 
-    // 2. 否则查找第一个空窗格
     for (let i = 0; i < maxPanes; i++) {
       if (!this.isValidTabId(this.state.paneBindings[i])) {
         return i;
       }
     }
 
-    // 3. 若全部已满，替换当前焦点窗格
     return focused >= 0 && focused < maxPanes ? focused : 0;
   }
 
@@ -206,9 +190,6 @@ export class ReaderWorkspaceStateMachine {
     return null;
   }
 
-  /**
-   * 聚焦某个可见窗格（例如用户点击空槽或切换到某窗格中的 iframe）
-   */
   public focusPane(paneIndex: number, now = Date.now()): void {
     const maxPanes = this.getMaxPanes();
     if (!Number.isInteger(paneIndex) || paneIndex < 0 || paneIndex >= maxPanes) return;
@@ -225,9 +206,6 @@ export class ReaderWorkspaceStateMachine {
     this.syncActiveFlags();
   }
 
-  /**
-   * 打开已有或新建标签页，并按多屏策略落位
-   */
   public openEntity(payload: OpenTabPayload, now = Date.now()): { tab: TabItem; isNew: boolean; paneIndex: number } {
     const existing = this.state.tabs.find((t) => t.entityId === payload.entityId);
     if (existing) {
@@ -251,11 +229,6 @@ export class ReaderWorkspaceStateMachine {
     return { tab: { ...newTab }, isNew: true, paneIndex };
   }
 
-  /**
-   * 激活指定标签页（点击底栏标签或书库重复选中）
-   * - 若已在分屏中展示：仅切换焦点，绝不重复打开；
-   * - 若未展示（或有 pendingSlotTarget）：优先填入空窗格，满屏替换焦点窗格。
-   */
   public activateTab(tabId: string, now = Date.now()): number {
     const tab = this.state.tabs.find((t) => t.id === tabId);
     if (!tab) return -1;
@@ -293,9 +266,6 @@ export class ReaderWorkspaceStateMachine {
     return assignedPane;
   }
 
-  /**
-   * 拖拽底栏标签到指定窗格（支持与目标窗格内容互换，不丢失原窗格内容）
-   */
   public assignTabToPane(tabId: string, targetPaneIndex: number, now = Date.now()): boolean {
     const maxPanes = this.getMaxPanes();
     if (!this.isValidTabId(tabId)) return false;
@@ -317,9 +287,6 @@ export class ReaderWorkspaceStateMachine {
     return true;
   }
 
-  /**
-   * 关闭标签页，按当前关闭策略处理多屏空槽
-   */
   public closeTab(tabId: string, now = Date.now()): boolean {
     const idx = this.state.tabs.findIndex((t) => t.id === tabId);
     if (idx === -1) return false;
@@ -362,7 +329,7 @@ export class ReaderWorkspaceStateMachine {
         this.state.activeTabId = candidate.id;
         candidate.lastVisited = now;
       } else if (this.state.closePolicy === 'collapse') {
-        // 无后台标签可补入，执行自动降级并紧凑重排可见窗格
+
         const survivingVisible: string[] = [];
         for (let i = 0; i < maxPanes; i++) {
           const id = this.state.paneBindings[i];
@@ -393,14 +360,14 @@ export class ReaderWorkspaceStateMachine {
 
         this.state.activeTabId = this.fallbackActiveTabId() || this.state.tabs[0]?.id || null;
       } else {
-        // backfill 无后台候选，或 keep-empty：保留该空槽并将焦点定位于此，方便下次直接补入
+
         this.state.focusedPaneIndex = freedPaneIdx;
         if (this.state.activeTabId === tabId) {
           this.state.activeTabId = this.fallbackActiveTabId();
         }
       }
     } else {
-      // 关闭的是未展示的后台标签
+
       if (this.state.activeTabId === tabId) {
         this.state.activeTabId = this.fallbackActiveTabId();
       }
@@ -410,9 +377,6 @@ export class ReaderWorkspaceStateMachine {
     return true;
   }
 
-  /**
-   * 切换分屏布局模式并智能去重补全
-   */
   public setSplitMode(mode: SplitLayoutMode): void {
     this.state.splitMode = mode;
     const maxPanes = this.getMaxPanes(mode);
@@ -444,7 +408,6 @@ export class ReaderWorkspaceStateMachine {
       }
     }
 
-    // 确保 activeTabId 至少出现在某可见窗格内
     if (this.isValidTabId(this.state.activeTabId) && !assigned.has(this.state.activeTabId)) {
       const targetSlot = this.state.paneBindings[0] === null ? 0 : Math.min(this.state.focusedPaneIndex, maxPanes - 1);
       if (this.state.paneBindings[targetSlot]) {
@@ -454,7 +417,6 @@ export class ReaderWorkspaceStateMachine {
       assigned.add(this.state.activeTabId);
     }
 
-    // 其余空位用后台最近标签补齐，绝不重复绑定同一实体
     for (let i = 0; i < maxPanes; i++) {
       if (this.state.paneBindings[i] === null) {
         const available = this.pickMostRecentBackgroundTab(assigned);
@@ -472,9 +434,6 @@ export class ReaderWorkspaceStateMachine {
     this.syncActiveFlags();
   }
 
-  /**
-   * 以对照分屏模式打开草稿自由画布
-   */
   public openCanvasSplit(
     data: {
       colSlug: string;

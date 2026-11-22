@@ -1,13 +1,13 @@
 # AstroLib 阶段报告复核与下一阶段执行/审计门禁
 
-**文档编号**：ARCH-STAGE-REVIEW-2026-11-12  
-**文档状态**：`P0 CLOSED — ACCEPTED FOR P1 HANDOFF`（2026-11-13）  
-**复核对象**：执行 Agent 提交的 `electron/main` 阶段报告（对话版，无独立报告文件）  
-**复核基线**：`electron/main` @ `cbb19a78`（`refactor(core): align electron desktop architecture with lean dynamic abp model`）  
-**对照基线**：`checkpoint/electron-pre-audit` @ `c36f8dbe`  
-**复核日期**：2026-11-12  
-**复核环境**：Windows / PowerShell / Node.js / Electron / electron-builder；当前工作树 `git status --short` 为空  
-**适用对象**：下一阶段执行 Agent、独立审计 Agent、发布负责人  
+**文档编号**：ARCH-STAGE-REVIEW-2026-11-12
+**文档状态**：`P0 CLOSED — ACCEPTED FOR P1 HANDOFF`（2026-11-13）
+**复核对象**：执行 Agent 提交的 `electron/main` 阶段报告（对话版，无独立报告文件）
+**复核基线**：`electron/main` @ `cbb19a78`（`refactor(core): align electron desktop architecture with lean dynamic abp model`）
+**对照基线**：`checkpoint/electron-pre-audit` @ `c36f8dbe`
+**复核日期**：2026-11-12
+**复核环境**：Windows / PowerShell / Node.js / Electron / electron-builder；当前工作树 `git status --short` 为空
+**适用对象**：下一阶段执行 Agent、独立审计 Agent、发布负责人
 **规范优先级**：用户直接指令 > `AGENTS.md` > 本文 > 历史交接文档
 
 ---
@@ -158,7 +158,7 @@ git check-ignore -v public/data/exercises/community_ai_solutions.json
 | `@huggingface` in asar | 1,566.8 MB（含本地 `.cache` 模型） |
 | ABP artifacts | 8,210 files / 614.8 MB；`.abp` 合计 144.3 MB |
 
-> 说明：`npm run build` 本次耗时 11.48s，报告中为 18.90s；构建时间受机器负载影响，不作为“不实”证据。  
+> 说明：`npm run build` 本次耗时 11.48s，报告中为 18.90s；构建时间受机器负载影响，不作为“不实”证据。
 > `npm run check:all` 通过不等于测试有效；空跑测试问题见 §4.6。
 
 ### 2.3 证据限制
@@ -218,8 +218,8 @@ git check-ignore -v public/data/exercises/community_ai_solutions.json
 
 #### 结论
 
-“`asar: true`”是真的；  
-“lean shell”是假的；  
+“`asar: true`”是真的；
+“lean shell”是假的；
 “`electron-builder --dir` 阻塞”不可复现。
 
 #### 不在本项处理
@@ -261,7 +261,7 @@ public/data/exercises/<slug>
 
 #### 结论
 
-当前 ABP 对“章节、图片、AI 索引、关系图、交叉引用、巡检”是自包含的；  
+当前 ABP 对“章节、图片、AI 索引、关系图、交叉引用、巡检”是自包含的；
 对 **exercises 不是自包含的**。报告把 exercises 与其它辅助数据并列写成完成项，属于实质性过度声明。
 
 #### 验收标准
@@ -318,7 +318,7 @@ public/data/exercises/<slug>
 "public/data/exercises/community_ai_solutions.json"
 ```
 
-但 `.gitignore` 忽略整个 `public/data/exercises/`，`git ls-files` 对该路径返回 0。  
+但 `.gitignore` 忽略整个 `public/data/exercises/`，`git ls-files` 对该路径返回 0。
 因此：
 
 - 当前工作树打包时该文件存在；
@@ -327,7 +327,7 @@ public/data/exercises/<slug>
 
 #### 结论
 
-发布流水线没有做到“从干净 clone 可复现”。  
+发布流水线没有做到“从干净 clone 可复现”。
 同时，`npm run build` 已从“全量构建”退化为“只构建 Astro”，但 README 仍宣称它包含习题与索引构建。
 
 #### 验收标准
@@ -362,7 +362,7 @@ export function getCatalogCollections(): Collection[] {
 
 #### 结论
 
-“增加了一个 catalog helper”不等于“SSOT 收口”。  
+“增加了一个 catalog helper”不等于“SSOT 收口”。
 当前仍是“一个空数组 + 一个 source 数组 + 一个可回退函数 + 一个无消费者的 JSON 投影”。
 
 #### 验收标准
@@ -400,7 +400,7 @@ if (!fs.existsSync(algosDir)) return;
 
 #### 结论
 
-61 files / 348 tests 的数字是真的；  
+61 files / 348 tests 的数字是真的；
 “测试覆盖了迁移后的内容与路径”是假的。
 
 #### 验收标准
@@ -427,7 +427,7 @@ if (!fs.existsSync(algosDir)) return;
 
 #### 结论
 
-主路径比迁移前好，但“严格校验 + 事务安装”仍是过度声明。  
+主路径比迁移前好，但“严格校验 + 事务安装”仍是过度声明。
 这属于 P1：不阻塞首次启动，但会在损坏包、重复安装、元数据写入失败时留下不一致状态。
 
 #### 验收标准
@@ -496,8 +496,8 @@ if (!fs.existsSync(algosDir)) return;
 
 #### 结论
 
-如果目标是纯桌面应用，这些是 Web 运行时残留；  
-如果 Web 仓仍需要，它们应归 `AstroLib-Web`，不应在桌面仓默认启用。  
+如果目标是纯桌面应用，这些是 Web 运行时残留；
+如果 Web 仓仍需要，它们应归 `AstroLib-Web`，不应在桌面仓默认启用。
 不能一边宣称“PWA 清理完成”，一边保留注册与构建复制。
 
 #### 验收标准
@@ -1092,9 +1092,9 @@ STATUS: RELEASE CANDIDATE ACCEPTED FOR FORMAL P1 HANDOFF
 
 ---
 
-**复核人**：独立审计 Agent（本次会话）  
-**复核方式**：只读代码 + 实际构建/测试/打包 + 产物解析  
-**源码修改**：无（本文件为新增审计文档）  
+**复核人**：独立审计 Agent（本次会话）
+**复核方式**：只读代码 + 实际构建/测试/打包 + 产物解析
+**源码修改**：无（本文件为新增审计文档）
 **下一次更新条件**：任一 Gate 完成、或被审计发现新 P0/P1 事实
 
 ---

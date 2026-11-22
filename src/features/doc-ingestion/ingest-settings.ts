@@ -1,16 +1,3 @@
-/**
- * src/features/doc-ingestion/ingest-settings.ts
- * ============================================================================
- * 学术文献解析与双栏阅读设置共享契约 (Single Source of Truth)
- * ============================================================================
- * 统一服务于：
- * - 全局设置中心 (SettingsIngestPanel.astro / settings-ingest-client.ts)
- * - 桌面宿主实时广播 (desktop.astro / reader-host-controller.ts)
- * - 研读书库统一上传流 (ingest-upload-pipeline.ts)
- * - 单文献纯净阅读视窗 (paper-reader-controller.ts / paper-typography.ts)
- * ============================================================================
- */
-
 export type IngestEngineType = 'api' | 'agent' | 'local';
 export type ReadingFontPreset = 'latin-modern' | 'termes' | 'libertine' | 'noto-serif' | 'sans';
 export type HeadingFontPreset = 'default' | 'inherit' | 'latin-modern' | 'termes' | 'libertine' | 'noto-serif';

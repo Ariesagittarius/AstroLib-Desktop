@@ -1,10 +1,3 @@
-/**
- * electron/server/canvas/client-script.ts
- * ============================================================================
- * 章节无限自由画布工作台客户端引擎脚本（笔迹渲染 / 卡片 / AST 引用 / 导出）
- * ============================================================================
- */
-
 export function buildCanvasClientScript(metaJson: string): string {
   return `
   (function () {

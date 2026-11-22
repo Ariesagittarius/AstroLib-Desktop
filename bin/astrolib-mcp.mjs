@@ -1,22 +1,4 @@
 #!/usr/bin/env node
-/**
- * bin/astrolib-mcp.mjs
- * ============================================================================
- * AstroLib 官方标准 MCP Stdio 服务端 (Model Context Protocol Stdio Server)
- * ============================================================================
- * 职责：
- * 1. 采用标准 JSON-RPC 2.0 (MCP 2024-11-05) 协议，通过 stdin/stdout 与外界通信；
- * 2. 暴露 AstroLib 核心学术工具：
- *    - locate_content: 统一内容定位协议求解 (AURP)
- *    - get_books_catalog: 获取全部教材与学科目录
- *    - get_book_toc: 获取指定教材完整章节大纲树
- *    - get_chapter_ast: 提取章节完整结构化 AST 树、公式与学术卡片
- *    - read_content_node: 根据唯一 ID 读取段落/公式/模块的完整 MDX 原文
- *    - search_exercises: 全局习题检索与官方题解
- *    - diff_chapters: 计算两章节源码 Unified Diff
- * 3. 供 antigravity-cli (agy) 通过 agy mcp add astrolib node <path> 接入调用。
- * ============================================================================
- */
 
 import readline from 'node:readline';
 import { ContentApiService } from '../src/core/content-api/content-api-service.ts';
@@ -207,7 +189,7 @@ async function handleMessage(msg) {
   }
 
   if (method === 'notifications/initialized') {
-    // 客户端通知，无需响应
+
     return;
   }
 

@@ -1,29 +1,4 @@
 #!/usr/bin/env node
-/**
- * bin/astrolib-pdf2abp.mjs
- * ============================================================================
- * AstroLib 自动化 PDF2ABP 多智能体转换命令行工具
- * ============================================================================
- * 用法：
- *   node bin/astrolib-pdf2abp.mjs check [--json]
- *   node bin/astrolib-pdf2abp.mjs run "<abs-or-rel-pdf-path>" [options]
- *   node bin/astrolib-pdf2abp.mjs resume <jobId> [options]
- *   node bin/astrolib-pdf2abp.mjs inspect <jobId> [--json]
- *   node bin/astrolib-pdf2abp.mjs list [--json]
- *
- * 选项：
- *   --concurrency=<1..24>  并发校对子代理数量 (默认 12，支持自适应限流)
- *   --no-import            完成打包与校验后不自动导入书库
- *   --model=<id>           覆盖模型 ID (默认 ybg-youlaber-ds4f)
- *   --provider=<id>        网关提供方 ID (默认 baigong)
- *   --base-url=<url>       覆盖 OpenAI 兼容网关地址
- *   --api-key=<key>        覆盖 API Key
- *   --instructions=<text>  附加全书转换/排版要求
- *   --max-steps=<N>        主代理最大迭代步数 (默认 80)
- *   --job-id=<id>          自定义任务 ID
- *   --json                 以 JSON 输出最终结果（过程日志转至 stderr）
- * ============================================================================
- */
 
 import fs from 'node:fs';
 import path from 'node:path';
@@ -120,7 +95,7 @@ function logProgress(jsonMode, line) {
 function formatEventLine(evt) {
   const t = new Date(evt.timestamp).toISOString().slice(11, 19);
   const tag = `[${t}][${evt.agentId}][${evt.type}]`;
-  // 高频 thinking 仅在非微碎时简洁输出
+
   if (evt.type === 'thinking') {
     const compact = String(evt.message || '').replace(/\s+/g, ' ').slice(0, 140);
     return `${tag} ${compact}`;
@@ -306,7 +281,7 @@ async function main() {
       try {
         manager.cancelJob(initialJob.jobId);
       } catch {
-        // ignore
+
       }
     };
     process.on('SIGINT', onSigInt);

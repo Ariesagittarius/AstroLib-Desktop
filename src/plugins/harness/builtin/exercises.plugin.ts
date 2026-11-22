@@ -1,10 +1,3 @@
-/**
- * src/plugins/harness/builtin/exercises.plugin.ts
- * ============================================================================
- * AstroLib 习题与题解检索插件 (/exercises)
- * ============================================================================
- */
-
 import type { HarnessPlugin, PluginContext } from '../types.ts';
 
 function escapeHtml(str: string): string {

@@ -299,7 +299,7 @@ $$
 flowchart LR
     P["$$X^2(e,t)$$\n样本瞬时功率"] -->|"$$\\mathbb{E}[\\cdot]$$"| Pt["瞬时平均功率\n$$\\mathbb{E}[X^2(e,t)]$$"]
     Pt -->|"$$\\overline{(\\cdot)}$$"| Pavg["平均功率\n$$P_X = \\overline{\\mathbb{E}[X^2]} = \\mathbb{E}[\\overline{X^2}]$$"]
-    
+
     P -->|"$$\\overline{(\\cdot)}$$"| Pe["样本平均功率\n$$\\overline{X^2(e,t)}$$"]
     Pe -->|"$$\\mathbb{E}[\\cdot]$$"| Pavg
 ```
@@ -406,7 +406,7 @@ flowchart TD
     indep["独立\n$$p_{XY}(x,y) = p_X(x)p_Y(y)$$"]
     uncorr["不相关\n$$\\mathbb{E}[XY] = \\mathbb{E}[X]\\mathbb{E}[Y]$$"]
     orth["正交\n$$\\mathbb{E}[XY] = 0$$"]
-    
+
     indep -->|"推导成立"| uncorr
     indep -.->|"零均值时推导成立"| orth
     uncorr <==>|"零均值时等价"| orth

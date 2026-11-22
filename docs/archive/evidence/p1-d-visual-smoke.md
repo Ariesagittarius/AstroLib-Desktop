@@ -5,10 +5,10 @@
 > 依据 `P1_REMEDIATION_AUDIT_2026-11-14.md` 裁决，**D5 样式削减门禁维持 CONDITIONAL**，不得宣称“0 regression”或“Formally Verified”。
 > **本报告更正了此前版本中与源码不一致的选择器；2026-11-14 第三轮复核再次校正 3 处残留（`.ask-panel-container` → `.ask-panel`、`.hub-empty-state` → `.ex-empty-state`、`.loading-mask` → `.m3-loading-overlay-host`）。**
 
-**Verification Date**: 2026-11-14  
-**Audit Baseline**: `5498542a` → HEAD (`f8651613`)  
-**Evaluator**: AstroLib Architectural Governance (Manual Spot Check)  
-**Target Scope**: Visual stability of Material Design 3 surfaces following mechanical stripping of 1,512 `!important` declarations from `src/styles/components/exercise-m3.css` and layer consolidation.  
+**Verification Date**: 2026-11-14
+**Audit Baseline**: `5498542a` → HEAD (`f8651613`)
+**Evaluator**: AstroLib Architectural Governance (Manual Spot Check)
+**Target Scope**: Visual stability of Material Design 3 surfaces following mechanical stripping of 1,512 `!important` declarations from `src/styles/components/exercise-m3.css` and layer consolidation.
 **Verdict**: **CONDITIONAL (Spot Checked, Formal Visual Regression Suite Deferred to P2)**
 
 ---

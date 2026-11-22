@@ -1,10 +1,3 @@
-/**
- * src/ai/client/chat-history.ts
- * ============================================================================
- * Thread History List & Management for AI Chat
- * ============================================================================
- */
-
 import { ThreadStore, MAX_THREADS } from './thread-store';
 
 export interface HistoryHost {

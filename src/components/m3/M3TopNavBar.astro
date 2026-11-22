@@ -1,17 +1,4 @@
 ---
-/**
- * src/components/m3/M3TopNavBar.astro
- * ============================================================================
- * Official Material 3 & Expressive Top Navigation Bar (App Bar)
- * ============================================================================
- * 规范：
- * 1. 严格遵循 Material Design 3 (Material You / Expressive) Top App Bar 规范；
- * 2. 彻底移除旧版 VitePress 遗留命名，使用统一 m3-* 声明式架构；
- * 3. 20px 物理光学尺寸 Google Material Symbols 官方矢量净标；
- * 4. 完美响应式断点：桌面端双栏/三栏，移动端平滑折叠至 M3 侧滑抽屉；
- * 5. 全面解耦布局和交互逻辑。
- * ============================================================================
- */
 import M3Icon from './M3Icon.astro';
 
 interface Props {
@@ -41,7 +28,7 @@ const {
 
 <header class:list={['m3-app-bar', 'vp-nav', className]} id="m3-main-app-bar">
   <div class="m3-app-bar__container vp-nav-container">
-    <!-- Brand Logo & Title -->
+
     {showBrand && (
       <a href="/" class="m3-brand vp-brand" aria-label={`${siteTitle} 首页`}>
         <div class="m3-brand__logo-wrap vp-logo-wrap" aria-hidden="true">
@@ -54,7 +41,6 @@ const {
       </a>
     )}
 
-    <!-- Quick Search Trigger (Chrome Omnibox Pill Style) -->
     {showSearch && (
       <div class="m3-search-pill vp-search-wrap">
         <slot name="search">
@@ -67,9 +53,8 @@ const {
       </div>
     )}
 
-    <!-- Navigation Actions Group -->
     <div class="m3-app-bar__actions vp-nav-actions">
-      <!-- Desktop Navigation Links -->
+
       {showNavLinks && (
         <nav class="m3-nav-links vp-nav-links" aria-label="主要导航">
           <slot name="nav-links">
@@ -81,10 +66,8 @@ const {
         <div class="m3-nav-divider vp-nav-divider" aria-hidden="true"></div>
       )}
 
-      <!-- Action Slots / Extra Controls -->
       <slot name="actions" />
 
-      <!-- Theme Switcher (M3 Circular Outlined Button) -->
       {showThemeToggle && (
         <div class="m3-action-item vp-theme-switch-container">
           <button
@@ -95,7 +78,7 @@ const {
             aria-label="切换亮/暗色主题"
             title="切换亮/暗色主题"
           >
-            <!-- Google Material Symbols 官方 Outlined light_mode -->
+
             <svg class="m3-mode-icon sun-icon theme-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <circle cx="12" cy="12" r="4"></circle>
               <line x1="12" y1="2" x2="12" y2="4"></line>
@@ -107,7 +90,7 @@ const {
               <line x1="6.34" y1="17.66" x2="4.93" y2="19.07"></line>
               <line x1="19.07" y1="4.93" x2="17.66" y2="6.34"></line>
             </svg>
-            <!-- Google Material Symbols 官方 Outlined dark_mode -->
+
             <svg class="m3-mode-icon moon-icon theme-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path>
             </svg>
@@ -115,7 +98,6 @@ const {
         </div>
       )}
 
-      <!-- Control Center & Extensions Hub (M3 Circular Outlined Button) -->
       {showHubButton && (
         <button
           type="button"
@@ -128,7 +110,6 @@ const {
         </button>
       )}
 
-      <!-- GitHub Link (Primer Octicon in 34px Circular Base) -->
       {showGithubLink && (
         <a
           href="https://github.com/Ariesagittarius/AstroLib"
@@ -144,7 +125,6 @@ const {
         </a>
       )}
 
-      <!-- Mobile Hamburger Button -->
       <button type="button" class="m3-hamburger vp-hamburger" id="m3-hamburger-btn" aria-label="展开导航菜单" aria-expanded="false">
         <span class="m3-hamburger__bar"></span>
         <span class="m3-hamburger__bar"></span>
@@ -153,7 +133,6 @@ const {
     </div>
   </div>
 
-  <!-- Mobile Dropdown Menu -->
   <div class="m3-mobile-drawer vp-mobile-menu" id="m3-mobile-drawer">
     <div class="m3-mobile-links vp-mobile-links">
       <slot name="mobile-links">
@@ -164,9 +143,8 @@ const {
   </div>
 </header>
 
-<script>
-  function setupM3TopNavBar() {
-    // 1. Theme toggle synchronization
+<script>function setupM3TopNavBar() {
+
     const themeBtn = document.getElementById('m3-theme-toggle-btn') || document.getElementById('vp-nav-theme-btn');
     if (themeBtn) {
       themeBtn.addEventListener('click', () => {
@@ -181,7 +159,6 @@ const {
       });
     }
 
-    // 2. Hub button overlay trigger
     const hubBtn = document.getElementById('m3-hub-btn') || document.getElementById('vp-nav-hub-btn');
     if (hubBtn) {
       hubBtn.addEventListener('click', () => {
@@ -193,7 +170,6 @@ const {
       });
     }
 
-    // 3. Mobile hamburger drawer
     const hamburger = document.getElementById('m3-hamburger-btn') || document.getElementById('vp-nav-hamburger');
     const drawer = document.getElementById('m3-mobile-drawer') || document.getElementById('vp-mobile-menu');
     if (hamburger && drawer) {
@@ -210,7 +186,6 @@ const {
       });
     }
 
-    // 4. Omnibox search trigger keyboard shortcut (/ or ⌘K)
     document.addEventListener('keydown', (e) => {
       if ((e.key === '/' || ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k')) &&
           !['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement)?.tagName)) {
@@ -231,8 +206,7 @@ const {
   document.addEventListener('astro:page-load', setupM3TopNavBar);
 </script>
 
-<style>
-  .m3-app-bar {
+<style>.m3-app-bar {
     position: sticky;
     top: 0;
     left: 0;
@@ -261,7 +235,6 @@ const {
     gap: 0.75rem;
   }
 
-  /* Brand Logo & Title */
   .m3-brand {
     display: flex;
     align-items: center;
@@ -305,7 +278,6 @@ const {
     color: var(--md-sys-color-on-surface, #e3e3e3);
   }
 
-  /* Chrome Omnibox Style Search Trigger */
   .m3-search-pill {
     flex: 1;
     display: flex;
@@ -369,7 +341,6 @@ const {
     color: var(--md-sys-color-outline, #8e918f);
   }
 
-  /* Right Actions */
   .m3-app-bar__actions {
     display: flex;
     align-items: center;
@@ -423,7 +394,6 @@ const {
     background-color: var(--md-sys-color-outline-variant, #3c4043);
   }
 
-  /* 34px Circular Action Buttons */
   .m3-icon-btn {
     position: relative;
     display: inline-flex;
@@ -456,7 +426,6 @@ const {
     transform: scale(0.94);
   }
 
-  /* Theme Switcher Sun/Moon Toggle */
   .m3-mode-icon {
     transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1), opacity 0.2s ease;
   }
@@ -465,7 +434,6 @@ const {
   :global([data-theme='dark']) .sun-icon { display: none; }
   :global([data-theme='dark']) .moon-icon { display: block; }
 
-  /* Mobile Hamburger */
   .m3-hamburger {
     display: none;
     flex-direction: column;
@@ -490,7 +458,6 @@ const {
     transition: transform 0.2s ease, opacity 0.2s ease;
   }
 
-  /* Mobile Drawer */
   .m3-mobile-drawer {
     display: none;
     position: absolute;
@@ -539,7 +506,6 @@ const {
     border-color: var(--md-sys-color-outline-variant, #3c4043);
   }
 
-  /* Responsive Rules */
   @media (max-width: 768px) {
     .m3-search-pill {
       max-width: 12rem;

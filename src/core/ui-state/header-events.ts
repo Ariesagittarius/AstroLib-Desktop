@@ -1,10 +1,3 @@
-/**
- * src/core/ui-state/header-events.ts
- * ============================================================================
- * Standardized Event Contract for Application & Documentation Headers
- * ============================================================================
- */
-
 export const HEADER_EVENTS = {
   THEME_TOGGLE: 'astrolib:theme-toggle',
   SEARCH_OPEN: 'astrolib:open-search',
@@ -30,9 +23,6 @@ export interface HeaderSidebarToggleDetail {
   expanded?: boolean;
 }
 
-/**
- * Dispatch a typed header event.
- */
 export function dispatchHeaderEvent<T = any>(eventName: HeaderEventType, detail?: T): boolean {
   if (typeof window === 'undefined') return false;
   return window.dispatchEvent(new CustomEvent(eventName, { detail, bubbles: true }));

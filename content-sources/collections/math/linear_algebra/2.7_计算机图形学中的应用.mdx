@@ -86,7 +86,7 @@ $$
 
 $\mathbb{R}^2$ 中每个点 $(x,y)$ 可以对应于 $\mathbb{R}^3$ 中的点 $(x,y,1)$ ，它们位于 $xy$ 平面上方1单位的平面上。我们称 $(x,y)$ 有齐次坐标 $(x,y,1)$ 。例如，点 $(0,0)$ 的齐次坐标为 $(0,0,1)$ 。点的齐次坐标不能相加，也不能乘以数，但它们可以乘以 $3\times 3$ 矩阵来做变换。
 
-![](images/82b5c4cfa848d5d6d52ed001df7e20ffa54a0070086a99a7b928f93317af0e2a.jpg)  
+![](images/82b5c4cfa848d5d6d52ed001df7e20ffa54a0070086a99a7b928f93317af0e2a.jpg)
 沿 $\begin{bmatrix}4\\ 3\end{bmatrix}$ 方向平移
 
 <Example title="例 4">
@@ -113,7 +113,7 @@ $$
 x 乘以 s
 y 乘以 t
 
-![](images/8b567addbdbf0a5ab9d0365ed6843acd1a0df880408adc74e0068533b8565ead.jpg)  
+![](images/8b567addbdbf0a5ab9d0365ed6843acd1a0df880408adc74e0068533b8565ead.jpg)
 原图
 </Example>
 
@@ -133,7 +133,7 @@ $$
 \left[ \begin{array}{c} {x} \\ {y} \\ {1} \end{array} \right] \xrightarrow {\text {缩小}} \left[ \begin{array}{c c c} {0. 3} & {0} & {0} \\ {0} & {0. 3} & {0} \\ {0} & {0} & {1} \end{array} \right] \left[ \begin{array}{c} {x} \\ {y} \\ {1} \end{array} \right]
 $$
 
-缩小后的图  
+缩小后的图
 ![](images/0e1d91b532b8ed03de68e3ace402f041c65a5f28796b3f14b97518b8fae836b0.jpg)
 
 $$
@@ -146,9 +146,9 @@ $$
 \left[ \begin{array}{c c c} 1 & 0 & - 0. 5 \\ 0 & 1 & 2 \\ 0 & 0 & 1 \end{array} \right] \left[ \begin{array}{c c c} 0 & - 1 & 0 \\ 1 & 0 & 0 \\ 0 & 0 & 1 \end{array} \right] \left[ \begin{array}{c c c} 0. 3 & 0 & 0 \\ 0 & 0. 3 & 0 \\ 0 & 0 & 1 \end{array} \right] \left[ \begin{array}{l} x \\ y \\ 1 \end{array} \right]
 $$
 
-旋转后的图  
-![](images/86a27c4fbd8b26ebeebcb4ef29ff7ef69335c8090183cc1a60492f21518b0944.jpg)  
-平移后的图  
+旋转后的图
+![](images/86a27c4fbd8b26ebeebcb4ef29ff7ef69335c8090183cc1a60492f21518b0944.jpg)
+平移后的图
 图2-18
 
 所以复合变换的矩阵为
@@ -286,17 +286,17 @@ James D. Foley, Andries van Dam, Steven K. Feiner, and John F. Hughes, Computer 
 <Block title="练习题">
 图形绕 $\mathbb{R}^2$ 中一点 $p$ 的旋转是这样实现的：首先把图形平移 $-p$ ，然后绕原点旋转，最后平移回去 $p$ 见图2-23.使用齐次坐标构造绕点(-2,6)旋转- $30^{\circ}$ 的 $3\times 3$ 矩阵.
 
-![](images/b1dead3bd808b382996e887a14d305ecbc1e2066d7ed683cb2b6dde79457ed5f.jpg)  
+![](images/b1dead3bd808b382996e887a14d305ecbc1e2066d7ed683cb2b6dde79457ed5f.jpg)
 a）原图
 
-![](images/ad71de2c1b28e6381bc06f2948f14cc9ebbee96e2c57da8f0aaeb19220e4da4a.jpg)  
+![](images/ad71de2c1b28e6381bc06f2948f14cc9ebbee96e2c57da8f0aaeb19220e4da4a.jpg)
 b）朝原点平移-p
 
-![](images/fca9a92619ef06154c0cc7bcc29708c0e862e4a236c679bc3c1ae3f32ddfa518.jpg)  
+![](images/fca9a92619ef06154c0cc7bcc29708c0e862e4a236c679bc3c1ae3f32ddfa518.jpg)
 c）绕原点旋转
 
-![](images/e690dbc9c8dc7b9383ef261329c6c414be1c829f70c6a3f754d6f69e3ea709b8.jpg)  
-d）平移回去 $\pmb{p}$  
+![](images/e690dbc9c8dc7b9383ef261329c6c414be1c829f70c6a3f754d6f69e3ea709b8.jpg)
+d）平移回去 $\pmb{p}$
 图 2-23 图形绕点 p 旋转
 </Block>
 

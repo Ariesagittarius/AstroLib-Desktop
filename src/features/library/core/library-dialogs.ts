@@ -1,10 +1,3 @@
-/**
- * src/features/library/core/library-dialogs.ts
- * ============================================================================
- * 研读书库 M3 对话框交互控制器 (Token 缺失阻断引导 & 超 200 页页码范围选择)
- * ============================================================================
- */
-
 import { MINERU_MAX_PAGES_PER_PARSE, validatePageRanges } from './entity-status';
 import type { OversizedPdfTask } from './ingest-upload-pipeline';
 

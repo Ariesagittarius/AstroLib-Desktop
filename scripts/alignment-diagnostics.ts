@@ -128,7 +128,6 @@ export async function runDiagnostics(options: {
   const tokenizer = await AutoTokenizer.from_pretrained(modelName);
   const pipe = await pipeline('feature-extraction', modelName, { dtype, device: 'cpu' });
 
-  // 1. Inspect Tokenizer and Token counts
   const tokenStats: DiagnosticsResult['tokenStats'] = [];
   for (const item of DIAGNOSTICS_CORPUS) {
     const enTokens = tokenizer(prefix + item.en);
@@ -153,7 +152,6 @@ export async function runDiagnostics(options: {
     });
   }
 
-  // 2. Measure tensor shapes before and after pooling
   const singleTestEn = prefix + DIAGNOSTICS_CORPUS[0].en;
   const singleInput = tokenizer(singleTestEn);
   const rawModel = await AutoModel.from_pretrained(modelName, { dtype });
@@ -163,7 +161,6 @@ export async function runDiagnostics(options: {
   const pooledOut = await pipe([singleTestEn], { pooling: 'mean', normalize: true });
   const shapeAfter = Array.from(pooledOut.dims as number[]);
 
-  // 3. Extract embeddings for all corpus items
   const enTexts = DIAGNOSTICS_CORPUS.map((s) => prefix + s.en);
   const zhTexts = DIAGNOSTICS_CORPUS.map((s) => prefix + s.zh);
 
@@ -182,18 +179,15 @@ export async function runDiagnostics(options: {
     zhEmbeds.push(Array.from(zhData.subarray(i * dim, (i + 1) * dim)));
   }
 
-  // 4. Measure L2 Norms
   const l2Norms: { [key: string]: number } = {};
   DIAGNOSTICS_CORPUS.forEach((s, idx) => {
     l2Norms[`en_${s.id}`] = computeL2Norm(enEmbeds[idx]);
     l2Norms[`zh_${s.id}`] = computeL2Norm(zhEmbeds[idx]);
   });
 
-  // 5. Measure Self-Similarity
   const selfSimEn = cosineSimilarity(enEmbeds[0], enEmbeds[0]);
   const selfSimZh = cosineSimilarity(zhEmbeds[0], zhEmbeds[0]);
 
-  // 6. Build Cross-Lingual Matrix [M x N]
   const M = enEmbeds.length;
   const N = zhEmbeds.length;
   const matrix: number[][] = [];
@@ -215,7 +209,6 @@ export async function runDiagnostics(options: {
   const variance = allValues.reduce((a, b) => a + Math.pow(b - meanVal, 2), 0) / allValues.length;
   const stdDev = Math.sqrt(variance);
 
-  // 7. Measure Ranking Metrics (Recall@1, Recall@5, MRR on True Pairs)
   const truePairs = DIAGNOSTICS_CORPUS.map((s, idx) => ({ ...s, idx })).filter(
     (s) => s.type === 'true_pair'
   );
@@ -238,7 +231,6 @@ export async function runDiagnostics(options: {
   const recallAt5 = top5Hits / truePairs.length;
   const mrr = rrSum / truePairs.length;
 
-  // 8. Pairwise details
   const pairwiseDetails: DiagnosticsResult['pairwiseDetails'] = [
     {
       pairName: 'Self-Similarity (EN == EN)',
@@ -277,7 +269,6 @@ export async function runDiagnostics(options: {
     },
   ];
 
-  // 9. INT8 vs FP32 comparison (if requested)
   let int8VsFp32Diff: DiagnosticsResult['int8VsFp32Diff'] | undefined;
   if (options.compareWithFp32 && dtype === 'q8') {
     const pipeFp32 = await pipeline('feature-extraction', modelName, { dtype: 'fp32', device: 'cpu' });

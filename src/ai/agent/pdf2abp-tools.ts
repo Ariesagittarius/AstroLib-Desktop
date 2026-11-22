@@ -1,10 +1,3 @@
-/**
- * src/ai/agent/pdf2abp-tools.ts
- * ============================================================================
- * 主 Agent 全链路 PDF2ABP 工具集 (MinerU / Python / Slicer / Subagents / Pack / Import)
- * ============================================================================
- */
-
 import fs from 'node:fs';
 import path from 'node:path';
 import { z } from 'zod';
@@ -574,7 +567,7 @@ export function createMainPdf2AbpTools(
             }
           }
         } catch {
-          // ignore
+
         }
       }
 

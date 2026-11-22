@@ -1,16 +1,3 @@
-/**
- * src/core/knowledge/adapters/paper-ingest-adapter.ts
- * ============================================================================
- * MinerU 学术文献统一结构化适配器 (ingest-tasks & task/ingest)
- * ============================================================================
- * 职责：
- * 1. 自动聚合 %APPDATA%/AstroLib/ingest-tasks 与工作区 task/ingest 下的全部学术文献任务；
- * 2. 懒构建并缓存轻量结构化索引 (.cache/knowledge-index.v1.json)：
- *    自动提取文献真标题、层次大纲、分节正文块、LaTeX 公式、插图路径 (/api/ingest/image) 与页码映射；
- * 3. 提供与教材完全一致的 astrolib://paper/<taskId>[/<sectionId>] 寻址、分节阅读与全文检索能力。
- * ============================================================================
- */
-
 import fs from 'node:fs';
 import path from 'node:path';
 import { resolveIngestCandidateDirs } from '../../catalog/content-paths.ts';
@@ -388,7 +375,6 @@ export class PaperIngestAdapter implements IKnowledgeAdapter {
       rawSections.push(currentSec);
     }
 
-    // 解析每个小节内的结构化块与插图
     const sections: PaperIndexedSection[] = [];
     let abstractSnippet: string | undefined;
 
@@ -432,7 +418,6 @@ export class PaperIngestAdapter implements IKnowledgeAdapter {
       });
     }
 
-    // 构造层次大纲树
     const outline: KnowledgeOutlineNode[] = [];
     const stack: Array<{ depth: number; node: KnowledgeOutlineNode }> = [];
 
@@ -460,7 +445,6 @@ export class PaperIngestAdapter implements IKnowledgeAdapter {
       stack.push({ depth: sec.depth, node });
     }
 
-    // 清理空 children 字段以节省体积
     const prune = (nodes: KnowledgeOutlineNode[]) => {
       for (const n of nodes) {
         if (n.children && n.children.length === 0) {
@@ -509,7 +493,6 @@ export class PaperIngestAdapter implements IKnowledgeAdapter {
 
       const lineNum = baseLine + i;
 
-      // 1. 标题
       const hM = line.match(/^(#{1,6})\s+(.+?)\s*$/);
       if (hM) {
         const text = hM[2].trim();
@@ -528,7 +511,6 @@ export class PaperIngestAdapter implements IKnowledgeAdapter {
         continue;
       }
 
-      // 2. 独立公式块 $$ ... $$
       if (/^\s*\$\$/.test(line)) {
         const buf = [line];
         const startL = lineNum;
@@ -556,7 +538,6 @@ export class PaperIngestAdapter implements IKnowledgeAdapter {
         continue;
       }
 
-      // 3. 图片行 ![alt](images/xxx.jpg)
       const imgM = line.match(/!\[([^\]]*)\]\(([^)\s]+)(?:\s+"([^"]*)")?\)/);
       if (imgM && line.trim().startsWith('![')) {
         const rawSrc = imgM[2].trim();
@@ -590,7 +571,6 @@ export class PaperIngestAdapter implements IKnowledgeAdapter {
         continue;
       }
 
-      // 4. 代码块
       const fenceM = line.match(/^\s*(```+|~~~+)/);
       if (fenceM) {
         const marker = fenceM[1][0];
@@ -615,7 +595,6 @@ export class PaperIngestAdapter implements IKnowledgeAdapter {
         continue;
       }
 
-      // 5. 表格 (HTML table 或 Markdown pipe table)
       if (/^\s*<table\b/i.test(line) || (line.includes('|') && i + 1 < sectionLines.length && /^\s*\|?[\s:-]+\|/.test(sectionLines[i + 1]))) {
         const startL = lineNum;
         const buf = [line];
@@ -647,7 +626,6 @@ export class PaperIngestAdapter implements IKnowledgeAdapter {
         continue;
       }
 
-      // 6. 普通段落聚合
       const startL = lineNum;
       const buf = [line];
       i++;

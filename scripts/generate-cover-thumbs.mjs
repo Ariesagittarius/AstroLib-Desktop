@@ -1,10 +1,4 @@
 #!/usr/bin/env node
-/**
- * scripts/generate-cover-thumbs.mjs
- * ============================================================================
- * 生成书库封面 360x480 WebP 缩略图并本地化外链封面
- * ============================================================================
- */
 
 import fs from 'node:fs';
 import path from 'node:path';
@@ -64,7 +58,7 @@ async function ensureLocalExternalCovers() {
         console.log(`[thumbs] 已本地化外链封面 -> public/covers/${item.filename}`);
       }
     } catch {
-      // 网络离线时自动降级生成本地学术封面
+
     }
 
     if (!saved) {

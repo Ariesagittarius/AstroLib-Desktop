@@ -19,10 +19,8 @@ import ExerciseTrigger from '@/components/exercises/ExerciseTrigger.astro';
 模拟信号数字化（A/D 转换）在物理上严格涵盖三大有序步骤：**采样（Sampling）**、**量化（Quantization）** 与 **编码（Coding）**。
 
 <div style="text-align: center; margin: 1.5rem 0;">
-  
 
 ![模拟信号数字化全过程](./images/fig_7_9_1.png)
-
 
   <div style="font-size: 0.88rem; color: var(--sl-color-gray-3); margin-top: 0.5rem;">图 7.9.1 模拟信号数字化的三大基本物理阶段：(a) 原始模拟信号；(b) 时间离散抽样；(c) 幅度离散量化；(d) 二进制码字生成；(e) 伴生量化误差</div>
 </div>
@@ -52,19 +50,15 @@ graph LR
 设连续时间带限模拟信号 $x(t)$ 的最高截止频率为 $f_H$（角频率 $\omega_H = 2\pi f_H$），其傅里叶频谱 $X(f)$ 在 $|f| > f_H$ 时恒为零。
 
 <div style="text-align: center; margin: 1.5rem 0;">
-  
 
 ![采样原理框图](./images/fig_7_9_2.png)
-
 
   <div style="font-size: 0.88rem; color: var(--sl-color-gray-3); margin-top: 0.5rem;">图 7.9.2 理想冲激抽样乘法器模型</div>
 </div>
 
 <div style="text-align: center; margin: 1.5rem 0;">
-  
 
 ![采样冲激脉冲序列](./images/fig_7_9_3.png)
-
 
   <div style="font-size: 0.88rem; color: var(--sl-color-gray-3); margin-top: 0.5rem;">图 7.9.3 理想周期冲激脉冲采样序列 $s(t) = \sum_{k=-\infty}^\infty \delta(t - k T_s)$</div>
 </div>
@@ -79,10 +73,8 @@ X_s(f) = f_s \sum_{n=-\infty}^{\infty} X(f - n f_s)
 $$
 
 <div style="text-align: center; margin: 1.5rem 0;">
-  
 
 ![时域与频域采样与重构全过程](./images/fig_7_9_4.png)
-
 
   <div style="font-size: 0.88rem; color: var(--sl-color-gray-3); margin-top: 0.5rem;">图 7.9.4 时域与频域采样与内插低通无失真重构全物理映射过程</div>
 </div>
@@ -104,10 +96,8 @@ $$
 若采样频率不足（$f_s < 2 f_H$），高频成分将折叠进入低频带，产生不可逆的**混叠失真（Aliasing）**：
 
 <div style="text-align: center; margin: 1.5rem 0;">
-  
 
 ![采样频率不足导致的频谱混叠](./images/fig_7_9_5.png)
-
 
   <div style="font-size: 0.88rem; color: var(--sl-color-gray-3); margin-top: 0.5rem;">图 7.9.5 采样频率低于两倍最高频率引发的频谱严重混叠失真</div>
 </div>
@@ -121,10 +111,8 @@ $$
 带通采样定理指出：通过精心选择采样频率，使频谱周期延拓副本恰好填满频带间隙而不重叠：
 
 <div style="text-align: center; margin: 1.5rem 0;">
-  
 
 ![带通信号采样频谱搬移](./images/fig_7_9_6.png)
-
 
   <div style="font-size: 0.88rem; color: var(--sl-color-gray-3); margin-top: 0.5rem;">图 7.9.6 带通信号抽样频谱的紧密互锁周期排列</div>
 </div>
@@ -136,10 +124,8 @@ $$
 式中 $r = f_H - k B$ 为余数（$0 \le r < B$）。
 
 <div style="text-align: center; margin: 1.5rem 0;">
-  
 
 ![带通采样最小频率与中心频率关系](./images/fig_7_9_7.png)
-
 
   <div style="font-size: 0.88rem; color: var(--sl-color-gray-3); margin-top: 0.5rem;">图 7.9.7 带通采样最小允许频率随载频变化的锯齿特性曲线（介于 $2B$ 与 $4B$ 之间）</div>
 </div>
@@ -153,10 +139,8 @@ $$
 标量量化器是将时间连续样值信号 $x$ 映射为离散量化电平 $y_k$ 的非线性运算器：
 
 <div style="text-align: center; margin: 1.5rem 0;">
-  
 
 ![标量量化器模型与输入输出映射](./images/fig_7_9_8.png)
-
 
   <div style="font-size: 0.88rem; color: var(--sl-color-gray-3); margin-top: 0.5rem;">图 7.9.8 标量量化器的分段阶梯输入输出特性模型</div>
 </div>
@@ -170,10 +154,8 @@ $$
 式中 $N = \log_2 M$ 为量化编码位数。
 
 <div style="text-align: center; margin: 1.5rem 0;">
-  
 
 ![均匀量化阶梯与锯齿波量化误差](./images/fig_7_9_9.png)
-
 
   <div style="font-size: 0.88rem; color: var(--sl-color-gray-3); margin-top: 0.5rem;">图 7.9.9 均匀量化阶梯特性与局限在 $[-\Delta/2, +\Delta/2]$ 内的量化误差波形</div>
 </div>
@@ -220,10 +202,8 @@ $$
 在语音通信中，小幅度样值出现的概率极高（服从拉普拉斯分布），大信号出现概率极低。若采用均匀量化，小信号落入固定步长 $\Delta$ 时，相对误差极大，信噪比严重恶化：
 
 <div style="text-align: center; margin: 1.5rem 0;">
-  
 
 ![均匀量化与对数压扩信噪比对比](./images/fig_7_9_10.png)
-
 
   <div style="font-size: 0.88rem; color: var(--sl-color-gray-3); margin-top: 0.5rem;">图 7.9.10 均匀量化与对数压扩量化信噪比随输入动态范围的变化曲线对比</div>
 </div>
@@ -231,10 +211,8 @@ $$
 为了在宽达 $40 \sim 50\text{ dB}$ 的动态范围内维持恒定高信噪比，工程上普遍采用**压扩技术（Companding）**：
 
 <div style="text-align: center; margin: 1.5rem 0;">
-  
 
 ![压缩器与扩张器构成的压扩系统](./images/fig_7_9_11.png)
-
 
   <div style="font-size: 0.88rem; color: var(--sl-color-gray-3); margin-top: 0.5rem;">图 7.9.11 由发射端非线性压缩器与接收端互逆扩张器构成的压扩系统架构</div>
 </div>
@@ -243,10 +221,8 @@ $$
 国际电信联盟（ITU-T G.711）推荐了两大经典标准：
 
 <div style="text-align: center; margin: 1.5rem 0;">
-  
 
 ![A 律与 μ 律对数压缩特性曲线](./images/fig_7_9_12.png)
-
 
   <div style="font-size: 0.88rem; color: var(--sl-color-gray-3); margin-top: 0.5rem;">图 7.9.12 A 律与 $\mu$ 律对数压缩特性解析曲线</div>
 </div>
@@ -272,10 +248,8 @@ $$
 将正负输入电压归一化范围 $[-1, +1]$ 沿横轴非均匀划分为 8 个不等长区间，各段边界依次按 $1/2$ 几何级数二等分收缩：$[0, \frac{1}{128}, \frac{1}{64}, \frac{1}{32}, \frac{1}{16}, \frac{1}{8}, \frac{1}{4}, \frac{1}{2}, 1]$。
 
 <div style="text-align: center; margin: 1.5rem 0;">
-  
 
 ![A 律 13 折线正极性特性曲线](./images/fig_7_9_13.png)
-
 
   <div style="font-size: 0.88rem; color: var(--sl-color-gray-3); margin-top: 0.5rem;">图 7.9.13 A 律 13 折线正极性 8 段折线几何结构与斜率倍增关系</div>
 </div>
@@ -376,10 +350,8 @@ $$
 由于单路话音信号经 $8\text{ kHz}$ 抽样后产生的窄脉冲宽度极窄，样值之间存在大量的空闲时间。**时分复用（TDM）** 利用这部分空闲时间交织传送多个话路的信号：
 
 <div style="text-align: center; margin: 1.5rem 0;">
-  
 
 ![时分复用（TDM）原理](./images/fig_7_9_14.png)
-
 
   <div style="font-size: 0.88rem; color: var(--sl-color-gray-3); margin-top: 0.5rem;">图 7.9.14 多路模拟信号经电子旋转分配开关实现的时分复用原理</div>
 </div>
@@ -389,10 +361,8 @@ $$
 国际电报电话咨询委员会（CCITT/ITU-T）规定的 PCM 30/32 路一次群帧结构是全球主流基准：
 
 <div style="text-align: center; margin: 1.5rem 0;">
-  
 
 ![PCM 30/32 路一次群帧结构](./images/fig_7_9_15.png)
-
 
   <div style="font-size: 0.88rem; color: var(--sl-color-gray-3); margin-top: 0.5rem;">图 7.9.15 PCM 30/32 路一次群（E1）基群帧周期与 32 个时隙分布</div>
 </div>
@@ -425,19 +395,15 @@ $$
 标量量化是对单一样值独立量化。1980 年代发展的**矢量量化（Vector Quantization, VQ）** 将 $K$ 个连续样点打包为 $K$ 维欧氏空间矢量 $\boldsymbol{X} = (X_1, X_2, \dots, X_K)^T$ 实施联合量化。
 
 <div style="text-align: center; margin: 1.5rem 0;">
-  
 
 ![二维空间矢量量化网格与胞腔](./images/fig_7_9_16.png)
-
 
   <div style="font-size: 0.88rem; color: var(--sl-color-gray-3); margin-top: 0.5rem;">图 7.9.16 二维平面空间非均匀分割构成的 Voronoi 胞腔与重构码字矢量</div>
 </div>
 
 <div style="text-align: center; margin: 1.5rem 0;">
-  
 
 ![矢量量化系统原理框图](./images/fig_7_9_17.png)
-
 
   <div style="font-size: 0.88rem; color: var(--sl-color-gray-3); margin-top: 0.5rem;">图 7.9.17 矢量量化器工作流程：输入矢量 $\to$ 距离最小化搜索 $\to$ 传输码本索引 $\to$ 查表重构</div>
 </div>

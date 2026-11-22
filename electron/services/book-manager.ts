@@ -1,10 +1,3 @@
-/**
- * electron/services/book-manager.ts
- * ============================================================================
- * AstroLib 桌面端原生图书包与书架管理服务 (Node.js FS / zlib / IPC)
- * ============================================================================
- */
-
 import { app } from 'electron';
 import path from 'node:path';
 import fs from 'node:fs';
@@ -19,9 +12,6 @@ import { validateInstallPayload } from '../../src/services/content-provider/inst
 import { bookFormatRegistry } from '../../src/core/book-formats/registry.ts';
 import type { BookNormalizeOptions, NormalizedSourceArchive } from '../../src/core/book-formats/types.ts';
 
-/**
- * 校验相对路径安全拼接：严禁路径穿越或写至基准目录之外
- */
 function resolveSafeSubpath(baseDir: string, relPath: string): string {
   if (!relPath || typeof relPath !== 'string') {
     throw new Error('非法的相对路径（空路径）');
@@ -81,9 +71,6 @@ export class DesktopBookManager {
     }
   }
 
-  /**
-   * 获取本地已安装的书籍列表
-   */
   public async getInstalledBooks(): Promise<InstalledBookMeta[]> {
     try {
       if (!fs.existsSync(this.metaFile)) {
@@ -91,7 +78,7 @@ export class DesktopBookManager {
       }
       const raw = fs.readFileSync(this.metaFile, 'utf8');
       const list: InstalledBookMeta[] = JSON.parse(raw);
-      // 验证书籍物理目录是否存在
+
       return list.filter((b) => {
         const bookDir = path.join(this.storageDir, `${b.manifest.colSlug}-${b.manifest.slug}`);
         return fs.existsSync(bookDir);
@@ -122,9 +109,6 @@ export class DesktopBookManager {
     return Buffer.from(rawBuffer as any);
   }
 
-  /**
-   * 统一从任意支持格式的书籍文件 (.abp / .epub 等) 安装到本地持久化存储
-   */
   public async installBookFromFile(
     fileName: string,
     fileBuffer: Buffer | Uint8Array | ArrayBuffer | any,
@@ -137,16 +121,10 @@ export class DesktopBookManager {
     return await this.installNormalizedBundle(validated, normalized.sourceArchive);
   }
 
-  /**
-   * 从 .abp (Gzip 压缩 JSON) 字节流安装书籍到本地持久化存储
-   */
   public async installBookFromAbp(abpBuffer: Buffer | Uint8Array | ArrayBuffer | any): Promise<InstalledBookMeta> {
     return await this.installBookFromFile('book.abp', abpBuffer);
   }
 
-  /**
-   * 将已归一化并通过契约校验的内容包原子安装至本地存储目录
-   */
   public async installNormalizedBundle(
     bundleInput: AbpBundlePayload,
     sourceArchive?: NormalizedSourceArchive
@@ -168,17 +146,15 @@ export class DesktopBookManager {
     let backedUp = false;
     let swapped = false;
     try {
-      // 3. 写入 manifest.json
+
       writeFileAtomic(path.join(stagingDir, 'manifest.json'), JSON.stringify(manifest, null, 2));
 
-      // 4. 写入全部章节 JSON（校验章节 key 无路径穿越）
       for (const [chapKey, payload] of Object.entries(chapters)) {
         const chapFile = resolveSafeSubpath(stagingChaptersDir, `${chapKey}.json`);
         this.ensureDir(path.dirname(chapFile));
         fs.writeFileSync(chapFile, JSON.stringify(payload, null, 2), 'utf8');
       }
 
-      // 5. 写入配图与静态资产 (Base64 解码，严格校验相对路径)
       for (const [relPath, b64Data] of Object.entries(assets)) {
         const destPath = resolveSafeSubpath(stagingDir, relPath);
         this.ensureDir(path.dirname(destPath));
@@ -186,7 +162,6 @@ export class DesktopBookManager {
         fs.writeFileSync(destPath, imgBuffer);
       }
 
-      // 5.0 写入原始归档副本（如 source/original.epub）
       if (sourceArchive && sourceArchive.bytes && sourceArchive.bytes.byteLength > 0) {
         const safeArchiveName = path.basename(sourceArchive.fileName || 'original.epub') || 'original.epub';
         const archivePath = resolveSafeSubpath(stagingDir, `source/${safeArchiveName}`);
@@ -199,7 +174,6 @@ export class DesktopBookManager {
         fs.writeFileSync(archivePath, Buffer.from(bundle.sourceArchiveBase64, 'base64'));
       }
 
-      // 5.1 写入切片元数据与离线量化向量 (若 bundle 包含 embeddings)
       if (bundle.embeddings) {
         if (bundle.embeddings.meta) {
           fs.writeFileSync(
@@ -214,7 +188,6 @@ export class DesktopBookManager {
         }
       }
 
-      // 5.2 写入自包含辅助数据（AI 索引、交叉引用、课后习题）
       if (bundle.aiIndex) {
         fs.writeFileSync(path.join(stagingDir, 'ai-index.json'), JSON.stringify(bundle.aiIndex, null, 2), 'utf8');
       }
@@ -231,7 +204,6 @@ export class DesktopBookManager {
         }
       }
 
-      // 5.3 原子替换目标目录（保留 backupDir 直至元数据落盘成功）
       if (fs.existsSync(bookDir)) {
         fs.renameSync(bookDir, backupDir);
         backedUp = true;
@@ -239,7 +211,6 @@ export class DesktopBookManager {
       fs.renameSync(stagingDir, bookDir);
       swapped = true;
 
-      // 6. 更新已安装图书元数据（原子写入；失败时在 catch 中回滚 bookDir）
       const installed = await this.getInstalledBooks();
       const existingIdx = installed.findIndex(
         (b) => b.manifest.id === manifest.id || (b.manifest.colSlug === manifest.colSlug && b.manifest.slug === manifest.slug)
@@ -292,9 +263,6 @@ export class DesktopBookManager {
     }
   }
 
-  /**
-   * 卸载图书并清理磁盘资源与渲染缓存
-   */
   public async removeBook(colSlug: string, bookSlug: string): Promise<boolean> {
     const bookKey = `${colSlug}-${bookSlug}`;
     const bookDir = resolveSafeSubpath(this.storageDir, bookKey);
@@ -319,9 +287,6 @@ export class DesktopBookManager {
     }
   }
 
-  /**
-   * 获取单本书籍的 Manifest
-   */
   public async getBookManifest(colSlug: string, bookSlug: string): Promise<AstroBookManifest | null> {
     try {
       const bookDir = resolveSafeSubpath(this.storageDir, `${colSlug}-${bookSlug}`);
@@ -333,9 +298,6 @@ export class DesktopBookManager {
     return null;
   }
 
-  /**
-   * 获取单章节 Payload 数据
-   */
   public async getChapterPayload(
     colSlug: string,
     bookSlug: string,
@@ -353,9 +315,6 @@ export class DesktopBookManager {
     return null;
   }
 
-  /**
-   * 磁盘占用统计
-   */
   public async getStorageStats(): Promise<StorageStats> {
     const installed = await this.getInstalledBooks();
     let totalBytes = 0;
@@ -380,9 +339,6 @@ export class DesktopBookManager {
     };
   }
 
-  /**
-   * 清空所有本地安装的书籍包与索引
-   */
   public async clearAllBooks(): Promise<void> {
     try {
       if (fs.existsSync(this.metaFile)) {

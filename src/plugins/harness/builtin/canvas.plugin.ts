@@ -1,15 +1,3 @@
-/**
- * src/plugins/harness/builtin/canvas.plugin.ts
- * ============================================================================
- * AstroLib 独立交互画布插件 (Track B: AstroCanvas Tools)
- * ============================================================================
- * 职责：
- * 1. 为 Agent 提供 create_canvas_artifact / update_canvas_artifact 工具；
- * 2. 将交互仿真实验、算法可视化、可交互图表装入沙箱画布并写入 ArtifactStore；
- * 3. 返回内联 Canvas 启动卡片信号，支持正文安全展开与右侧成果物宽屏工作台双向呈现。
- * ============================================================================
- */
-
 import { buildSandboxedCanvasHtml } from '../../../features/harness/canvas-sandbox.ts';
 import type { ArtifactItem } from '../../../features/harness/types.ts';
 import type { HarnessPlugin, PluginContext } from '../types.ts';
@@ -175,7 +163,6 @@ export const CanvasPlugin: HarnessPlugin = {
       },
     });
 
-    // 3. read_canvas_artifact (只读回读源码、版本与遥测快照)
     context.registerTool({
       name: 'read_canvas_artifact',
       displayName: '回读交互画布源码与遥测',
@@ -230,7 +217,6 @@ export const CanvasPlugin: HarnessPlugin = {
       },
     });
 
-    // 4. inspect_canvas_artifact (Electron 离屏截图 + DOM/KaTeX/报错闭环自检)
     context.registerTool({
       name: 'inspect_canvas_artifact',
       displayName: '视觉与控制台自检 Canvas 画布',
@@ -322,7 +308,6 @@ export const CanvasPlugin: HarnessPlugin = {
           };
         }
 
-        // Dev 浏览器模式降级：返回已有 iframe 遥测或静态源码审计提示
         const fallbackLines = [
           `Canvas 自检报告 (非 Electron 离屏模式降级): "${art.title}" (${art.id})`,
           captureRes?.note ? `说明: ${captureRes.note}` : '',

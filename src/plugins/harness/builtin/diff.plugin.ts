@@ -1,10 +1,3 @@
-/**
- * src/plugins/harness/builtin/diff.plugin.ts
- * ============================================================================
- * AstroLib 章节与文本 Unified Diff 比对插件 (/diff & compare_chapters)
- * ============================================================================
- */
-
 import type { HarnessPlugin, PluginContext } from '../types.ts';
 import { UniversalLocatorResolver } from '../../../core/content-api/content-locator.ts';
 

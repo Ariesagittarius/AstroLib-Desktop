@@ -1,16 +1,3 @@
-/**
- * src/services/web-search/web-search-service.ts
- * ============================================================================
- * 可选多适配器学术联网搜索服务 (Optional Pluggable Web Search Service)
- * ============================================================================
- * 设计原则：
- * 1. 默认彻底关闭：未启用或未配置凭据时，上层 Agent 工具清单完全不注入 web_search，
- *    保证学术与本地隐私检索零干扰；
- * 2. 支持用户自带多类常见检索接口：Tavily / Bocha / 自建 SearXNG / 通用 REST Custom JSON；
- * 3. 统一 12s 超时熔断与标准化结果结构化裁剪。
- * ============================================================================
- */
-
 import type { WebSearchConfig, WebSearchProviderKind } from '../../features/harness/types.ts';
 export type { WebSearchConfig, WebSearchProviderKind };
 
@@ -210,7 +197,6 @@ export async function executeWebSearch(
       };
     }
 
-    // custom REST API: POST JSON { query, maxResults }
     if (!/^https?:\/\//i.test(baseUrl)) {
       throw new Error('Custom 搜索接口需要配置完整的 http(s):// URL。');
     }

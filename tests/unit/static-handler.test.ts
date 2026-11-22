@@ -1,18 +1,3 @@
-/**
- * tests/unit/static-handler.test.ts
- * ============================================================================
- * StaticHandler 静态服务引擎单元测试 (P1-A1 门禁测试)
- * ============================================================================
- * 验证目标：
- * 1. 严格 0 模糊匹配：模糊前缀必须返回 404；
- * 2. Canonical Slug 物理命中：返回 HTTP 200 与 HTML 内容；
- * 3. Legacy Slug 显式单项别名查表：返回 HTTP 301 永久重定向并携带 Location 标头；
- * 4. 章节或书籍不存在：返回 HTTP 404 与符合学术规范的 HTML 错误视窗；
- * 5. 书籍根路径 /collections/:col/:book/：返回 HTTP 302 重定向至 entryPoint；
- * 6. 官方 13 本书 1,251 章全量 Canonical Slug 普查：100% 满足 cleanSlug(slug) === slug。
- * ============================================================================
- */
-
 import { describe, it, expect, beforeAll } from 'vitest';
 import path from 'node:path';
 import fs from 'node:fs';
@@ -27,7 +12,7 @@ describe('StaticHandler Unit & Invariant Contract Tests (P1-A1)', () => {
   const artifactsAbpDir = resolveAbpArtifactsDir(ROOT);
 
   beforeAll(async () => {
-    // 确保开发期测试至少有一本真实解包书籍
+
     const abpFile = path.join(artifactsAbpDir, 'math-math_senior.abp');
     if (!fs.existsSync(abpFile)) {
       const { packBook } = await import('../../scripts/pack-book-abp.mjs');
@@ -143,7 +128,7 @@ describe('StaticHandler Unit & Invariant Contract Tests (P1-A1)', () => {
 
   it('4. 模糊匹配必须彻底禁止：前缀模糊路径必须返回 HTTP 404', async () => {
     const handler = new StaticHandler(distDir, undefined, ROOT);
-    // 故意截断合法 slug，验证绝无任何模糊子串/前缀匹配
+
     const url = '/collections/math/math_senior/07_1/';
 
     let statusCode = 0;
@@ -300,18 +285,15 @@ describe('StaticHandler Unit & Invariant Contract Tests (P1-A1)', () => {
         for (const chapter of section.chapters) {
           totalChaptersCount++;
 
-          // 核心断言 1：每个章节的 slug 必须恒等于 cleanSlug(slug)
           if (cleanSlug(chapter.slug) !== chapter.slug) {
             slugMismatchCount++;
           }
 
-          // 核心断言 2：每个章节在 chapters/ 目录下必须有对应的物理 JSON 文件
           const chapFilePath = path.join(chaptersDir, `${chapter.slug}.json`);
           if (!fs.existsSync(chapFilePath)) {
             missingFilesCount++;
           }
 
-          // 统计显式历史别名
           if (chapter.legacySlug) {
             legacySlugCount++;
             expect(chapter.legacySlug).not.toBe(chapter.slug);
@@ -320,7 +302,6 @@ describe('StaticHandler Unit & Invariant Contract Tests (P1-A1)', () => {
       }
     }
 
-    // 全量统计验证
     expect(totalChaptersCount).toBe(1251);
     expect(slugMismatchCount).toBe(0);
     expect(missingFilesCount).toBe(0);

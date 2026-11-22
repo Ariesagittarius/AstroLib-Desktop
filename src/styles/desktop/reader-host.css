@@ -1,10 +1,3 @@
-/**
- * src/styles/desktop/reader-host.css
- * ============================================================================
- * AstroLib 桌面端研读中心与分屏全局样式 (Material Design 3 & 极简排版)
- * ============================================================================
- */
-
 .fragment-reader-container {
   width: 100%;
   height: 100%;
@@ -17,7 +10,6 @@
   font-family: var(--font-ui, 'Google Sans', 'Google Sans Text', 'Noto Sans SC Variable', 'Source Han Sans SC', 'Noto Sans SC', '思源黑体', sans-serif);
 }
 
-/* 核心视窗容器舞台 */
 .reader-viewport-stage {
   flex: 1;
   position: relative;
@@ -26,7 +18,6 @@
   display: flex;
 }
 
-/* 空白展台 */
 .reader-empty-stage {
   width: 100%;
   height: 100%;
@@ -89,9 +80,6 @@
   transform: translateY(-1px);
 }
 
-/* ============================================================================
- * 动态分屏几何定位舞台 (零 reparenting、零冗余边距、1px 分割缝、支持 2x2 上下独立列宽)
- * ============================================================================ */
 .reader-split-grid {
   --split-col: 50%;
   --split-row: 50%;
@@ -119,7 +107,6 @@
   overflow: hidden;
 }
 
-/* 1x1 单屏 */
 .reader-split-grid.mode-1x1 [data-pane-index="0"],
 .reader-split-grid.mode-1x1 .tab-pane-slot[data-assigned-pane="0"] {
   left: 0;
@@ -128,7 +115,6 @@
   height: 100%;
 }
 
-/* 1x2 左右双屏 */
 .reader-split-grid.mode-1x2 [data-pane-index="0"],
 .reader-split-grid.mode-1x2 .tab-pane-slot[data-assigned-pane="0"] {
   left: 0;
@@ -145,7 +131,6 @@
   height: 100%;
 }
 
-/* 2x1 上下双屏 */
 .reader-split-grid.mode-2x1 [data-pane-index="0"],
 .reader-split-grid.mode-2x1 .tab-pane-slot[data-assigned-pane="0"] {
   left: 0;
@@ -162,7 +147,6 @@
   height: calc(100% - var(--split-row) - 0.5px);
 }
 
-/* 2x2 四象限（支持上下排独立列宽） */
 .reader-split-grid.mode-2x2 [data-pane-index="0"],
 .reader-split-grid.mode-2x2 .tab-pane-slot[data-assigned-pane="0"] {
   left: 0;
@@ -195,7 +179,6 @@
   height: calc(100% - var(--split-row) - 0.5px);
 }
 
-/* 分屏界线拖拽把手 */
 .split-divider-handle {
   position: absolute;
   z-index: var(--layer-controls, 15);
@@ -273,7 +256,6 @@
   display: block;
 }
 
-/* 多屏模式当前焦点窗格顶边细指示条（不占布局空间） */
 .reader-split-grid:not(.mode-1x1) .is-pane-focused::after {
   content: '';
   position: absolute;
@@ -286,7 +268,6 @@
   z-index: 5;
 }
 
-/* 拖入悬停高亮 */
 .pane-drag-over::before {
   content: '';
   position: absolute;
@@ -297,7 +278,6 @@
   z-index: 6;
 }
 
-/* 持久 iframe 复用槽位 */
 .tab-pane-slot {
   display: flex;
   flex-direction: column;
@@ -375,7 +355,6 @@
   background-color: var(--md-sys-color-surface, #ffffff);
 }
 
-/* 空分屏窗格容器 */
 .split-pane-box {
   display: flex;
   flex-direction: column;
@@ -401,7 +380,6 @@
   padding: 0;
 }
 
-/* 空分屏插槽 */
 .pane-empty-slot {
   width: 100%;
   height: 100%;
@@ -437,9 +415,6 @@
   border-color: var(--md-sys-color-primary);
 }
 
-/* ============================================================================
- * 页面底部标签页栏 (Bottom Chrome-Style Dock) & 折叠机制
- * ============================================================================ */
 .reader-bottom-dock {
   height: 38px;
   background-color: var(--md-sys-color-surface-container-low, #f4f7f2);
@@ -529,7 +504,6 @@ html[data-desktop-fullscreen='true'] .reader-bottom-dock {
   gap: 4px;
 }
 
-/* 单个底部标签页：区分未展示、已展示 (is-visible)、当前焦点 (is-focused) */
 .chrome-tab {
   height: 28px;
   display: flex;
@@ -630,7 +604,6 @@ html[data-desktop-fullscreen='true'] .reader-bottom-dock {
   background-color: var(--md-sys-color-surface-container-high, #e6eae5);
 }
 
-/* 底部右侧动作区 */
 .reader-split-controls {
   display: flex;
   align-items: center;

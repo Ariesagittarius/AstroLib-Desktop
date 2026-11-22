@@ -1,17 +1,3 @@
-/**
- * src/styles/components/bilingual-reader.css
- * ============================================================================
- * AstroLib 双语对照与跨书关联阅读器样式表 (Bilingual Reader CSS)
- * ============================================================================
- * 遵循 Material Design 3 Expressive (M3E) 极简设计准则：
- * 1. 宽幅学术展开状态机：让出右侧大纲，正文独占主视口；
- * 2. 严密的 minmax(0, 1fr) 50%-50% CSS Grid 双栏布局，公式与卡片永不挤爆；
- * 3. 官方 Google M3E 风格胶囊按钮、Tonal 材质与毛玻璃悬浮气泡菜单；
- * 4. 消除所有功能冗余，纯净学术阅读体验。
- * ============================================================================
- */
-
-/* 1. 页面级宽幅学术展开状态机 */
 html.bilingual-in-page-active,
 body.bilingual-in-page-active {
   overflow-x: hidden !important;
@@ -35,7 +21,6 @@ body.bilingual-in-page-active .pagination {
   display: none !important;
 }
 
-/* 2. M3 Expressive Chrome 风格版本下拉气泡选单 (Popover Menu) */
 .bilingual-trigger-wrapper {
   position: relative;
   display: inline-flex;
@@ -141,7 +126,6 @@ body.bilingual-in-page-active .pagination {
   line-height: 1.35;
 }
 
-/* 3. 内联双栏容器与顶栏控制条 */
 .in-page-bilingual-root {
   width: 100% !important;
   max-width: 100% !important;
@@ -189,7 +173,7 @@ body.bilingual-in-page-active .pagination {
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: #10b981; /* Green active dot */
+  background: #10b981;
 }
 
 .toolbar-divider-arrow {
@@ -244,7 +228,6 @@ body.bilingual-in-page-active .pagination {
   letter-spacing: 0.02em;
 }
 
-/* Material 3 统一按钮规范 */
 .m3-action-btn {
   display: inline-flex;
   align-items: center;
@@ -308,7 +291,6 @@ body.bilingual-in-page-active .pagination {
   margin-left: 2px;
 }
 
-/* 4. 双栏排版网格 (严格 50%-50% minmax(0, 1fr) 约束) */
 .in-page-bilingual-grid {
   position: relative !important;
   width: 100% !important;
@@ -373,7 +355,6 @@ body.bilingual-in-page-active .pagination {
   padding: 0 !important;
 }
 
-/* 保证中缝 SVG 连线画布覆盖在整个网格之上，且绝对不占用 Grid 流 */
 .bilingual-svg-canvas {
   position: absolute !important;
   top: 0 !important;
@@ -387,7 +368,6 @@ body.bilingual-in-page-active .pagination {
   grid-row: 1 / -1 !important;
 }
 
-/* 贝塞尔曲线箭头样式 */
 .bilingual-arrow-path {
   fill: none;
   stroke: var(--sl-color-gray-4, #94a3b8);
@@ -409,7 +389,6 @@ body.bilingual-in-page-active .pagination {
   fill: currentColor;
 }
 
-/* 段落微光高亮与对齐轮廓 */
 .bilingual-highlight-active {
   outline: 2px solid #6366f1 !important;
   outline-offset: 4px !important;
@@ -426,7 +405,6 @@ body.bilingual-in-page-active .pagination {
   transition: outline 0.2s, background-color 0.2s;
 }
 
-/* 骨架屏加载状态 */
 .in-page-bilingual-loading {
   display: flex !important;
   flex-direction: column !important;

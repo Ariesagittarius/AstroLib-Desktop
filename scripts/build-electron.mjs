@@ -1,10 +1,4 @@
 #!/usr/bin/env node
-/**
- * scripts/build-electron.mjs
- * ============================================================================
- * AstroLib Electron 主进程与预加载脚本编译工具 (基于 esbuild，毫秒级快速打包)
- * ============================================================================
- */
 
 import path from 'node:path';
 import fs from 'node:fs';
@@ -22,7 +16,6 @@ async function build() {
   const startTime = Date.now();
   console.log('⚡ 正在编译 Electron 主进程与 Preload 脚本...');
 
-  // 1. 编译 main.ts -> dist-electron/main.mjs
   await esbuild.build({
     entryPoints: [path.join(ROOT, 'electron/main.ts')],
     outfile: path.join(OUT_DIR, 'main.mjs'),
@@ -40,7 +33,6 @@ async function build() {
     ],
   });
 
-  // 2. 编译 preload.ts -> dist-electron/preload.cjs (必须为 CommonJS 格式，确保 Chromium 渲染层原生执行)
   await esbuild.build({
     entryPoints: [path.join(ROOT, 'electron/preload.ts')],
     outfile: path.join(OUT_DIR, 'preload.cjs'),
@@ -52,7 +44,6 @@ async function build() {
     external: ['electron'],
   });
 
-  // 3. 复制 Python 常驻推理脚本到 dist-electron
   for (const pySrc of [
     'src/services/info-highlight/qwen-highlight-runner.py',
     'src/server/plugins/bilingual-aligner/qwen-runner.py',
@@ -63,7 +54,6 @@ async function build() {
     }
   }
 
-  // 4. 复制 KaTeX CSS、核心 JS、contrib 扩展 (auto-render / mhchem) 与字体资产到 dist-electron/katex，确保独立画布工作台离线打包后零缺字、公式全渲染
   const katexDistSrc = path.join(ROOT, 'node_modules/katex/dist');
   const katexCssSrc = path.join(katexDistSrc, 'katex.min.css');
   if (fs.existsSync(katexCssSrc)) {

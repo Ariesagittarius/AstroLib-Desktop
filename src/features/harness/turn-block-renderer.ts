@@ -1,22 +1,3 @@
-/**
- * src/features/harness/turn-block-renderer.ts
- * ============================================================================
- * 交错时间流渲染器 & 零闪烁增量 DOM 修补引擎
- * (Chronological Interleaved Turn Block Renderer & Zero-Flicker Stream View)
- * ============================================================================
- * 职责：
- * 1. 将 Thinking / Tool / Approval / Text / Widget / Question / Status
- *    严格按实际发生顺序交错排布，彻底消除“所有工具堆在顶部、正文挤在底部”的割裂感；
- * 2. 提供 normalizeTurnBlocks / groupTurnBlocksIntoSegments / renderTurnInterleavedHtml
- *    等纯函数，兼容历史仅有 steps + contentMarkdown 的存档会话；
- * 3. TurnStreamView 维护块级与段落级 DOM 稳定身份：
- *    - 已封闭（completed）的文本块、工具节点、Canvas 卡片、pdf2abp 卡片永不整块重绘；
- *    - 流式文本块按顶层 HTML 子节点比对原始未水合串（prevRawHtmls），已生成的前序段落
- *      （含已渲染的 KaTeX 公式、astro-ui 卡片与用户文本选区）完全免受重绘打断；
- *    - 同一 DOM 容器（含 iframe）只要位次不变，绝不重新 insertBefore，防止页面重载与闪烁。
- * ============================================================================
- */
-
 import { mdToHtml } from '../../ai/client/chat-markdown.ts';
 import { renderToolIconHtml } from './turn-timeline-renderer.ts';
 import type {
@@ -95,10 +76,6 @@ function isStepRailBlock(block: TurnBlock): block is StepRailBlock {
   return block.kind === 'thinking' || block.kind === 'tool' || block.kind === 'approval';
 }
 
-/**
- * 将历史仅有 steps + contentMarkdown 的旧版 StructuredTurn 无损规整为 TurnBlock[]，
- * 若已存在原生 blocks 则直接返回，保证新旧会话兼容。
- */
 export function normalizeTurnBlocks(turn: StructuredTurn): TurnBlock[] {
   if (Array.isArray(turn.blocks) && turn.blocks.length > 0) {
     return turn.blocks;
@@ -176,10 +153,6 @@ export function normalizeTurnBlocks(turn: StructuredTurn): TurnBlock[] {
   return fallback;
 }
 
-/**
- * 将交错块流归并分组：相邻的思考/工具/审批块合并为连续的 .metro-segment 导轨片段，
- * 而中间或后续出现的所有正文、组件与追问卡片原位打断并独立穿插，严格保持时间先后顺序。
- */
 export function groupTurnBlocksIntoSegments(blocks: TurnBlock[]): RenderSlot[] {
   const slots: RenderSlot[] = [];
   let currentSteps: StepRailBlock[] = [];
@@ -522,9 +495,6 @@ export function renderSegmentHtml(
   `.trim();
 }
 
-/**
- * 纯函数：生成完整交错渲染 HTML（供 SSR / 单测 / 历史消息初次回放）。
- */
 export function renderTurnInterleavedHtml(
   turn: StructuredTurn,
   options: TurnInterleaveRenderOptions = {}
@@ -569,11 +539,6 @@ interface WidgetCacheEntry {
   fingerprint: string;
 }
 
-/**
- * 增量键控流式视图管理器 (TurnStreamView)
- * 每个 Assistant Turn 独占一个 TurnStreamView 实例，仅打补丁更新变化的块与尾部节点，
- * 保证上方已有内容、KaTeX 公式、CSS 动效、滚动进度、展开的 Canvas/pdf2abp 卡片零打断。
- */
 export class TurnStreamView {
   private readonly hostEl: HTMLElement;
   private readonly deps: TurnStreamViewDeps;
@@ -601,7 +566,6 @@ export class TurnStreamView {
     const slots = groupTurnBlocksIntoSegments(blocks);
     const liveSlotIds = new Set(slots.map((s) => s.id));
 
-    // 清理已移除的顶层槽位
     for (const [id, el] of this.segmentEls) {
       if (!liveSlotIds.has(id)) {
         el.remove();
@@ -633,7 +597,6 @@ export class TurnStreamView {
       }
     }
 
-    // 按顺序同步或挂入各个槽位，注意已有元素若位次一致绝不触碰，保护 iframe / 选区 / 动画
     slots.forEach((slot, idx) => {
       let slotEl: HTMLElement;
       if (slot.kind === 'segment') {
@@ -689,7 +652,6 @@ export class TurnStreamView {
       return segEl;
     }
 
-    // 增量更新头部状态与展开态
     segEl.classList.toggle('is-open', isExpanded);
     segEl.classList.toggle('is-collapsed', !isExpanded);
     segEl.classList.toggle('is-streaming', turn.status === 'streaming');
@@ -735,7 +697,6 @@ export class TurnStreamView {
       summaryTextEl.textContent = summary.text;
     }
 
-    // 增量更新 <ol class="metro-rail-list"> 中的各个节点
     const listEl = segEl.querySelector<HTMLElement>('.metro-rail-list');
     if (listEl) {
       const liveStepIds = new Set(blocks.map((b) => b.id));
@@ -898,7 +859,6 @@ export class TurnStreamView {
       return li;
     }
 
-    // ApprovalBlock 仅在状态发生变化时局部更新
     const isPending = block.status === 'pending';
     li.classList.toggle('is-pending', isPending);
     const dot = li.querySelector('.metro-node-dot');
@@ -959,13 +919,11 @@ export class TurnStreamView {
     const prevRaw = entry.prevRawNodesHtml;
     const liveNodes = Array.from(entry.innerEl.childNodes);
 
-    // 剥除多余尾部节点
     while (liveNodes.length > nextNodes.length) {
       const last = liveNodes.pop();
       last?.parentNode?.removeChild(last);
     }
 
-    // 仅更新真正变化的顶层子块，前序已稳定段落及其已水合 KaTeX/DOM 保持 100% 原始引用！
     for (let i = 0; i < nextNodes.length; i++) {
       if (i < liveNodes.length && prevRaw[i] === nextRawStrings[i]) {
         continue;
@@ -1059,7 +1017,6 @@ export class TurnStreamView {
       const target = e.target as HTMLElement | null;
       if (!target) return;
 
-      // 1. 段折叠按钮
       const segBtn = target.closest<HTMLElement>('[data-segment-toggle]');
       if (segBtn) {
         const segmentId = segBtn.dataset.segmentToggle || '';
@@ -1084,7 +1041,6 @@ export class TurnStreamView {
         return;
       }
 
-      // 2. 跳转右侧成果物
       const jumpBtn = target.closest<HTMLElement>('[data-jump-artifact]');
       if (jumpBtn) {
         e.stopPropagation();
@@ -1093,7 +1049,6 @@ export class TurnStreamView {
         return;
       }
 
-      // 3. 单个思考/工具节点折叠
       const stepBtn = target.closest<HTMLElement>('[data-metro-toggle]');
       if (stepBtn) {
         const stepId = stepBtn.dataset.metroToggle || '';
@@ -1131,7 +1086,6 @@ export class TurnStreamView {
         return;
       }
 
-      // 4. 权限审批动作
       const apprBtn = target.closest<HTMLElement>('[data-approval-choice]');
       if (apprBtn) {
         e.stopPropagation();
@@ -1146,7 +1100,6 @@ export class TurnStreamView {
         return;
       }
 
-      // 5. 状态条后续动作（例如“继续探索”）
       const statusBtn = target.closest<HTMLElement>('[data-turn-status-action]');
       if (statusBtn && this.currentTurn) {
         const action = statusBtn.dataset.turnStatusAction as 'continue-exploring' | 'retry';

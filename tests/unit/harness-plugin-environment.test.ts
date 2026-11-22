@@ -1,17 +1,3 @@
-/**
- * tests/unit/harness-plugin-environment.test.ts
- * ============================================================================
- * AstroLib Harness 独立动态插件环境与启发式指令系统自动化单元测试
- * ============================================================================
- * 覆盖测试场景：
- * 1. HeuristicResolver: 零硬编码启发式匹配与消歧验证 (/toc 123 绝不落回默认书籍)；
- * 2. PluginEnvironment 插件生命周期 (registerPlugin / unregisterPlugin / 可扩展性)；
- * 3. 内联指令动态提取与上下文注入 (extractInlineCommands & buildAugmentedPrompt)；
- * 4. Agent Function Calling 工具集与 System Prompt 动态生成；
- * 5. 动态建议生成 (getSuggestions 启发式菜单)。
- * ============================================================================
- */
-
 import { describe, it, expect, beforeEach } from 'vitest';
 import { PluginEnvironment } from '../../src/plugins/harness/plugin-environment.ts';
 import { HeuristicResolver } from '../../src/plugins/harness/heuristic-resolver.ts';
@@ -158,27 +144,22 @@ describe('Harness Plugin Environment & Heuristic Tools Test Suite', () => {
 
       await env.registerPlugin(customPlugin);
 
-      // 验证指令已被动态收录
       const cmds = env.getAllCommands().map((c) => c.command);
       expect(cmds).toContain('/export');
 
-      // 验证内联提取器能自动识别新指令
       const matches = env.extractInlineCommands('请使用 /export pdf 为我导出本章');
       expect(matches.length).toBe(1);
       expect(matches[0].cmd).toBe('/export');
       expect(matches[0].args).toBe('pdf');
 
-      // 验证大模型 Tools 动态增加了该工具
       const openAiTools = env.toOpenAITools();
       const toolNames = openAiTools.map((t) => t.function.name);
       expect(toolNames).toContain('export_document');
 
-      // 验证系统提示词动态包含了新插件说明
       const help = env.generateSystemPromptHelp();
       expect(help).toContain('/export');
       expect(help).toContain('export_document');
 
-      // 测试动态注销插件
       await env.unregisterPlugin('test.custom.plugin');
       const cmdsAfter = env.getAllCommands().map((c) => c.command);
       expect(cmdsAfter).not.toContain('/export');

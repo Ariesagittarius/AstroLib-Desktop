@@ -26,10 +26,10 @@ import Algorithm from '@/components/Algorithm.astro';
 
 我们称有向图中的两个顶点 $u$ 和 $v$ 是连通的(connected)，当从顶点 $u$ 到 $v$ ，以及从 $v$ 到 $u$ ，各存在一条路径。
 
-(a)  
+(a)
 ![](../images/3749122569f4d9d9e14a10432c416497371ff727b3915078f4abd11b414bde19.jpg)
 
-![](../images/677bf740f5d28f9c346b22c6d488c099c88332f4acfd2563c8a6a6112b7da3e2.jpg)  
+![](../images/677bf740f5d28f9c346b22c6d488c099c88332f4acfd2563c8a6a6112b7da3e2.jpg)
 图 3-9 (a) 一个有向图的例子及其强连通部件 (b) 图元
 
 这一连通关系将顶点集合 V 划分成一系列分离集(见习题 3.30)，我们称这些分离集为强连通部件。图 3-9(a)给出的图中含有 5 个强连通部件。
@@ -56,7 +56,7 @@ import Algorithm from '@/components/Algorithm.astro';
 
 该性质基于以下更一般的性质：
 
-![](../images/5638db8f1f4f25791018b7f9b5ad29f4b030df4e19a25a9367398ea84bf40c6d.jpg)  
+![](../images/5638db8f1f4f25791018b7f9b5ad29f4b030df4e19a25a9367398ea84bf40c6d.jpg)
 图 3-10 图 3-9 中所给图的反转
 
 性质3 如果 $C$ 和 $C'$ 是强连通部件，同时从 $C$ 中的一个顶点到 $C'$ 中的一个顶点存在一条边，则 $C$ 中 post 的最大值要大于 $C'$ 中 post 的最大值。

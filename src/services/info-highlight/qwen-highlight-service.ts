@@ -1,16 +1,3 @@
-/**
- * src/services/info-highlight/qwen-highlight-service.ts
- * ============================================================================
- * AstroLib Qwen3-0.6B 信息高亮后端服务 (Shannon Surprisal Daemon Bridge)
- * ============================================================================
- * 职责：
- * 1. 管理 Python 常驻 Daemon 子进程 (qwen-highlight-runner.py)，模型一次载入显存，后续零开销；
- * 2. 严格优先复用本地已探明的 Python 环境与已下载的 Qwen 权重（零网络消耗，省流量）；
- * 3. 内存级分析结果 LRU 缓存，同一章节或段落切回即显；
- * 4. 健壮的并发请求队列与崩溃自愈重启机制。
- * ============================================================================
- */
-
 import { spawn, type ChildProcess } from 'node:child_process';
 import path from 'node:path';
 import fs from 'node:fs';
@@ -42,7 +29,6 @@ export class QwenHighlightService {
   >();
   private requestCounter = 0;
 
-  // 内存结果缓存 (按文本哈希缓存)
   private resultCache = new Map<string, InfoHighlightResult>();
   private readonly maxCacheEntries = 64;
 
@@ -77,9 +63,6 @@ export class QwenHighlightService {
     return this.instance;
   }
 
-  /**
-   * 自动探测可用的 Python 解释器路径 (严格优先复用本机带有 PyTorch/CUDA 的虚拟环境)
-   */
   public findPythonPath(): string | null {
     if (process.env.PYTHON_PATH && fs.existsSync(process.env.PYTHON_PATH)) {
       return process.env.PYTHON_PATH;
@@ -101,16 +84,13 @@ export class QwenHighlightService {
           return p;
         }
       } catch {
-        // continue
+
       }
     }
 
     return null;
   }
 
-  /**
-   * 自动探测本地已就绪的 Qwen3-0.6B-Base 模型路径
-   */
   public findModelPath(): string | null {
     if (process.env.QWEN_MODEL_PATH && fs.existsSync(process.env.QWEN_MODEL_PATH)) {
       return process.env.QWEN_MODEL_PATH;
@@ -131,9 +111,6 @@ export class QwenHighlightService {
     return null;
   }
 
-  /**
-   * 检查服务与模型就绪状态
-   */
   async getStatus(): Promise<InfoHighlightStatus> {
     const pythonPath = this.findPythonPath();
     const modelPath = this.findModelPath();
@@ -149,9 +126,6 @@ export class QwenHighlightService {
     };
   }
 
-  /**
-   * 后台静默预热常驻守护进程（预载模型至显存）
-   */
   async prewarm(): Promise<boolean> {
     try {
       const status = await this.getStatus();
@@ -163,9 +137,6 @@ export class QwenHighlightService {
     }
   }
 
-  /**
-   * 确保常驻 Daemon 子进程运行
-   */
   private async ensureDaemon(): Promise<ChildProcess> {
     if (this.pythonProcess && !this.pythonProcess.killed && this.isReady) {
       this.touchIdleTimer();
@@ -239,7 +210,6 @@ export class QwenHighlightService {
           try {
             const data = JSON.parse(trimmed);
 
-            // 首次就绪通知
             if (data.status === 'ready') {
               clearTimeout(timer);
               this.isReady = true;
@@ -252,7 +222,6 @@ export class QwenHighlightService {
               return;
             }
 
-            // 匹配请求 ID
             if (data.id && this.pendingRequests.has(data.id)) {
               const { resolve: reqResolve, reject: reqReject } = this.pendingRequests.get(data.id)!;
               this.pendingRequests.delete(data.id);
@@ -320,9 +289,6 @@ export class QwenHighlightService {
     });
   }
 
-  /**
-   * 分析文本信息量与惊异度
-   */
   async analyze(text: string): Promise<InfoHighlightResult> {
     const cleanText = (text || '').trim();
     if (!cleanText) {
@@ -335,7 +301,6 @@ export class QwenHighlightService {
       };
     }
 
-    // 检查缓存
     const cacheKey = cleanText;
     if (this.resultCache.has(cacheKey)) {
       return this.resultCache.get(cacheKey)!;
@@ -358,7 +323,7 @@ export class QwenHighlightService {
         resolve: (val) => {
           clearTimeout(timer);
           this.touchIdleTimer();
-          // 写入 LRU 缓存
+
           if (this.resultCache.size >= this.maxCacheEntries) {
             const firstKey = this.resultCache.keys().next().value;
             if (firstKey) this.resultCache.delete(firstKey);
@@ -379,9 +344,6 @@ export class QwenHighlightService {
     });
   }
 
-  /**
-   * 显式销毁常驻进程（释放显存）
-   */
   destroy(): void {
     this.idleCtrl.reset();
     if (this.pythonProcess && !this.pythonProcess.killed) {

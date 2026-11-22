@@ -143,7 +143,6 @@ describe('Pdf2AbpStore (Phase 2 Harness UI State)', () => {
     expect(store.getState().files).toHaveLength(1);
     expect(lastSse).not.toBeNull();
 
-    // Simulate incoming SSE phase & completion events
     lastSse!.emit('phase_changed', {
       seq: 1,
       timestamp: 1500,
@@ -246,7 +245,7 @@ describe('Pdf2AbpStore (Phase 2 Harness UI State)', () => {
     });
 
     await store.refreshJobs();
-    // wait microtasks for auto-select selectJob + probes
+
     await new Promise((r) => setTimeout(r, 20));
 
     expect(store.getState().activeJobId).toBe('job_mythical');

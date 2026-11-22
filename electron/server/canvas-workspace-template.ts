@@ -1,16 +1,3 @@
-/**
- * electron/server/canvas-workspace-template.ts
- * ============================================================================
- * AstroLib 章节无限自由画布工作台动态合成入口 (模块化拼装)
- * ============================================================================
- * 职责拆分为 electron/server/canvas/ 下的独立子模块：
- * - styles.ts: Material You 主题色桥接、统一字体栈与极简微点光标样式
- * - markup.ts: 紧凑工具栏、双层画布、弹窗结构
- * - theme-sync-script.ts: 首屏及运行时主题色/日夜模式/字体热同步
- * - client-script.ts: 无限画布笔迹、卡片编辑、AST 引用与导入导出逻辑
- * ============================================================================
- */
-
 import { buildCanvasStyles } from './canvas/styles.ts';
 import { buildCanvasBodyMarkup } from './canvas/markup.ts';
 import { buildCanvasThemeSyncScript } from './canvas/theme-sync-script.ts';

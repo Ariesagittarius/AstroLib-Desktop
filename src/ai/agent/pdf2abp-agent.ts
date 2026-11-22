@@ -1,17 +1,3 @@
-/**
- * src/ai/agent/pdf2abp-agent.ts
- * ============================================================================
- * 自动化 PDF2ABP 主 Agent 调度引擎与任务管理器 (Pdf2AbpJobManager)
- * ============================================================================
- * 职责：
- * 1. 管理 pdf2abp 任务的完整生命周期（start / resume / cancel / waitForJob / list / events）；
- * 2. 封装默认免费网关配置（Youlabber `ybg-youlaber-ds4f`）与用户自定义网关透传；
- * 3. 协调主 Agent 自主完成「读规范 → PDF 体检 → MinerU 解析缝合 → 总览读图 →
- *    蓝图切分 / Python 预处理 → 子代理并发校对 → 汇总门禁自愈 → 编译验收 → 一键入库」；
- * 4. 执行 Zero-Trust 终局检验：仅当存在 verify_abp 通过且满足 autoImport 要求时才标为 completed。
- * ============================================================================
- */
-
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
@@ -183,7 +169,7 @@ export class Pdf2AbpJobManager {
       try {
         listener(evt);
       } catch {
-        // ignore listener failure
+
       }
     }
   }
@@ -572,7 +558,6 @@ export class Pdf2AbpJobManager {
         return state;
       }
 
-      // Zero-Trust 终局检验：必须真实产出通过 verify_abp 检验的归档包（且满足 autoImport 要求）
       const verifyOk = Boolean(state.verifyResult?.passed);
       const importOk = !state.autoImport || Boolean(state.importResult?.installed);
 
@@ -595,7 +580,6 @@ export class Pdf2AbpJobManager {
         return state;
       }
 
-      // 未完成终局产物
       const hasMineruBlock = /MINERU_UNAVAILABLE/i.test(result.finalText || '');
       const failureReason = hasMineruBlock
         ? 'MINERU_UNAVAILABLE: 未配置有效的 MinerU 云端 Token 或本地服务，任务终止。'

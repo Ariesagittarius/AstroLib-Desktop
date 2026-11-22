@@ -1,10 +1,3 @@
-/**
- * src/ai/skills/pdf2abp/index.ts
- * ============================================================================
- * 内置 PDF2ABP Skill 与 ABP 规范文档索引中心
- * ============================================================================
- */
-
 import { abpSpecSkill } from './abp-spec.ts';
 import { academicTypesettingSkill } from './academic-typesetting-rules.ts';
 import { orchestratorSopSkill } from './orchestrator-sop.ts';

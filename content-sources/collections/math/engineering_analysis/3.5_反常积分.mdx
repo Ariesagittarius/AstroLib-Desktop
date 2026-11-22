@@ -32,7 +32,6 @@ $$
 \mathrm{d}W = F(x) \mathrm{d}x = k \frac{Q}{x^2} \mathrm{d}x, \tag{5.1}
 $$
 
-
 其中 $k$ 为常数。该电荷从 $x=a$ 移到 $x=b$ 处电场力所做的功为
 
 $$
@@ -51,7 +50,6 @@ $$
 V_a = \lim_{b \to +\infty} \int_a^b F(x) \mathrm{d}x = \frac{kQ}{a}. \tag{5.2}
 $$
 
-
 (5.2) 式所包含的定积分的极限，可以看作 $F(x)$ 在区间 $[a, +\infty)$ 上的积分，称为 $F(x)$ 在无穷区间 $[a, +\infty)$ 上的积分。
 </Example>
 
@@ -62,7 +60,6 @@ $$
 \int_a^{+\infty} f(x) \mathrm{d}x = \lim_{b \to +\infty} \int_a^b f(x) \mathrm{d}x. \tag{5.3}
 $$
 
-
 若极限 $\lim_{b \to +\infty} \int_a^b f(x) \mathrm{d}x$ 存在，则称 $f$ 在 $[a, +\infty)$ 上的积分**收敛**，此时，称该极限为 $f$ 在 $[a, +\infty)$ 上积分的值。若极限不存在，则 $f$ 在 $[a, +\infty)$ 上的积分**发散**，收敛与发散统称为**敛散性**。
 
 类似地，可以定义 $f$ 在无穷区间 $(-\infty, b]$ 上的积分 $\int_{-\infty}^b f(x) \mathrm{d}x$ 及其敛散性。$f$ 在无穷区间 $(-\infty, +\infty)$ 上的积分 $\int_{-\infty}^{+\infty} f(x) \mathrm{d}x$ 定义如下：
@@ -70,7 +67,6 @@ $$
 $$
 \int_{-\infty}^{+\infty} f(x) \mathrm{d}x = \lim_{a \to -\infty} \int_a^c f(x) \mathrm{d}x + \lim_{b \to +\infty} \int_c^b f(x) \mathrm{d}x, \tag{5.4}
 $$
-
 
 其中 $c$ 为任一实数，$a$ 与 $b$ 各自独立地分别趋于 $-\infty$ 与 $+\infty$。若极限 $\lim_{a \to -\infty} \int_a^c f(x) \mathrm{d}x$ 与 $\lim_{b \to +\infty} \int_c^b f(x) \mathrm{d}x$ 同时存在，则称 $f$ 在 $(-\infty, +\infty)$ 上的积分**收敛**；若其中有一个不存在，则积分**发散**。
 </Knowledge>
@@ -168,7 +164,6 @@ $$
 \int_{a}^{b} f(x) \mathrm{d}x = \lim_{\varepsilon \to 0^{+}} \int_{a+\varepsilon}^{b} f(x) \mathrm{d}x. \tag{5.4}
 $$
 
-
 </Knowledge>
 
 <SideNote title="注意">
@@ -182,7 +177,6 @@ $$
 $$
 \int_{a}^{b} f(x) \mathrm{d}x = \lim_{\varepsilon \to 0^{+}} \int_{a}^{c-\varepsilon} f(x) \mathrm{d}x + \lim_{\delta \to 0^{+}} \int_{c+\delta}^{b} f(x) \mathrm{d}x, \tag{5.5}
 $$
-
 
 其中 $\varepsilon$ 与 $\delta$ 为任意的不同正数, 并且各自独立地趋于零. 若极限
 
@@ -236,13 +230,11 @@ $$
 \int_{a}^{b} f(x) \mathrm{d}x = F(b-0) - F(a). \tag{5.6}
 $$
 
-
 特别地, 若函数 $F$ 在 $x=b$ 处左连续, 则有
 
 $$
 \int_{a}^{b} f(x) \mathrm{d}x = F(b) - F(a). \tag{5.7}
 $$
-
 
 例如, 在例 5.5 中, 由于 $\frac{\arcsin \frac{x}{a}}{a}$ 是被积函数的一个原函数, 并且它在 $x=a$ 处左连续, 故例 5.5 的运算过程可直接写成
 
@@ -271,7 +263,6 @@ $$
 $$
 0 \leqslant f(x) \leqslant g(x), \quad \forall x \in [a, +\infty), \tag{5.8}
 $$
-
 
 则：
 1. 当 $\int_a^{+\infty} g(x) \mathrm{d}x$ 收敛时，$\int_a^{+\infty} f(x) \mathrm{d}x$ 收敛；
@@ -525,7 +516,6 @@ $$
 \Gamma(\alpha) = \int_0^{+\infty} x^{\alpha-1} e^{-x} \mathrm{d}x, \quad \alpha \in (0, +\infty). \tag{5.9}
 $$
 
-
 </Knowledge>
 
 利用分部积分法不难得知，$\Gamma$ 函数满足如下的递推关系：
@@ -539,7 +529,6 @@ $$
 $$
 \Gamma(\alpha + 1) = \int_{0}^{+\infty} x^{\alpha} \mathrm{e}^{-x} \mathrm{d}x = -x^{\alpha} \mathrm{e}^{-x} \bigg|_{0}^{+\infty} + \alpha \int_{0}^{+\infty} x^{\alpha-1} \mathrm{e}^{-x} \mathrm{d}x \tag{5.10}
 $$
-
 
 $$
 = \alpha \int_{0}^{+\infty} x^{\alpha-1} \mathrm{e}^{-x} \mathrm{d}x = \alpha \Gamma(\alpha).

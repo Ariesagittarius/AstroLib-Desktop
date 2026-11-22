@@ -1,23 +1,3 @@
-/**
- * electron/server/reader-shell-template.ts
- * ============================================================================
- * Universal Reader Shell 页面合成引擎 (Universal Reader HTML Synthesizer)
- * ============================================================================
- * 职责：
- * 将 ABP 书籍清单 (manifest) 与章节有效负载 (payload) 合成入 AstroLib 预编译
- * 的完整 Starlight Master Shell (dist/reader-shell/index.html)。
- *
- * 核心设计原则（严禁 UI 降级）：
- * 1. 100% 保持 AstroLib 原版设计、全套 Vite 编译 CSS 与 Material You (M3) 主题；
- * 2. 完整保留顶部 HeaderOverride（搜索 Ctrl+K、双语助读 Alt+Y、关注点透镜 Alt+I、工具聚合菜单、
- *    日夜切换、快速设置对话框及其全部字体/排版/色彩/AI 配置）；
- * 3. 完整实现左侧多书目层级树状导航，支持多合集全部书籍检索与无缝切换阅读；
- * 4. 注入 MinerU OCR 警告提示条 NoticeFramework 与教材出版元数据 Chips（作者、出版社、书名、阶段学科、双语入口）；
- * 5. 完整保留右侧 Sideload Dock（本节大纲、课后习题、AI 书内问答、双语助读、关注点透镜）及右下角 AI FAB 浮动动作按钮；
- * 6. 严禁任何形式的 UI 降级或自造非官方简陋 HTML 模拟器。
- * ============================================================================
- */
-
 import fs from 'node:fs';
 import path from 'node:path';
 import type { AstroBookManifest, AstroBookChapterPayload } from '../../src/types/content-package.ts';
@@ -56,9 +36,6 @@ let cachedTemplate: string | null = null;
 let cachedTemplateMtime = 0;
 let cachedTemplatePath = '';
 
-/**
- * 检索并读取已编译的 Starlight Master Shell 模板文件
- */
 function getMasterTemplate(distDir?: string): string | null {
   const candidates: string[] = [];
   if (distDir) {
@@ -84,7 +61,7 @@ function getMasterTemplate(distDir?: string): string | null {
         return content;
       }
     } catch {
-      // 继续尝试下一个候选路径
+
     }
   }
 
@@ -93,9 +70,6 @@ function getMasterTemplate(distDir?: string): string | null {
 
 const abpManifestCache = new Map<string, AstroBookManifest | null>();
 
-/**
- * 缓存读取全站任意图书的 ABP 清单
- */
 function getBookManifestCached(colSlug: string, bookSlug: string, distDir?: string): AstroBookManifest | null {
   const key = `${colSlug}-${bookSlug}`;
   if (abpManifestCache.has(key)) return abpManifestCache.get(key) || null;
@@ -119,9 +93,6 @@ function getBookManifestCached(colSlug: string, bookSlug: string, distDir?: stri
   return null;
 }
 
-/**
- * 递归渲染书籍章节树（支持全学科所有图书展开与跳转）
- */
 function renderBookChaptersTree(
   colSlug: string,
   bookSlug: string,
@@ -168,9 +139,6 @@ function renderBookChaptersTree(
     .join('');
 }
 
-/**
- * 提取卡片小标题前缀标签 (Chip) 与编号/主体
- */
 function parseCardTitle(rawTitle: string, modules: Record<string, any> = {}): { chip: string; number: string } {
   let clean = rawTitle.trim();
   const emojiRegex = /[\u{1F300}-\u{1F6FF}\u{1F900}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\uFE0F]/gu;
@@ -208,9 +176,6 @@ function parseCardTitle(rawTitle: string, modules: Record<string, any> = {}): { 
   return { chip: '', number: clean };
 }
 
-/**
- * 构建高保真结构化大纲树 (TOC) HTML，完整包含折叠分组、卡片 Chips 与数学公式
- */
 function buildStructuredTocHtml(
   contentHtml: string,
   headings: Array<{ depth: number; text: string; id: string }>,
@@ -230,7 +195,6 @@ function buildStructuredTocHtml(
   const items: TocItem[] = [];
   const seenIds = new Set<string>();
 
-  // 1. 匹配正文中的所有 H2, H3, H4 标题（不依赖属性顺序）
   const headingRe = /<h([2-4])\b([^>]*)>([\s\S]*?)<\/h\1>/gi;
   let match: RegExpExecArray | null;
   while ((match = headingRe.exec(contentHtml)) !== null) {
@@ -257,7 +221,6 @@ function buildStructuredTocHtml(
     });
   }
 
-  // 2. 匹配所有学术卡片 (.toc-chunk)，严格排除题解【解】、证明与解析折叠块
   const cardRe = /<(?:div|details)\s+[^>]*?class="([^"]*?toc-chunk[^"]*?)"[^>]*?data-title="([^"]+)"[^>]*?id="([^"]+)"/gi;
   while ((match = cardRe.exec(contentHtml)) !== null) {
     const cls = match[1];
@@ -282,7 +245,6 @@ function buildStructuredTocHtml(
     });
   }
 
-  // 合并 payload.headings 中未被 H2~H4 捕获的锚点（例如 EPUB NAV 子锚点 #toc-1）
   headings.forEach((h, i) => {
     if (!h.id || seenIds.has(h.id)) return;
     seenIds.add(h.id);
@@ -302,7 +264,6 @@ function buildStructuredTocHtml(
 
   items.sort((a, b) => a.pos - b.pos);
 
-  // 3. 聚合为标题分组
   interface TocGroup {
     heading: TocItem | null;
     cards: TocItem[];
@@ -328,7 +289,6 @@ function buildStructuredTocHtml(
     return '<li class="toc-loading">本节暂无大纲</li>';
   }
 
-  // 4. 渲染 M3 规范的折叠面板与条目
   let out = '';
   for (const group of groups) {
     const cardsHtml = group.cards
@@ -386,9 +346,6 @@ function buildStructuredTocHtml(
   return out;
 }
 
-/**
- * 将 ABP 书籍清单与章节内容注入至标准 Starlight 模板中
- */
 export function renderReaderPageHtml(
   manifest: AstroBookManifest,
   payload: AstroBookChapterPayload,
@@ -396,7 +353,6 @@ export function renderReaderPageHtml(
 ): string {
   const masterTemplate = getMasterTemplate(distDir);
 
-  // 1. 若无 Master Shell 模板（仅可能出现在未执行构建的单元测试环境中），安全降级
   if (!masterTemplate) {
     return renderFallbackShellHtml(manifest, payload);
   }
@@ -414,7 +370,6 @@ export function renderReaderPageHtml(
   const hasEmbeddedFonts = Boolean(manifest.hasEmbeddedFonts);
   const pageTitle = `${payload.title} - ${manifest.title} - AstroLib`;
 
-  // 确保 HTML 根节点包含桌面端避让类名、思源黑体默认偏好、两字缩进、阅读体裁与 Material You 主题
   html = html.replace(
     /<html([^>]*)>/i,
     (_m, attrs) => {
@@ -453,14 +408,12 @@ export function renderReaderPageHtml(
     }
   );
 
-  // 2. 注入 Title 与 Meta 元数据
   html = html.replace(/<title>.*?<\/title>/i, () => `<title>${escapeHtml(pageTitle)}</title>`);
   html = html.replace(/<meta\s+name="description"\s+content="[^"]*"/i, () => `<meta name="description" content="${escapeHtml(manifest.description || payload.title)}"`);
   html = html.replace(/<meta\s+property="og:title"\s+content="[^"]*"/i, () => `<meta property="og:title" content="${escapeHtml(pageTitle)}"`);
   html = html.replace(/<meta\s+property="og:description"\s+content="[^"]*"/i, () => `<meta property="og:description" content="${escapeHtml(manifest.description || payload.title)}"`);
   html = html.replace(/<meta\s+name="twitter:title"\s+content="[^"]*"/i, () => `<meta name="twitter:title" content="${escapeHtml(pageTitle)}"`);
 
-  // 3. 仅保留当前图书章节索引用于同书内快速检索，避免每页遍历读取全站 13 本书 Manifest 推高渲染耗能
   const searchCatalog: Array<{
     col: string;
     book: string;
@@ -485,7 +438,6 @@ export function renderReaderPageHtml(
     }
   }
 
-  // 严格践行 AGENTS.md 规范与图3批注：“其他书目可以删去，只保留当前书目的目录”
   const currentBookChaptersTreeHtml = renderBookChaptersTree(
     colSlug,
     bookSlug,
@@ -515,10 +467,8 @@ export function renderReaderPageHtml(
 </sl-sidebar-state-persist>
 `;
 
-  // 替换侧栏持久化树容器
   html = html.replace(/<sl-sidebar-state-persist[\s\S]*?<\/sl-sidebar-state-persist>/i, () => sidebarTreeHtml);
 
-  // 4. 注入 MinerU OCR 警告提示条 NoticeFramework
   const noticeBannerHtml = `
 <div class="astrolib-notice-framework" data-book-slug="${escapeHtml(bookSlug)}" role="complementary" aria-label="页面提示">
   <div class="astrolib-notice-card astrolib-notice-wiki severity-warning" id="notice-ocr" data-notice-id="ocr">
@@ -564,7 +514,6 @@ export function renderReaderPageHtml(
     html = html.replace(/(<main data-pagefind-body)/i, (_m, p1) => `${noticeBannerHtml}\n${p1}`);
   }
 
-  // 5. 注入章节标题与 Material 3 元数据 Chips（作者、出版社、书名、阶段学科、双语助读）
   const stageSubjectLabel = [
     manifest.stageLabel || manifest.stage,
     manifest.categoryLabel || manifest.subjectLabel || manifest.category,
@@ -649,7 +598,6 @@ export function renderReaderPageHtml(
     html = html.replace(/(<article class="sl-markdown-content")/i, (_m, p1) => `${combinedTopHeaderHtml}\n${p1}`);
   }
 
-  // 6. 计算并构建「上一节」与「下一节」翻页导航
   const flattenedChapters: Array<{ slug: string; title: string }> = [];
   for (const sec of manifest.sections) {
     for (const ch of sec.chapters) {
@@ -684,7 +632,6 @@ export function renderReaderPageHtml(
     `;
   }
 
-  // 7. 注入章节正文与翻页导航 (挂载当前章节权威元数据供 ViewTransitions 软切章实时感知)
   const safeClassTokens = (list?: string[]) =>
     (list || [])
       .map((c) => c.replace(/[^a-zA-Z0-9_-]/g, ''))
@@ -715,7 +662,6 @@ export function renderReaderPageHtml(
     html = html.replace(/(<article class="sl-markdown-content"[^>]*>)/i, (_m, p1) => `${p1}\n${contentBodyHtml}`);
   }
 
-  // 8. 更新右侧 Sideload Dock 属性与本节大纲 (TOC)，剔除 manifest.assets 减小内嵌 HTML 体积
   const clientBookConfig = {
     title: manifest.title,
     slug: manifest.slug,
@@ -738,7 +684,6 @@ export function renderReaderPageHtml(
   html = html.replace(/<ul id="custom-toc-list" class="toc-list"[^>]*>[\s\S]*?<\/ul>/i, () => `<ul id="custom-toc-list" class="toc-list"${ssrTocAttrs}>${tocHtml}</ul>`);
   html = html.replace(/<ul id="vp-local-nav-toc-list" class="toc-list"[^>]*>[\s\S]*?<\/ul>/i, () => `<ul id="vp-local-nav-toc-list" class="toc-list"${ssrTocAttrs}>${tocHtml}</ul>`);
 
-  // 9. 确保顶部包含关注点透镜 (Alt+I) 与批注手写按钮 (Alt+N / Alt+P)
   if (!html.includes('id="vp-focus-btn"')) {
     const focusBtnHtml = `
       <button
@@ -772,7 +717,6 @@ export function renderReaderPageHtml(
     }
   }
 
-  // 10. 确保侧载栏包含关注点透镜侧载面板
   if (!html.includes('data-panel-id="focus"')) {
     const focusPanelHtml = `
   <section class="sideload-panel-view" data-panel-id="focus" aria-hidden="true">
@@ -881,7 +825,6 @@ export function renderReaderPageHtml(
     html = html.replace(/(<\/aside>)/i, (_m, p1) => `${annPanelHtml}\n${p1}`);
   }
 
-  // 10.5 净化顶栏：彻底移除单一正文视窗中冗余的全局元素（徽标、导航链接、主题切换、全站设置、独立工作台、GitHub），同时保留左侧目录折叠按钮
   html = html.replace(/<a\s+href="\/"\s+class="[^"]*(?:m3-brand|vp-brand|brand-link)[^"]*"[^>]*>([\s\S]*?)<\/a>/gi, (_match, inner) => {
     const toggleMatch = inner.match(/<div class="[^"]*(?:m3-brand-wrapper|vp-brand-wrapper)[^"]*"[^>]*>[\s\S]*?<\/div>|<button[^>]*id="vp-sidebar-toggle-btn"[^>]*>[\s\S]*?<\/button>/i);
     return toggleMatch ? toggleMatch[0] : '';
@@ -889,10 +832,8 @@ export function renderReaderPageHtml(
   html = html.replace(/<nav\s+class="[^"]*(?:m3-nav-links|vp-nav-links)[^"]*"[^>]*>[\s\S]*?<\/nav>/gi, '');
   html = html.replace(/<div\s+class="[^"]*(?:m3-nav-divider|vp-nav-divider)[^"]*"[^>]*><\/div>/gi, '');
 
-  // 11. 联动 AI 书内智能问答 FAB 标题
   html = html.replace(/(<ai-ask[^>]*data-book-title=)"[^"]*"/i, (_m, p1) => `${p1}"${escapeHtmlAttr(manifest.title)}"`);
 
-  // 12. 彻底剔除所有底部【网站地图】字样及其残留容器
   html = html.replace(/<a[^>]*>[\s\S]*?网站地图[\s\S]*?<\/a>/gi, '');
   html = html.replace(/<[^>]*>网站地图<\/[^>]*>/gi, '');
   html = html.replace(/网站地图/g, '');
@@ -916,7 +857,6 @@ export function renderReaderPageHtml(
   const footnotesJson = JSON.stringify(chapterFootnotes).replace(/<\//g, '<\\/');
   const footnotesScriptHtml = `<script id="__book_footnotes__" type="application/json">${footnotesJson}</script>`;
 
-  // 13. 注入全局设置持久化、交叉引用链接器、全局瞬时搜索与 WikiNotice 交互客户端脚本
   const headInjection = `
   ${bookStylesLinksHtml}
   <style id="astrolib-wiki-notice-styles">
@@ -1549,7 +1489,6 @@ export function renderReaderPageHtml(
   })}
   `;
 
-  // 14. 移除失效的禁用属性并注入全局 head 增强脚本
   html = html.replace(/<button([^>]*?)data-open-modal\s+disabled/gi, (_m, p1) => `<button${p1}data-open-modal`);
   html = html.replace(/<button([^>]*?)id="astrolib-search-trigger"([^>]*?)disabled/gi, (_m, p1, p2) => `<button${p1}id="astrolib-search-trigger"${p2}`);
   html = html.replace('</head>', () => `${headInjection}\n</head>`);
@@ -1557,9 +1496,6 @@ export function renderReaderPageHtml(
   return html;
 }
 
-/**
- * 极简保底模板（仅在极端缺失构建产物时的测试保底，正常运行不走此处）
- */
 function renderFallbackShellHtml(
   manifest: AstroBookManifest,
   payload: AstroBookChapterPayload

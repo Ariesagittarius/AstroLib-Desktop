@@ -1,16 +1,3 @@
-/**
- * tests/contract/type-widening.test.ts
- * ============================================================================
- * Type Widening & Strict Schema Governance Contract Suite (P1-E3)
- * ============================================================================
- * 规范与约束：
- * 1. 严禁在 src/types/ 中出现 'literal' | string 形式的宽泛字面量联合；
- * 2. 严禁在 src/types/ 中出现 (string & {}) 伪收窄 hack；
- * 3. 允许合法的标量与数组值联合，如 tocMapping: Record<string, string | string[]>；
- * 4. 确保类型系统真实起到编译期静态拦截作用。
- * ============================================================================
- */
-
 import { describe, it, expect } from 'vitest';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
@@ -42,7 +29,7 @@ describe('Type Widening Contract Suite (P1-E3 / ADR-GOVERNANCE)', () => {
       const content = fs.readFileSync(file, 'utf-8');
       const lines = content.split('\n');
       lines.forEach((line, idx) => {
-        // 排除注释
+
         const trimmed = line.trim();
         if (trimmed.startsWith('//') || trimmed.startsWith('*') || trimmed.startsWith('/*')) return;
 

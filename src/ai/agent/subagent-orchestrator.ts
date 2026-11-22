@@ -1,19 +1,3 @@
-/**
- * src/ai/agent/subagent-orchestrator.ts
- * ============================================================================
- * 有界并发校对子代理编排器 (Bounded Parallel Proofreader Subagent Orchestrator)
- * ============================================================================
- * 特性：
- * 1. 基于信号量工作池限制最大并发数（1..6，默认 3），兼顾速度与网关稳定性；
- * 2. 每个子代理拥有全新隔离上下文，仅注入子代理协议 + 必要 ABP 卡片/防线片段 +
- *    单章草稿与关联页码，彻底避免上下文污染与爆表；
- * 3. 检查点断点续传：优先校验 `subagents/<taskId>.result.json` 与磁盘 MDX 真实状态，
- *    已达标分片自动跳过不重复烧轮次；
- * 4. 独立外部验收（Zero Trust）：子代理退出后由编排器亲自用 `validateBookDirectory`
- *    校验目标文件（含多段分片 `assetBaseDir: workspace.bookDir`），绝不盲信口头声明。
- * ============================================================================
- */
-
 import fs from 'node:fs';
 import { readPdf2AbpSkill } from '../skills/pdf2abp/index.ts';
 import { createBasePdf2AbpTools } from './pdf2abp-base-tools.ts';
@@ -106,7 +90,7 @@ function buildSubagentUserPrompt(
         lineHint = `（约 ${lineCount} 行）`;
       }
     } catch {
-      // ignore
+
     }
     lines.push(`- **MinerU 初步草稿路径**：\`${task.draftRelPath}\`${lineHint}`);
   }
@@ -159,7 +143,6 @@ function extractSubagentJsonReport(text: string): ParsedSubagentReport {
   const fenced = trimmed.match(/```(?:json)?\s*([\s\S]*?)```/i);
   const candidates = [fenced?.[1]?.trim(), trimmed];
 
-  // 也尝试提取最后一个平衡花括号块
   const lastBrace = trimmed.lastIndexOf('}');
   const firstBrace = trimmed.indexOf('{');
   if (firstBrace !== -1 && lastBrace > firstBrace) {
@@ -174,7 +157,7 @@ function extractSubagentJsonReport(text: string): ParsedSubagentReport {
         return obj as ParsedSubagentReport;
       }
     } catch {
-      // try next
+
     }
   }
 
@@ -363,7 +346,6 @@ async function executeSingleSubagentTask(
         onHttpOk: gate?.onHttpOk,
       });
 
-      // 若目标文件完全尚未落盘，且非主动取消，给一次温和重试机会
       const absExpected = workspace.resolveWorkspacePath(task.targetOutputRelPath);
       if (
         attempt === 1 &&
@@ -414,11 +396,10 @@ async function executeSingleSubagentTask(
         existingOutputFiles.push(rel);
       }
     } catch {
-      // ignore out-of-sandbox claims
+
     }
   }
 
-  // 强制检查约定目标文件是否落盘
   const primaryOutRel = existingOutputFiles.includes(task.targetOutputRelPath)
     ? task.targetOutputRelPath
     : existingOutputFiles[0];

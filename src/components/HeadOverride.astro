@@ -1,13 +1,4 @@
 ---
-/**
- * HeadOverride.astro
- * ============================================================================
- * Desktop-converged document head override:
- * 1. Normalizes mathematical LaTeX inside <title> into clean readable titles;
- * 2. Preserves Starlight head stylesheets while removing redundant tags;
- * 3. Injects zero-flash lite-mode class guard at first paint.
- * ============================================================================
- */
 import { collections } from '../config/collections.config.ts';
 
 const route = Astro.locals.starlightRoute;
@@ -56,8 +47,7 @@ const processedHead = head.filter((item) => {
 
 {processedHead.map(({ tag: Tag, attrs, content }) => <Tag {...attrs} set:html={content} />)}
 
-<script is:inline>
-  try {
+<script is:inline>try {
     if (localStorage.getItem('astrolib_lite_mode') === 'true') {
       document.documentElement.dataset.liteMode = 'true';
       document.documentElement.classList.add('astrolib-lite-mode');

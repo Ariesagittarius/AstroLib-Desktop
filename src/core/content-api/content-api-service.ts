@@ -1,18 +1,3 @@
-/**
- * src/core/content-api/content-api-service.ts
- * ============================================================================
- * AstroLib 统一内部内容服务门面 (Content API Service Facade)
- * ============================================================================
- * 职责：
- * 1. 作为单例服务对外统一提供图书、章节、大纲、卡片、公式、习题与 MinerU 数据的读取；
- * 2. 调度 ABP 编译打包与图书导入流水线；
- * 3. 承载 IContentMutationService 抽象实现，严格保障扩展性；
- * 4. 彻底解耦 UI 与底层数据源，服务于 REST API、CLI、MCP 与 Agent Engine；
- * 5. 集成 UniversalLocatorResolver 统一内容定位协议与跨书章节拓扑索引；
- * 6. 双模自愈适配：支持源码 MDX 与 ABP 标准编译包 (artifacts/abp-packs) 自动回退。
- * ============================================================================
- */
-
 import fs from 'node:fs';
 import path from 'node:path';
 import { execFile } from 'node:child_process';
@@ -108,15 +93,12 @@ export class ContentApiService implements IContentMutationService {
   public static getInstance(): ContentApiService {
     if (!ContentApiService.instance) {
       ContentApiService.instance = new ContentApiService();
-      // 预热全库索引
+
       ContentApiService.instance.buildGlobalChapterIndex();
     }
     return ContentApiService.instance;
   }
 
-  /**
-   * 1. 获取所有合集与图书摘要列表（聚合静态源码配置与动态安装图书包，含 EPUB / 自制 ABP）
-   */
   public listBooks(): BookSummary[] {
     const list: BookSummary[] = [];
     const seenKeys = new Set<string>();
@@ -151,7 +133,6 @@ export class ContentApiService implements IContentMutationService {
       }
     }
 
-    // 补充扫描用户安装目录（含 pdf2abp / EPUB）、开发热导入目录与构建产物目录中的动态书籍
     const extraPackRoots = resolveAbpPackCandidateDirs();
     for (const rootDir of extraPackRoots) {
       if (!fs.existsSync(rootDir)) continue;
@@ -202,9 +183,6 @@ export class ContentApiService implements IContentMutationService {
     return list;
   }
 
-  /**
-   * 2. 获取指定图书的结构化大纲树 (TOC) - 支持源码与 ABP 展开包双模自愈
-   */
   public getBookToc(colSlug: string, bookSlug: string): {
     bookSlug: string;
     colSlug: string;
@@ -222,7 +200,6 @@ export class ContentApiService implements IContentMutationService {
       catalog = buildBookCatalog(bookDir, { languages: bookMeta?.languages });
     }
 
-    // 双模回退：从用户安装 ABP 目录、开发热导入目录或构建产物目录读取 manifest.json 章节树
     if (!catalog || catalog.length === 0) {
       const abpCandidateRoots = resolveAbpPackCandidateDirs();
       for (const abpDir of abpCandidateRoots) {
@@ -277,9 +254,6 @@ export class ContentApiService implements IContentMutationService {
     };
   }
 
-  /**
-   * 3. 递归查找并获取指定章节的 AST 结构化语义 - 支持源码与 ABP 包双模自愈
-   */
   public getChapterAst(
     colSlug: string,
     bookSlug: string,
@@ -307,7 +281,6 @@ export class ContentApiService implements IContentMutationService {
       });
     }
 
-    // 双模回退：从用户安装 ABP 目录或 artifacts/abp-packs 读取已编译章节数据
     const cleanSlug = assertSafeSlug(
       safeChap.replace(/^collections\/[^/]+\/[^/]+\//, '').replace(/\.(mdx|md)$/i, ''),
       '章节',
@@ -404,7 +377,7 @@ export class ContentApiService implements IContentMutationService {
               lineEnd: bIdx + 1,
             }));
           } else {
-            // 将无截断原文附着到反推节点，消除 140 字截断
+
             for (const fn of fallbackTree) {
               const matchedBlock = extracted.blocks.find(
                 (b) => b.id === fn.id || (fn.title && b.title === fn.title)
@@ -445,9 +418,6 @@ export class ContentApiService implements IContentMutationService {
     throw new Error(`在 ${colSlug}/${bookSlug} 中未找到章节: ${chapterSlug}`);
   }
 
-  /**
-   * 3.5 精准读取指定 AST 节点 (段落/公式/模块/例题/习题) 的完整原文与元数据
-   */
   public readChapterNode(
     colSlug: string,
     bookSlug: string,
@@ -459,7 +429,7 @@ export class ContentApiService implements IContentMutationService {
     const targetFile = fs.existsSync(bookDir) ? this.findChapterFile(bookDir, chapterSlug) : null;
 
     if (!targetFile || !fs.existsSync(targetFile)) {
-      // 回退：在无源码的纯 ABP 桌面环境尝试从反推 AST 中读取节点
+
       try {
         const abpAst = this.getChapterAst(colSlug, bookSlug, chapterSlug);
         const allNodes = flattenTree(abpAst.tree);
@@ -512,7 +482,7 @@ export class ContentApiService implements IContentMutationService {
 
     let targetNode = findNodeById(ast.tree, nodeId);
     if (!targetNode) {
-      // 容错匹配：如果传了大小写不一致或去前缀的 ID
+
       const allNodes = flattenTree(ast.tree);
       targetNode = allNodes.find((n) => n.id.toLowerCase() === nodeId.toLowerCase()) || null;
       if (!targetNode) {
@@ -544,7 +514,6 @@ export class ContentApiService implements IContentMutationService {
     let startLine = node.lineStart;
     let endLine = node.lineEnd;
 
-    // 如果是标题且请求包含下属子节点，可顺延至该标题范围结束
     if (options.includeChildren && node.children && node.children.length > 0) {
       const maxChildLine = Math.max(...node.children.map((c) => c.lineEnd));
       if (maxChildLine > endLine) endLine = maxChildLine;
@@ -575,9 +544,6 @@ export class ContentApiService implements IContentMutationService {
     };
   }
 
-  /**
-   * 3.6 获取指定 AST 节点的原版预编译语义 HTML（供画布 1:1 复刻原文排版与公式效果）
-   */
   public getChapterNodeHtml(
     colSlug: string,
     bookSlug: string,
@@ -616,7 +582,7 @@ export class ContentApiService implements IContentMutationService {
     }
 
     if (chapterHtml) {
-      // 1. 直接匹配带 id="<nodeId>" 的标签块（标题或卡片）
+
       const escapedId = nodeId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       const directElRe = new RegExp(`<([a-z0-9]+)[^>]*\\sid=["']${escapedId}["'][^>]*>`, 'i');
       const directMatch = directElRe.exec(chapterHtml);
@@ -646,7 +612,6 @@ export class ContentApiService implements IContentMutationService {
         }
       }
 
-      // 2. 通过 AST 文本指纹从编译后 HTML 精准定位对应块（如 card-28-example, p-18, math-20）
       try {
         const nodeInfo = this.readChapterNode(safeCol, safeBook, safeChap, nodeId);
         if (nodeInfo.type === 'card' && nodeInfo.title) {
@@ -707,9 +672,6 @@ export class ContentApiService implements IContentMutationService {
     return { success: false, nodeId, html: '' };
   }
 
-  /**
-   * 4. 获取指定章节关联的习题
-   */
   public getChapterExercises(
     colSlug: string,
     bookSlug: string,
@@ -718,16 +680,10 @@ export class ContentApiService implements IContentMutationService {
     return getExercisesForChapter(colSlug, bookSlug, chapterSlug);
   }
 
-  /**
-   * 5. 全局检索习题
-   */
   public searchExercises(query: string, limit: number = 20): ExerciseItem[] {
     return searchExercises(query, limit);
   }
 
-  /**
-   * 6. 构建全库章节拓扑扁平索引并同步给 UniversalLocatorResolver
-   */
   public buildGlobalChapterIndex(): ChapterIndexItem[] {
     if (this.cachedChapterIndex && this.cachedChapterIndex.length > 0) {
       return this.cachedChapterIndex;
@@ -773,38 +729,22 @@ export class ContentApiService implements IContentMutationService {
     return items;
   }
 
-  /**
-   * 7. 统一协议定位器求解接口 (Locator Protocol Entry)
-   */
   public locateContent(query: string | Partial<ContentLocator>): ContentLocator {
     const chapters = this.buildGlobalChapterIndex();
     return UniversalLocatorResolver.resolve(query, this.listBooks(), chapters);
   }
 
-  /**
-   * 8. 获取 MinerU 文档列表
-   */
   public listMineruTasks(): MineruTaskData[] {
     return listMineruTasks();
   }
 
-  /**
-   * 9. 获取单个 MinerU 文档详情与切片
-   */
   public getMineruTask(hashOrPath: string): MineruTaskData | null {
     return getMineruTaskData(hashOrPath);
   }
 
-  /**
-   * 10. 获取 MinerU 布局切片
-   */
   public getMineruLayout(hashOrPath: string, limit: number = 50) {
     return getMineruLayoutSlice(hashOrPath, limit);
   }
-
-  // ==========================================================================
-  // 10.5 统一知识库协议门面 (MDX / pdf2abp / EPUB / 学术文献四源归一)
-  // ==========================================================================
 
   public invalidateKnowledgeCache(): void {
     this.cachedChapterIndex = null;
@@ -842,13 +782,6 @@ export class ContentApiService implements IContentMutationService {
     return KnowledgeRegistry.getInstance().searchAll(query, options);
   }
 
-  // ==========================================================================
-  // 11. 批注元数据、手写笔迹与章节自由画布 (Agent 只读感知 + UI 持久化)
-  // ==========================================================================
-
-  /**
-   * [Agent 只读] 获取整本书的批注全景统计与核心摘录
-   */
   public getBookAnnotationsOverview(colSlug: string, bookSlug: string): BookAnnotationsOverview {
     const meta = this.findBookMeta(colSlug, bookSlug);
     return aggregateBookAnnotationsOverview({
@@ -859,9 +792,6 @@ export class ContentApiService implements IContentMutationService {
     });
   }
 
-  /**
-   * [Agent 只读] 获取指定章节的批注、手写与自由画布，并与对应 AST 节点外接组装
-   */
   public getChapterAnnotationsWithAst(
     colSlug: string,
     bookSlug: string,
@@ -877,7 +807,7 @@ export class ContentApiService implements IContentMutationService {
       astTree = ast.tree || [];
       resolvedChapterSlug = ast.chapterSlug || chapterSlug;
     } catch {
-      // 若章节源码/ABP 暂不可用，仍返回脱耦批注数据
+
     }
 
     const payload = this.annotationStorage.getChapterAnnotations(
@@ -897,9 +827,6 @@ export class ContentApiService implements IContentMutationService {
     });
   }
 
-  /**
-   * [Agent 只读] 跨书或单书全文检索用户批注、侧注与画布笔记
-   */
   public searchAnnotations(
     query: string,
     options: { colSlug?: string; bookSlug?: string; limit?: number } = {}
@@ -921,9 +848,6 @@ export class ContentApiService implements IContentMutationService {
     });
   }
 
-  /**
-   * [UI / 导出专用] 获取轻量章节原始批注载荷
-   */
   public getChapterAnnotationsRaw(
     colSlug: string,
     bookSlug: string,
@@ -932,9 +856,6 @@ export class ContentApiService implements IContentMutationService {
     return this.annotationStorage.getChapterAnnotations(colSlug, bookSlug, chapterSlug);
   }
 
-  /**
-   * [UI 专用] 新增或更新单条批注
-   */
   public upsertChapterAnnotation(
     colSlug: string,
     bookSlug: string,
@@ -945,9 +866,6 @@ export class ContentApiService implements IContentMutationService {
     return this.annotationStorage.upsertAnnotationItem(colSlug, bookSlug, chapterSlug, item, chapterTitle);
   }
 
-  /**
-   * [UI 专用] 删除单条批注
-   */
   public deleteChapterAnnotation(
     colSlug: string,
     bookSlug: string,
@@ -957,9 +875,6 @@ export class ContentApiService implements IContentMutationService {
     return this.annotationStorage.deleteAnnotationItem(colSlug, bookSlug, chapterSlug, annotationId);
   }
 
-  /**
-   * [UI 专用] 保存章节自由画布笔记
-   */
   public saveChapterCanvasNote(
     colSlug: string,
     bookSlug: string,
@@ -980,9 +895,6 @@ export class ContentApiService implements IContentMutationService {
     return this.annotationStorage.saveCanvasNoteAsync(colSlug, bookSlug, chapterSlug, canvasNote, chapterTitle);
   }
 
-  /**
-   * [UI 专用] 整体保存章节批注载荷
-   */
   public saveChapterAnnotationsPayload(
     colSlug: string,
     bookSlug: string,
@@ -992,9 +904,6 @@ export class ContentApiService implements IContentMutationService {
     return this.annotationStorage.saveChapterAnnotations(colSlug, bookSlug, chapterSlug, updates);
   }
 
-  /**
-   * 导出整书或单章无损 .anp 数据包
-   */
   public exportBookAnp(
     colSlug: string,
     bookSlug: string,
@@ -1004,16 +913,9 @@ export class ContentApiService implements IContentMutationService {
     return this.annotationStorage.exportBookAnp(colSlug, bookSlug, meta?.title || bookSlug, chapterSlug);
   }
 
-  /**
-   * 导入并校验 .anp 批注包
-   */
   public importBookAnp(rawPkg: unknown, mode: 'merge' | 'overwrite' = 'merge') {
     return this.annotationStorage.importBookAnp(rawPkg, mode);
   }
-
-  // ==========================================================================
-  // IContentMutationService 契约实现
-  // ==========================================================================
 
   public async saveChapterMdx(
     colSlug: string,
@@ -1033,7 +935,7 @@ export class ContentApiService implements IContentMutationService {
 
     fs.mkdirSync(path.dirname(writePath), { recursive: true });
     fs.writeFileSync(writePath, content, 'utf-8');
-    this.cachedChapterIndex = null; // 触发索引刷新
+    this.cachedChapterIndex = null;
     return { success: true, bytesWritten: Buffer.byteLength(content, 'utf-8') };
   }
 
@@ -1089,10 +991,6 @@ export class ContentApiService implements IContentMutationService {
     this.cachedChapterIndex = null;
     return { success: true, bookPath: targetDir };
   }
-
-  // ==========================================================================
-  // 私有辅助方法
-  // ==========================================================================
 
   private findBookMeta(colSlug: string, bookSlug: string) {
     const col = sourceCollections.find((c) => c.slug === colSlug);

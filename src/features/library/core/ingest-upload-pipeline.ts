@@ -1,16 +1,3 @@
-/**
- * src/features/library/core/ingest-upload-pipeline.ts
- * ============================================================================
- * 研读书库统一混合上传与文献解析管线 (ABP + PDF Mixed Upload & Ingest Flow)
- * ============================================================================
- * 职责：
- * 1. 自动分流混合上传文件 (.abp 教材包 vs .pdf 学术文献)；
- * 2. 解析前置环境与凭证守卫：云端引擎缺 Token 时阻断并引导至全局设置；
- * 3. <= 200 页 PDF 静默后台解析；> 200 页 PDF 弹窗询问切片页码范围；
- * 4. 支持在研读书库对失败/中断/待解析文献直接触发重新解析。
- * ============================================================================
- */
-
 import type { UnifiedReadingEntity } from '../../../types/library-entity';
 import { getSavedMineruToken, readIngestSettings, type IngestEngineType } from '../../doc-ingestion/ingest-settings';
 import { MINERU_MAX_PAGES_PER_PARSE } from './entity-status';
@@ -139,7 +126,6 @@ export async function handleMixedFileUploads(
     return;
   }
 
-  // 1. 先安装所有 .abp / .epub 书籍文件（不依赖 MinerU Token）
   let installedBookCount = 0;
   for (const bookFile of bookFiles) {
     const isEpub = bookFile.name.toLowerCase().endsWith('.epub');
@@ -157,7 +143,6 @@ export async function handleMixedFileUploads(
     await callbacks.onRefreshLibrary();
   }
 
-  // 2. 处理 .pdf 文献队列
   if (pdfFiles.length === 0) {
     if (installedBookCount > 0) {
       const warnSuffix =

@@ -1,40 +1,18 @@
-/**
- * src/types/annotation-package.ts
- * ============================================================================
- * AstroLib 书籍批注、数位板手写与自由画布笔记标准化包契约 (AstroNote Package / ANP)
- * ============================================================================
- * 遵循架构规范：
- * - Layer 2 (Domain Model & Package Schema)
- * - 纯 TypeScript 接口与无副作用校验/合并函数，严禁依赖 UI 或服务端运行层
- * - 遵循 Rule 1 (UI is not a domain model) & Rule 3 (Source of Truth)
- * - 遵循 Type-Narrowing 门禁：严禁使用 'literal' | string 或 (string & {}) 宽泛联合
- * ============================================================================
- */
-
 import type { AstNodeType } from '../core/content-api/types.ts';
 
 export const ANP_SCHEMA_VERSION = '1.0.0' as const;
 
-/**
- * 文本引用选择器（用于段落内容变动时的自愈再锚定）
- */
 export interface TextQuoteSelector {
   exact: string;
   prefix?: string;
   suffix?: string;
 }
 
-/**
- * 文本字符偏移选择器（基于 AST 节点纯文本偏移区间 [start, end)）
- */
 export interface TextPositionSelector {
   start: number;
   end: number;
 }
 
-/**
- * 批注与教材 AST 语法树外接锚点
- */
 export interface AstNodeAnchor {
   colSlug: string;
   bookSlug: string;
@@ -46,9 +24,6 @@ export interface AstNodeAnchor {
   position?: TextPositionSelector;
 }
 
-/**
- * 1. 段落/句子高亮批注
- */
 export interface HighlightAnnotation {
   id: string;
   kind: 'highlight';
@@ -60,9 +35,6 @@ export interface HighlightAnnotation {
   updatedAt: string;
 }
 
-/**
- * 2. 学术侧注（支持 Markdown + LaTeX 公式，可折叠展开）
- */
 export interface SidenoteAnnotation {
   id: string;
   kind: 'sidenote';
@@ -75,11 +47,6 @@ export interface SidenoteAnnotation {
   updatedAt: string;
 }
 
-/**
- * 数位板/手写轨迹采样点
- * - 当 anchorMode === 'node-relative' 时，u, v 为所属 AST 节点矩形内归一化比例 [0, 1]
- * - 当 anchorMode === 'margin-offset' 时，u, v 为相对于最近邻 AST 节点左上角的未缩放逻辑偏移 (dx, dy)
- */
 export interface InkPoint {
   u: number;
   v: number;
@@ -92,9 +59,6 @@ export interface InkPoint {
 export type InkAnchorMode = 'node-relative' | 'margin-offset';
 export type InkToolType = 'pen' | 'highlighter';
 
-/**
- * 3. 数位板手写批注（混合双层锚定）
- */
 export interface InkStrokeAnnotation {
   id: string;
   kind: 'ink';
@@ -112,9 +76,6 @@ export interface InkStrokeAnnotation {
   updatedAt: string;
 }
 
-/**
- * 单条附着于正文 AST 树的批注联合类型
- */
 export type BookAnnotationItem =
   | HighlightAnnotation
   | SidenoteAnnotation
@@ -124,9 +85,6 @@ export type CanvasBlockKind = 'markdown' | 'ast-quote';
 
 export type CanvasBrushStyle = 'fountain' | 'monoline' | 'pencil';
 
-/**
- * 章节自由画布中的内容卡片（支持自由 Markdown/LaTeX 笔记块与 AST 原文引用块）
- */
 export interface CanvasNoteBlock {
   id: string;
   kind: CanvasBlockKind;
@@ -146,9 +104,6 @@ export interface CanvasNoteBlock {
   updatedAt: string;
 }
 
-/**
- * 章节自由画布中的手写矢量图层笔画（画布逻辑坐标系）
- */
 export interface CanvasInkStroke {
   id: string;
   tool: InkToolType;
@@ -160,18 +115,12 @@ export interface CanvasInkStroke {
   createdAt: string;
 }
 
-/**
- * 画布视口状态
- */
 export interface CanvasViewportState {
   panX: number;
   panY: number;
   zoom: number;
 }
 
-/**
- * 4. 章节自由画布笔记容器
- */
 export interface ChapterCanvasNote {
   chapterSlug: string;
   title: string;
@@ -181,9 +130,6 @@ export interface ChapterCanvasNote {
   updatedAt: string;
 }
 
-/**
- * 单章节批注与自由画布持久化完整载荷
- */
 export interface ChapterAnnotationPayload {
   schemaVersion: typeof ANP_SCHEMA_VERSION;
   colSlug: string;
@@ -195,9 +141,6 @@ export interface ChapterAnnotationPayload {
   updatedAt: string;
 }
 
-/**
- * AstroNote Package (.anp / .anp.json) 整书或单章无损导入导出包
- */
 export interface AstroNotePackagePayload {
   schemaVersion: typeof ANP_SCHEMA_VERSION;
   exportedAt: string;
@@ -207,9 +150,6 @@ export interface AstroNotePackagePayload {
   chapters: Record<string, ChapterAnnotationPayload>;
 }
 
-/**
- * 供 Agent 只读感知的图书章节批注分布条目
- */
 export interface BookChapterAnnotationStats {
   chapterSlug: string;
   chapterTitle?: string;
@@ -224,9 +164,6 @@ export interface BookChapterAnnotationStats {
   updatedAt: string;
 }
 
-/**
- * 供 Agent 全局感知的整书批注概览
- */
 export interface BookAnnotationsOverview {
   colSlug: string;
   bookSlug: string;
@@ -262,9 +199,6 @@ export interface BookAnnotationsOverview {
   updatedAt: string;
 }
 
-/**
- * 批注条目外接的 AST 节点上下文摘要
- */
 export interface AttachedAstNodeSummary {
   nodeId: string;
   type: AstNodeType;
@@ -279,25 +213,16 @@ export interface AttachedAstNodeSummary {
   uri: string;
 }
 
-/**
- * 带 AST 节点原文外接关联的单条批注（供 Agent 深度对照阅读）
- */
 export interface EnrichedBookAnnotation {
   annotation: BookAnnotationItem;
   astNode: AttachedAstNodeSummary | null;
 }
 
-/**
- * 带 AST 节点外接关联的画布引用块
- */
 export interface EnrichedCanvasBlock {
   block: CanvasNoteBlock;
   astNode: AttachedAstNodeSummary | null;
 }
 
-/**
- * 章节批注与 AST 节点外接组装结果（供 REST API 与 Agent 工具使用）
- */
 export interface ChapterAnnotationsWithAstResult {
   colSlug: string;
   bookSlug: string;
@@ -316,9 +241,6 @@ export interface ChapterAnnotationsWithAstResult {
   };
 }
 
-/**
- * 跨书/单书批注检索命中条目
- */
 export interface AnnotationSearchHit {
   hitType: 'highlight' | 'sidenote' | 'canvas-block';
   id: string;
@@ -334,9 +256,6 @@ export interface AnnotationSearchHit {
   updatedAt: string;
 }
 
-/**
- * 创建空的单章节批注载荷
- */
 export function createEmptyChapterAnnotationPayload(
   colSlug: string,
   bookSlug: string,
@@ -456,9 +375,6 @@ function isValidCanvasNote(raw: unknown): raw is ChapterCanvasNote {
   return blocksOk && strokesOk;
 }
 
-/**
- * 校验反序列化后的 .anp 数据包格式合法性
- */
 export function validateAnpPackage(raw: unknown): AstroNotePackagePayload {
   if (!isRecord(raw)) {
     throw new Error('无效的 ANP 批注包：根节点必须为 JSON 对象');
@@ -508,9 +424,6 @@ function pickNewerTimestamp(a: string, b: string): number {
   return tb >= ta ? 1 : -1;
 }
 
-/**
- * 基于 UUID 无损幂等合并同一章节的两份批注载荷
- */
 export function mergeChapterAnnotationPayloads(
   existing: ChapterAnnotationPayload,
   incoming: ChapterAnnotationPayload

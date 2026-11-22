@@ -1,25 +1,12 @@
 ---
-/**
- * src/components/desktop/FragmentReaderHost.astro
- * ============================================================================
- * Fragment 3: Chrome 风格底部标签栏与 Windows 11 任意分屏研读中心
- * ============================================================================
- * 规范：
- * 1. 视窗优先：所有非内容信息彻底剔除，0 边距、0 阴影、1px 细分割线；
- * 2. 标签栏置底且支持折叠：最大化垂直研读可视面积；
- * 3. 多屏同亮、焦点区分、自由拖拽界线（含 2x2 上下独立列宽）；
- * 4. 彻底解耦：状态机归 workspace-state.ts，界线归 split-resizer.ts，宿主编排归 reader-host-controller.ts。
- * ============================================================================
- */
-
 import M3Icon from '../m3/M3Icon.astro';
 import '../../styles/desktop/reader-host.css';
 ---
 
 <div class="fragment-reader-container" id="fragment-reader">
-  <!-- 核心视窗容器舞台 -->
+
   <main class="reader-viewport-stage" id="reader-viewport-stage">
-    <!-- 空状态展台 -->
+
     <div class="reader-empty-stage" id="reader-empty-stage">
       <span class="material-symbols-outlined empty-icon">menu_book</span>
       <h3 class="empty-title">暂无已打开的研读视窗</h3>
@@ -31,29 +18,24 @@ import '../../styles/desktop/reader-host.css';
       </button>
     </div>
 
-    <!-- 动态分屏网格容器 (支持 1x1 / 1x2 / 2x1 / 2x2 上下独立列宽) -->
     <div class="reader-split-grid mode-1x1" id="reader-split-grid" style="display: none;">
-      <!-- Pane 0 -->
+
       <div class="split-pane-box" id="pane-0" data-pane-index="0">
         <div class="pane-iframe-wrap" id="pane-wrap-0"></div>
       </div>
 
-      <!-- Pane 1 -->
       <div class="split-pane-box" id="pane-1" data-pane-index="1" style="display: none;">
         <div class="pane-iframe-wrap" id="pane-wrap-1"></div>
       </div>
 
-      <!-- Pane 2 -->
       <div class="split-pane-box" id="pane-2" data-pane-index="2" style="display: none;">
         <div class="pane-iframe-wrap" id="pane-wrap-2"></div>
       </div>
 
-      <!-- Pane 3 -->
       <div class="split-pane-box" id="pane-3" data-pane-index="3" style="display: none;">
         <div class="pane-iframe-wrap" id="pane-wrap-3"></div>
       </div>
 
-      <!-- 拖拽界线把手组：双击可复原均分 -->
       <div class="split-divider-handle split-divider-handle--v" id="split-divider-v" title="左右拖动调整分屏宽度（双击均分）"></div>
       <div class="split-divider-handle split-divider-handle--h" id="split-divider-h" title="上下拖动调整分屏高度（双击均分）"></div>
       <div class="split-divider-handle split-divider-handle--v split-divider-handle--v-top" id="split-divider-v-top" title="拖动调整上排左右列宽（双击均分）"></div>
@@ -61,7 +43,6 @@ import '../../styles/desktop/reader-host.css';
     </div>
   </main>
 
-  <!-- 页面底部 Chrome 风格标签页栏 -->
   <footer class="reader-bottom-dock" id="reader-bottom-dock">
     <button type="button" class="dock-expand-handle" id="dock-expand-handle" title="展开标签栏与分屏控制器">
       <span class="material-symbols-outlined" style="font-size: 16px;">expand_less</span>
@@ -100,8 +81,7 @@ import '../../styles/desktop/reader-host.css';
   </footer>
 </div>
 
-<script>
-  import { initReaderChromeHost } from '../../features/reader-host/reader-host-controller';
+<script>import { initReaderChromeHost } from '../../features/reader-host/reader-host-controller';
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => initReaderChromeHost());

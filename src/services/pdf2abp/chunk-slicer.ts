@@ -1,17 +1,3 @@
-/**
- * src/services/pdf2abp/chunk-slicer.ts
- * ============================================================================
- * 确定性章节分片器与多段合并器 (Deterministic Chapter Slicer & Merger)
- * ============================================================================
- * 职责：
- * 1. 根据主 Agent 制定的 BookPlanSpec（含各章精确物理页码区间），
- *    从全局 stitched/pages_blocks.json 提取每章草稿 Markdown 与引用插图清单；
- * 2. 将引用的 MinerU 图片预拷贝至工作区 book/images/；
- * 3. 若单章跨度 > maxPagesPerChunk（默认 8 页），自动拆分为多个子工作包以严控子代理上下文；
- * 4. 在所有子代理完成后，将多段 MDX 合并为完整干净的最终章节文件。
- * ============================================================================
- */
-
 import fs from 'node:fs';
 import path from 'node:path';
 import type { JobWorkspace } from './workspace-manager.ts';
@@ -44,9 +30,6 @@ function formatBlockToDraftLine(b: StitchedPageBlock): string {
   return b.text;
 }
 
-/**
- * 确定性预处理草稿文本：收敛多余空行、清除行尾空白
- */
 export function precleanDraft(text: string): string {
   return String(text || '')
     .replace(/\r\n/g, '\n')
@@ -55,9 +38,6 @@ export function precleanDraft(text: string): string {
     .trimEnd() + '\n';
 }
 
-/**
- * 确定性结构规划护栏校验：拦截合并兄弟小节、拆散三级子节、非法收录目录/索引及 intro 配置冲突
- */
 export function validateBookPlan(plan: BookPlanSpec): {
   ok: boolean;
   errors: string[];
@@ -237,7 +217,6 @@ export function prepareChapterChunks(params: {
     blocksByPage.get(b.page)!.push(b);
   }
 
-  // 同步写入 book/book.json（如主 Agent 尚未写或需保持同步）
   if (plan.bookConfig) {
     workspace.writeFile('book/book.json', JSON.stringify(plan.bookConfig, null, 2));
   }
@@ -376,9 +355,6 @@ export function prepareChapterChunks(params: {
   };
 }
 
-/**
- * 将同一章节的多个校对分片无损拼接为最终 book/<chapter>.mdx
- */
 export function mergeChapterParts(params: {
   workspace: JobWorkspace;
   targetOutputRelPath: string;

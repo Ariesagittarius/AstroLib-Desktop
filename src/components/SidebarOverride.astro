@@ -7,16 +7,13 @@ import { buildTwoTierSidebar } from '../utils/sidebar/sidebar-tree';
 const { sidebar } = Astro.locals.starlightRoute;
 const pathname = Astro.url.pathname;
 
-// 构造 Google Docs 规范的双级侧边栏结构
 const filteredSidebar = buildTwoTierSidebar(sidebar, pathname, collections);
 ---
 
-<!-- 1. 渲染过滤后的侧边栏结构 -->
 <SidebarPersister>
   <SidebarSublist sublist={filteredSidebar} />
 </SidebarPersister>
-<script is:inline>
-  (() => {
+<script is:inline>(() => {
     try {
       const top = parseInt(sessionStorage.getItem('astrolib_sidebar_scroll') || '', 10);
       const scroller = document.getElementById('starlight__sidebar');
@@ -27,9 +24,7 @@ const filteredSidebar = buildTwoTierSidebar(sidebar, pathname, collections);
   })();
 </script>
 
-<!-- 2. 注入客户端路由与交互管线：阅读记录、SPA 极速导航引擎与数字资源弹层 -->
-<script>
-  import '../scripts/navigation/recent-reading';
+<script>import '../scripts/navigation/recent-reading';
   import '../scripts/navigation/spa-engine';
   import '../scripts/navigation/academic-resource';
 </script>

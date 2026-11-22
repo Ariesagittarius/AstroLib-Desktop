@@ -39,21 +39,18 @@ Multiplicative constants can be omitted: $14n^2$ becomes $n^2$.
     const paras = SemanticParagraphExtractor.extractFromMarkdown(markdown, { prefix: 'src' });
 
     expect(paras.length).toBe(4);
-    // 0: heading
+
     expect(paras[0].type).toBe('heading');
     expect(paras[0].text).toContain('0.3 Big-O notation');
     expect(paras[0].sectionContext).toBe('0.3 Big-O notation');
 
-    // 1: paragraph
     expect(paras[1].type).toBe('paragraph');
     expect(paras[1].text).toContain('sloppiness');
     expect(paras[1].sectionContext).toBe('0.3 Big-O notation');
 
-    // 2: math
     expect(paras[2].type).toBe('math');
     expect(paras[2].text).toContain('\\frac{f_2(n)}{f_1(n)}');
 
-    // 3: paragraph with inline formula
     expect(paras[3].type).toBe('paragraph');
     expect(paras[3].formulas).toBeDefined();
     expect(paras[3].formulas?.length).toBeGreaterThan(0);
@@ -89,12 +86,10 @@ n
       enableOcrHealing: true,
     });
 
-    // Check that standalone page number "8" and "第 23 页 序言" were eliminated
     const texts = paras.map((p) => p.text);
     expect(texts.some((t) => t.includes('第 23 页'))).toBe(false);
     expect(texts.some((t) => t === '8')).toBe(false);
 
-    // Check that Rule 3 was healed together
     const rule3 = paras.find((p) => p.text.includes('任何指数项支配任何多项式项'));
     expect(rule3).toBeDefined();
     expect(rule3?.text).toContain('3n');

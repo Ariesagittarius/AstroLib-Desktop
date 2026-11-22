@@ -1,10 +1,3 @@
-/**
- * tests/unit/antigravity-cli-integration.test.ts
- * ============================================================================
- * AstroLib Antigravity CLI 本地智能体接入与静默自省单元测试
- * ============================================================================
- */
-
 import { describe, it, expect } from 'vitest';
 import { AntigravityCliService } from '../../src/services/antigravity-cli/antigravity-cli-service.ts';
 import { execFileSync, execFile } from 'node:child_process';

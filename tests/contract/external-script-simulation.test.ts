@@ -1,15 +1,3 @@
-/**
- * tests/contract/external-script-simulation.test.ts
- * ============================================================================
- * Phase 1 第三方外部脚本调用与分析闭环仿真测试 (供第三方审计)
- * ============================================================================
- * 场景模拟：
- * 1. 外部脚本获取两个章节的 AST，自动对比知识卡片与公式差异；
- * 2. 外部脚本获取章节习题并自动组装结构化题解报告；
- * 3. 外部脚本获取 MinerU 数据并评估切片质量。
- * ============================================================================
- */
-
 import { describe, it, expect } from 'vitest';
 import { ContentApiService } from '../../src/core/content-api/content-api-service.ts';
 
@@ -17,14 +5,13 @@ describe('Phase 1: External Script Consumption Simulation', () => {
   const service = ContentApiService.getInstance();
 
   it('场景 1: 外部脚本跨章节对比 —— 辨析两章节卡片与公式密度', () => {
-    // 模拟外部脚本调取 1.1 与 1.2
+
     const ch1 = service.getChapterAst('math', 'linear_algebra_geometry', '11_二三阶行列式');
     const ch2 = service.getChapterAst('math', 'linear_algebra_geometry', '12_全排列及其逆序数');
 
     expect(ch1).toBeDefined();
     expect(ch2).toBeDefined();
 
-    // 外部脚本执行分析计算
     const analysisReport = {
       ch1: {
         title: ch1.title,
@@ -55,11 +42,9 @@ describe('Phase 1: External Script Consumption Simulation', () => {
 
     expect(exercises.length).toBeGreaterThan(0);
 
-    // 寻找章节里的定义卡片
     const definitionCard = ast.cards.find((c) => c.title?.includes('二阶行列式'));
     expect(definitionCard).toBeDefined();
 
-    // 外部脚本自动生成导学工件对象
     const studyWorksheet = {
       chapterTitle: ast.title,
       coreKnowledge: definitionCard?.content,

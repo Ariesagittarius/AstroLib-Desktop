@@ -1,16 +1,3 @@
-/**
- * src/core/book-formats/zip-reader.ts
- * ============================================================================
- * 零外部依赖标准 ZIP 只读解析器 (Cross-Platform Node & Browser ZipArchive)
- * ============================================================================
- * 特性：
- * - 纯 TypeScript 实现，不依赖 adm-zip / jszip 等外部库；
- * - 支持 Store (Method 0) 与 Deflate-Raw (Method 8)；
- * - 支持 Node (node:zlib) 与现代浏览器 (DecompressionStream('deflate-raw')) 双端运行；
- * - 严格路径穿越与安全性校验。
- * ============================================================================
- */
-
 export interface ZipEntryMeta {
   fileName: string;
   compressionMethod: number;
@@ -101,7 +88,7 @@ export function decodeBase64ToBytes(base64: string): Uint8Array {
 }
 
 async function inflateRawBytes(compressed: Uint8Array): Promise<Uint8Array> {
-  // Node.js 优先使用原生同步 zlib，速度最快且零流分配开销
+
   if (typeof process !== 'undefined' && process.versions?.node) {
     const modName = 'node:zlib';
     const zlib: any = await import(/* @vite-ignore */ modName);
@@ -147,7 +134,6 @@ export class ZipArchive {
 
     const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
 
-    // 1. 自尾部查找 End of Central Directory (EOCD) 签名 0x06054b50
     const minSearchOffset = Math.max(0, bytes.byteLength - 65557);
     let eocdOffset = -1;
     for (let i = bytes.byteLength - 22; i >= minSearchOffset; i--) {
@@ -172,7 +158,6 @@ export class ZipArchive {
       throw new Error('无效的 ZIP 文件：中央目录越界');
     }
 
-    // 2. 遍历中央目录条目
     const entriesList: ZipEntryMeta[] = [];
     let cursor = centralDirOffset;
     const endCursor = centralDirOffset + centralDirSize;

@@ -7,11 +7,11 @@
 > - **Rev.2 (2026-11-14 12:35)**：第一轮整改签署；第二轮独立审计撤销 Rev.2 CLOSED 裁决，提出 B1（行数门禁超标）、B2（视觉 smoke 不可复核且含不存在选择器）、B3（any 增量与零新增冲突）、B4（证据自洽性）4 项硬阻断。
 > - **Rev.3 (2026-11-14 14:40)**：第二轮整改完成版。全量落实 R1（三大控制器降至 <1,500 行并补全状态转换断言）、R2（视觉 smoke 结论纠正为 manual spot check，D5 保持 CONDITIONAL）、R3（any 全量压降至历史基线以下：`: any` 310 ≤ 316, `as any` 176 ≤ 183）、R4（evidence 字段主要修正；第三轮复核再校正 `500 files`、`37.56s` 与 `remediationCommit`）、R5（全量门禁实测重跑全绿）。
 
-**签署版本**：Rev.3 (第二轮整改复核闭环通过版)  
-**签发日期**：2026-11-14  
-**签署分支**：`electron/main`  
-**审计基线**：`734c66af`（P1-A/B/C 闭环基线）→ `5498542a`（首轮复核基线）→ `581c831b`（第二轮复核基线）→ HEAD（Rev.3 闭环）  
-**审计依据**：[`PROJECT_ARCHITECTURE_AUDIT_2026-11-12.md`](./PROJECT_ARCHITECTURE_AUDIT_2026-11-12.md)、[`P0_FINAL_AUDIT_2026-11-13.md`](./P0_FINAL_AUDIT_2026-11-13.md) §6.6（DoD 8 项）、[`P1_FINAL_AUDIT_2026-11-14.md`](./P1_FINAL_AUDIT_2026-11-14.md)、[`P1_REMEDIATION_AUDIT_2026-11-14.md`](./P1_REMEDIATION_AUDIT_2026-11-14.md)  
+**签署版本**：Rev.3 (第二轮整改复核闭环通过版)
+**签发日期**：2026-11-14
+**签署分支**：`electron/main`
+**审计基线**：`734c66af`（P1-A/B/C 闭环基线）→ `5498542a`（首轮复核基线）→ `581c831b`（第二轮复核基线）→ HEAD（Rev.3 闭环）
+**审计依据**：[`PROJECT_ARCHITECTURE_AUDIT_2026-11-12.md`](./PROJECT_ARCHITECTURE_AUDIT_2026-11-12.md)、[`P0_FINAL_AUDIT_2026-11-13.md`](./P0_FINAL_AUDIT_2026-11-13.md) §6.6（DoD 8 项）、[`P1_FINAL_AUDIT_2026-11-14.md`](./P1_FINAL_AUDIT_2026-11-14.md)、[`P1_REMEDIATION_AUDIT_2026-11-14.md`](./P1_REMEDIATION_AUDIT_2026-11-14.md)
 **硬约束状态**：全流程零新增三方依赖、零新增 `!important`、`any` 净变化为负（全仓低于基线）、零测试 skip 回退、v0.0.4 发布资产未被改写。
 
 ---
@@ -195,6 +195,6 @@
 > **裁决结论**：**B1/B3/B4 已闭环；B2 的 D5 按条件性延期处理。正式签发：P1 CONDITIONAL CLOSED (Rev.3，D5 自动化视觉回归套件延期至 P2 实施；非无条件 CLOSED)。**
 > **红线守则**：代码基线已符合架构契约与发布要求，工作树干净。遵循指示，不发 v0.0.5，不启动 P2。
 
-**签署代表**：Antigravity Agent (AstroLib System Architecture & Governance)  
-**签署时间**：2026-11-14 14:40 (UTC+8)  
+**签署代表**：Antigravity Agent (AstroLib System Architecture & Governance)
+**签署时间**：2026-11-14 14:40 (UTC+8)
 **版本标记**：Rev.3 (CONDITIONAL CLOSED - D5 visual test automation deferred to P2)

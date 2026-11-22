@@ -11,7 +11,6 @@ import Variant from '@/components/Variant.astro';
 import Note from '@/components/Note.astro';
 import Block from '@/components/Block.astro';
 
-
 对于求向量数量积问题, 关键在于如何选取合适的两个向量作为基底, 而基底向量往往在题中会给出明确的提示.
 
 <Example title="例 3.48">
@@ -25,15 +24,12 @@ B. -9
 C. -6
 D. 0
 
-
-
 <Analysis>
 本题中 $|\overrightarrow{BC}|$ , $\overrightarrow{BC}$ 与 $\overrightarrow{OM}$ 的夹角都是未知的, 因此不能直接利用数量积的定义求解. 而 $\overrightarrow{OM}, \overrightarrow{ON}$ 的模长和夹角都是已知的, 故我们考虑选 $\{\overrightarrow{OM}, \overrightarrow{ON}\}$ 为基向量, 也就是用 $\overrightarrow{OM}$ 和 $\overrightarrow{ON}$ 来表示 $\overrightarrow{BC}$ .
 </Analysis>
 
 <Solution>
 由 $OM = 1, ON = 2, \angle MON = 120^{\circ}$ , 可得 $\overrightarrow{OM} \cdot \overrightarrow{ON} = |\overrightarrow{OM}| \cdot |\overrightarrow{ON}|\cos 120^{\circ} = -1$ . 因此我们选择 $\overrightarrow{OM}, \overrightarrow{ON}$ 为基
-
 
 底, 接下来需要用 $\overrightarrow{OM}$ , $\overrightarrow{ON}$ 把 $\overrightarrow{BC}$ 表示出来. 因为 $\overrightarrow{BM} = 2\overrightarrow{MA}$ , $\overrightarrow{CN} = 2\overrightarrow{NA}$ , 所以 $\overrightarrow{BC} = 3\overrightarrow{MN}$ , 则 $\overrightarrow{BC} \cdot \overrightarrow{OM} = 3\overrightarrow{MN} \cdot \overrightarrow{OM} = 3\left(\overrightarrow{ON} - \overrightarrow{OM}\right) \cdot \overrightarrow{OM} = 3\overrightarrow{OM} \cdot \overrightarrow{ON} - 3\overrightarrow{OM}^2 = -6$ , 故选 C.
 </Solution>
@@ -81,8 +77,6 @@ $$
 
 <Analysis>
 因为所求的是 $\frac{AB}{AC}$ , 且已知含有 $\overrightarrow{AB} \cdot \overrightarrow{AC} = 6\overrightarrow{AO} \cdot \overrightarrow{EC}$ , 由于 $\overrightarrow{AO}$ 与 $\overrightarrow{EC}$ 不是共起点的, 故不会选择 $\overrightarrow{AO}$ 与 $\overrightarrow{EC}$ 作
-
-
 
 为基底. 因此考虑选择 $\{\overrightarrow{AB}, \overrightarrow{AC}\}$ 作为基底. 下面需要解决的是如何把 $\overrightarrow{EC}$ 与 $\overrightarrow{AO}$ 用 $\{\overrightarrow{AB}, \overrightarrow{AC}\}$ 表示.
 </Analysis>

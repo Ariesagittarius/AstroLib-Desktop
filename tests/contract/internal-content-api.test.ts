@@ -1,10 +1,3 @@
-/**
- * tests/contract/internal-content-api.test.ts
- * ============================================================================
- * Phase 1 内部内容数据 API 核心契约与功能测试 (供第三方审计)
- * ============================================================================
- */
-
 import { describe, it, expect } from 'vitest';
 import { ContentApiService } from '../../src/core/content-api/content-api-service.ts';
 
@@ -43,7 +36,6 @@ describe('Phase 1: ContentApiService Internal Contract Tests', () => {
     expect(ast.title).toBe('1.1 二、三阶行列式');
     expect(ast.headings.length).toBeGreaterThan(0);
 
-    // 验证卡片提取 (定理/定义/例题/题解)
     expect(ast.cards.length).toBeGreaterThanOrEqual(8);
     const defCard = ast.cards.find((c) => c.title?.includes('定义 1.1'));
     expect(defCard).toBeDefined();
@@ -56,13 +48,11 @@ describe('Phase 1: ContentApiService Internal Contract Tests', () => {
     expect(exampleCard).toBeDefined();
     expect(exampleCard?.type).toBe('example');
 
-    // 验证数学公式提取
     expect(ast.formulas.length).toBeGreaterThan(20);
     const blockFormula = ast.formulas.find((f) => f.displayMode === 'block');
     expect(blockFormula).toBeDefined();
     expect(blockFormula?.latex).toBeDefined();
 
-    // 验证段落切片与卡片引用
     expect(ast.paragraphs.length).toBeGreaterThan(0);
     expect(ast.readingTimeMinutes).toBeGreaterThan(0);
     expect(ast.wordCount).toBeGreaterThan(100);

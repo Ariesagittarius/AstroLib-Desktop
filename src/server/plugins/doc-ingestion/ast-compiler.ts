@@ -1,20 +1,3 @@
-/**
- * @deprecated LEGACY-PENDING-IR
- * ============================================================================
- * src/server/plugins/doc-ingestion/ast-compiler.ts
- * AstroLib MinerU 结构化 AST 编译器
- * 架构定位说明 (ADR-CONTENT-IR-2026-11-13 / P1-B3)：
- * 本编译器属于 MinerU 摄取端实验性 AST 工具，非当前书籍阅读生产主路径。
- * 退出生产路径条件与时间点：
- * 1. 条件：摄取端全面迁移至统一的最小 ContentDocument IR，并由标准 ABP 打包流水线接管；
- * 2. 时间点：P1-E 系统性重构与摄取管线收口阶段。
- * 现阶段严禁在生产阅读流程中依赖此文件，保持只读与标注状态。
- * ============================================================================
- * 将 MinerU content_list_v2.json / layout.json / full.md 编译为统一高质量 LayoutBlock
- * 深度解析物理分页标尺、本页学术脚注双向对应、页眉/刊物/水印折叠元注
- * ============================================================================
- */
-
 import fs from 'node:fs';
 import path from 'node:path';
 import katex from 'katex';
@@ -33,9 +16,6 @@ function escapeRegex(str: string): string {
   return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
-/**
- * 将 LaTeX 数学公式安全渲染为 KaTeX HTML
- */
 function renderMath(tex: string, displayMode: boolean): string {
   try {
     return katex.renderToString(tex.trim(), {
@@ -47,9 +27,6 @@ function renderMath(tex: string, displayMode: boolean): string {
   }
 }
 
-/**
- * 解析脚注符号与正文内容
- */
 function extractFootnoteSymbolAndBody(spans: any[]): { symbol: string; bodySpans: any[] } {
   if (!spans || spans.length === 0) return { symbol: '*', bodySpans: [] };
   let symbol = '';
@@ -79,14 +56,11 @@ function extractFootnoteSymbolAndBody(spans: any[]): { symbol: string; bodySpans
   return { symbol, bodySpans };
 }
 
-/**
- * 核心导出函数：将解压目录编译为结构化 LayoutBlock 集合
- */
 export function compileIngestAST(targetDir: string, taskId: string): LayoutBlock[] {
-  // 1. 优先尝试 MinerU 原生 content_list_v2.json 或 content_list.json
+
   const listFiles = fs.readdirSync(targetDir).filter((f) => f.includes('content_list') && f.endsWith('.json'));
   if (listFiles.length > 0) {
-    // 优先 v2
+
     const file = listFiles.find((f) => f.includes('v2')) || listFiles[0];
     try {
       const data = JSON.parse(fs.readFileSync(path.join(targetDir, file), 'utf-8'));
@@ -95,11 +69,10 @@ export function compileIngestAST(targetDir: string, taskId: string): LayoutBlock
       }
     } catch (err) {
       console.error('compileFromContentList failed:', err);
-      // fallback
+
     }
   }
 
-  // 2. 次选 layout.json
   const layoutPath = path.join(targetDir, 'layout.json');
   if (fs.existsSync(layoutPath)) {
     try {
@@ -109,28 +82,23 @@ export function compileIngestAST(targetDir: string, taskId: string): LayoutBlock
       }
     } catch (err) {
       console.error('compileFromContentList failed:', err);
-      // fallback
+
     }
   }
 
-  // 3. 后备：纯 Markdown (如 Agent 轻量接口)
   const mdFiles = fs.readdirSync(targetDir).filter((f) => f.endsWith('.md'));
   if (mdFiles.length > 0) {
     try {
       const mdContent = fs.readFileSync(path.join(targetDir, mdFiles[0]), 'utf-8');
       return compileFromMarkdown(mdContent, taskId);
     } catch {
-      // ignore
+
     }
   }
 
   return [];
 }
 
-/**
- * 编译器 1：基于 MinerU content_list_v2.json 进行高保真 AST 编译
- * 该文件中的 bbox 坐标均为归一化 1000 分制 [x0, y0, x1, y1] (0 - 1000)
- */
 function compileFromContentList(pages: any[], taskId: string): LayoutBlock[] {
   const blocks: LayoutBlock[] = [];
 
@@ -138,14 +106,12 @@ function compileFromContentList(pages: any[], taskId: string): LayoutBlock[] {
     const pageItems = pages[pageIdx];
     if (!Array.isArray(pageItems)) continue;
 
-    // 1. 预提取本页物理页码
     const pageNumItem = pageItems.find((it) => it.type === 'page_number');
     const pageNumStr = (pageNumItem?.content?.page_number_content || [])
       .map((c: any) => c.content || '')
       .join('')
       .trim() || String(pageIdx + 1);
 
-    // 2. 预提取本页所有脚注并建立本页符号表
     const rawFootnoteItems = pageItems.filter((it) => it.type === 'page_footnote');
     const pageFootnotes: Array<{
       itemIdx: number;
@@ -190,7 +156,6 @@ function compileFromContentList(pages: any[], taskId: string): LayoutBlock[] {
 
     const knownSymbols = new Set(pageFootnotes.map((f) => f.symbol));
 
-    // 3. 预提取本页页眉与期刊/水印元信息
     let headerText = '';
     let footerText = '';
     let asideText = '';
@@ -208,7 +173,6 @@ function compileFromContentList(pages: any[], taskId: string): LayoutBlock[] {
       }
     });
 
-    // 4. 发射跨页虚线标尺 (Page Divider, 仅在第 2 页及之后生成)
     if (pageIdx > 0) {
       blocks.push({
         id: `divider_p${pageIdx}`,
@@ -223,7 +187,6 @@ function compileFromContentList(pages: any[], taskId: string): LayoutBlock[] {
       });
     }
 
-    // 5. 若本页存在刊物、会议或水印信息，发射页外折叠元注徽标 (Page Meta Badge)
     if (headerText || footerText || asideText) {
       const metaRows: string[] = [];
       if (headerText) {
@@ -250,12 +213,10 @@ function compileFromContentList(pages: any[], taskId: string): LayoutBlock[] {
       });
     }
 
-    // 6. 遍历本页普通正文元素
     for (let itemIdx = 0; itemIdx < pageItems.length; itemIdx++) {
       const item = pageItems[itemIdx];
       const rawType = item.type || 'paragraph';
 
-      // 彻底跳过元信息与裸页码、脚注，避免在正文流中打断阅读！
       if (
         rawType === 'page_number' ||
         rawType === 'page_header' ||
@@ -320,7 +281,7 @@ function compileFromContentList(pages: any[], taskId: string): LayoutBlock[] {
           } else {
             let chunkText = s.content || '';
             let chunkHtml = escapeHtml(chunkText);
-            // 兼容性扫描文本内的 ^1 或 ^{2}
+
             for (const sym of knownSymbols) {
               const esc = escapeRegex(sym);
               const reg = new RegExp(`\\^\\{?${esc}\\}?`, 'g');
@@ -378,7 +339,6 @@ function compileFromContentList(pages: any[], taskId: string): LayoutBlock[] {
       });
     }
 
-    // 7. 本页所有正文完毕后，在页底集中发射学术级脚注区 (Page Footnotes Zone)
     if (pageFootnotes.length > 0) {
       for (const fn of pageFootnotes) {
         blocks.push({
@@ -399,9 +359,6 @@ function compileFromContentList(pages: any[], taskId: string): LayoutBlock[] {
   return blocks;
 }
 
-/**
- * 编译器 2：从 layout.json 的 pdf_info 编译回退
- */
 function compileFromLayoutJson(pdfInfo: any[], taskId: string): LayoutBlock[] {
   const blocks: LayoutBlock[] = [];
 
@@ -413,7 +370,6 @@ function compileFromLayoutJson(pdfInfo: any[], taskId: string): LayoutBlock[] {
 
     const paraBlocks = page.para_blocks || [];
 
-    // 发射分页标尺
     if (pageIdx > 0) {
       blocks.push({
         id: `divider_p${pageIdx}`,
@@ -480,7 +436,6 @@ function compileFromLayoutJson(pdfInfo: any[], taskId: string): LayoutBlock[] {
         html = `<p class="doc-paragraph">${innerHtml}</p>`;
       }
 
-      // 将 layout.json 的 pt 坐标归一化为 1000 分制
       const normBbox: [number, number, number, number] = [
         Math.round((pb.bbox[0] / pageWidth) * 1000),
         Math.round((pb.bbox[1] / pageHeight) * 1000),
@@ -504,9 +459,6 @@ function compileFromLayoutJson(pdfInfo: any[], taskId: string): LayoutBlock[] {
   return blocks;
 }
 
-/**
- * 编译器 3：从纯 Markdown 编译回退 (Agent 免密接口)
- */
 function compileFromMarkdown(mdContent: string, taskId: string): LayoutBlock[] {
   const blocks: LayoutBlock[] = [];
   const sections = mdContent.split(/\n\n+/);
@@ -559,13 +511,6 @@ function compileFromMarkdown(mdContent: string, taskId: string): LayoutBlock[] {
   return blocks;
 }
 
-/**
- * 合成高纯度结构化 Markdown：
- * 1. 彻底清除突兀孤立的页码段落（如 \n\n2\n\n）；
- * 2. 插入标准 <!-- page: N --> 分页锚点；
- * 3. 收集并格式化学术脚注 [^N] 与文末 [^N]: 定义；
- * 4. 剔除重复无意义的 running header。
- */
 export function synthesizeStructuredMarkdown(blocks: LayoutBlock[], originalRawMd?: string): string {
   const parts: string[] = [];
   const footnotes: string[] = [];
@@ -574,7 +519,7 @@ export function synthesizeStructuredMarkdown(blocks: LayoutBlock[], originalRawM
     if (b.type === 'page_divider') {
       parts.push(`\n\n<!-- page: ${b.pageNumber || (b.pageIndex + 1)} -->\n\n`);
     } else if (b.type === 'page_meta') {
-      // 避免正文夹杂元注噪音，保持正文洁净
+
       continue;
     } else if (b.type === 'title') {
       const lvl = Math.min(6, Math.max(1, b.level || 2));
@@ -598,10 +543,8 @@ export function synthesizeStructuredMarkdown(blocks: LayoutBlock[], originalRawM
 
   let md = parts.join('').replace(/\n{3,}/g, '\n\n').trim();
 
-  // 清洗残留的孤立数字段落
   md = md.replace(/\n\n\d{1,3}\n\n/g, '\n\n');
 
-  // 追加标准脚注区
   if (footnotes.length > 0) {
     md += `\n\n---\n\n### 附注与文献说明\n\n` + footnotes.join('\n\n');
   }

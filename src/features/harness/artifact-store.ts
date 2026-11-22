@@ -1,15 +1,3 @@
-/**
- * src/features/harness/artifact-store.ts
- * ============================================================================
- * AstroLib 多态成果物历史仓状态机 (Polymorphic Artifact Hub Store)
- * ============================================================================
- * 职责：
- * 1. 统一托管 PDF2ABP 任务、AstroCanvas 交互画布、章节 AST、Python 产物与源码 Diff；
- * 2. 彻底替代旧版单槽覆盖模式，支持列表/详情双向切换、按类型筛选与历史回溯；
- * 3. 为交互画布 (Canvas) 提供不可变版本快照栈与撤销/重做能力。
- * ============================================================================
- */
-
 import type {
   ArtifactItem,
   ArtifactKind,
@@ -43,7 +31,6 @@ export class ArtifactStore {
     return ArtifactStore.instance;
   }
 
-  /** 允许单测创建独立实例 */
   public static createIsolated(): ArtifactStore {
     return new ArtifactStore(true);
   }
@@ -201,9 +188,6 @@ export class ArtifactStore {
     return item;
   }
 
-  /**
-   * 同步 PDF2ABP 任务至历史仓（同 jobId 仅维护唯一记录）
-   */
   public syncPdf2AbpJob(job: {
     jobId: string;
     sourceFileName: string;
@@ -235,9 +219,6 @@ export class ArtifactStore {
     );
   }
 
-  /**
-   * 追加画布新版本，支持版本回溯
-   */
   public pushCanvasVersion(
     id: string,
     nextCode: string,

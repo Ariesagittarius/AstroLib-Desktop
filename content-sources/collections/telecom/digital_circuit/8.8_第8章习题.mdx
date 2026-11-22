@@ -54,13 +54,11 @@ import Exercise from '@/components/Exercise.astro';
 <Exercise title="习题 8-10">
 完整的 IF 语句一般会生成什么硬件电路？不完整的 IF 语句一般会生成什么硬
 
-
 件电路？
 </Exercise>
 
 <Exercise title="习题 8-11">
 试比较 CASE 语句和 IF 语句的异同之处。
-
 
 ```txt
 </Exercise>
@@ -73,7 +71,6 @@ import Exercise from '@/components/Exercise.astro';
 <Exercise title="习题 8-13">
 什么是状态机？它主要适于处理什么逻辑问题？摩尔型状态机和米里型状态机各有什么特点？
 
-
 ```txt
 </Exercise>
 
@@ -85,7 +82,6 @@ import Exercise from '@/components/Exercise.astro';
 <Exercise title="习题 8-15">
 写出描述 4 位数码比较器 74LS85(有级联入端 G、S、E) 功能的 VHDL 程序。
 
-
 ```txt
 </Exercise>
 
@@ -96,7 +92,6 @@ import Exercise from '@/components/Exercise.astro';
 
 <Exercise title="习题 8-17">
 设计实体 slml 的 VHDL 程序意图实现 4 选 1 选择器。试指出其中的错误。
-
 
 ```vhdl
 
@@ -170,13 +165,11 @@ end sldo;
 <Exercise title="习题 8-23">
 设计一单稳触发器, 当遇输入触发信号(pul)的上升沿, 输出 8 个输入脉冲(clk)
 
-
 周期宽度的低脉冲信号(dwp)。若在输出低脉冲期间又遇 pul 的上升沿,则输出低脉冲时宽继续顺延 8 个 clk 周期。
 </Exercise>
 
 <Exercise title="习题 8-24">
 设输入数据序列为 $X(i)$ , 每个 $X(i)$ 数据是 8 位无符号二进制数 (并行码)。 $X(i)$ 为串行同步序列, 即每时钟 clk 的上升沿时输入一个数据。试用 VHDL 实现以下滤波运算, 得到滤波输出 yout 。运算中的乘、除可用移位直接实现。
-
 
 $$
 
@@ -187,7 +180,6 @@ $$
 
 <Exercise title="习题 8-25">
 试用 VHDL 实现下式的 IIR 滤波。 $X(n)$ 为串行同步输入序列，每个 $X(n)$ 为 16 位无符号数。运算中的乘、除可通过移位实现。
-
 
 $$
 
@@ -203,16 +195,11 @@ $$
 <Exercise title="习题 8-27">
 题表 8.1 为一个交通灯的状态变化顺序,有黄灯的状态的持续时间为半分钟,其他状态的时间为 2 分钟。各方向另有输入信号 apply,若在绿灯持续期间 apply 有效,则该状态持续时间顺延 1 分钟。试画出状态图并做出 VHDL 的实现程序。
 
-
-![](images/656c36c39fd7a1b54de65f78c833fc35d164e9933a6dfa0a7a4f13ea2df1d09e.jpg)  
+![](images/656c36c39fd7a1b54de65f78c833fc35d164e9933a6dfa0a7a4f13ea2df1d09e.jpg)
 
 题图8.1
 
-
-
 题表8.1
-
-
 
 <table><tr><td>东西方向</td><td>南北方向</td></tr><tr><td>红</td><td>绿</td></tr><tr><td>红</td><td>黄</td></tr><tr><td>绿</td><td>红</td></tr><tr><td>黄</td><td>红</td></tr></table>
 </Exercise>
@@ -227,7 +214,6 @@ $$
 
 <Exercise title="习题 8-30">
 说明以下 VHDL 程序意图完成的工作,指出可能存在的问题。
-
 
 ```vhdl
 
@@ -244,8 +230,6 @@ end avo4;
 architecture whtodo of avo4 is
 
 ```
-
-
 
 ```vhdl
 
@@ -307,19 +291,11 @@ end whtodo;
 
 ```
 
-
-
 ## 第9章 数模和模数转换
-
-
 
 随着数字电子技术的发展,特别是计算机技术的进步,使得数字技术在自动控制、自动检测、数字移动通信等领域获得广泛应用,数字系统是对数字量进行算术运算和逻辑运算的电路,它具有传统模拟系统无法比拟的高可靠性、高抗干扰能力和高度智能化等优点。
 
-
-
 数字系统只能对数字量进行处理,而实际信号大多是连续变换的模拟量,如温度、压力、位移、声音、图像等。因此,需要把这些模拟量转化成数字量,才能送入数字系统进行处理,这种将模拟量转换成数字量的过程称为模数转换(A/D 转换),完成模数转换的电路称为模数转换器(Analog to Digital Converter, ADC)或 A/D 转换器。相反,经过数字系统处理的数字量,一般情况下需要再次转换成模拟量,才能驱动执行机构进行动作,这种转换称为数模转换(D/A 转换),完成数模转换的电路称为数模转换器(Digital to Analog Converter, DAC)或 D/A 转换器。模数转换和数模转换技术是数字电子技术的一个重要分支,ADC 和 DAC 是数字系统的重要接口部件。
-
-
 
 为保证数据处理结果的准确性, ADC 和 DAC 必须要有足够的转换精度; 同时, 为适应快速信号处理与控制需求, ADC 和 DAC 还必须有足够的转换速度。转换精度和转换速度是衡量 ADC 和 DAC 性能优劣的重要技术指标。本章将介绍数模转换和模数转换的基本原理、电路结构及其应用。
 </Exercise>

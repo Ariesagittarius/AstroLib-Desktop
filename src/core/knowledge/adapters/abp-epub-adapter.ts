@@ -1,16 +1,3 @@
-/**
- * src/core/knowledge/adapters/abp-epub-adapter.ts
- * ============================================================================
- * ABP 编译包 / pdf2abp 书籍 / EPUB 电子书 统一结构化适配器
- * ============================================================================
- * 职责：
- * 1. 自动扫描 User ABP 目录（含 pdf2abp 与 EPUB 入库书目）、.tmp/dev-abp-packs 与 artifacts/abp-packs；
- * 2. 无损解析 chapters/*.json 的完整 HTML（精确还原 KaTeX annotation LaTeX、剔除 Ruby 注音、
- *    完整保留学术卡片/题解/章首导语/插图，彻底根治 140 字截断缺陷）；
- * 3. 优先利用包内 ai-index.json，缺失时在 .cache/<bookKey>/knowledge-index.v1.json 懒生成检索索引。
- * ============================================================================
- */
-
 import fs from 'node:fs';
 import path from 'node:path';
 import { resolveAbpPackCandidateDirs } from '../../catalog/content-paths.ts';
@@ -34,7 +21,7 @@ import type {
 } from '../types.ts';
 
 interface AbpPackEntry {
-  key: string; // `${colSlug}-${slug}`
+  key: string;
   abpRootDir: string;
   bookDir: string;
   manifest: AstroBookManifest;
@@ -73,14 +60,10 @@ function decodeHtmlEntities(str: string): string {
     .replace(/&amp;/g, '&');
 }
 
-/**
- * 将含 KaTeX / Ruby / 卡片的 HTML 无损转为纯净学术文本（保留 LaTeX 表达）
- */
 export function htmlFragmentToAcademicText(html: string): string {
   if (!html) return '';
   let work = html;
 
-  // 1. 先提取独立展示公式容器的 data-latex
   work = work.replace(
     /<div\b[^>]*class="[^"]*katex-display-container[^"]*"[^>]*data-latex="([^"]*)"[^>]*>[\s\S]*?<\/div>(?:\s*<\/div>)?/gi,
     (_m, encoded) => {
@@ -93,7 +76,6 @@ export function htmlFragmentToAcademicText(html: string): string {
     }
   );
 
-  // 2. 替换 KaTeX <span class="katex-display"> / <span class="katex"> 为精确 LaTeX（避免 katex-html 与 katex-mathml 重复乱码）
   work = work.replace(
     /<span\b[^>]*class="[^"]*\bkatex-display\b[^"]*"[^>]*>[\s\S]*?<annotation\s+encoding="application\/x-tex">([\s\S]*?)<\/annotation>[\s\S]*?<\/span>\s*<\/span>\s*<\/span>/gi,
     (_m, tex) => `\n$$\n${decodeHtmlEntities(tex).trim()}\n$$\n`
@@ -102,21 +84,18 @@ export function htmlFragmentToAcademicText(html: string): string {
     /<span\b[^>]*class="[^"]*\bkatex\b[^"]*"[^>]*>[\s\S]*?<annotation\s+encoding="application\/x-tex">([\s\S]*?)<\/annotation>[\s\S]*?<\/span>\s*<\/span>/gi,
     (_m, tex) => `$${decodeHtmlEntities(tex).trim()}$`
   );
-  // 兜底任何残留 katex-html（在保留 annotation 之后清理）
+
   work = work.replace(/<span\b[^>]*class="[^"]*katex-html[^"]*"[^>]*>[\s\S]*?<\/span>/gi, '');
 
-  // 3. 剔除日文/中文注音 <rt>/<rp> 防止把假名混进正文词干
   work = work
     .replace(/<rt\b[^>]*>[\s\S]*?<\/rt>/gi, '')
     .replace(/<rp\b[^>]*>[\s\S]*?<\/rp>/gi, '');
 
-  // 4. 换行语义恢复
   work = work
     .replace(/<br\s*\/?>/gi, '\n')
     .replace(/<\/(?:p|div|li|tr|h[1-6]|blockquote|section|article|figcaption)>/gi, '\n')
     .replace(/<(?:td|th)\b[^>]*>/gi, ' | ');
 
-  // 5. 清除剩余标签并解码实体
   work = decodeHtmlEntities(work.replace(/<[^>]+>/g, ''));
   return work
     .replace(/[ \t]+/g, ' ')
@@ -124,9 +103,6 @@ export function htmlFragmentToAcademicText(html: string): string {
     .trim();
 }
 
-/**
- * 提取一段 HTML 内的平衡闭合标签区间
- */
 function findMatchingTagEnd(html: string, openTagStart: number, openTagEnd: number, tagName: string): number {
   const openRe = new RegExp(`<${tagName}(?:\\s|>)`, 'gi');
   const closeRe = new RegExp(`</${tagName}\\s*>`, 'gi');
@@ -150,9 +126,6 @@ function findMatchingTagEnd(html: string, openTagStart: number, openTagEnd: numb
   return html.length;
 }
 
-/**
- * 将编译后的 ABP / EPUB 章节 HTML 解析为无截断语义块列表
- */
 export function extractBlocksFromCompiledHtml(params: {
   html: string;
   docUri: string;
@@ -167,7 +140,6 @@ export function extractBlocksFromCompiledHtml(params: {
 
   if (!html) return { blocks, images };
 
-  // 先提取全部图像资产
   const imgTagRe = /<img\b([^>]*?)>/gi;
   let imgMatch: RegExpExecArray | null;
   while ((imgMatch = imgTagRe.exec(html)) !== null) {
@@ -186,7 +158,6 @@ export function extractBlocksFromCompiledHtml(params: {
     }
   }
 
-  // 顶层/次顶层结构扫描（标题、学术卡片、题解折叠、公式块、表格、段落、列表、孤立图）
   const tokenRe =
     /<(h[1-6])\b([^>]*)>|<(div|details)\b([^>]*class="[^"]*(?:academic-[a-z0-9_-]+-card|solution-details|katex-display-container)[^"]*"[^>]*)>|<(p|li|blockquote|table|pre)\b([^>]*)>|<(img)\b([^>]*)>/gi;
 
@@ -202,7 +173,7 @@ export function extractBlocksFromCompiledHtml(params: {
     const matchTagEnd = tokenRe.lastIndex;
 
     if (m[1]) {
-      // Heading h1..h6
+
       const tag = m[1].toLowerCase();
       const attrs = m[2] || '';
       const endPos = findMatchingTagEnd(html, matchStart, matchTagEnd, tag);
@@ -224,7 +195,7 @@ export function extractBlocksFromCompiledHtml(params: {
     }
 
     if (m[3]) {
-      // Academic card / solution / display math container
+
       const tag = m[3].toLowerCase();
       const attrs = m[4] || '';
       const endPos = findMatchingTagEnd(html, matchStart, matchTagEnd, tag);
@@ -281,7 +252,6 @@ export function extractBlocksFromCompiledHtml(params: {
       const idM = attrs.match(/\bid\s*=\s*["']([^"']+)["']/i);
       const id = idM?.[1] || `${tag}-${++blockIdx}`;
 
-      // 若 <p> 内仅有 <img>，记录为 figure
       const innerImg = fullSlice.match(/<img\b([^>]*?)>/i);
       const text = htmlFragmentToAcademicText(fullSlice);
       if (innerImg && !text) {
@@ -321,7 +291,7 @@ export function extractBlocksFromCompiledHtml(params: {
     }
 
     if (m[7]) {
-      // Standalone <img>
+
       const attrs = m[8] || '';
       const srcM = attrs.match(/\bsrc\s*=\s*["']([^"']+)["']/i);
       const altM = attrs.match(/\balt\s*=\s*["']([^"']*)["']/i);
@@ -348,7 +318,6 @@ export function extractBlocksFromCompiledHtml(params: {
     cursor = matchTagEnd;
   }
 
-  // 如果整页是纯文本包裹在 <div> 内且未命中任何上述标签，兜底按整段文本输出
   if (blocks.length === 0) {
     const fallbackText = htmlFragmentToAcademicText(html);
     if (fallbackText) {
@@ -613,7 +582,6 @@ export class AbpEpubAdapter implements IKnowledgeAdapter {
       }
     }
 
-    // 附带章节脚注（如有）
     if (payload.footnotes && Object.keys(payload.footnotes).length > 0) {
       for (const [fnId, fnEntry] of Object.entries(payload.footnotes)) {
         const text = fnEntry.text || htmlFragmentToAcademicText(fnEntry.html);
@@ -673,7 +641,6 @@ export class AbpEpubAdapter implements IKnowledgeAdapter {
       const docUri = `astrolib://${m.colSlug}/${m.slug}`;
       let perDocMatches = 0;
 
-      // 1. 优先读包内 ai-index.json
       const aiIndexPath = path.join(pack.bookDir, 'ai-index.json');
       if (fs.existsSync(aiIndexPath)) {
         try {
@@ -686,7 +653,6 @@ export class AbpEpubAdapter implements IKnowledgeAdapter {
             const matched = matcher ? matcher.test(combined) : combined.toLowerCase().includes(lowerQ);
             if (!matched) continue;
 
-            // 从 url 或 id 反推章节 slug
             let secId = '';
             if (typeof chunk.url === 'string' && chunk.url.includes('/')) {
               const segs = chunk.url.replace(/\/+$/, '').split('/');
@@ -718,7 +684,6 @@ export class AbpEpubAdapter implements IKnowledgeAdapter {
         } catch {}
       }
 
-      // 2. 缺失 ai-index.json 时使用懒缓存知识索引
       const idxData = this.getOrBuildLazyIndex(pack);
       for (const ch of idxData.chunks) {
         const hay = `${ch.sectionTitle} ${ch.text}`;

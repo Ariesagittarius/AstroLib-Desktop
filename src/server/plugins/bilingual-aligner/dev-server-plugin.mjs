@@ -1,10 +1,3 @@
-/**
- * src/server/plugins/bilingual-aligner/dev-server-plugin.mjs
- * ============================================================================
- * Vite Dev Server 插件：端侧轻量向量对齐与目录多向匹配服务接口 (/__bilingual__/*)
- * ============================================================================
- */
-
 import { BilingualOnnxEngine } from './onnx-engine.ts';
 import { QwenEngine } from './qwen-engine.ts';
 
@@ -48,7 +41,7 @@ export function bilingualDevServerPlugin() {
         const path = rawUrl.split('?')[0];
 
         try {
-          // 2. 健康探活 /__bilingual__/health
+
           if (req.method === 'GET' && path === `${BILINGUAL_PATH_PREFIX}/health`) {
             const engine = BilingualOnnxEngine.getInstance();
             const qwenEngine = QwenEngine.getInstance();
@@ -62,7 +55,6 @@ export function bilingualDevServerPlugin() {
             });
           }
 
-          // 2.0 手动释放双语对齐模型（Qwen3 + MiniLM）/__bilingual__/unload
           if (req.method === 'POST' && path === `${BILINGUAL_PATH_PREFIX}/unload`) {
             QwenEngine.getInstance().destroy();
             await BilingualOnnxEngine.getInstance().dispose();
@@ -75,14 +67,12 @@ export function bilingualDevServerPlugin() {
             });
           }
 
-          // 2.1 获取可选模型列表 /__bilingual__/models
           if (req.method === 'GET' && path === `${BILINGUAL_PATH_PREFIX}/models`) {
             const engine = BilingualOnnxEngine.getInstance();
             const models = await engine.getAvailableModels();
             return sendJson(res, 200, { models });
           }
 
-          // 3. 段落向量对齐 /__bilingual__/align
           if (req.method === 'POST' && path === `${BILINGUAL_PATH_PREFIX}/align`) {
             const body = await readJsonBody(req);
             const sourceTexts = body.sourceTexts || (Array.isArray(body.sourceParagraphs) ? body.sourceParagraphs.map(p => typeof p === 'string' ? p : p.text) : []);
@@ -98,7 +88,6 @@ export function bilingualDevServerPlugin() {
             return sendJson(res, 200, result);
           }
 
-          // 4. 目录章节对齐 /__bilingual__/toc-match
           if (req.method === 'POST' && path === `${BILINGUAL_PATH_PREFIX}/toc-match`) {
             const body = await readJsonBody(req);
             const sourceChapters = body.sourceChapters || [];

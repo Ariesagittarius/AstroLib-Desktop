@@ -24,14 +24,14 @@ import Algorithm from '@/components/Algorithm.astro';
 
 注意到：(1)由于对每条边 $(i,j)$ ，有 $i < j$ ，故图 $G = (V,E)$ 是一个dag；(2)递增子序列和dag中的路径之间存在一一对应关系。因此，我们的目标现在就变成了寻找dag中的最长路径！
 
-![](../images/a37b6b75565d016465332777f1bbb869eb0723ab8e3824a2ae99946d1817d1e5.jpg)  
+![](../images/a37b6b75565d016465332777f1bbb869eb0723ab8e3824a2ae99946d1817d1e5.jpg)
 图 6-2 递增子序列的 dag
 
 以是相关的算法：
 
 <div class="mineru-algorithm">
-for $j = 1,2,\ldots ,n$:  
-$L(j) = 1 + \max \{L(i):(i,j)\in E\}$  
+for $j = 1,2,\ldots ,n$:
+$L(j) = 1 + \max \{L(i):(i,j)\in E\}$
 return $\max_jL(j)$
 </div>
 

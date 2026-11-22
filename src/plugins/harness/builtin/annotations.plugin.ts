@@ -1,10 +1,3 @@
-/**
- * src/plugins/harness/builtin/annotations.plugin.ts
- * ============================================================================
- * AstroLib 首屏 Agent 批注与自由画布只读感知插件 (/notes & Read-Only Tools)
- * ============================================================================
- */
-
 import type { HarnessPlugin, PluginContext } from '../types.ts';
 import { UniversalLocatorResolver } from '../../../core/content-api/content-locator.ts';
 

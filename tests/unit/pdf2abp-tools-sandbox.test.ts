@@ -35,12 +35,10 @@ describe('PDF2ABP Workspace Sandbox, Python Runner, Stitcher, Slicer & Importer'
   it('JobWorkspace 严格拦截路径越狱与外部未授权 PDF 访问', () => {
     const ws = new JobWorkspace('job_test_jail', dummyPdfPath, path.join(tmpDir, 'jobs'));
 
-    // 允许工作区内读写
     ws.writeFile('book/01_intro.mdx', '---\ntitle: "引言"\n---\n\n测试正文\n');
     const readRes = ws.readFile('book/01_intro.mdx');
     expect(readRes.content).toContain('测试正文');
 
-    // 拦截逃逸路径
     expect(() => ws.resolveWorkspacePath('../outside.txt')).toThrow();
     expect(() => ws.resolveWorkspacePath('book/../../escape.txt')).toThrow();
     expect(() => ws.resolveWorkspacePath('C:\\Windows\\System32\\drivers\\etc\\hosts')).toThrow();
@@ -51,7 +49,7 @@ describe('PDF2ABP Workspace Sandbox, Python Runner, Stitcher, Slicer & Importer'
   it('runWorkspacePython 在沙箱工作区执行 Python 脚本并注入环境变量', async () => {
     const pyExe = await findBestPythonExecutable();
     if (!pyExe) {
-      return; // 无 Python 环境时跳过
+      return;
     }
     const ws = new JobWorkspace('job_test_py', dummyPdfPath, path.join(tmpDir, 'jobs'));
     const res = await runWorkspacePython({
@@ -79,14 +77,12 @@ print(json.dumps({"ok": True, "ws": os.environ['ASTROLIB_WORKSPACE_DIR']}))
     fs.mkdirSync(path.join(part1Dir, 'images'), { recursive: true });
     fs.mkdirSync(path.join(part2Dir, 'images'), { recursive: true });
 
-    // 两卷故意使用相同文件名 img1.jpg，验证防覆盖重命名
     fs.writeFileSync(path.join(part1Dir, 'images', 'img1.jpg'), 'PART1_IMG');
     fs.writeFileSync(path.join(part2Dir, 'images', 'img1.jpg'), 'PART2_IMG');
 
     fs.writeFileSync(path.join(part1Dir, 'full.md'), '# 第一章\n\n![](images/img1.jpg)\n\n$$a=1$$', 'utf-8');
     fs.writeFileSync(path.join(part2Dir, 'full.md'), '$$\nb=2\n$$\n\n# 第二章\n\n![](images/img1.jpg)', 'utf-8');
 
-    // Part 1 使用 v2 格式 (2 pages: global 1, 2)
     fs.writeFileSync(
       path.join(part1Dir, 'doc_content_list_v2.json'),
       JSON.stringify([
@@ -107,7 +103,6 @@ print(json.dumps({"ok": True, "ws": os.environ['ASTROLIB_WORKSPACE_DIR']}))
       'utf-8'
     );
 
-    // Part 2 使用 v1 格式 (10 pages: global 3..12)
     const p2Blocks: any[] = [];
     for (let i = 0; i < 10; i++) {
       p2Blocks.push({ type: 'text', text: `第 ${3 + i} 页练习内容`, page_idx: i });
@@ -139,7 +134,6 @@ print(json.dumps({"ok": True, "ws": os.environ['ASTROLIB_WORKSPACE_DIR']}))
     expect(stitchedMd).toContain('images/p2_img1.jpg');
     expect(stitchedMd).not.toContain('$$$$');
 
-    // 验证章节切分（第 2 章跨 10 页，按 maxPagesPerChunk=6 自动分为 2 个子片）
     const sliced = prepareChapterChunks({
       workspace: ws,
       maxPagesPerChunk: 6,
@@ -153,12 +147,11 @@ print(json.dumps({"ok": True, "ws": os.environ['ASTROLIB_WORKSPACE_DIR']}))
       },
     });
 
-    expect(sliced.workOrders).toHaveLength(3); // ch1 (1 part) + ch2 (2 parts)
+    expect(sliced.workOrders).toHaveLength(3);
     expect(sliced.copiedImagesCount).toBe(2);
     expect(fs.existsSync(path.join(ws.bookImagesDir, 'p1_img1.jpg'))).toBe(true);
     expect(fs.existsSync(path.join(ws.bookImagesDir, 'p2_img1.jpg'))).toBe(true);
 
-    // 验证 mergeChapterParts
     ws.writeFile('chunks/ch2__part1of2/proofread_part.mdx', '---\ntitle: "第2章"\n---\n\n第一段习题');
     ws.writeFile('chunks/ch2__part2of2/proofread_part.mdx', '---\ntitle: "第2章"\n---\n\n第二段习题');
     const merged = mergeChapterParts({
@@ -170,7 +163,7 @@ print(json.dumps({"ok": True, "ws": os.environ['ASTROLIB_WORKSPACE_DIR']}))
     const mergedContent = ws.readFile(merged.targetOutputRelPath).content;
     expect(mergedContent).toContain('第一段习题');
     expect(mergedContent).toContain('第二段习题');
-    expect(mergedContent.match(/^---$/gm)?.length).toBe(2); // 仅保留单份 Frontmatter
+    expect(mergedContent.match(/^---$/gm)?.length).toBe(2);
   });
 
   it('importAbpToAppLibrary 能原子安装 .abp 包至目标书库目录', async () => {
@@ -226,7 +219,6 @@ print(json.dumps({"ok": True, "ws": os.environ['ASTROLIB_WORKSPACE_DIR']}))
     expect(errText).toContain('1.2.3');
     expect(errText).toContain('chapters[]');
 
-    // 验证同页 startAnchor/endAnchor 切片、MINERU_FOOTNOTE 提示及默认整节不拆分
     const ws = new JobWorkspace('anchor_slice_test', dummyPdfPath, path.join(tmpDir, 'jobs'));
     const fakeBlocks = [
       { page: 11, localPage: 11, partIndex: 1, type: 'title', level: 1, text: 'Chapter 0' },
@@ -280,7 +272,6 @@ print(json.dumps({"ok": True, "ws": os.environ['ASTROLIB_WORKSPACE_DIR']}))
       },
     });
 
-    // 15 页整节未传入显式页数上限 -> 保持整节 1 个切片，总计 2 个 workOrders
     expect(sliced.workOrders).toHaveLength(2);
     const introDraft = ws.readFile('chunks/ch0_intro/draft.md').content;
     expect(introDraft).toContain('Computers and networks are everywhere');
@@ -291,7 +282,6 @@ print(json.dumps({"ok": True, "ws": os.environ['ASTROLIB_WORKSPACE_DIR']}))
     expect(sec01Draft).toContain('Two ideas changed the world');
     expect(sec01Draft).toContain('<!-- MINERU_FOOTNOTE p11: 1 Sissa and Moore story in Chapter 8. -->');
 
-    // 验证 analyzeBookStructure 与 auditBookCoverage
     const analysis = analyzeBookStructure(path.join(ws.mineruStitchedDir, 'pages_blocks.json'));
     expect(analysis.sections.some((s) => s.kind === 'chapter-intro')).toBe(true);
     expect(analysis.density.pagesWithFootnotes).toEqual([{ page: 11, count: 1 }]);

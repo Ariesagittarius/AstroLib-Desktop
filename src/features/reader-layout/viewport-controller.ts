@@ -1,13 +1,3 @@
-/**
- * src/features/reader-layout/viewport-controller.ts
- * ============================================================================
- * 通用阅读视口控制器 (Universal Three-Mode Viewport Controller)
- * ============================================================================
- * 统一抽象连续滚动 / 单页翻阅 / 双栏对页三种布局，面向所有阅读辅助子系统
- * （大纲、批注、双语对照、交叉引用、脚注浮窗、插画灯箱）暴露统一契约。
- * ============================================================================
- */
-
 import type {
   BookFootnoteEntry,
   BookSourceFormat,
@@ -308,7 +298,6 @@ export class ReaderViewportController {
     flowEl.style.columnWidth = `${this.metrics.columnWidth}px`;
     flowEl.style.columnGap = `${this.metrics.columnGap}px`;
 
-    // 临时归零 transform 计算精确总栏数，避免局部视觉滞后
     const prevTransform = flowEl.style.transform;
     flowEl.style.transform = 'translateX(0px)';
     const totalScrollWidth = flowEl.scrollWidth;

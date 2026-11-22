@@ -30,11 +30,11 @@ $$
 
 对于每个节点，我们都可以写出类似的关系式。如果我们按照图6-1中从左至右的顺序计算出所有这些dist值，则可以肯定的是，当我们考虑某个节点 $\nu$ 时，总是已经得到了计算 $\mathrm{dist}(\nu)$ 所需的全部信息。因此，我们可以按照如下方式，只需一遍就能计算出所有的距离值。算法示意如下：
 
-![](../images/5ece0a4fd98752618ad674dceef51c985fdee682c45bd0a7cef7e60749e68e18.jpg)  
+![](../images/5ece0a4fd98752618ad674dceef51c985fdee682c45bd0a7cef7e60749e68e18.jpg)
 图 6-1 一个 dag 及其线性化(拓扑排序)
 
 <div class="mineru-algorithm">
-initialize all dist(·) values to  $\infty$ 
+initialize all dist(·) values to  $\infty$
 dist(s) = 0
 for each  $v \in V \setminus \{s\}$ , in linearized order:
 dist(v) = min_&#123;u,v)∈E&#123;dist(u) + l(u,v)&#125;

@@ -1,15 +1,3 @@
-/**
- * tests/contract/reader-full-routability.test.ts
- * ============================================================================
- * Reader Full Routability Contract Suite (1,251 Canonical Chapters Full Sweep)
- * ============================================================================
- * 遵循 P1-A4 门禁硬约束与 ADR-READER-CONTRACT-2026-11-13：
- * 遍历全部 13 个 manifest (artifacts/abp-packs/*\/manifest.json)；
- * 真实对全量 1,251 个 Canonical Slug 发起 StaticHandler.handle() 请求：
- * 必须 100% 返回 HTTP 200 且 Content-Type 包含 text/html。
- * ============================================================================
- */
-
 import { describe, it, expect, beforeAll } from 'vitest';
 import * as fs from 'node:fs';
 import * as path from 'node:path';

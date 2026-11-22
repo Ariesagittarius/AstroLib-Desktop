@@ -1,14 +1,3 @@
-/**
- * src/features/reader-layout/prefs.ts
- * ============================================================================
- * 通用阅读版式偏好与三模分页几何纯函数引擎 (Reading Layout Preferences & Geometry)
- * ============================================================================
- * 规范：
- * - 纯 TypeScript 模块，零 DOM 强制耦合，供运行时控制器、设置中心与单元测试复用；
- * - 支持按本书维度持久化阅读布局、体裁、样式融合与原书字体开关。
- * ============================================================================
- */
-
 import type {
   BookSourceFormat,
   BookStyleMode,
@@ -347,7 +336,7 @@ export function saveBookPrefOverride(
         if (partial.latin !== undefined) stored.latin = normalizeLatinFont(partial.latin, current.latin);
         if (partial.cjk !== undefined) {
           stored.cjk = normalizeCjkFont(partial.cjk, current.cjk);
-          // 用户手动切换本籍 CJK 字体时，自动关闭“优先原书内嵌字体”以免规则互锁导致不生效
+
           if (current.useBookFonts && partial.useBookFonts === undefined) {
             stored.useBookFonts = false;
           }
@@ -410,9 +399,6 @@ export function saveBookReadingPrefs(
   };
 }
 
-/**
- * 计算有效栏数：请求双栏且可用阅读宽度低于阈值时，优雅退让为单栏
- */
 export function resolveEffectiveColumns(
   requestedMode: ReadingLayoutMode,
   availableWidthPx: number
@@ -426,9 +412,6 @@ export function resolveEffectiveColumns(
   return { columns: 1, degradedFromDual: true };
 }
 
-/**
- * 计算严格无累计像素漂移的分栏分页几何度量
- */
 export function computeColumnMetrics(
   requestedMode: ReadingLayoutMode,
   availableWidthPx: number
@@ -476,9 +459,6 @@ export function clampPageIndex(pageIndex: number, totalPages: number): number {
   return Math.max(0, Math.min(maxIdx, Math.floor(pageIndex)));
 }
 
-/**
- * 根据元素相对于多栏流容器左侧的偏移像素计算所在页码 (0-based)
- */
 export function calculatePageIndexForOffset(
   elementOffsetLeft: number,
   metrics: Pick<ColumnLayoutMetrics, 'columnWidth' | 'columnGap' | 'effectiveColumns'>,

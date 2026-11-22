@@ -1,13 +1,3 @@
-/**
- * src/components/harness/pdf2abp/pdf2abp-artifacts-panel.ts
- * ============================================================================
- * Harness Inspector View for PDF2ABP Workshop:
- * 1. Compact non-overflowing header (job switcher, status, timer, actions)
- * 2. Accessible 3-tab surface: 过程导览 / 产物浏览 / 原始事件
- * 3. GitHub Issue-style vertical milestone rail with live subagent matrix & vision strip
- * ============================================================================
- */
-
 import '@material/web/button/filled-button.js';
 import '@material/web/button/outlined-button.js';
 import '@material/web/button/text-button.js';
@@ -701,7 +691,6 @@ export class Pdf2AbpArtifactsPanel {
         })
       : null;
 
-    // 1. 下拉列表增量同步（仅任务列表或选中 ID 变化时才重建 options，避免打断选择）
     const selectEl = container.querySelector<HTMLSelectElement>('#pdf2abp-job-select');
     const selectKey = JSON.stringify([
       state.activeJobId || '',
@@ -719,7 +708,6 @@ export class Pdf2AbpArtifactsPanel {
       if (state.activeJobId) selectEl.value = state.activeJobId;
     }
 
-    // 2. 错误条增量更新
     const storeErrEl = container.querySelector<HTMLElement>('#pdf2abp-store-error');
     if (storeErrEl) {
       if (state.error) {
@@ -765,7 +753,6 @@ export class Pdf2AbpArtifactsPanel {
 
     emptyMount?.setAttribute('hidden', '');
 
-    // 3. Meta 状态栏增量更新（保持脉冲绿点与按钮状态稳定）
     const statusClass =
       job.status === 'running' || job.status === 'pending'
         ? 'is-running'
@@ -810,7 +797,6 @@ export class Pdf2AbpArtifactsPanel {
       `;
     }
 
-    // 4. Tabbar 增量更新
     const fileCount = state.files.filter((f) => !f.isDirectory).length;
     const tabKey = `${this.activeTab}|${fileCount}|${state.events.length}`;
     if (tablistMount && tabKey !== this.lastTablistKey) {
@@ -851,7 +837,6 @@ export class Pdf2AbpArtifactsPanel {
       `;
     }
 
-    // 5. 切换各面板显隐（不销毁非当前页签 DOM，保留滚轮与预览状态）
     if (timelinePanel) {
       if (this.activeTab === 'timeline') timelinePanel.removeAttribute('hidden');
       else timelinePanel.setAttribute('hidden', '');
@@ -865,7 +850,6 @@ export class Pdf2AbpArtifactsPanel {
       else eventsPanel.setAttribute('hidden', '');
     }
 
-    // 6. 仅按需增量更新当前激活页签
     if (this.activeTab === 'timeline' && timelinePanel) {
       const timelineKey = JSON.stringify([
         job.jobId,
@@ -897,7 +881,7 @@ export class Pdf2AbpArtifactsPanel {
         this.lastFilesTreeKey = treeKey;
         groupsHost.innerHTML = this.renderFilesGroupsHtml(state);
       } else if (groupsHost) {
-        // 仅原地切换 active 高亮，绝不重建列表或丢失折叠态
+
         groupsHost.querySelectorAll<HTMLElement>('.pdf2abp-file-btn').forEach((btn) => {
           btn.classList.toggle('active', btn.dataset.filePath === state.selectedFilePath);
         });

@@ -24,10 +24,8 @@ $$
 $$
 
 <div style="text-align: center; margin: 1.5rem 0;">
-  
 
 ![2FSK 信号频率间隔为 1/(2Tb)](./images/fig_6_5_1.png)
-
 
   <div style="font-size: 0.88rem; color: var(--sl-color-gray-3); margin-top: 0.5rem;">图 6.5.1 2FSK 信号在相干解调下的最小正交频差 $\Delta f = 1/(2T_b)$</div>
 </div>
@@ -51,10 +49,8 @@ $$
 $$
 
 <div style="text-align: center; margin: 1.5rem 0;">
-  
 
 ![利用 h=0.5 的 VCO 产生 MSK 信号](./images/fig_6_5_2.png)
-
 
   <div style="font-size: 0.88rem; color: var(--sl-color-gray-3); margin-top: 0.5rem;">图 6.5.2 利用压控振荡器（VCO, 调制指数 $h=0.5$）调频产生 MSK 信号原理</div>
 </div>
@@ -94,10 +90,8 @@ q(t) = \begin{cases}
 $$
 
 <div style="text-align: center; margin: 1.5rem 0;">
-  
 
 ![矩形脉冲 g_T(t) 与积分响应 q(t) 波形图](./images/fig_6_5_3.png)
-
 
   <div style="font-size: 0.88rem; color: var(--sl-color-gray-3); margin-top: 0.5rem;">图 6.5.3 矩形频移脉冲 $g_T(t)$ 与其相位积分响应 $q(t)$</div>
 </div>
@@ -118,19 +112,15 @@ $$
 - 当 $n$ 为奇数时：$\theta(nT_b) \equiv \pm \frac{\pi}{2} \pmod{2\pi}$。
 
 <div style="text-align: center; margin: 1.5rem 0;">
-  
 
 ![MSK 相位路径与相位网格图](./images/fig_6_5_4.png)
-
 
   <div style="font-size: 0.88rem; color: var(--sl-color-gray-3); margin-top: 0.5rem;">图 6.5.4 MSK 随输入码元演化的相位树（Phase Tree）与模 $2\pi$ 约束相位网格图（Phase Trellis）</div>
 </div>
 
 <div style="text-align: center; margin: 1.5rem 0;">
-  
 
 ![MSK 连续相位路径图](./images/fig_6_5_5.png)
-
 
   <div style="font-size: 0.88rem; color: var(--sl-color-gray-3); margin-top: 0.5rem;">图 6.5.5 MSK 相位路径：相位轨迹平滑连续，杜绝瞬时相位突跳</div>
 </div>
@@ -164,10 +154,8 @@ $$
 **结论**：MSK 信号在任意时刻的瞬时包络恒定为 $A$，完全无任何幅度起伏，彻底免疫功放非线性导致的互调失真。
 
 <div style="text-align: center; margin: 1.5rem 0;">
-  
 
 ![MSK 信号产生方框图](./images/fig_6_5_6.png)
-
 
   <div style="font-size: 0.88rem; color: var(--sl-color-gray-3); margin-top: 0.5rem;">图 6.5.6 MSK 信号产生的两类经典架构：(a) 差分预编码正交调制法；(b) 交叉乘积直接合成法</div>
 </div>
@@ -194,10 +182,8 @@ P_{\text{MSK}}(f) = \frac{16 A^2 T_b}{\pi^2} \left[ \frac{\cos(2\pi (f - f_c) T_
 $$
 
 <div style="text-align: center; margin: 1.5rem 0;">
-  
 
 ![MSK 功率谱密度图](./images/fig_6_5_7.png)
-
 
   <div style="font-size: 0.88rem; color: var(--sl-color-gray-3); margin-top: 0.5rem;">图 6.5.7 MSK 与 QPSK / OQPSK 的归一化单边带功率谱密度对比</div>
 </div>
@@ -220,10 +206,8 @@ $$
 MSK 信号由两个相差 $T_b$ 的正交载波分量构成，在加性高斯白噪声信道（AWGN）中，可采用由两个独立匹配滤波器构成的并联解调器进行最佳接收。
 
 <div style="text-align: center; margin: 1.5rem 0;">
-  
 
 ![MSK 最佳相干接收机框图](./images/fig_6_5_8.png)
-
 
   <div style="font-size: 0.88rem; color: var(--sl-color-gray-3); margin-top: 0.5rem;">图 6.5.8 MSK 最佳相干解调接收机原理结构</div>
 </div>
@@ -262,10 +246,8 @@ $$
 1981年，日本学者室田和昭（K. Murota）与平出贤吉（K. Hirade）提出了 **高斯最小移频键控（Gaussian Minimum Shift Keying, GMSK）**：在 MSK 调制器前置串入一个**高斯低通预滤波器（GLPF）**。
 
 <div style="text-align: center; margin: 1.5rem 0;">
-  
 
 ![GMSK 信号产生原理框图](./images/fig_6_5_9.png)
-
 
   <div style="font-size: 0.88rem; color: var(--sl-color-gray-3); margin-top: 0.5rem;">图 6.5.9 GMSK 信号产生的基本物理架构：高斯低通预滤波 + 连续相位调制</div>
 </div>
@@ -299,19 +281,15 @@ B T_b = 0.3
 $$
 
 <div style="text-align: center; margin: 1.5rem 0;">
-  
 
 ![BTb=0.3 高斯滤波器的冲激响应 g(t)](./images/fig_6_5_10.png)
-
 
   <div style="font-size: 0.88rem; color: var(--sl-color-gray-3); margin-top: 0.5rem;">图 6.5.10 $B T_b = 0.3$ 时成形脉冲 $g(t)$ 的时间扩展特性</div>
 </div>
 
 <div style="text-align: center; margin: 1.5rem 0;">
-  
 
 ![高斯滤波器相位响应 q(t)](./images/fig_6_5_11.png)
-
 
   <div style="font-size: 0.88rem; color: var(--sl-color-gray-3); margin-top: 0.5rem;">图 6.5.11 频率成形脉冲 $g(t)$ 及其连续相位响应 $q(t) = \int_{-\infty}^t g(\tau)\mathrm{d}\tau$</div>
 </div>
@@ -324,19 +302,15 @@ $$
 这意味着当前码元的脉冲响应会越界扩散至前后的邻近码元区间内，从而**人为引入了受控的码间串扰（Controlled Inter-Symbol Interference, ISI）**。
 
 <div style="text-align: center; margin: 1.5rem 0;">
-  
 
 ![BTb=0.3 GMSK 信号的眼图](./images/fig_6_5_12.png)
-
 
   <div style="font-size: 0.88rem; color: var(--sl-color-gray-3); margin-top: 0.5rem;">图 6.5.12 $B T_b = 0.3$ 时 GMSK 信号眼图：受控码间串扰导致眼图张开度局部收缩</div>
 </div>
 
 <div style="text-align: center; margin: 1.5rem 0;">
-  
 
 ![BTb=0.3 GMSK 信号的相位路径](./images/fig_6_5_13.png)
-
 
   <div style="font-size: 0.88rem; color: var(--sl-color-gray-3); margin-top: 0.5rem;">图 6.5.13 GMSK 信号的连续光滑相位路径：转折角被高斯阻尼圆滑消除</div>
 </div>
@@ -350,10 +324,8 @@ $$
 通过高斯预滤波，GMSK 信号的功率谱旁瓣以惊人的速率向下坍塌：
 
 <div style="text-align: center; margin: 1.5rem 0;">
-  
 
 ![GMSK 信号功率谱密度图](./images/fig_6_5_14.png)
-
 
   <div style="font-size: 0.88rem; color: var(--sl-color-gray-3); margin-top: 0.5rem;">图 6.5.14 不同 $B T_b$ 参数下 GMSK 与 MSK、TFM 的功率谱密度对比</div>
 </div>
@@ -376,10 +348,8 @@ $$
 其中 $h_0(t)$ 称为**主脉冲（Principal Component）**，其余 $h_1(t), h_2(t), h_3(t)$ 称为次级脉冲。
 
 <div style="text-align: center; margin: 1.5rem 0;">
-  
 
 ![洛朗分解主脉冲 c0(t) 与次脉冲 c1(t)](./images/fig_6_5_15.png)
-
 
   <div style="font-size: 0.88rem; color: var(--sl-color-gray-3); margin-top: 0.5rem;">图 6.5.15 洛朗分解的主成形脉冲 $c_0(t)$ 与次级脉冲 $c_1(t)$ 的时域波形</div>
 </div>
@@ -394,10 +364,8 @@ $$
 为消除解调时的符号记忆并适应直接相干接收，通常在发射端前置差分预编码器（Differential Precoding）：
 
 <div style="text-align: center; margin: 1.5rem 0;">
-  
 
 ![GMSK 差分预编码器](./images/fig_6_5_17.png)
-
 
   <div style="font-size: 0.88rem; color: var(--sl-color-gray-3); margin-top: 0.5rem;">图 6.5.17 GMSK 差分预编码逻辑框图</div>
 </div>
@@ -405,19 +373,15 @@ $$
 基于此线性分解与相位累加查找机制，现代全数字 GMSK 调制器普遍采用 **ROM 查表法** 或 **数字正交调制法**：
 
 <div style="text-align: center; margin: 1.5rem 0;">
-  
 
 ![基于 ROM 查找表的 GMSK 调制器](./images/fig_6_5_18.png)
-
 
   <div style="font-size: 0.88rem; color: var(--sl-color-gray-3); margin-top: 0.5rem;">图 6.5.18 基于 ROM 查找表与直接数字合成（DDS）的 GMSK 正交调制架构</div>
 </div>
 
 <div style="text-align: center; margin: 1.5rem 0;">
-  
 
 ![GMSK 正交调制器方框图](./images/fig_6_5_19.png)
-
 
   <div style="font-size: 0.88rem; color: var(--sl-color-gray-3); margin-top: 0.5rem;">图 6.5.19 GMSK 正交模拟/数字上变频发射架构</div>
 </div>
@@ -427,10 +391,8 @@ $$
 ### 6. GMSK 接收解调与误码率性能
 
 <div style="text-align: center; margin: 1.5rem 0;">
-  
 
 ![同相及正交支路波形与抽样](./images/fig_6_5_20.png)
-
 
   <div style="font-size: 0.88rem; color: var(--sl-color-gray-3); margin-top: 0.5rem;">图 6.5.20 GMSK 同相支路与正交支路的基带波形与最佳抽样判决时刻</div>
 </div>
@@ -438,10 +400,8 @@ $$
 由于洛朗主脉冲 $c_0(t)$ 的主导地位，GMSK 的接收机可采用与 MSK / OQPSK 完全兼容的低复杂度正交相关解调结构：
 
 <div style="text-align: center; margin: 1.5rem 0;">
-  
 
 ![GMSK 相干接收机框图与误码率](./images/fig_6_5_21.png)
-
 
   <div style="font-size: 0.88rem; color: var(--sl-color-gray-3); margin-top: 0.5rem;">图 6.5.21 GMSK 正交相干接收机方框图与判决再生</div>
 </div>

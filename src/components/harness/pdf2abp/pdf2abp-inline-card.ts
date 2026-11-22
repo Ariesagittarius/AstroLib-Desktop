@@ -1,15 +1,3 @@
-/**
- * src/components/harness/pdf2abp/pdf2abp-inline-card.ts
- * ============================================================================
- * /pdf2abp 独立对话内联参数配置与紧凑里程碑进度卡片
- * ============================================================================
- * 规范：
- * 1. 输入 /pdf2abp 后直接在对话区呈现，与上下文对话流完全独立；
- * 2. 完整对齐 Material Design 3 表单参数配置（源路径、结构模式、并发数、附加指令）；
- * 3. 启动后原地平滑切换为紧凑里程碑进度轨，并提供「在右侧成果物展开详览」直达按钮。
- * ============================================================================
- */
-
 import '@material/web/textfield/outlined-text-field.js';
 import '@material/web/button/filled-button.js';
 import '@material/web/button/outlined-button.js';
@@ -344,7 +332,6 @@ export function mountPdf2AbpInlineCards(
         return;
       }
 
-      // 增量原地补丁更新，绝不销毁已有节点，保护脉冲点动画与进度条过渡效果
       const titleEl = card.querySelector<HTMLElement>('[data-role="title"]');
       if (titleEl && titleEl.textContent !== job.sourceFileName) {
         titleEl.textContent = job.sourceFileName;

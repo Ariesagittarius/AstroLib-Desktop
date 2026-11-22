@@ -1,10 +1,3 @@
-/**
- * electron/main.ts
- * ============================================================================
- * AstroLib 桌面端主进程入口 (Electron Main Process Entry)
- * ============================================================================
- */
-
 import { app, BrowserWindow, ipcMain, shell, Menu, dialog, nativeTheme, session } from 'electron';
 import path from 'node:path';
 import fs from 'node:fs';
@@ -29,20 +22,17 @@ import {
   type CanvasCaptureResult,
 } from '../src/server/plugins/content-api/agent-tools-handler.ts';
 
-// 规范应用名称并彻底移除默认菜单栏
 app.name = 'AstroLib';
 Menu.setApplicationMenu(null);
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// 确定项目运行路径与静态资产目录
 const isPackaged = app.isPackaged;
 const projectRoot = isPackaged ? app.getAppPath() : process.cwd();
 const distDir = path.join(projectRoot, 'dist');
 const preloadPath = path.join(__dirname, 'preload.cjs');
 
-// 全局异常与启动日志记录（输出至 AppData 目录，用于排查任何静默退出问题）
 function getLogFile(): string {
   try {
     const dir = app.getPath('userData');
@@ -78,7 +68,6 @@ let modelManager: ModelManager | null = null;
 let bookManager: DesktopBookManager | null = null;
 let libraryManager: DesktopLibraryManager | null = null;
 
-// 1. 单实例应用锁
 const gotTheLock = app.requestSingleInstanceLock();
 if (!gotTheLock) {
   log('[EXIT] 检测到已有实例正在运行 (SingleInstanceLock failed)，退出当前副本');
@@ -91,7 +80,6 @@ if (!gotTheLock) {
       mainWindow.show();
       mainWindow.focus();
 
-      // 检测命令行中是否带有 astrolib:// 链接并通知渲染进程定位
       const uriArg = commandLine.find((arg) => typeof arg === 'string' && (arg.startsWith('astrolib://') || arg.startsWith('astrolib:/')));
       if (uriArg) {
         mainWindow.webContents.send('astrolib:navigate-to-url', uriArg);
@@ -119,13 +107,10 @@ function openExternalSafely(rawUrl: string): void {
     }
     void shell.openExternal(parsed.toString());
   } catch {
-    // 忽略非法 URL
+
   }
 }
 
-/**
- * 创建主阅读窗口
- */
 function createMainWindow(port: number): BrowserWindow {
   const iconPath = path.join(projectRoot, 'public', 'favicon.png');
   const savedTheme = SettingsManager.getInstance().get('starlight-theme');
@@ -201,7 +186,6 @@ function createMainWindow(port: number): BrowserWindow {
     log(`[RENDER_PROCESS_GONE] 渲染进程异常退出: ${JSON.stringify(details)}`);
   });
 
-  // 外部链接一律调用系统默认浏览器打开；内部 astrolib 或 collections 链接拦截并在主视窗内调度，绝不开设独立 404 二级窗口
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
     log(`[WINDOW_OPEN] 捕获窗口打开请求: ${url}`);
     if (url.startsWith('astrolib:') || url.includes('/astrolib:') || url.includes('/collections/')) {
@@ -215,7 +199,6 @@ function createMainWindow(port: number): BrowserWindow {
     return { action: 'deny' };
   });
 
-  // 拦截主窗口顶层意外导航 (will-navigate)，严格锁定在本地服务同源内
   mainWindow.webContents.on('will-navigate', (event, navigationUrl) => {
     log(`[WILL_NAVIGATE] 主窗口导航拦截: ${navigationUrl}`);
     if (navigationUrl.includes('/collections/') || navigationUrl.startsWith('astrolib:') || navigationUrl.includes('/astrolib:')) {
@@ -249,9 +232,6 @@ function createMainWindow(port: number): BrowserWindow {
   return mainWindow;
 }
 
-/**
- * 唤起主窗体内的设置覆盖层（不再打开独立二级窗口）
- */
 function openHubOverlayInMainWindow() {
   if (mainWindow && !mainWindow.isDestroyed()) {
     if (mainWindow.isMinimized()) mainWindow.restore();
@@ -260,9 +240,6 @@ function openHubOverlayInMainWindow() {
   }
 }
 
-/**
- * 注册 IPC 调度总线
- */
 function setupIpcHandlers() {
   ipcMain.on('astrolib:get-app-version-sync', (event) => {
     event.returnValue = app.getVersion();
@@ -344,7 +321,6 @@ function setupIpcHandlers() {
     openExternalSafely(url);
   });
 
-  // ABP / EPUB 多格式图书包与书架原生 IPC 路由
   ipcMain.handle('astrolib:install-book-from-abp', async (_event, abpData: Uint8Array | Buffer | ArrayBuffer) => {
     if (!bookManager) throw new Error('桌面图书服务未初始化');
     const res = await bookManager.installBookFromAbp(abpData);
@@ -557,7 +533,6 @@ function setupIpcHandlers() {
     return { ok: true };
   });
 
-  // 统一书库与研读实体 (书籍 + 文献)
   ipcMain.handle('astrolib:get-library-entities', async (_event, forceRefresh?: boolean) => {
     return libraryManager ? libraryManager.getAllEntities(Boolean(forceRefresh)) : [];
   });
@@ -751,9 +726,8 @@ function setupIpcHandlers() {
   );
 }
 
-// 2. 应用程序准备就绪
 app.whenReady().then(async () => {
-  // 注册操作系统 astrolib:// 协议处理
+
   try {
     if (!app.isDefaultProtocolClient('astrolib')) {
       app.setAsDefaultProtocolClient('astrolib');
@@ -793,7 +767,6 @@ app.whenReady().then(async () => {
     return installedMeta;
   });
 
-  // 初始化本地模型空闲释放策略（默认 5 分钟，严格按需加载，启动零显存占用）
   const savedIdleTtl = SettingsManager.getInstance().get('astrolib_local_model_idle_ttl_ms');
   const initialIdleTtlMs = parseModelIdleTtlMs(savedIdleTtl ?? undefined);
   process.env.ASTROLIB_MODEL_IDLE_TTL_MS = String(initialIdleTtlMs);
@@ -805,7 +778,6 @@ app.whenReady().then(async () => {
 
   modelManager = new ModelManager(projectRoot, customModelsDir);
 
-  // 监听并广播模型下载进度给主窗口（设置覆盖层宿于主窗口内）
   modelManager.onProgress((progress) => {
     if (mainWindow && !mainWindow.isDestroyed()) {
       mainWindow.webContents.send('astrolib:model-progress', progress);
@@ -814,7 +786,7 @@ app.whenReady().then(async () => {
 
   try {
     localServer = new LocalServer(projectRoot, distDir, userAbpDir);
-    serverPort = await localServer.start(62960); // 优先使用固定端口 62960 保证 Web Origin 与持久化存储绝对一致
+    serverPort = await localServer.start(62960);
     log(`[astrolib-desktop] 本地服务已启动于 http://127.0.0.1:${serverPort}`);
 
     const defaultSess = session.defaultSession;
@@ -847,13 +819,12 @@ app.whenReady().then(async () => {
             return;
           }
         } catch {
-          // 忽略异常 URL 解析
+
         }
         callback({ requestHeaders: details.requestHeaders });
       }
     );
 
-    // 注册 Electron 离屏 Canvas 渲染抓取器（单队列串行防抖，6s 硬超时，自动销毁 BrowserWindow）
     let captureMutex: Promise<unknown> = Promise.resolve();
     registerElectronCanvasCapturer((captureReq: CanvasCaptureRequest) => {
       const task = captureMutex.then(async (): Promise<CanvasCaptureResult> => {
@@ -959,7 +930,6 @@ app.whenReady().then(async () => {
 
     createMainWindow(serverPort);
 
-    // 全局防御：拦截全应用所有 WebContents（含所有 iframe、子框架与外部触发）的窗口请求
     app.on('web-contents-created', (_event, contents) => {
       contents.setWindowOpenHandler(({ url }) => {
         log(`[GLOBAL_WINDOW_OPEN] 拦截 WebContents 窗口请求: ${url}`);
@@ -974,12 +944,10 @@ app.whenReady().then(async () => {
       });
     });
 
-    // 本地 AI 模型严格采用按需加载策略：启动阶段不预热任何常驻守护进程，确保开机零显存占用
   } catch (err: any) {
     log(`[CRITICAL] 本地服务启动失败: ${err?.stack || err}`);
   }
 
-  // 监听操作系统级日夜模式变化，无缝同步 Windows 标题栏三键颜色
   nativeTheme.on('updated', () => {
     if (mainWindow && !mainWindow.isDestroyed()) {
       const savedTheme = SettingsManager.getInstance().get('starlight-theme');
@@ -999,7 +967,6 @@ app.whenReady().then(async () => {
   });
 });
 
-// 3. 所有窗口关闭时退出
 app.on('window-all-closed', () => {
   log('[LIFECYCLE] 所有窗口已关闭，准备退出应用');
   if (process.platform !== 'darwin') {
@@ -1007,7 +974,6 @@ app.on('window-all-closed', () => {
   }
 });
 
-// 4. 应用退出前清理
 app.on('before-quit', async () => {
   try {
     QwenHighlightService.getInstance().destroy();

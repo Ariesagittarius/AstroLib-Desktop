@@ -1,13 +1,6 @@
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesPackage{astrolib-chapter}[2026/09/07 v1.0 AstroLib Academic Textbook Chapter Style]
 
-% =========================================================================
-% AstroLib 生产级大学数学教材 / 学术讲义宏包 (astrolib-chapter.sty)
-% 哲学：The content is the interface. The mathematics is the design.
-% 特性：极简、克制、纯正黑白灰阶学术版式，无任何 SaaS UI 杂讯与无谓装饰
-% =========================================================================
-
-% 基础版面与几何设定 (大学教材标准学术版心，对齐 book.tex 标准，告别畸窄正文与重叠侧注)
 \RequirePackage{geometry}
 \geometry{
   a4paper,
@@ -21,13 +14,11 @@
   footskip=2.0em
 }
 
-% 核心数学宏包
 \RequirePackage{amsmath}
 \RequirePackage{amssymb}
 \RequirePackage{mathtools}
 \RequirePackage{amsthm}
 
-% 学术表格与插图
 \RequirePackage{booktabs}
 \RequirePackage{array}
 \RequirePackage{longtable}
@@ -35,11 +26,9 @@
 \RequirePackage[export]{adjustbox}
 \RequirePackage{float}
 
-% 极简学术线框宏包 (tcolorbox)
 \RequirePackage{tcolorbox}
 \tcbuselibrary{skins,breakable,theorems}
 
-% 列表与枚举控制 (latex-document-skill Anti-Pattern 4 紧凑度量标准，增强最大嵌套深度至 8 级)
 \RequirePackage{enumitem}
 \setlistdepth{8}
 \renewlist{itemize}{itemize}{8}
@@ -50,14 +39,12 @@
 \setlist[enumerate,2]{label=(\arabic*), nosep, leftmargin=*}
 \setlist[enumerate,3]{label=(\alph*), nosep, leftmargin=*}
 
-% 学术注记兜底宏（直接映射至流式 remark 环境）
-\NewDocumentCommand\astrolibsidenote{ O{注} +m }{%
+\NewDocumentCommand\astrolibsidenote{ O{注} +m }{
   \begin{remark}[#1]
     #2
-  \end{remark}%
+  \end{remark}
 }
 
-% 页眉页脚 (fancyhdr) - 顶栏选用典雅楷体
 \RequirePackage{fancyhdr}
 \pagestyle{fancy}
 \fancyhf{}
@@ -68,35 +55,29 @@
 \fancyhead[R]{\small\kaishu\astrolibbooktitle}
 \fancyfoot[C]{\small\normalfont 第 \thepage\ 页}
 
-% =========================================================================
-% 标宋 (高字重思源宋体/标宋) 专用字族 (\biaosong)
-% =========================================================================
-\IfFontExistsTF{SourceHanSerifSC-Bold.otf}{%
-  \setCJKfamilyfont{zhbiaosong}{SourceHanSerifSC-Bold.otf}%
-}{%
-  \IfFontExistsTF{Source Han Serif SC Bold}{%
-    \setCJKfamilyfont{zhbiaosong}{Source Han Serif SC Bold}%
-  }{%
-    \IfFontExistsTF{Noto Serif CJK SC Bold}{%
-      \setCJKfamilyfont{zhbiaosong}{Noto Serif CJK SC Bold}%
-    }{%
-      \IfFontExistsTF{FandolSong-Bold.otf}{%
-        \setCJKfamilyfont{zhbiaosong}{FandolSong-Bold.otf}%
-      }{%
-        \IfFontExistsTF{STZhongsong}{%
-          \setCJKfamilyfont{zhbiaosong}{STZhongsong}%
-        }{%
-          \setCJKfamilyfont{zhbiaosong}{SimSun}[AutoFakeBold=true]%
-        }%
-      }%
-    }%
-  }%
+\IfFontExistsTF{SourceHanSerifSC-Bold.otf}{
+  \setCJKfamilyfont{zhbiaosong}{SourceHanSerifSC-Bold.otf}
+}{
+  \IfFontExistsTF{Source Han Serif SC Bold}{
+    \setCJKfamilyfont{zhbiaosong}{Source Han Serif SC Bold}
+  }{
+    \IfFontExistsTF{Noto Serif CJK SC Bold}{
+      \setCJKfamilyfont{zhbiaosong}{Noto Serif CJK SC Bold}
+    }{
+      \IfFontExistsTF{FandolSong-Bold.otf}{
+        \setCJKfamilyfont{zhbiaosong}{FandolSong-Bold.otf}
+      }{
+        \IfFontExistsTF{STZhongsong}{
+          \setCJKfamilyfont{zhbiaosong}{STZhongsong}
+        }{
+          \setCJKfamilyfont{zhbiaosong}{SimSun}[AutoFakeBold=true]
+        }
+      }
+    }
+  }
 }
 \providecommand{\biaosong}{\CJKfamily{zhbiaosong}}
 
-% =========================================================================
-% 章节标题排版规范：统一采用思源宋体高字重/标宋方案（\biaosong\bfseries）
-% =========================================================================
 \ctexset{
   section = {
     format = \Large\bfseries\biaosong,
@@ -124,7 +105,6 @@
   }
 }{}
 
-% 交叉引用与超链接 (克制灰黑配色，印刷友好)
 \RequirePackage{hyperref}
 \hypersetup{
   colorlinks=true,
@@ -136,7 +116,6 @@
 }
 \RequirePackage{cleveref}
 
-% hyperref PDF 书签宏安全展开屏蔽表 (防止 unicode-math 下希腊字母及公式宏展开为字体图元引发 Improper alphabetic constant 崩溃)
 \pdfstringdefDisableCommands{
   \def\chi{χ}
   \def\sigma{σ}
@@ -203,11 +182,6 @@
   \def\boldsymbol#1{#1}
 }
 
-% =========================================================================
-% 学术定理与模块环境定义 (现代学术精排风格：0.38pt 典雅细线，1.5mm 微圆角，透气留白)
-% =========================================================================
-
-% 动态前缀宏：默认 1.，由渲染器根据当前章节 Canonical Metadata 动态设置
 \providecommand{\astrolibchapternum}{1.}
 
 \tcbset{
@@ -231,7 +205,6 @@
   }
 }
 
-% 1. 核心定理与命题系统 (由动态宏统一驱动，与原书标号一致)
 \newtcbtheorem{theorem}{定理}{
   astrolib-box,
   colframe=black!45,
@@ -300,7 +273,6 @@
   description font=\biaosong,
 }{blk}
 
-% 2. 例题与变式系统 (独立按 astrolibchapternum 编号，柔和微浅灰底)
 \newtcbtheorem{example}{例}{
   astrolib-box,
   colframe=black!28,
@@ -320,7 +292,6 @@
   description font=\biaosong,
 }{var}
 
-% 3. 方法总结与解题指南
 \newtcbtheorem[use counter from=example]{method}{方法}{
   astrolib-box,
   colframe=black!35,
@@ -329,20 +300,15 @@
   description font=\biaosong,
 }{meth}
 
-% 4. 证明环境 (严谨 amsthm 标准，结尾自动附加 Halmos 墓碑符 \qedsymbol)
 \renewcommand{\proofname}{\biaosong\bfseries 证明}
-% amsthm 原生 proof 已经非常完美，此处保留其纯正行为
 
-% 5. 解题环境 (例题解答，与严谨证明在学术语义上严格区分)
-% 消费 Academic Typography Hooks 保证与正文字体同阶同族，消除粗黑断裂
 \providecommand{\astrolibsolutionhead}[1][解]{{\normalfont\biaosong\bfseries 【#1】}}
-\newenvironment{solution}[1][解]{%
-  \par\vspace{0.4em}\noindent\astrolibsolutionhead[#1]\;\ %
-}{%
-  \par\vspace{0.8em}%
+\newenvironment{solution}[1][解]{
+  \par\vspace{0.4em}\noindent\astrolibsolutionhead[#1]\;\
+}{
+  \par\vspace{0.8em}
 }
 
-% 6. 注记与思考 (左侧垂直学术参考线，无边框与背景)
 \newtcolorbox{remark}[1][注记]{
   blanker,
   breakable,
@@ -357,7 +323,6 @@
   after skip=0.9em plus 0.2em minus 0.1em
 }
 
-% 7. 思路分析 (弱化学术引导)
 \newtcolorbox{analysis}[1][思路分析]{
   blanker,
   breakable,
@@ -372,7 +337,6 @@
   after skip=0.8em plus 0.2em minus 0.1em
 }
 
-% 8. 导读与总结
 \newtcolorbox{guide}[1][本节导读]{
   astrolib-box,
   colframe=black!25,
@@ -387,7 +351,6 @@
   title={【#1】}
 }
 
-% 9. 课后习题
 \newtcolorbox{exercise}[1][课后习题]{
   astrolib-box,
   colframe=black!30,
@@ -395,24 +358,19 @@
   title={【#1】}
 }
 
-% =========================================================================
-% 10. 学术数字资源流式标注 (Academic Digital Resource Annotation)
-% 哲学：外部延伸资源遵循正文内容流排版，绝非正文脚注，不占页脚，不生成上标编号
-% 排版：Typography + Spacing 驱动，小字号、弱化前缀、标题整体超链接及轻量 ↗
-% =========================================================================
-\newcommand{\astrolibdigitalresource}[3][配套数字资源]{%
-  \par\vspace{0.4em plus 0.1em minus 0.1em}%
-  \noindent%
-  \begingroup%
-  \small%
-  {\kaishu\textcolor{black!60}{#1\,·\,}}%
-  \if\relax\detokenize{#3}\relax%
-    {\textcolor{black!85}{#2}}%
-  \else%
-    \href{#3}{\textcolor{black!85}{#2}\,\ensuremath{\nearrow}}%
-  \fi%
-  \endgroup%
-  \par\vspace{0.45em plus 0.1em minus 0.1em}%
+\newcommand{\astrolibdigitalresource}[3][配套数字资源]{
+  \par\vspace{0.4em plus 0.1em minus 0.1em}
+  \noindent
+  \begingroup
+  \small
+  {\kaishu\textcolor{black!60}{#1\,·\,}}
+  \if\relax\detokenize{#3}\relax
+    {\textcolor{black!85}{#2}}
+  \else
+    \href{#3}{\textcolor{black!85}{#2}\,\ensuremath{\nearrow}}
+  \fi
+  \endgroup
+  \par\vspace{0.45em plus 0.1em minus 0.1em}
 }
 
 \endinput

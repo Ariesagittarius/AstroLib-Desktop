@@ -1,10 +1,3 @@
-/**
- * src/ai/agent/pdf2abp-base-tools.ts
- * ============================================================================
- * 主 Agent 与校对子代理共享的基准工具集 (Skills / Workspace / Vision / MDX QA)
- * ============================================================================
- */
-
 import fs from 'node:fs';
 import path from 'node:path';
 import { z } from 'zod';
@@ -54,7 +47,7 @@ function readImageAsAttachment(
 
 export interface CreateBaseToolsOptions {
   workspace: JobWorkspace;
-  /** 是否包含全书勘测工具（主代理需要 inspect_pdf / render_contact_sheet，子代理也可按需调用） */
+
   includeOverviewTools?: boolean;
   onPdfInspected?: (info: PdfInspectResult) => void;
   onValidated?: (targetRel: string, report: MdxValidationReport) => void;

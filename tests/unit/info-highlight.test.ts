@@ -1,10 +1,3 @@
-/**
- * tests/unit/info-highlight.test.ts
- * ============================================================================
- * AstroLib 信息高亮与关注点透镜单元测试 (Shannon Surprisal Unit Tests)
- * ============================================================================
- */
-
 import { describe, it, expect } from 'vitest';
 import { features } from '@/config/features.config.ts';
 import { QwenHighlightService } from '@/services/info-highlight/qwen-highlight-service.ts';
@@ -28,25 +21,23 @@ describe('Info Highlight & Shannon Surprisal Suite', () => {
   it('香农惊异度与条件信息量 (CI) 标尺数学逻辑严密', () => {
     const MAX_BITS = 18.0;
 
-    // 1. 高频搭配或标点助词 (P = 0.60, 60% 预测置信度)
     const probHigh = 0.60;
     const surprisalLow = -Math.log2(probHigh);
     const ciLow = Math.min(1.0, Math.max(0.0, surprisalLow / MAX_BITS));
     const levelLow = Math.min(15, Math.max(0, Math.floor(ciLow * 16)));
 
-    expect(surprisalLow).toBeLessThan(1.0); // 惊异度极低 (< 1 bit)
-    expect(ciLow).toBeLessThan(0.06);       // CI 比例极低 (< 6%)
-    expect(levelLow).toBe(0);               // 归入 0 档 (全淡化/不干扰视觉)
+    expect(surprisalLow).toBeLessThan(1.0);
+    expect(ciLow).toBeLessThan(0.06);
+    expect(levelLow).toBe(0);
 
-    // 2. 专业罕见词或关键实体 (P = 1.8e-5, 0.0018% 预测置信度)
     const probLow = 1.8e-5;
     const surprisalHigh = -Math.log2(probLow);
     const ciHigh = Math.min(1.0, Math.max(0.0, surprisalHigh / MAX_BITS));
     const levelHigh = Math.min(15, Math.max(0, Math.floor(ciHigh * 16)));
 
-    expect(surprisalHigh).toBeGreaterThan(15.0); // 惊异度极高 (> 15 bits)
-    expect(ciHigh).toBeGreaterThan(0.85);        // CI 比例极高 (> 85%)
-    expect(levelHigh).toBeGreaterThanOrEqual(13); // 强烈视觉高亮/保留黑度
+    expect(surprisalHigh).toBeGreaterThan(15.0);
+    expect(ciHigh).toBeGreaterThan(0.85);
+    expect(levelHigh).toBeGreaterThanOrEqual(13);
   });
 
   it('QwenHighlightService.getStatus() 在任意环境均应返回结构化状态', async () => {
@@ -83,7 +74,6 @@ describe('Info Highlight & Shannon Surprisal Suite', () => {
     expect(updated.mode).toBe('block');
     expect(updated.thresholdPct).toBe(50);
 
-    // 恢复默认
     client.updateConfig({ mode: 'fade', thresholdPct: 35 });
   });
 
@@ -95,7 +85,7 @@ describe('Info Highlight & Shannon Surprisal Suite', () => {
       { offset: [8, 10], raw: '改变', prob: 0.573, surprisalBits: 0.80, ciRatio: 0.045, level: 0 },
     ];
 
-    const threshold = 0.35; // 35% CI 阈值
+    const threshold = 0.35;
     const highInfoTokens = sampleTokens.filter((t) => t.ciRatio >= threshold);
     const lowInfoTokens = sampleTokens.filter((t) => t.ciRatio < threshold);
 

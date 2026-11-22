@@ -1,8 +1,3 @@
-/**
- * src/features/search-rec/core/retrieval/dense-retriever.ts
- * 稠密语义向量双塔检索通道 (支持 Int8 与 Float32 统一检索)
- */
-
 import type { AcademicChunk, CandidateItem } from '../../types/candidate.ts';
 import { dotProductFloatAndInt8, dotProductFloat32 } from '../vector/quantizer.ts';
 
@@ -10,9 +5,9 @@ export interface DenseVectorIndex {
   dim: number;
   format: 'int8' | 'float32';
   chunks: AcademicChunk[];
-  // Int8 模式: 每项为 scale 和 Int8Array
+
   int8Vectors?: Array<{ scale: number; data: Int8Array }>;
-  // Float32 模式: 每项为 Float32Array
+
   float32Vectors?: Float32Array[];
 }
 
@@ -23,11 +18,6 @@ export class DenseRetriever {
     this.index = index;
   }
 
-  /**
-   * 使用用户查询向量对全库切片执行最近邻相似度检索
-   * @param queryVec 归一化的 Float32 查询向量
-   * @param limit 返回 Top-K 数量
-   */
   search(queryVec: Float32Array | number[], limit = 50): CandidateItem[] {
     const { chunks, format, int8Vectors, float32Vectors } = this.index;
     if (chunks.length === 0) return [];

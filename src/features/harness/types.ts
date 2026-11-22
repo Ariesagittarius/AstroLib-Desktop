@@ -1,12 +1,3 @@
-/**
- * src/features/harness/types.ts
- * ============================================================================
- * AstroLib 首屏 Agent Harness 核心领域模型与类型契约
- * ============================================================================
- * 遵循 AGENTS.md Rule 1 / Rule 6：所有共享模型与状态类型集中维护于领域层。
- * ============================================================================
- */
-
 export type AgentPermissionMode = 'read-only' | 'workspace' | 'full';
 
 export type ToolRiskLevel = 'read' | 'workspace' | 'system';
@@ -216,11 +207,11 @@ export interface StructuredTurn {
   status: 'streaming' | 'completed' | 'aborted' | 'error';
   providerDisplayName?: string;
   steps: TurnStep[];
-  /** 自然时间序渲染块（思考 / 工具 / 正文 / 组件交错） */
+
   blocks?: TurnBlock[];
   contentMarkdown: string;
   errorMessage?: string;
-  /** undefined: follow settingsStore.autoCollapseTrace; boolean: user manual override */
+
   collapseSummaryOverride?: boolean;
 }
 

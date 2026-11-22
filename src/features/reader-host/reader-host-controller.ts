@@ -1,16 +1,3 @@
-/**
- * src/features/reader-host/reader-host-controller.ts
- * ============================================================================
- * 研读视窗宿主控制器 (Iframe Pool + Bottom Chrome Tabs + Multi-Pane Focus)
- * ============================================================================
- * 架构保证：
- * 1. 所有 .tab-pane-slot 与 #pane-0..3 空槽均直接作为 #reader-split-grid 直接子元素，
- *    通过 CSS 几何定位切换窗格位置，绝不 reparenting 导致 iframe 重载；
- * 2. 统一委托 ReaderWorkspaceStateMachine 处理多屏落位、焦点与关闭策略；
- * 3. 委托 SplitResizer 处理 1x2 / 2x1 / 2x2 上下独立列宽的界线拖拽。
- * ============================================================================
- */
-
 import type { UnifiedReadingEntity } from '../../types/library-entity';
 import { getBookTitle, type AstrolibNodeTarget } from '../../utils/astrolib-uri';
 import {
@@ -188,7 +175,7 @@ export class ReaderChromeHostController {
             } catch {}
           }
         });
-        // 同步内部画布 Tab 记录
+
         const stateTabs = this.machine.getTabs();
         stateTabs.forEach((tab) => {
           if (tab.kind === 'canvas' && tab.entityId.startsWith(`canvas:${data.colSlug}-${data.bookSlug}-`)) {
@@ -236,9 +223,6 @@ export class ReaderChromeHostController {
     });
   }
 
-  /**
-   * 追踪当前聚焦窗格：支持点击空槽以及焦点进入子 iframe
-   */
   private initPaneFocusTracking(): void {
     const grid = this.splitGridEl;
     if (!grid) return;
@@ -256,7 +240,6 @@ export class ReaderChromeHostController {
       }
     });
 
-    // 当点击进入 iframe 内部时，主窗失焦且 document.activeElement 指向该 iframe
     window.addEventListener('blur', () => {
       setTimeout(() => {
         const active = document.activeElement;

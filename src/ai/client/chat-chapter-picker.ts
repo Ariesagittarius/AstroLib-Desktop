@@ -1,10 +1,3 @@
-/**
- * src/ai/client/chat-chapter-picker.ts
- * ============================================================================
- * Chapter Picker & Context Reference View Controller for AI Chat
- * ============================================================================
- */
-
 import type { ReferencedChapter } from './chat-controller.state';
 
 export interface ChapterPickerHost {
@@ -114,7 +107,7 @@ export class ChatChapterPicker {
           return (article.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 4000);
         }
       } catch {
-        // ignore
+
       }
       return '';
     })();

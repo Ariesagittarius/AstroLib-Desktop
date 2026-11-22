@@ -1,26 +1,11 @@
-/**
- * src/core/book-formats/css-harmonizer.ts
- * ============================================================================
- * EPUB 样式作用域隔离与 Material You 分层融合引擎
- * ============================================================================
- * 目标：
- * 1. 彻底杜绝原书 CSS 污染 AstroLib 壳层 UI（顶栏 / 侧栏 / 批注 / 弹窗）；
- * 2. 给内嵌 @font-face 加书级命名空间前缀，并自动附加系统回退字体栈防子集字体缺字；
- * 3. 输出分层声明以无缝支撑三种实时切换模式：
- *    - harmonized（主题融合，默认）：保留微排版与结构，色彩接入 Material You tokens 与暗黑安全；
- *    - original（出版原貌）：保留原书装饰色与字体，仅规避暗色模式下黑字黑底或纯白刺眼背景；
- *    - reflow（统一重排）：原书样式零介入，由系统统一阅读版面接管。
- * ============================================================================
- */
-
 import { resolveZipRelativePath } from './zip-reader.ts';
 
 export interface HarmonizeCssParams {
   cssText: string;
   cssRelPath: string;
-  /** 指向该书资产前缀，例如 `/collections/${colSlug}/${bookSlug}/assets/` */
+
   assetUrlPrefix: string;
-  /** 书级唯一字体命名空间，防跨书子集字体冲突 */
+
   fontNamespace: string;
 }
 
@@ -187,7 +172,6 @@ function parseCssBlocks(raw: string): CssAstBlock[] {
       continue;
     }
 
-    // raw[i] === '{'
     i++;
     let depth = 1;
     let body = '';
@@ -390,7 +374,7 @@ function normalizeColorToRgb(val: string): { r: number; g: number; b: number; al
 function isNeutralGrayOrBlackWhite(rgb: { r: number; g: number; b: number }): boolean {
   const max = Math.max(rgb.r, rgb.g, rgb.b);
   const min = Math.min(rgb.r, rgb.g, rgb.b);
-  // 极低饱和度视为黑白灰中性色
+
   return max - min <= 22;
 }
 
@@ -398,7 +382,6 @@ function scopeSingleSelector(selector: string, scopeAttrPrefix: string): string 
   let s = selector.trim();
   if (!s) return '';
 
-  // 替换 html / :root / body 为正文内置安全嵌套宿主类名
   s = s.replace(/(^|[\s>+~])(:root|html)(?=$|[\s.#:[>+~])/gi, '$1.astrolib-epub-html');
   s = s.replace(/(^|[\s>+~])body(?=$|[\s.#:[>+~])/gi, '$1.astrolib-epub-body');
 
@@ -442,7 +425,6 @@ function rewriteFontFamilyValue(
     }
   }
 
-  // 子集字体必须追加完整字库兜底栈，避免生僻字或标点退回浏览器粗糙宋体
   if (mapped.length > 0 && !cleanVal.includes('var(--academic-font-cjk')) {
     mapped.push(fallbackStack);
   }
@@ -460,7 +442,6 @@ export function harmonizeEpubCss(params: HarmonizeCssParams): HarmonizeCssResult
   const fontFamilies: string[] = [];
   const fontFaceRules: string[] = [];
 
-  // 第一遍扫描所有 @font-face，建立命名空间字体映射并重写相对字体路径
   const collectFontFaces = (list: CssAstBlock[]) => {
     for (const block of list) {
       if (block.type === 'at-rule' && /^@font-face$/i.test(block.prelude)) {
@@ -512,7 +493,7 @@ export function harmonizeEpubCss(params: HarmonizeCssParams): HarmonizeCssResult
 
     for (const block of list) {
       if (block.type === 'at-rule') {
-        // @font-face 已顶层输出，@import / @page 不透传破坏全局
+
         continue;
       }
 
@@ -538,7 +519,7 @@ export function harmonizeEpubCss(params: HarmonizeCssParams): HarmonizeCssResult
         const harmonizedColorDarkDecls: string[] = [];
 
         for (const { prop, value } of decls) {
-          // 跳过破坏壳层视口或分页容器的定位与绝对宽度规则
+
           if (prop === 'position' && /\b(?:fixed|sticky)\b/i.test(value)) continue;
           if (prop === 'overflow' || prop === 'overflow-x' || prop === 'overflow-y') {
             if (isRootTarget) continue;
@@ -554,7 +535,7 @@ export function harmonizeEpubCss(params: HarmonizeCssParams): HarmonizeCssResult
           }
 
           if (prop === 'content') {
-            // 仅允许安全文本伪元素内容（例如 .hanla:after { content: " "; } 或 content: none）
+
             if (/^none$|^normal$/i.test(value) || /^(['"]).*\1$/.test(value)) {
               structuralDecls.push(`${prop}: ${value}`);
             }
@@ -562,13 +543,13 @@ export function harmonizeEpubCss(params: HarmonizeCssParams): HarmonizeCssResult
           }
 
           if (prop === 'width' || prop === 'height') {
-            // 图片、表格等容器可保留合法尺寸，但不能强制溢出容器
+
             structuralDecls.push(`${prop}: ${value}`);
             continue;
           }
 
           if (STRUCTURAL_PROPS.has(prop)) {
-            // 对根节点 body/html 的背景与全局字号留给系统滑块协调，但保留 line-height、text-align 等排版节奏
+
             if (isRootTarget && prop === 'font-size') {
               continue;
             }
@@ -578,12 +559,11 @@ export function harmonizeEpubCss(params: HarmonizeCssParams): HarmonizeCssResult
 
           if (COLOR_PROPS.has(prop)) {
             if (isRootTarget && (prop === 'background' || prop === 'background-color')) {
-              // 根容器背景交由主题切换，避免遮挡暗色表面
+
               continue;
             }
             const rgb = normalizeColorToRgb(value);
 
-            // A. 出版原貌 (original)
             if (prop === 'background' || prop === 'background-color') {
               originalColorLightDecls.push(`${prop}: ${value}`);
               if (!rgb || (rgb.alpha > 0 && rgb.r < 220 && rgb.g < 220 && rgb.b < 220)) {
@@ -599,7 +579,6 @@ export function harmonizeEpubCss(params: HarmonizeCssParams): HarmonizeCssResult
               originalColorDarkDecls.push(`${prop}: ${value}`);
             }
 
-            // B. 主题融合 (harmonized)
             if (prop === 'color' && rgb && !isNeutralGrayOrBlackWhite(rgb)) {
               const cleanColor = value.replace(/\s*!important$/i, '').trim();
               harmonizedColorLightDecls.push(
@@ -620,7 +599,6 @@ export function harmonizeEpubCss(params: HarmonizeCssParams): HarmonizeCssResult
           }
         }
 
-        // 1. 结构微排版：适用于 harmonized 与 original
         if (structuralDecls.length > 0) {
           const sel = buildScopedSelectors(
             block.prelude,
@@ -631,7 +609,6 @@ export function harmonizeEpubCss(params: HarmonizeCssParams): HarmonizeCssResult
           }
         }
 
-        // 2. 原书嵌入字体：original 默认使用，harmonized 在启用“优先原书字体”时使用
         if (fontDecls.length > 0) {
           const sel = buildScopedSelectors(
             block.prelude,
@@ -642,7 +619,6 @@ export function harmonizeEpubCss(params: HarmonizeCssParams): HarmonizeCssResult
           }
         }
 
-        // 3. 色彩分层：出版原貌（区分明暗安全）
         if (originalColorLightDecls.length > 0) {
           const sel = buildScopedSelectors(
             block.prelude,
@@ -662,7 +638,6 @@ export function harmonizeEpubCss(params: HarmonizeCssParams): HarmonizeCssResult
           }
         }
 
-        // 4. 色彩分层：主题融合（有色装饰融入 M3 Primary）
         if (harmonizedColorLightDecls.length > 0) {
           const sel = buildScopedSelectors(
             block.prelude,

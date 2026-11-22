@@ -1,10 +1,3 @@
-/**
- * src/ai/client/chat-model-menu.ts
- * ============================================================================
- * Model Selector & Settings Menu Controller for AI Chat
- * ============================================================================
- */
-
 import {
   getActiveAiModelId,
   saveAiActiveModel,

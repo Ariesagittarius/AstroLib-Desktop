@@ -1,10 +1,3 @@
-/**
- * src/ai/skills/pdf2abp/academic-typesetting-rules.ts
- * ============================================================================
- * Skill 2: 学术出版与极端减法原则及五大质量防御准则
- * ============================================================================
- */
-
 import type { SkillDocument } from './types.ts';
 
 export const academicTypesettingSkill: SkillDocument = {

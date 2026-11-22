@@ -1,10 +1,3 @@
-/**
- * tests/unit/install-validation.test.ts
- * ============================================================================
- * ABP 安装统一校验引擎单元测试 (P1-C1 / ADR-LIBRARY-CONTRACT)
- * ============================================================================
- */
-
 import { describe, it, expect } from 'vitest';
 import {
   validateInstallPayload,
@@ -90,12 +83,11 @@ function createValidBundle(): AbpBundlePayload {
 describe('ABP Install Validation Engine Unit Tests (P1-C1)', () => {
   describe('Path & Slug Safety Helpers', () => {
     it('isSafeRelativePath 能够正确拦截路径逃逸并允许合法相对路径', () => {
-      // 合法相对路径
+
       expect(isSafeRelativePath('chapters/01_intro.json')).toBe(true);
       expect(isSafeRelativePath('images/sub/fig.png')).toBe(true);
       expect(isSafeRelativePath('01_intro.json')).toBe(true);
 
-      // 非法与逃逸路径
       expect(isSafeRelativePath('../secrets.json')).toBe(false);
       expect(isSafeRelativePath('chapters/../../secrets.json')).toBe(false);
       expect(isSafeRelativePath('/etc/passwd')).toBe(false);
@@ -204,12 +196,11 @@ describe('ABP Install Validation Engine Unit Tests (P1-C1)', () => {
     });
 
     it('7. 章节 slug 或清单 colSlug/slug 包含路径逃逸字符时抛出 PATH_TRAVERSAL_DETECTED', () => {
-      // A. colSlug 逃逸
+
       const bundle1 = createValidBundle();
       bundle1.manifest.colSlug = '../etc';
       expect(() => validateInstallPayload(bundle1)).toThrow(/PATH_TRAVERSAL_DETECTED/);
 
-      // B. chapter key 逃逸
       const bundle2 = createValidBundle();
       bundle2.chapters['../evil_chap'] = {
         ...bundle2.chapters['01_intro'],
@@ -217,7 +208,6 @@ describe('ABP Install Validation Engine Unit Tests (P1-C1)', () => {
       };
       expect(() => validateInstallPayload(bundle2)).toThrow(/PATH_TRAVERSAL_DETECTED/);
 
-      // C. Windows 盘符与反斜杠逃逸
       const bundle3 = createValidBundle();
       bundle3.chapters['C:\\escape'] = {
         ...bundle3.chapters['01_intro'],

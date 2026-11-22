@@ -23,10 +23,10 @@ So if coordinate-system transformations such as rotation, translation, and scali
 
 What impact does this rotation have on a vector in this space? Take a look at vector $\vec { A }$ and its components in Figure 4.2(a) and (b). Note that the rotation has no effect on the length or direction of $\vec { A }$ (at first glance, $\vec { A }$ may look a bit different in Figure 4.2(a) and 4.2(b), but you can verify using a ruler and protractor that the vector itself is exactly the same). But the rotation has clearly caused the components of $\vec { A }$ to change: $A _ { x } ^ { \prime }$ (the $x ^ { \prime } .$ -component of A in the tilted coordinate system) is longer than $A _ { x }$ , and $A _ { y } ^ { \prime }$ is shorter than $A _ { y }$ . If you were to continue rotating your axes in the same direction, you'd eventuall reach an angle at which $\vec { A }$ lies entirely along the $\boldsymbol { x } ^ { \prime } \mathrm { - } \mathrm { a x i s . }$ , at which point the y-component of $\vec { A }$ would vanish (that is, $A _ { y } ^ { \prime } = 0 )$ and the $x ^ { \prime } .$ -component would equal the length of $\vec { A } ( A _ { x } ^ { \prime } = | \vec { A } | )$ .
 
-![](images/e7391da8d8fb37bec06d629f42155dc3302bd82a471db8cb43ff755231b40293.jpg)  
+![](images/e7391da8d8fb37bec06d629f42155dc3302bd82a471db8cb43ff755231b40293.jpg)
 Figure 4.1 Rotation of 2-D coordinate system.
 
-![](images/e3108e3d81d108f15332d0cdd26f7edaf78188bb9ca74af22f21157a502c4b3b.jpg)  
+![](images/e3108e3d81d108f15332d0cdd26f7edaf78188bb9ca74af22f21157a502c4b3b.jpg)
 Figure 4.2 Change in vector components due to rotation of coordinate system.
 
 Finding the change in the components of a vector due to rotation of the coordinate axes can be done both graphically using simple geometry and analytically using the dot product. You'll find the graphical approach in this section; the analytical approach is the subject of one of the problems at the end of this chapter.
@@ -41,8 +41,8 @@ $$
 A _ {x} ^ {\prime} = \ell_ {1} + \ell_ {2},\tag{4.1}
 $$
 
-![](images/20c2aa0d263e806a488c605cc6673214406d4ed4754dcfab6e8a38040e565526.jpg)  
-(b)  
+![](images/20c2aa0d263e806a488c605cc6673214406d4ed4754dcfab6e8a38040e565526.jpg)
+(b)
 Figure 4.3 Dependence of $A _ { x } ^ { \prime }$ on $A _ { x }$ and $A _ { y }$
 
 and to determine how these segments depend on $A _ { x }$ and $A _ { y }$ , consider the righ triangles shown in Figure 4.3. In the (a) portion of the figure, you can see that $A _ { x }$ is the hypotenuse of a right triangle formed by drawing a perpendicular from the end of $A _ { x }$ to the $x ^ { \prime } { \mathrm { - } } { \mathrm { a x i s } }$ . Call the angle between the x-axis and the $x ^ { \prime } \mathrm { - a x }$ is $\alpha _ { 1 1 }$ (the reason for using double subscripts will become clear when rotations are written in matrix notation). Then the length of $\ell _ { 1 }$ (the projection of $A _ { x }$ onto the $x ^ { \prime } { \mathrm { - a x i s ) } }$ is $A _ { x } \cos ( \alpha _ { 1 1 } )$ . Hence
@@ -99,14 +99,14 @@ in a two-dimensional Cartesian coordinate system. Now imagine that the x- and y-
 
 Before jumping to the equations to find the components $A _ { x } ^ { \prime }$ and $A _ { \nu } ^ { \prime }$ in the rotated coordinate system, it's worth a few minutes to take a look at the diagram to estimate what the effect of the rotation on the components will be. From Figure 4.4(b), it's pretty clear that both the $A _ { x } ^ { \prime }$ and $A _ { y } ^ { \prime }$ components will be negative, and the $A _ { y } ^ { \prime }$ component appears to be somewhat larger than the $A _ { x } ^ { \prime }$ component.
 
-![](images/bcce0494bc989919b7770d6ebf377e369390359cadc5d9e53388631f247a0a0d.jpg)  
+![](images/bcce0494bc989919b7770d6ebf377e369390359cadc5d9e53388631f247a0a0d.jpg)
 (a)
 
-![](images/e55327f3c9461cec2ef8734bd7b202285ba1b46051c65d1a55853707e770774a.jpg)  
-(b)  
+![](images/e55327f3c9461cec2ef8734bd7b202285ba1b46051c65d1a55853707e770774a.jpg)
+(b)
 Figure 4.4 2-D Cartesian axes rotated by $1 5 0 ^ { \circ }$
 
-![](images/595a18150e5b7fd2a0f2e3abb8c993ba0977c0b60bee8ea86b6567a216db8e9a.jpg)  
+![](images/595a18150e5b7fd2a0f2e3abb8c993ba0977c0b60bee8ea86b6567a216db8e9a.jpg)
 Figure 4.5 Angles between original and rotated axes.
 
 Now that you have an idea of what to expect, you can insert the relevant values into Eq. 4.6. You know that $A _ { x } = 5$ and $A _ { y } = 3$ , and using the angles shown in Figure 4.5, you should be able to see that $\alpha _ { 1 1 } = 1 5 0 ^ { \circ } , \alpha _ { 1 2 } = 6 0 ^ { \circ }$ $\alpha _ { 2 1 } = 2 4 0 ^ { \circ }$ , and $\alpha _ { 2 2 } = 1 5 0 ^ { \circ }$
@@ -147,7 +147,7 @@ There's nothing inherently wrong with doing this, as long as you remember what t
 
 Rigid rotation of Cartesian axes is only one type of the myriad coordinate transformations that can change the components of a vector. But as long as the new components can be written as weighted sums of the original components, the transformation is linear and can be represented by a matrix equation. Fo reasons that will become clear when you read Section 4.3 of this chapter, such transformations of vector components are called "inverse" or "passive" transformations, which means the matrix equation of such a transformation wil look like this:
 
-![](images/17274bd3449cd3fc2b0d07196da9f5680f1fd153e03c2188ab8840c5d2023320.jpg)  
+![](images/17274bd3449cd3fc2b0d07196da9f5680f1fd153e03c2188ab8840c5d2023320.jpg)
 Figure 4.6 Components of $\hat { \imath }$ and $\hat { \jmath }$ in rotated coordinate system.
 
 $$

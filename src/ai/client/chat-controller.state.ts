@@ -1,15 +1,3 @@
-/**
- * src/ai/client/chat-controller.state.ts
- * ============================================================================
- * Pure Headless State Machine for AI Chat Controller
- * ============================================================================
- * 规范：
- * 1. 绝对无 DOM 依赖：严禁出现 window, document, querySelector, addEventListener；
- * 2. 状态转移确定性与幂等性：严格约束 idle <-> busy/streaming -> error/complete 闭环；
- * 3. 序列化与水合支持：支持状态快照导出与安全恢复。
- * ============================================================================
- */
-
 export type ChatExecutionStatus = 'idle' | 'busy' | 'streaming' | 'error';
 
 export interface ReferencedChapter {
@@ -65,8 +53,6 @@ export class ChatControllerStateMachine {
     }
   }
 
-  // --- Getters ---
-
   public getStatus(): ChatExecutionStatus {
     return this.status;
   }
@@ -103,11 +89,9 @@ export class ChatControllerStateMachine {
     return this.errorMessage;
   }
 
-  // --- State Transitions ---
-
   public startGenerating(): boolean {
     if (this.status === 'busy' || this.status === 'streaming') {
-      return false; // 非法转移：生成中禁止重复启动
+      return false;
     }
     this.status = 'busy';
     this.errorMessage = null;
@@ -116,7 +100,7 @@ export class ChatControllerStateMachine {
 
   public enterStreaming(): boolean {
     if (this.status !== 'busy' && this.status !== 'streaming') {
-      return false; // 只有 busy 才能转为 streaming
+      return false;
     }
     this.status = 'streaming';
     return true;
@@ -124,7 +108,7 @@ export class ChatControllerStateMachine {
 
   public finishGenerating(): boolean {
     if (this.status !== 'busy' && this.status !== 'streaming') {
-      return false; // 非生成态不能完成
+      return false;
     }
     this.status = 'idle';
     this.errorMessage = null;
@@ -151,8 +135,6 @@ export class ChatControllerStateMachine {
     return true;
   }
 
-  // --- Preferences & Toggles ---
-
   public setActiveModelId(modelId: string): void {
     if (!modelId || !modelId.trim()) return;
     this.activeModelId = modelId.trim();
@@ -178,8 +160,6 @@ export class ChatControllerStateMachine {
     this.activeThreadId = threadId;
   }
 
-  // --- Chapter References ---
-
   public addReferencedChapter(chapter: ReferencedChapter): boolean {
     if (!chapter.url) return false;
     const exists = this.referencedChapters.some((c) => c.url === chapter.url);
@@ -197,8 +177,6 @@ export class ChatControllerStateMachine {
   public clearReferencedChapters(): void {
     this.referencedChapters = [];
   }
-
-  // --- Serialization & Hydration ---
 
   public serialize(): ChatControllerSnapshot {
     return {

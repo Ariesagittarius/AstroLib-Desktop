@@ -1,16 +1,3 @@
-/**
- * src/ai/ai-config.ts
- * =============================================================================
- * AstroLib 统一 AI 提供商与模型配置中心（Single Source of Truth）
- * -----------------------------------------------------------------------------
- * 职责：
- * 1. 统一管理全站 AI 模型提供商（Google Gemini / DeepSeek / 自定义等）；
- * 2. 贯彻【选择提供商 -> 填写 API Key -> 选择模型】的统一交互规范；
- * 3. 集中处理按提供商维度的 API Key、端点 URL、激活模型的本地持久化；
- * 4. 派发与监听全站响应式事件（astrolib:ai-config-change），无缝联动问答与偏好设置。
- * =============================================================================
- */
-
 import { extractErrorMessageAndStatus, parseAiError } from './error-handler.ts';
 
 export type AiProviderId = 'gemini' | 'deepseek' | 'bupt' | 'zhipu' | 'custom';
@@ -70,11 +57,6 @@ export function shouldUseLocalProxy(): boolean {
   return false;
 }
 
-/**
- * 获取 Google Gemini 的有效默认端点：
- * 在 Vite dev 或 Electron LocalServer (127.0.0.1) 下默认使用本地 Node.js 全双工反代端点，
- * 彻底消除浏览器 CORS 预检与 TLS 指纹阻断；纯静态托管下使用官方直连端点。
- */
 export function getGeminiDefaultEndpoint(): string {
   if (shouldUseLocalProxy()) {
     return GEMINI_DEV_PROXY_ENDPOINT;
@@ -82,11 +64,6 @@ export function getGeminiDefaultEndpoint(): string {
   return GEMINI_OFFICIAL_ENDPOINT;
 }
 
-/**
- * 获取北京邮电大学「人人有算力」AI 资源服务平台的有效默认端点：
- * 在 Vite dev 或 Electron LocalServer 下默认使用本地 Node.js 进程直连端点，屏蔽本地代理分流干扰；
- * 纯静态托管下使用官方直连端点。
- */
 export function getBuptDefaultEndpoint(): string {
   if (shouldUseLocalProxy()) {
     return BUPT_DEV_PROXY_ENDPOINT;
@@ -94,9 +71,6 @@ export function getBuptDefaultEndpoint(): string {
   return BUPT_OFFICIAL_ENDPOINT;
 }
 
-/**
- * 探测北京邮电大学校园网 AI 网关连通性
- */
 export async function checkBuptCampusNetwork(): Promise<boolean> {
   try {
     const useProxy = shouldUseLocalProxy();
@@ -268,12 +242,10 @@ export const DEFAULT_AI_PROVIDERS: AiProviderDef[] = [
   },
 ];
 
-/** 默认激活提供商 */
 export const DEFAULT_ACTIVE_PROVIDER_ID = 'gemini';
-/** 默认激活模型 */
+
 export const DEFAULT_ACTIVE_MODEL_ID = 'gemini-3.8-flash';
 
-/** 统一存储键 */
 const STORAGE_KEYS = {
   ACTIVE_PROVIDER: 'astrolib_ai_active_provider',
   ACTIVE_MODEL: 'astrolib_ai_active_model',
@@ -322,9 +294,6 @@ function safeRemoveItem(key: string): void {
   } catch {}
 }
 
-/**
- * 派发全站 AI 配置变更广播
- */
 export function dispatchAiConfigChange(): void {
   if (typeof window === 'undefined') return;
   try {
@@ -333,9 +302,6 @@ export function dispatchAiConfigChange(): void {
   } catch {}
 }
 
-/**
- * 监听全站 AI 配置变更
- */
 export function onAiConfigChange(callback: (config: EffectiveAiConfig) => void): () => void {
   if (typeof window === 'undefined') return () => {};
   const handler = (e: Event) => {
@@ -352,9 +318,6 @@ export function onAiConfigChange(callback: (config: EffectiveAiConfig) => void):
   };
 }
 
-/**
- * 获取自定义模型列表
- */
 export function getCustomAiModels(): AiModelDef[] {
   try {
     const raw = safeGetItem(STORAGE_KEYS.CUSTOM_MODELS);
@@ -367,9 +330,6 @@ export function getCustomAiModels(): AiModelDef[] {
   }
 }
 
-/**
- * 添加自定义模型
- */
 export function addCustomAiModel(model: { id: string; label: string; endpoint: string; desc?: string }): boolean {
   if (!model || !model.id || !model.endpoint) return false;
   const customs = getCustomAiModels();
@@ -390,9 +350,6 @@ export function addCustomAiModel(model: { id: string; label: string; endpoint: s
   return true;
 }
 
-/**
- * 删除自定义模型
- */
 export function removeCustomAiModel(modelId: string): boolean {
   const customs = getCustomAiModels().filter((c) => c.id !== modelId);
   safeSetItem(STORAGE_KEYS.CUSTOM_MODELS, JSON.stringify(customs));
@@ -406,9 +363,6 @@ export function removeCustomAiModel(modelId: string): boolean {
   return true;
 }
 
-/**
- * 获取所有提供商定义列表（合并自定义模型）
- */
 export function getAllAiProviders(): AiProviderDef[] {
   const customs = getCustomAiModels();
   return DEFAULT_AI_PROVIDERS.map((p) => {
@@ -435,24 +389,18 @@ export function getAllAiProviders(): AiProviderDef[] {
   });
 }
 
-/**
- * 获取指定提供商定义
- */
 export function getAiProvider(providerId?: string): AiProviderDef {
   const providers = getAllAiProviders();
   const targetId = providerId || getActiveAiProviderId();
   return providers.find((p) => p.id === targetId) || providers[0];
 }
 
-/**
- * 获取当前选中的提供商 ID
- */
 export function getActiveAiProviderId(): AiProviderId {
   const saved = safeGetItem(STORAGE_KEYS.ACTIVE_PROVIDER) as any;
   if (saved === 'gemini' || saved === 'deepseek' || saved === 'bupt' || saved === 'zhipu' || saved === 'custom') {
     return saved;
   }
-  // 检查当前模型属于哪个提供商
+
   const activeModelId = safeGetItem(STORAGE_KEYS.ACTIVE_MODEL);
   if (activeModelId) {
     if (activeModelId.startsWith('gemini')) return 'gemini';
@@ -464,14 +412,10 @@ export function getActiveAiProviderId(): AiProviderId {
   return DEFAULT_ACTIVE_PROVIDER_ID;
 }
 
-/**
- * 保存当前选中的提供商
- */
 export function saveAiActiveProvider(providerId: AiProviderId): void {
   safeSetItem(STORAGE_KEYS.ACTIVE_PROVIDER, providerId);
   const provider = getAiProvider(providerId);
 
-  // 恢复该提供商上次选中的模型，若无则使用该提供商的默认模型
   const rememberedModel = safeGetItem(STORAGE_KEYS.PROVIDER_MODEL_PREFIX + providerId);
   const validModel = provider.models.find((m) => m.id === rememberedModel);
   const nextModelId = validModel ? validModel.id : provider.defaultModelId || provider.models[0]?.id || DEFAULT_ACTIVE_MODEL_ID;
@@ -483,17 +427,11 @@ export function saveAiActiveProvider(providerId: AiProviderId): void {
   dispatchAiConfigChange();
 }
 
-/**
- * 获取指定提供商下的所有可用模型
- */
 export function getModelsByProvider(providerId: string): AiModelDef[] {
   const provider = getAiProvider(providerId);
   return provider.models || [];
 }
 
-/**
- * 获取全站所有模型扁平列表
- */
 export function getAllAiModels(): AiModelDef[] {
   const providers = getAllAiProviders();
   const results: AiModelDef[] = [];
@@ -511,9 +449,6 @@ export function getAllAiModels(): AiModelDef[] {
   return results;
 }
 
-/**
- * 获取当前选中的模型 ID
- */
 export function getActiveAiModelId(): string {
   const saved = safeGetItem(STORAGE_KEYS.ACTIVE_MODEL);
   if (saved) return saved;
@@ -522,9 +457,6 @@ export function getActiveAiModelId(): string {
   return provider.defaultModelId || provider.models[0]?.id || DEFAULT_ACTIVE_MODEL_ID;
 }
 
-/**
- * 获取当前选中的模型完整定义对象
- */
 export function getActiveAiModel(): AiModelDef {
   const provider = getAiProvider();
   const currentId = getActiveAiModelId();
@@ -538,13 +470,9 @@ export function getActiveAiModel(): AiModelDef {
   return provider.models[0] || all[0];
 }
 
-/**
- * 保存当前选中的模型 ID
- */
 export function saveAiActiveModel(modelId: string): void {
   safeSetItem(STORAGE_KEYS.ACTIVE_MODEL, modelId);
 
-  // 优先在当前提供商内查找并记住所属提供商
   const activeProvider = getAiProvider();
   let found = activeProvider.models.find((m) => m.id === modelId);
   if (!found) {
@@ -559,18 +487,12 @@ export function saveAiActiveModel(modelId: string): void {
   dispatchAiConfigChange();
 }
 
-/**
- * 获取指定提供商的 API Key
- */
 export function getProviderApiKey(providerId?: string): string {
   const targetProvider = providerId || getActiveAiProviderId();
   const key = safeGetItem(STORAGE_KEYS.PROVIDER_KEY_PREFIX + targetProvider);
   return (key || '').trim();
 }
 
-/**
- * 保存指定提供商的 API Key
- */
 export function saveProviderApiKey(providerId: string, apiKey: string): void {
   const cleanKey = (apiKey || '').trim();
   const targetProvider = providerId || getActiveAiProviderId();
@@ -584,16 +506,12 @@ export function saveProviderApiKey(providerId: string, apiKey: string): void {
   dispatchAiConfigChange();
 }
 
-/**
- * 获取指定提供商的有效端点 URL
- */
 export function getProviderEndpoint(providerId?: string): string {
   const targetProvider = providerId || getActiveAiProviderId();
   const override = safeGetItem(STORAGE_KEYS.PROVIDER_ENDPOINT_PREFIX + targetProvider);
   if (override && override.trim()) {
     const cleanOverride = override.trim();
-    // 特化 Gemini：若处于本地开发态，且本地存储残留的是 Google 官方端点，
-    // 智能映射为本地 Dev Server 反代端点，避免因历史缓存导致浏览器/代理握手失败
+
     if (targetProvider === 'gemini' && shouldUseLocalProxy()) {
       if (cleanOverride === GEMINI_OFFICIAL_ENDPOINT) {
         return GEMINI_DEV_PROXY_ENDPOINT;
@@ -611,9 +529,6 @@ export function getProviderEndpoint(providerId?: string): string {
   return provider.defaultEndpoint || '';
 }
 
-/**
- * 保存指定提供商的自定义端点 URL
- */
 export function saveProviderEndpoint(providerId: string, endpoint: string): void {
   const cleanEp = (endpoint || '').trim();
   const targetProvider = providerId || getActiveAiProviderId();
@@ -627,9 +542,6 @@ export function saveProviderEndpoint(providerId: string, endpoint: string): void
   dispatchAiConfigChange();
 }
 
-/**
- * 获取当前模型的有效 API Key（按所属提供商获取）
- */
 export function getAiApiKey(modelId?: string): string {
   const targetModelId = modelId || getActiveAiModelId();
   const all = getAllAiModels();
@@ -638,9 +550,6 @@ export function getAiApiKey(modelId?: string): string {
   return getProviderApiKey(providerId);
 }
 
-/**
- * 保存 API Key（自动归属到当前或指定模型的提供商）
- */
 export function saveAiApiKey(modelId: string, apiKey: string): void {
   const all = getAllAiModels();
   const found = all.find((m) => m.id === modelId);
@@ -648,15 +557,11 @@ export function saveAiApiKey(modelId: string, apiKey: string): void {
   saveProviderApiKey(providerId, apiKey);
 }
 
-/**
- * 获取当前模型的有效端点 URL
- */
 export function getAiEndpoint(modelId?: string): string {
   const targetModelId = modelId || getActiveAiModelId();
   const all = getAllAiModels();
   const found = all.find((m) => m.id === targetModelId);
 
-  // 1. 如果模型自身有特定 endpoint 且不属于默认提供商端点
   if (found && found.endpoint) {
     if (found.provider === 'gemini' && shouldUseLocalProxy()) {
       if (found.endpoint === GEMINI_OFFICIAL_ENDPOINT) {
@@ -666,14 +571,10 @@ export function getAiEndpoint(modelId?: string): string {
     return found.endpoint;
   }
 
-  // 2. 所属提供商端点
   const providerId = found ? found.provider : getActiveAiProviderId();
   return getProviderEndpoint(providerId);
 }
 
-/**
- * 保存指定端点
- */
 export function saveAiEndpoint(modelId: string, endpoint: string): void {
   const all = getAllAiModels();
   const found = all.find((m) => m.id === modelId);
@@ -681,9 +582,6 @@ export function saveAiEndpoint(modelId: string, endpoint: string): void {
   saveProviderEndpoint(providerId, endpoint);
 }
 
-/**
- * 获取当前的数值参数设置
- */
 export function getAiParams(): { maxTokens: number; maxContextChars: number; topK: number } {
   const rawTok = safeGetItem(STORAGE_KEYS.MAX_TOKENS);
   const rawCtx = safeGetItem(STORAGE_KEYS.MAX_CONTEXT_CHARS);
@@ -700,9 +598,6 @@ export function getAiParams(): { maxTokens: number; maxContextChars: number; top
   };
 }
 
-/**
- * 保存数值参数
- */
 export function saveAiParams(params: Partial<{ maxTokens: number; maxContextChars: number; topK: number }>): void {
   if (params.maxTokens !== undefined) safeSetItem(STORAGE_KEYS.MAX_TOKENS, String(params.maxTokens));
   if (params.maxContextChars !== undefined) safeSetItem(STORAGE_KEYS.MAX_CONTEXT_CHARS, String(params.maxContextChars));
@@ -710,41 +605,26 @@ export function saveAiParams(params: Partial<{ maxTokens: number; maxContextChar
   dispatchAiConfigChange();
 }
 
-/**
- * 获取回答模式 ('retrieve' | 'discussion')
- */
 export function getAiAnswerMode(): 'retrieve' | 'discussion' {
   const val = safeGetItem(STORAGE_KEYS.ANSWER_MODE);
   return val === 'discussion' ? 'discussion' : 'retrieve';
 }
 
-/**
- * 保存回答模式
- */
 export function saveAiAnswerMode(mode: 'retrieve' | 'discussion'): void {
   safeSetItem(STORAGE_KEYS.ANSWER_MODE, mode);
   dispatchAiConfigChange();
 }
 
-/**
- * 获取来源链接打开偏好 ('new' | 'same')
- */
 export function getAiSourceOpen(): 'new' | 'same' {
   const val = safeGetItem(STORAGE_KEYS.SRC_OPEN);
   return val === 'same' ? 'same' : 'new';
 }
 
-/**
- * 保存来源链接打开偏好
- */
 export function saveAiSourceOpen(mode: 'new' | 'same'): void {
   safeSetItem(STORAGE_KEYS.SRC_OPEN, mode);
   dispatchAiConfigChange();
 }
 
-/**
- * 获取问答窗口尺寸设置与预设
- */
 export function getAiPanelDimensions(): {
   width: number;
   height: number;
@@ -771,9 +651,6 @@ export function getAiPanelDimensions(): {
   return { width, height, preset, customWidth, customHeight };
 }
 
-/**
- * 保存问答窗口尺寸设置与预设
- */
 export function saveAiPanelDimensions(dim: {
   width?: number;
   height?: number;
@@ -795,77 +672,50 @@ export function saveAiPanelDimensions(dim: {
   dispatchAiConfigChange();
 }
 
-/**
- * 获取是否自动折叠前序思考与工具调用（默认 true）
- */
 export function getAiAutoCollapsePreceding(): boolean {
   const val = safeGetItem(STORAGE_KEYS.AUTO_COLLAPSE_TOOLS);
   if (val === null) return true;
   return val === 'true';
 }
 
-/**
- * 保存是否自动折叠前序思考与工具调用
- */
 export function saveAiAutoCollapsePreceding(enabled: boolean): void {
   safeSetItem(STORAGE_KEYS.AUTO_COLLAPSE_TOOLS, enabled ? 'true' : 'false');
   dispatchAiConfigChange();
 }
 
-/**
- * 获取侧载模式下是否默认自动引用当前阅读章节内容（默认 true）
- */
 export function getAiSideloadRefChapter(): boolean {
   const val = safeGetItem(STORAGE_KEYS.SIDELOAD_REF_CHAPTER);
   if (val === null) return true;
   return val === 'true';
 }
 
-/**
- * 保存侧载模式下是否默认自动引用当前阅读章节内容
- */
 export function saveAiSideloadRefChapter(enabled: boolean): void {
   safeSetItem(STORAGE_KEYS.SIDELOAD_REF_CHAPTER, enabled ? 'true' : 'false');
   dispatchAiConfigChange();
 }
 
-/**
- * 获取是否开启扩展思考 (Extended Thinking)
- */
 export function getAiExtendedThinking(): boolean {
   const val = safeGetItem(STORAGE_KEYS.EXTENDED_THINKING);
   if (val === null) return false;
   return val === 'true';
 }
 
-/**
- * 保存是否开启扩展思考
- */
 export function saveAiExtendedThinking(enabled: boolean): void {
   safeSetItem(STORAGE_KEYS.EXTENDED_THINKING, enabled ? 'true' : 'false');
   dispatchAiConfigChange();
 }
 
-/**
- * 获取是否在探索完成后自动折叠工具调用为单行总结（默认 true）
- */
 export function getAiCollapseToolsSummary(): boolean {
   const val = safeGetItem(STORAGE_KEYS.COLLAPSE_TOOLS_SUMMARY);
   if (val === null) return true;
   return val === 'true';
 }
 
-/**
- * 保存是否在探索完成后自动折叠工具调用为单行总结
- */
 export function saveAiCollapseToolsSummary(enabled: boolean): void {
   safeSetItem(STORAGE_KEYS.COLLAPSE_TOOLS_SUMMARY, enabled ? 'true' : 'false');
   dispatchAiConfigChange();
 }
 
-/**
- * Antigravity 风格工具探索多步调用单行摘要格式化器
- */
 export function formatExplorationSummary(tools: any[]): string {
   if (!tools || !tools.length) return '';
   let searchCount = 0;
@@ -896,9 +746,6 @@ export function formatExplorationSummary(tools: any[]): string {
   return `已完成 ${tools.length} 步工具探索${details}`;
 }
 
-/**
- * 获取用于胶囊按钮展示的模型精简短别名 (完全对标 Chrome Gemini)
- */
 export function getShortModelLabel(modelId?: string): string {
   const id = modelId || getActiveAiModelId();
   if (id === 'auto') return '自动';
@@ -914,9 +761,6 @@ export function getShortModelLabel(modelId?: string): string {
   return model?.label?.split(' ')[0] || '模型';
 }
 
-/**
- * 获取当前直接可用于流式请求的完整有效配置对象
- */
 export function getEffectiveAiClientConfig(): EffectiveAiConfig {
   const provider = getAiProvider();
   const modelDef = getActiveAiModel();
@@ -952,9 +796,6 @@ export interface TestAiResult {
   rawError?: string;
 }
 
-/**
- * 测试 AI 端点与密钥连通性（带深度错误提取）
- */
 export async function testAiConnection(
   modelId?: string,
   explicitKey?: string,

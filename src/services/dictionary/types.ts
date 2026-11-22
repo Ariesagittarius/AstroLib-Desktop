@@ -1,12 +1,5 @@
-/**
- * src/services/dictionary/types.ts
- * ============================================================================
- * AstroLib 双语研判与英语学习：单词释义与词典数据模型
- * ============================================================================
- */
-
 export interface WordMeaning {
-  partOfSpeech: string; // n., v., adj., adv., vt., vi., etc.
+  partOfSpeech: string;
   definitions: string[];
   examples?: string[];
 }

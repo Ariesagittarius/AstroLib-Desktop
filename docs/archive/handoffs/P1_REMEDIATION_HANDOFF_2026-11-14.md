@@ -1,8 +1,8 @@
 # P1 整改执行指令 (P1 Remediation Handoff)
 
-**签发日期**：2026-11-14  
-**依据**：[`P1_FINAL_AUDIT_2026-11-14.md`](./P1_FINAL_AUDIT_2026-11-14.md)  
-**基线**：`electron/main` @ `5498542a`，工作树 clean，Tag `v0.0.4` @ `df68e42c`  
+**签发日期**：2026-11-14
+**依据**：[`P1_FINAL_AUDIT_2026-11-14.md`](./P1_FINAL_AUDIT_2026-11-14.md)
+**基线**：`electron/main` @ `5498542a`，工作树 clean，Tag `v0.0.4` @ `df68e42c`
 **适用范围**：仅 P1-D / P1-E 的阻断项整改；不进入 v0.0.5 发布，不启动 P2 新功能。
 
 ---

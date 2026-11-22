@@ -1,11 +1,3 @@
-/**
- * src/publishing/abp/types.ts
- * ============================================================================
- * 独立无头 ABP (AstroBook Package) 编译器与质检门禁类型契约
- * ============================================================================
- * 遵循 Rule 2 (Publishing is independent) & Rule 8 (No runtime dependency on scripts/)
- */
-
 import type {
   AbpBundlePayload,
   AstroBookManifest,
@@ -21,7 +13,7 @@ export interface BookJsonSectionConfig {
   slug?: string;
   intro?: string;
   collapsed?: boolean;
-  /** 支持填入相对文件名（如 "01_引言.mdx"）、rawSlug 或 cleanSlug */
+
   chapters: string[];
 }
 

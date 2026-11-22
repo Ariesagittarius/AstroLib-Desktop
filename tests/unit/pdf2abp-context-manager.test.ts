@@ -47,7 +47,7 @@ describe('PDF2ABP AgentContextManager', () => {
           },
         ],
       });
-      // 模拟意外传入 tool 的图片，测试必须将其剥离
+
       history.push({
         role: 'tool',
         tool_call_id: `call_${turn}`,
@@ -77,16 +77,14 @@ describe('PDF2ABP AgentContextManager', () => {
 
     expect(stats.imageCount).toBe(1);
     expect(countAllImageParts(wireMessages)).toBe(1);
-    expect(stats.evictedImagesCount).toBe(5); // 4 old synthetic user images + 1 invalid tool image
+    expect(stats.evictedImagesCount).toBe(5);
 
-    // 确认保留的是最后一张第 5 页图片
     const lastVisionMsg = wireMessages.find(
       (m) => Array.isArray(m.content) && m.content.some((p) => p.type === 'image_url')
     )!;
     const imgPart = (lastVisionMsg.content as any[]).find((p) => p.type === 'image_url');
     expect(imgPart.image_url.url).toBe(makeDummyBase64('page-5'));
 
-    // 确认旧的 syntheticVision 消息已被折叠为字符串面包屑
     const page1User = wireMessages.find(
       (m) => m.role === 'user' && typeof m.content === 'string' && m.content.includes('PDF Page 1')
     );
@@ -94,7 +92,6 @@ describe('PDF2ABP AgentContextManager', () => {
     expect(typeof page1User!.content).toBe('string');
     expect(page1User!.content).toContain('Earlier visual slot evicted');
 
-    // 确认 role:'tool' 无任何 image_url 残留
     for (const m of wireMessages) {
       if (m.role === 'tool') {
         expect(typeof m.content).toBe('string');
@@ -118,7 +115,6 @@ describe('PDF2ABP AgentContextManager', () => {
       { role: 'user', content: 'Original Goal: convert /books/algebra.pdf carefully.' },
     ];
 
-    // 构造 8 组较长的工具调用历史（包含单轮双工具调用 + 合成视觉回复）
     for (let i = 1; i <= 8; i++) {
       history.push({
         role: 'assistant',
@@ -162,18 +158,15 @@ describe('PDF2ABP AgentContextManager', () => {
     expect(stats.droppedGroupsCount).toBeGreaterThan(0);
     expect(stats.imageCount).toBe(1);
 
-    // 1. 仅 index 0 为 role:'system'，中部禁止出现 role:'system'
     const systemIndices = wireMessages
       .map((m, idx) => (m.role === 'system' ? idx : -1))
       .filter((idx) => idx !== -1);
     expect(systemIndices).toEqual([0]);
     expect(String(wireMessages[0].content)).toContain('[CONTEXT COMPACTION SUMMARY]');
 
-    // 2. 初始用户任务 Goal 必须保留在 index 1
     expect(wireMessages[1].role).toBe('user');
     expect(String(wireMessages[1].content)).toContain('/books/algebra.pdf');
 
-    // 3. 严格检查 assistant(tool_calls) <-> tool 配对完整性
     const pendingIds = new Set<string>();
     for (const msg of wireMessages) {
       if (msg.role === 'assistant') {

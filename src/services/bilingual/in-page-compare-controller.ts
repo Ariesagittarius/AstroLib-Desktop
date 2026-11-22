@@ -1,17 +1,3 @@
-/**
- * src/services/bilingual/in-page-compare-controller.ts
- * ============================================================================
- * AstroLib 本页内联双语排版对照与语义关联控制器 (In-Page Bilingual Compare Controller)
- * ============================================================================
- * 遵循 Material Design 3 规范与 Rule 10 (One boundary -> One migration -> One verification)：
- * 1. 在当前页面内联展开 50%-50% 左右等宽学术双栏，左栏保留当前正文，右栏拉取对应版本排版；
- * 2. 100% 共享官方预渲染产物（.sl-markdown-content），零运行时 Markdown 编译，数学公式/卡片完全一致；
- * 3. 宽幅学术展开状态机：临时避让收起右侧 TOC 大纲，主正文区独占全屏视口；
- * 4. 驱动中缝 SVG 贝塞尔曲线关联连线与底部高保真学术相关矩阵（Heatmap）；
- * 5. 规范支持三通道退出（顶栏退出按钮、Esc 快捷键、顶栏 Chip 切换），无损复原原阅读位置。
- * ============================================================================
- */
-
 import { BilingualReaderController } from './bilingual-reader-controller.ts';
 import {
   sidebarLayoutContract as sidebarLayoutController,
@@ -61,10 +47,9 @@ export class InPageCompareController {
   private bindGlobalEvents() {
     if (typeof window === 'undefined') return;
 
-    // Esc 快捷键一键退出双栏对比并复原
     window.addEventListener('keydown', (e) => {
       if (e.key === 'Escape' && this.isActive) {
-        // 如果热力图已展开，优先折叠热力图；否则退出对比
+
         const heatmapSheet = document.getElementById('bilingual-heatmap-sheet');
         if (heatmapSheet && !heatmapSheet.classList.contains('is-collapsed')) {
           heatmapSheet.classList.add('is-collapsed');
@@ -84,16 +69,13 @@ export class InPageCompareController {
     return this.currentOptions?.target || null;
   }
 
-  /**
-   * 开启或切换内联双语对照
-   */
   public async open(options: InPageCompareOptions): Promise<void> {
     if (this.isActive && this.currentOptions?.target.id === options.target.id) {
       return;
     }
 
     if (this.isActive) {
-      // 切换目标语言版本
+
       await this.switchTarget(options.target);
       this.currentOptions = options;
       return;
@@ -102,7 +84,6 @@ export class InPageCompareController {
     this.currentOptions = options;
     this.savedScrollY = window.scrollY;
 
-    // 1. 定位正文容器
     const mainEl = document.querySelector('main');
     const article = mainEl?.querySelector('article.sl-markdown-content') || document.querySelector('article.sl-markdown-content');
     if (!article || !article.parentElement) {
@@ -112,11 +93,9 @@ export class InPageCompareController {
 
     this.originalArticle = article as HTMLElement;
 
-    // 2. 插入 DOM 占位符以便后续无损恢复
     this.originalPlaceholder = document.createComment('astrolib-in-page-bilingual-marker');
     article.parentElement.insertBefore(this.originalPlaceholder, article);
 
-    // 3. 记住并收起左右大纲，让双栏独占全屏视口
     try {
       this.savedLeftSidebarCollapsed = sidebarLayoutController.isCollapsed();
       this.savedRightSidebarPanel = sideloadManager.getActivePanelId();
@@ -124,16 +103,13 @@ export class InPageCompareController {
       sideloadManager.open('none');
     } catch {}
 
-    // 4. 激活页面级宽幅展开样式
     document.documentElement.classList.add('bilingual-in-page-active');
     document.body.classList.add('bilingual-in-page-active');
 
-    // 4. 构建双栏根结构
     this.splitRoot = document.createElement('div');
     this.splitRoot.id = 'in-page-bilingual-root';
     this.splitRoot.className = 'in-page-bilingual-root';
 
-    // 渲染顶栏控制条
     const toolbar = document.createElement('header');
     toolbar.className = 'in-page-bilingual-toolbar';
     toolbar.innerHTML = `
@@ -201,7 +177,6 @@ export class InPageCompareController {
       </div>
     `;
 
-    // 渲染双栏阅读主体
     const grid = document.createElement('div');
     grid.className = 'in-page-bilingual-grid';
 
@@ -233,24 +208,17 @@ export class InPageCompareController {
     this.splitRoot.appendChild(toolbar);
     this.splitRoot.appendChild(grid);
 
-    // 将已有文章原件平移入左栏，保留所有既有编译与渲染状态
     leftPane.appendChild(this.originalArticle);
 
-    // 将整个双栏容器挂载入 DOM
     this.originalPlaceholder.parentElement?.insertBefore(this.splitRoot, this.originalPlaceholder);
 
     this.isActive = true;
 
-    // 绑定顶栏操作事件
     this.bindToolbarEvents(toolbar, grid);
 
-    // 5. 异步获取目标语言版本文章排版并启动对齐
     await this.loadTargetContent(options.target, grid);
   }
 
-  /**
-   * 载入目标语言版本的内容
-   */
   private async loadTargetContent(target: TargetVersionOption, grid: HTMLElement): Promise<void> {
     const rightPane = grid.querySelector('.bilingual-col-target') as HTMLElement;
     if (!rightPane) return;
@@ -273,16 +241,13 @@ export class InPageCompareController {
         throw new Error('未能在目标页面解析到学术正文');
       }
 
-      // 清除骨架屏并置入预渲染的目标章节
       rightPane.innerHTML = '';
       rightPane.appendChild(targetArticle);
 
-      // 启动端侧语义向量对齐与 SVG 贝塞尔连线控制器
       this.bilingualController?.destroy();
       this.bilingualController = new BilingualReaderController();
       this.bilingualController.init(grid);
 
-      // 监听对齐完成以更新状态标签
       setTimeout(() => {
         const statBadge = document.getElementById('in-page-align-stat');
         if (statBadge) {
@@ -307,29 +272,23 @@ export class InPageCompareController {
     }
   }
 
-  /**
-   * 绑定顶栏控制器事件
-   */
   private bindToolbarEvents(toolbar: HTMLElement, grid: HTMLElement) {
-    // 1. 退出对比按钮
+
     const exitBtn = toolbar.querySelector('#in-page-exit-btn');
     exitBtn?.addEventListener('click', () => {
       this.close();
     });
 
-    // 2. 刷新对齐
     const realignBtn = toolbar.querySelector('#in-page-realign-btn');
     realignBtn?.addEventListener('click', () => {
       this.bilingualController?.runAlignment();
     });
 
-    // 3. 热力图抽屉展开/折叠
     const heatmapBtn = toolbar.querySelector('#in-page-toggle-heatmap');
     heatmapBtn?.addEventListener('click', () => {
       this.bilingualController?.getHeatmapController()?.toggleCollapse();
     });
 
-    // 4. 版本切换下拉菜单
     const switcherBtn = toolbar.querySelector('#in-page-target-switcher') as HTMLElement | null;
     const popover = toolbar.querySelector('#in-page-switch-popover') as HTMLElement | null;
 
@@ -369,22 +328,17 @@ export class InPageCompareController {
     });
   }
 
-  /**
-   * 动态平滑切换至另一目标语言版本
-   */
   public async switchTarget(newTarget: TargetVersionOption): Promise<void> {
     if (!this.splitRoot || !this.currentOptions) return;
 
     this.currentOptions.target = newTarget;
 
-    // 持久化用户偏好
     if (this.currentOptions.bookSlug) {
       try {
         localStorage.setItem(`astrolib_bilingual_target_${this.currentOptions.bookSlug}`, newTarget.id);
       } catch {}
     }
 
-    // 更新顶栏标签
     const targetLabelEl = this.splitRoot.querySelector('#in-page-target-label');
     if (targetLabelEl) {
       targetLabelEl.textContent = newTarget.label;
@@ -405,29 +359,22 @@ export class InPageCompareController {
     }
   }
 
-  /**
-   * 关闭内联双栏排版对比，无损复原原阅读状态
-   */
   public close(): void {
     if (!this.isActive) return;
 
-    // 1. 销毁双语对齐控制器
     this.bilingualController?.destroy();
     this.bilingualController = null;
 
-    // 2. 将原正文 DOM 平移回原位
     if (this.originalArticle && this.originalPlaceholder && this.originalPlaceholder.parentElement) {
       this.originalPlaceholder.parentElement.insertBefore(this.originalArticle, this.originalPlaceholder);
       this.originalPlaceholder.remove();
     }
 
-    // 3. 移除内联双栏结构
     if (this.splitRoot) {
       this.splitRoot.remove();
       this.splitRoot = null;
     }
 
-    // 4. 清理页面宽幅展开样式，精准恢复原阅读侧栏状态（不是无脑重新展开）
     document.documentElement.classList.remove('bilingual-in-page-active');
     document.body.classList.remove('bilingual-in-page-active');
 
@@ -442,7 +389,6 @@ export class InPageCompareController {
       }
     } catch {}
 
-    // 折叠热力图抽屉
     const heatmapSheet = document.getElementById('bilingual-heatmap-sheet');
     if (heatmapSheet) {
       heatmapSheet.classList.add('is-collapsed');
@@ -450,14 +396,11 @@ export class InPageCompareController {
 
     this.isActive = false;
 
-    // 5. 平滑恢复滚动位置
     window.scrollTo({ top: this.savedScrollY, behavior: 'instant' });
 
-    // 同步顶栏对比 Chip 的激活视觉状态
     const chip = document.getElementById('bilingual-in-page-trigger');
     chip?.classList.remove('is-active');
   }
 }
 
-// 统一导出控制器单例
 export const inPageCompareController = InPageCompareController.getInstance();

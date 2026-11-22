@@ -1,10 +1,3 @@
-/**
- * src/ai/skills/pdf2abp/orchestrator-sop.ts
- * ============================================================================
- * Skill 3: 主 Agent PDF2ABP 全流程端到端编排 SOP
- * ============================================================================
- */
-
 import type { SkillDocument } from './types.ts';
 
 export const orchestratorSopSkill: SkillDocument = {

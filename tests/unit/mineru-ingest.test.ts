@@ -1,10 +1,3 @@
-/**
- * tests/unit/mineru-ingest.test.ts
- * ============================================================================
- * MinerU 文档摄取与调度单元测试
- * ============================================================================
- */
-
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -59,13 +52,11 @@ describe('MinerU Ingestion Engine Unit Tests', () => {
     expect(meta.pageRanges).toBe('1-3');
     expect(meta.status).toBe('idle');
 
-    // 验证文件存在
     const taskDir = path.join(taskManager.getBaseDir(), meta.taskId);
     expect(fs.existsSync(taskDir)).toBe(true);
     expect(fs.existsSync(path.join(taskDir, 'origin.pdf'))).toBe(true);
     expect(fs.existsSync(path.join(taskDir, 'meta.json'))).toBe(true);
 
-    // 清理测试任务目录
     fs.rmSync(taskDir, { recursive: true, force: true });
   });
 
@@ -85,11 +76,9 @@ $$
     // @ts-expect-error accessing private method for test verification
     const safeMdx = taskManager.escapeMdxContent(rawContent);
 
-    // 非公式大括号应该被转义
     expect(safeMdx).toContain('&#123;foo: "bar"&#125;');
     expect(safeMdx).toContain('10～20');
 
-    // 公式内部大括号应该完全保留！
     expect(safeMdx).toContain('$f(x) = {x^2 + 1}$');
     expect(safeMdx).toContain('e^{-x^2}');
   });
@@ -101,24 +90,20 @@ $$
       expect(result).toBeDefined();
       expect(result!.layoutBlocks.length).toBeGreaterThan(100);
 
-      // 验证标题 AST
       const titleBlock = result!.layoutBlocks.find((b) => b.type === 'title');
       expect(titleBlock).toBeDefined();
       expect(titleBlock!.html).toContain('<h1 class="doc-heading');
 
-      // 验证图片 AST (包含真实文件名和优雅 figure 结构)
       const imageBlock = result!.layoutBlocks.find((b) => b.type === 'image');
       expect(imageBlock).toBeDefined();
       expect(imageBlock!.html).toContain('<figure class="doc-figure">');
       expect(imageBlock!.html).toContain('/api/ingest/image?taskId=task_1793621396668_7357z3&name=');
       expect(imageBlock!.html).toContain('<figcaption class="doc-figcaption">');
 
-      // 验证公式 AST (KaTeX 服务端预渲染，零裸 LaTeX 泄露)
       const eqBlock = result!.layoutBlocks.find((b) => b.type === 'equation');
       expect(eqBlock).toBeDefined();
       expect(eqBlock!.html).toContain('katex');
 
-      // 验证 1000 分制归一化坐标
       expect(titleBlock!.pageWidth).toBe(1000);
       expect(titleBlock!.pageHeight).toBe(1000);
       expect(titleBlock!.bbox[0]).toBeGreaterThanOrEqual(0);
@@ -127,7 +112,7 @@ $$
   });
 
   it('7. should accurately count PDF pages when outline dictionary contains small /Count first', () => {
-    // 构造模拟复杂 PDF：先出现大纲 /Type /Outlines /Count 2，后出现根页面树 /Type /Pages /Count 34
+
     const complexPdf = Buffer.from(
       '%PDF-1.5\n' +
       '1 0 obj\n<</Type /Outlines /Count 2 /First 2 0 R /Last 3 0 R>>\nendobj\n' +
@@ -146,23 +131,19 @@ $$
     const result = taskManager.getResult(testTaskId);
     expect(result).toBeDefined();
 
-    // 1. 验证物理分页标尺 (Page Divider) 存在且无孤立页码段落
     const dividers = result!.layoutBlocks.filter((b) => b.type === 'page_divider');
     expect(dividers.length).toBeGreaterThan(0);
     expect(dividers[0].pageNumber).toBe('2');
 
-    // 2. 验证学术级独立脚注 (Footnotes) 存在
     const footnotes = result!.layoutBlocks.filter((b) => b.type === 'footnote');
     expect(footnotes.length).toBeGreaterThanOrEqual(4);
     const fn2 = footnotes.find((f) => f.fnIndex === '2');
     expect(fn2).toBeDefined();
     expect(fn2!.text).toContain('In this paper, we use agentic MLLMs');
 
-    // 3. 验证纯净合成 Markdown 中不存在突兀的裸孤立数字段落
     expect(result!.markdown).not.toMatch(/\n\n2\n\n/);
     expect(result!.markdown).not.toMatch(/\n\n5\n\n/);
 
-    // 4. 验证标准 Markdown 脚注语法
     expect(result!.markdown).toContain('[^2]');
     expect(result!.markdown).toContain('[^2]:');
   });
@@ -189,7 +170,6 @@ $$
     });
     expect(meta.pageCount).toBe(250);
 
-    // 模拟上次进程崩溃遗留在 meta.json 的运行态
     const taskDir = taskManager.findTaskDir(meta.taskId)!;
     const metaFile = path.join(taskDir, 'meta.json');
     meta.status = 'processing';
@@ -201,7 +181,6 @@ $$
     expect(reconciled?.status).toBe('failed');
     expect(reconciled?.error).toContain('中断');
 
-    // 验证删除接口正常清理物理目录
     const deleted = taskManager.deleteTask(meta.taskId);
     expect(deleted).toBe(true);
     expect(fs.existsSync(taskDir)).toBe(false);

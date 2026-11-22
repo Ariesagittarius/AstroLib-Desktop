@@ -1,14 +1,8 @@
-/**
- * src/features/search-rec/core/retrieval/exact-retriever.ts
- * 精确公式、编号与符号检索通道
- */
-
 import type { AcademicChunk, CandidateItem } from '../../types/candidate.ts';
 
 const TAG_REGEX = /(?:式\s*\(?|tag:|\()?(\d+(?:\.\d+)*)\)?/i;
 const THEOREM_NUM_REGEX = /(定理|定义|例|例题|引理|推论|性质|公式|算法|公理)\s*(\d+(?:\.\d+)*)/i;
 
-/** 归一化 LaTeX 公式，剔除多余空白与括号差异 */
 function normalizeLatex(tex: string): string {
   return tex
     .replace(/\s+/g, '')
@@ -19,24 +13,16 @@ function normalizeLatex(tex: string): string {
     .toLowerCase();
 }
 
-/**
- * 精确检索器
- */
 export class ExactRetriever {
-  /**
-   * 判断 Query 是否属于精确公式或特定符号查询
-   */
+
   static isExactIntent(query: string): boolean {
     const q = query.trim();
-    if (q.includes('\\') || q.includes('$')) return true; // 包含 LaTeX 命令
-    if (TAG_REGEX.test(q)) return true; // 包含公式 tag 编号
-    if (THEOREM_NUM_REGEX.test(q)) return true; // 包含定理/例题编号
+    if (q.includes('\\') || q.includes('$')) return true;
+    if (TAG_REGEX.test(q)) return true;
+    if (THEOREM_NUM_REGEX.test(q)) return true;
     return false;
   }
 
-  /**
-   * 执行精确匹配检索
-   */
   static search(chunks: AcademicChunk[], query: string, limit = 50): CandidateItem[] {
     const q = query.trim();
     if (!q) return [];
@@ -57,7 +43,6 @@ export class ExactRetriever {
       let score = 0;
       let matchedToken = '';
 
-      // 1. 定理/例题编号精准命中 (例：定理 2.1)
       if (targetThmType && targetThmNum) {
         if (chunk.type.includes(targetThmType) && chunk.number === targetThmNum) {
           score += 200;
@@ -68,7 +53,6 @@ export class ExactRetriever {
         }
       }
 
-      // 2. 公式 Tag 命中 (例：式 3.12)
       if (targetTag) {
         if (chunk.number === targetTag) {
           score += 180;
@@ -79,7 +63,6 @@ export class ExactRetriever {
         }
       }
 
-      // 3. LaTeX 公式源码匹配
       if (isLatex && cleanLatexQuery) {
         const chunkLatexList = chunk.latexFormulas || [];
         for (const formula of chunkLatexList) {
@@ -90,7 +73,7 @@ export class ExactRetriever {
             break;
           }
         }
-        // 回退检查正文纯文本
+
         if (score === 0) {
           const normChunkText = normalizeLatex(chunk.text);
           if (normChunkText.includes(cleanLatexQuery)) {
@@ -100,7 +83,6 @@ export class ExactRetriever {
         }
       }
 
-      // 4. 精确标题全包含匹配
       if (q.length >= 2 && chunk.title.toLowerCase().includes(q.toLowerCase())) {
         score += 80;
         matchedToken = matchedToken || q;

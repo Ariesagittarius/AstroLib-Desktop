@@ -1,67 +1,51 @@
-# build output
 dist/
-# generated types
 .astro/
 
-# dependencies
 node_modules/
 
-# logs
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
-
-# environment variables & local tokens
 .env
 .env.*
 !.env.example
 .mineru.json
 
-# macOS-specific files
 .DS_Store
 
-# MinerU 原始转换产物与本地工具目录（不入库）
 task/
 .codex/
 
-# 编译产物：ABP 书籍包与配套索引/习题/EPUB 导出（不入库）
 artifacts/
 content-sources/catalog.json
 public/abp-packs/
 tests/fixtures/runtime-*/
 tests/fixtures/zero-book-*/
 
-# 构建产物：EPUB 下载文件（由 scripts/generate-epub.mjs 生成，不入库）
 public/epub/
 
-# 构建产物：PWA 离线数据包（由 scripts/build-offline-pack.mjs 生成，托管于 GitHub Releases，不入库）
 public/offline-packs/
 dist/offline-packs/
 *-offline-pack.json
 
-# 构建产物：AI 检索索引（由 scripts/build-ai-index.mjs 生成，不入库）
 public/ai-index/
 
-# 构建产物：全站题库预渲染、巡检、知识拓扑与跨页引用（由 scripts/build-*.mjs 生成，不入库）
 public/data/exercises/
 public/inspector-data/
 public/relation-graphs/
 public/data/cross-ref/
 
-# 原始真题题库底表与历史单卷存档（不入库）
 src/data/exercises/bupt_math_full_database.json
 src/data/exercises/raw_papers/
 
-# Python 与本地调试残留
 __pycache__/
 .venv/
 .venv-agent/
 public/_katex-check/
 .tmp/
 
-# AI Agent Skills, IDE configs & assistant metadata (local-only)
 .agents/
 .dsh/
 .codex/
@@ -76,12 +60,9 @@ backup/
 test/data/
 test/output/
 
-# Electron 桌面端构建产物与缓存
 dist-electron/
 release/
 .electron-cache/
 
-# 根目录阶段性审计与基准性能报告（不入库）
 /*-audit.md
 /performance-*.md
-

@@ -1,16 +1,3 @@
-/**
- * src/components/harness/artifact-hub-panel.ts
- * ============================================================================
- * 多态成果物历史仓面板 (Polymorphic Artifact Hub Panel)
- * ============================================================================
- * 职责：
- * 1. 在右侧分屏「成果物」视图统一托管所有类型的成果历史：
- *    PDF2ABP 任务、AstroCanvas 交互画布、章节 AST、Python 运算与图像、Diff 比对；
- * 2. 提供「历史清单 <-> 单项详览」自由导航与类型过滤，彻底根治 AST 覆盖锁死 PDF2ABP 问题；
- * 3. 在呈现 AST / Markdown 成果时自动触发 KaTeX 公式渲染与交互按钮绑定。
- * ============================================================================
- */
-
 import type { ArtifactItem, ArtifactKind } from '../../features/harness/types.ts';
 import {
   ArtifactStore,
@@ -281,7 +268,6 @@ export class ArtifactHubPanel {
       return;
     }
 
-    // AST / Markdown / General HTML
     if (actionsEl && item.html) {
       const copyBtn = document.createElement('button');
       copyBtn.type = 'button';

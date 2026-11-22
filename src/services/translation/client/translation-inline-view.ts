@@ -1,10 +1,3 @@
-/**
- * src/services/translation/client/translation-inline-view.ts
- * ============================================================================
- * Inline Paragraph Translation View Controller for Translation Dock
- * ============================================================================
- */
-
 import type { ParagraphUnit, TranslationProviderId, TranslationDisplayMode } from '../types';
 import { TranslationStorage } from '../storage/translation-storage';
 import { ParagraphAligner } from '../paragraph-aligner';
@@ -88,7 +81,6 @@ export class TranslationInlineView {
     const hasTransIds = Boolean(contentContainer.querySelector('[data-trans-id]'));
     let paragraphs = this.ctx.getParagraphs();
 
-    // 1. 扫描正文 DOM 提取段落
     if (this.ctx.getCurrentChapterKey() !== chapterKey || !hasTransIds || paragraphs.length === 0 || forceRefresh) {
       this.ctx.setCurrentChapterKey(chapterKey);
       paragraphs = ParagraphAligner.extractFromArticleDom(contentContainer);
@@ -96,10 +88,8 @@ export class TranslationInlineView {
     }
     if (paragraphs.length === 0) return;
 
-    // 2. 本地持久化缓存回填
     const { hydratedCount } = TranslationStorage.hydrateUnits(chapterKey, paragraphs);
 
-    // 3. 渲染行内控制条与行内对照译文块
     this.renderInlineToolbar(contentContainer);
     this.renderInlineBlocks(contentContainer, paragraphs);
 
@@ -111,7 +101,6 @@ export class TranslationInlineView {
     this.abortController = new AbortController();
     const signal = this.abortController.signal;
 
-    // 4. 分块请求翻译
     const total = paragraphs.length;
     const CHUNK_SIZE = 4;
 
@@ -122,7 +111,6 @@ export class TranslationInlineView {
         chunk.map(async (unit) => {
           if (signal.aborted) return;
 
-          // 严格跳过公式块与代码块的翻译
           if (unit.type === 'math' || unit.type === 'code') {
             unit.status = 'done';
             unit.translatedText = unit.sourceText;
@@ -188,7 +176,7 @@ export class TranslationInlineView {
 
   public renderInlineBlocks(container: HTMLElement, paragraphs: ParagraphUnit[]): void {
     for (const unit of paragraphs) {
-      // 严格跳过公式与代码块，不注入任何行内翻译结构
+
       if (unit.type === 'math' || unit.type === 'code') continue;
 
       const srcEl = container.querySelector<HTMLElement>(`[data-trans-id="${unit.id}"]`);
@@ -416,7 +404,6 @@ export class TranslationInlineView {
       </div>
     `;
 
-    // 绑定行内工具栏按键事件
     toolbar.querySelectorAll<HTMLButtonElement>('[data-inline-provider]').forEach((btn) => {
       btn.addEventListener('click', () => {
         const p = btn.getAttribute('data-inline-provider') as TranslationProviderId;

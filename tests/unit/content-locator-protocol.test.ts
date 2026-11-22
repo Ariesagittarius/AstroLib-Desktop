@@ -1,18 +1,3 @@
-/**
- * tests/unit/content-locator-protocol.test.ts
- * ============================================================================
- * AstroLib 统一内容定位协议 (AURP) 与跨书全局自愈寻址契约测试套件
- * ============================================================================
- * 覆盖场景：
- * 1. 规范 URI 格式互转 (astrolib://<col>/<book>[/<chapter>][#<card>])；
- * 2. 跨书全局章节反向寻址：验证输入 "06_第1章-三角函数" 绝不落回默认线性代数，而是精准定位新高考数学；
- * 3. 歧义消歧与候选推荐 (confidence: 'ambiguous')；
- * 4. ContentApiService 双模自愈 (源码 MDX + ABP 标准展开包 fallback 保证目录树绝不为空)；
- * 5. 习题多关键词分词智能检索 ("极限, 实数完备性") 与解答提取；
- * 6. Plugin 工具层与指令层规范契约验证 (/ast, /toc, locate_content)。
- * ============================================================================
- */
-
 import { describe, it, expect, beforeEach } from 'vitest';
 import { UniversalLocatorResolver } from '../../src/core/content-api/content-locator.ts';
 import { ContentApiService } from '../../src/core/content-api/content-api-service.ts';
@@ -120,13 +105,12 @@ describe('AstroLib Universal Content Locator Protocol (AURP) Suite', () => {
     });
 
     it('3.3 getChapterAst 应能正常提取卡片与 LaTeX 数学公式', () => {
-      // 3.3.1 导读章应能提取 Guide 卡片
+
       const introAst = service.getChapterAst('math', 'math_senior', '06_第1章-三角函数');
       expect(introAst).toBeDefined();
       expect(introAst.title).toContain('三角函数');
       expect(introAst.cards.length).toBeGreaterThan(0);
 
-      // 3.3.2 具体公式节应能完整提取学术卡片与 LaTeX 公式
       const formulaAst = service.getChapterAst('math', 'math_senior', '08_111_平方关系与商数关系');
       expect(formulaAst).toBeDefined();
       expect(formulaAst.cards.length).toBeGreaterThan(0);

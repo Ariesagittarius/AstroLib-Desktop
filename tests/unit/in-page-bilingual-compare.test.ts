@@ -1,16 +1,8 @@
-/**
- * tests/unit/in-page-bilingual-compare.test.ts
- * ============================================================================
- * 本页内联双语排版对照与高保真学术相关矩阵测试套件 (Node 环境极简 DOM Mock)
- * ============================================================================
- */
-
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { InPageCompareController } from '../../src/services/bilingual/in-page-compare-controller.ts';
 import { HeatmapController } from '../../src/services/bilingual/heatmap-controller.ts';
 import type { AlignmentMatrixResult } from '../../src/services/bilingual/types.ts';
 
-// 极简 DOM Mock，供 Node.js 环境下测试控制器状态机流转
 class MockClassList {
   private classes = new Set<string>();
   add(...names: string[]) {
@@ -250,7 +242,6 @@ describe('InPageCompareController Suite', () => {
 
     expect(controller.getIsActive()).toBe(true);
 
-    // 执行关闭
     controller.close();
 
     expect(controller.getIsActive()).toBe(false);
@@ -370,7 +361,6 @@ describe('HeatmapController Layout & Blues Colormap Suite', () => {
 
     heatmap.setData(mockResult, 0.6);
 
-    // 触发点击
     canvas.dispatchEvent({
       type: 'click',
       clientX: 120,

@@ -1,18 +1,3 @@
-/**
- * src/core/content-api/ast-extractor.ts
- * ============================================================================
- * AstroLib 章节结构化语义提取引擎 (MDX AST & Academic Card Extractor)
- * ============================================================================
- * 职责：
- * 1. 深度解析 MDX 源码，提取 Frontmatter 元数据与多级标题 (H1-H6)；
- * 2. 识别与抽取学术卡片体系 (<Theorem>, <Definition>, <Example>, <Solution> 等)，支持嵌套解构；
- * 3. 抽离独立行间与行内 KaTeX 数学公式，保留完整精确 LaTeX 表述与行号；
- * 4. 抽取全部正文段落、代码块、列表、表格并建立抽象层语义定性描述；
- * 5. 生成层次分明、唯一可寻址的真实 AST 语法树 (AstDocumentNode)，支撑精确内容读取；
- * 6. 100% 纯函数与无副作用，严格支撑外部脚本、MCP 与 Agent 结构化分析。
- * ============================================================================
- */
-
 import type { ChapterHeadingItem } from '../../types/content-package.ts';
 import type {
   AcademicCardNode,
@@ -46,9 +31,6 @@ const KNOWN_ACADEMIC_TAGS = new Set([
   'Exercise',
 ]);
 
-/**
- * 1. 从 MDX 中抽取 Frontmatter 元数据
- */
 export function extractFrontmatter(mdxContent: string): {
   frontmatter: Record<string, string>;
   body: string;
@@ -80,9 +62,6 @@ export function extractFrontmatter(mdxContent: string): {
   return { frontmatter, body, frontmatterLines };
 }
 
-/**
- * 抽象层：分析行间数学公式的学术定性描述
- */
 function summarizeMathFormula(latex: string): string {
   const clean = latex.replace(/\s+/g, ' ').trim();
   const tags: string[] = [];
@@ -106,9 +85,6 @@ function summarizeMathFormula(latex: string): string {
   return `【独立公式】${tagPrefix}$$${snippet}$$`;
 }
 
-/**
- * 抽象层：分析学术卡片语义并生成学术定性摘要
- */
 function summarizeCard(tag: string, title?: string, firstChildPreview?: string): string {
   const label = title || tag;
   const childHint = firstChildPreview ? `：${firstChildPreview.slice(0, 50)}` : '';
@@ -138,9 +114,6 @@ function summarizeCard(tag: string, title?: string, firstChildPreview?: string):
   }
 }
 
-/**
- * 抽象层：分析段落语义并生成学术定性摘要
- */
 function summarizeParagraph(text: string): string {
   const clean = text
     .replace(/<[^>]*>/g, '')
@@ -152,16 +125,12 @@ function summarizeParagraph(text: string): string {
     return `【正文段落】${clean}`;
   }
 
-  // 提取首句作为核心论点
   const firstSentenceMatch = clean.match(/^([^。！？\n]+[。！？])/);
   const firstSentence = firstSentenceMatch ? firstSentenceMatch[1] : clean.slice(0, 60);
 
   return `【正文段落】${firstSentence}...`;
 }
 
-/**
- * 递归解析特定行区间内的语法块，生成具有完整层级与定性性质的 AST 节点
- */
 function parseLinesToNodes(
   allLines: string[],
   startLineIdx: number,
@@ -174,21 +143,18 @@ function parseLinesToNodes(
   while (i < endLineIdx) {
     const line = allLines[i];
     const trimmed = line.trim();
-    const currentLineNum = i + 1; // 1-based 全文行号
+    const currentLineNum = i + 1;
 
-    // 1. 空行
     if (!trimmed) {
       i++;
       continue;
     }
 
-    // 2. import 模块语句忽略
     if (trimmed.startsWith('import ') && (trimmed.includes(' from ') || trimmed.endsWith(';'))) {
       i++;
       continue;
     }
 
-    // 3. 标题 (H1-H6)
     const headingMatch = trimmed.match(/^(#{1,6})\s+(.+)$/);
     if (headingMatch) {
       const level = headingMatch[1].length;
@@ -211,12 +177,10 @@ function parseLinesToNodes(
       continue;
     }
 
-    // 4. 数学公式块 $$ ... $$
     if (trimmed.startsWith('$$')) {
       const formulaStartLine = currentLineNum;
       const formulaLines: string[] = [];
 
-      // 单行 $$ formula $$
       const singleMatch = trimmed.match(/^\$\$(.+?)\$\$$/);
       if (singleMatch) {
         const latex = singleMatch[1].trim();
@@ -236,7 +200,6 @@ function parseLinesToNodes(
         continue;
       }
 
-      // 多行 $$ ... $$
       const firstRest = trimmed.slice(2).trim();
       if (firstRest) formulaLines.push(firstRest);
       i++;
@@ -270,7 +233,6 @@ function parseLinesToNodes(
       continue;
     }
 
-    // 5. 学术卡片标签 <Tag ...> ... </Tag>
     const openTagMatch = trimmed.match(/^<([A-Z][a-zA-Z0-9]*)([^>]*)>/);
     if (openTagMatch) {
       const tag = openTagMatch[1];
@@ -279,7 +241,6 @@ function parseLinesToNodes(
       const titleAttrMatch = attrs.match(/title\s*=\s*['"](.*?)['"]/);
       const title = titleAttrMatch ? titleAttrMatch[1] : tag;
 
-      // 自闭合卡片 (如 <QRCodeVideo ... />)
       if (trimmed.endsWith('/>') || attrs.endsWith('/')) {
         const id = `card-${cardStartLine}-${tag.toLowerCase()}`;
         nodes.push({
@@ -299,13 +260,11 @@ function parseLinesToNodes(
         continue;
       }
 
-      // 容器卡片：扫描匹配闭合标签 </Tag>，精准支持内部嵌套
       let depth = 1;
       let j = i + 1;
       const openPattern = new RegExp(`<${tag}[^>]*>`, 'g');
       const closePattern = new RegExp(`</${tag}>`, 'g');
 
-      // 检查首行是否包含闭合
       const firstLineAfterTag = line.slice(openTagMatch.index! + openTagMatch[0].length);
       if (firstLineAfterTag.includes(`</${tag}>`)) {
         depth = 0;
@@ -326,13 +285,11 @@ function parseLinesToNodes(
       const cardEndLine = j < endLineIdx ? j + 1 : endLineIdx;
       const cardId = `card-${cardStartLine}-${tag.toLowerCase()}`;
 
-      // 递归解析卡片内部子节点（起始于 cardStartLine + 1，结束于 cardEndLine - 1）
       const innerChildren =
         cardEndLine > cardStartLine + 1
           ? parseLinesToNodes(allLines, cardStartLine, cardEndLine - 1, cardId)
           : [];
 
-      // 提取内部首个段落预览
       const firstP = innerChildren.find((c) => c.type === 'paragraph');
       const summary = summarizeCard(tag, title, firstP?.preview);
 
@@ -355,7 +312,6 @@ function parseLinesToNodes(
       continue;
     }
 
-    // 6. 代码块 ``` ... ```
     if (trimmed.startsWith('```')) {
       const codeStartLine = currentLineNum;
       const lang = trimmed.slice(3).trim();
@@ -382,7 +338,6 @@ function parseLinesToNodes(
       continue;
     }
 
-    // 7. 列表项 (- / * / 1.)
     if (/^(\s*[-*+]|\s*\d+\.)\s+/.test(trimmed)) {
       const listStartLine = currentLineNum;
       const listLines: string[] = [];
@@ -407,7 +362,6 @@ function parseLinesToNodes(
       continue;
     }
 
-    // 8. 表格块 (| ... |)
     if (trimmed.startsWith('|') && trimmed.endsWith('|')) {
       const tableStartLine = currentLineNum;
       const tableLines: string[] = [];
@@ -432,7 +386,6 @@ function parseLinesToNodes(
       continue;
     }
 
-    // 9. 引用块 (> ...)
     if (trimmed.startsWith('>')) {
       const quoteStartLine = currentLineNum;
       const quoteLines: string[] = [];
@@ -458,7 +411,6 @@ function parseLinesToNodes(
       continue;
     }
 
-    // 10. 普通正文段落 (Paragraph) - 聚合连续文字行
     const pStartLine = currentLineNum;
     const pLines: string[] = [];
     while (i < endLineIdx) {
@@ -499,10 +451,6 @@ function parseLinesToNodes(
   return nodes;
 }
 
-/**
- * 组装 Heading 层级拓扑树 (Sections Hierarchy Tree)
- * 将扁平的各级标题与下属段落、公式、模块组织为真正的 AST 结构
- */
 function assembleHeadingHierarchy(flatNodes: AstDocumentNode[]): AstDocumentNode[] {
   const rootTree: AstDocumentNode[] = [];
   const headingStack: AstDocumentNode[] = [];
@@ -538,9 +486,6 @@ function assembleHeadingHierarchy(flatNodes: AstDocumentNode[]): AstDocumentNode
   return rootTree;
 }
 
-/**
- * 扁平化收集树中所有的节点
- */
 export function flattenTree(tree: AstDocumentNode[]): AstDocumentNode[] {
   const result: AstDocumentNode[] = [];
   for (const node of tree) {
@@ -552,9 +497,6 @@ export function flattenTree(tree: AstDocumentNode[]): AstDocumentNode[] {
   return result;
 }
 
-/**
- * 根据唯一 ID 在 AST 树中查找目标节点
- */
 export function findNodeById(tree: AstDocumentNode[], nodeId: string): AstDocumentNode | null {
   for (const node of tree) {
     if (node.id === nodeId) return node;
@@ -566,9 +508,6 @@ export function findNodeById(tree: AstDocumentNode[], nodeId: string): AstDocume
   return null;
 }
 
-/**
- * 将层次化 AST 树格式化为适合 Agent 阅读理解的缩进大纲文本
- */
 export function formatAstTreeOutline(nodes: AstDocumentNode[], indent = '', maxDepth = 4): string {
   const lines: string[] = [];
 
@@ -603,9 +542,6 @@ export function formatAstTreeOutline(nodes: AstDocumentNode[], indent = '', maxD
   return lines.join('\n');
 }
 
-/**
- * 提取标题大纲 (Headings) - 保持向后兼容
- */
 export function extractHeadings(mdxContent: string): ChapterHeadingItem[] {
   const headings: ChapterHeadingItem[] = [];
   const lines = mdxContent.split(/\r?\n/);
@@ -631,9 +567,6 @@ export function extractHeadings(mdxContent: string): ChapterHeadingItem[] {
   return headings;
 }
 
-/**
- * 提取学术卡片 (Academic Cards) - 保持向后兼容
- */
 export function extractAcademicCards(mdxContent: string): AcademicCardNode[] {
   const cards: AcademicCardNode[] = [];
   const lines = mdxContent.split(/\r?\n/);
@@ -709,9 +642,6 @@ export function extractAcademicCards(mdxContent: string): AcademicCardNode[] {
   return cards;
 }
 
-/**
- * 提取数学公式 (Math Formulas) - 保持向后兼容
- */
 export function extractMathFormulas(mdxContent: string): MathFormulaNode[] {
   const formulas: MathFormulaNode[] = [];
   const lines = mdxContent.split(/\r?\n/);
@@ -778,9 +708,6 @@ export function extractMathFormulas(mdxContent: string): MathFormulaNode[] {
   return formulas;
 }
 
-/**
- * 提取段落节点列表 (Paragraphs) - 保持向后兼容
- */
 export function extractParagraphs(mdxContent: string, cards: AcademicCardNode[]): ParagraphNode[] {
   const paragraphs: ParagraphNode[] = [];
   const lines = mdxContent.split(/\r?\n/);
@@ -827,9 +754,6 @@ export function extractParagraphs(mdxContent: string, cards: AcademicCardNode[])
   return paragraphs;
 }
 
-/**
- * 主提取函数：综合提炼章节真实 AST 结构化响应数据
- */
 export function extractChapterAst(params: {
   colSlug: string;
   bookSlug: string;
@@ -845,17 +769,14 @@ export function extractChapterAst(params: {
   const title = frontmatter.title || chapterSlug;
   const lines = mdxContent.split(/\r?\n/);
 
-  // 1. 构建全新完整的层次化语法树 (True AST Tree)
   const flatNodes = parseLinesToNodes(lines, frontmatterLines, lines.length);
   const tree = assembleHeadingHierarchy(flatNodes);
 
-  // 2. 提取传统扁平集合以保持完全向后兼容
   const headings = extractHeadings(mdxContent);
   const cards = extractAcademicCards(mdxContent);
   const formulas = extractMathFormulas(mdxContent);
   const paragraphs = extractParagraphs(mdxContent, cards);
 
-  // 3. 计算字数与估算阅读时间
   const cleanText = mdxContent.replace(/<[^>]*>/g, '').replace(/\$\$[\s\S]*?\$\$/g, '').trim();
   const wordCount = cleanText.length;
   const readingTimeMinutes = Math.max(1, Math.round(wordCount / 350));

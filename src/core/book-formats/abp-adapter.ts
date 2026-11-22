@@ -1,10 +1,3 @@
-/**
- * src/core/book-formats/abp-adapter.ts
- * ============================================================================
- * 标准 .abp 预编译学术数据包适配器
- * ============================================================================
- */
-
 import {
   AbpInstallError,
   AbpInstallErrorCode,
@@ -39,7 +32,7 @@ export class AbpFormatAdapter implements IBookFormatAdapter {
     if (fileName && fileName.toLowerCase().endsWith('.abp')) {
       return true;
     }
-    // Gzip 魔数 1f 8b
+
     if (data && data.byteLength >= 2 && data[0] === 0x1f && data[1] === 0x8b) {
       return true;
     }

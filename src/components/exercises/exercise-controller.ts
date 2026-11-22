@@ -169,7 +169,7 @@ class ExerciseCenterController {
     if (typeof document === 'undefined') return;
 
     const setup = () => {
-      // 路由换页安全清理：若存在多个 root 节点，移除多余的旧节点
+
       const allRoots = document.querySelectorAll('#exercise-modal-root');
       if (allRoots.length > 1) {
         allRoots.forEach((node, idx) => {
@@ -219,7 +219,7 @@ class ExerciseCenterController {
       try {
         const savedCollapsed = localStorage.getItem('astro_exercise_filter_collapsed');
         const isMobileScreen = typeof window !== 'undefined' && window.innerWidth <= 640;
-        // 规范第九条：移动端优先进入「沉浸做题态」，筛选默认收起；桌面端遵从用户记忆
+
         const shouldCollapse = savedCollapsed !== null ? savedCollapsed === '1' : isMobileScreen;
         if (shouldCollapse) {
           this.setFilterCollapsed(true);
@@ -252,7 +252,6 @@ class ExerciseCenterController {
 
     document.addEventListener('astro:page-load', setup);
 
-    // 监听页面卸载，释放全屏题库、PDF 渲染引擎与长周期缓存
     document.addEventListener('astrolib:page-unload', () => {
       if (this.isOpen) {
         this.close();
@@ -723,9 +722,6 @@ class ExerciseCenterController {
     }
   }
 
-  /**
-   * LRU 缓存淘汰策略：保持最多保活 max 个章节 JSON，防止内存无上限膨胀
-   */
   private trimChapterCache(max = 2) {
     while (this.chapterCache.size > max) {
       const oldestKey = this.chapterCache.keys().next().value;
@@ -737,9 +733,6 @@ class ExerciseCenterController {
     }
   }
 
-  /**
-   * LRU 缓存淘汰策略：保持最多保活 max 套试卷 JSON
-   */
   private trimPaperCache(max = 2) {
     while (this.paperCache.size > max) {
       const oldestKey = this.paperCache.keys().next().value;
@@ -1313,9 +1306,6 @@ class ExerciseCenterController {
     });
   }
 
-  /**
-   * 构造参考答案、推导步骤与考点提示 HTML (按需执行，避免全量 KaTeX DOM 挂载)
-   */
   private renderSolutionBoxContent(q: SlimQuestionItem): string {
     const record = this.practiceRecords.get(q.id) || { answered: false };
     return renderSolutionBoxContent(q, record);

@@ -1,10 +1,3 @@
-/**
- * src/ai/client/chat-generation.ts
- * ============================================================================
- * Multi-turn Stream Chat & Tool Calling Loop for AI Ask
- * ============================================================================
- */
-
 import {
   getAiProvider,
   getAiExtendedThinking,

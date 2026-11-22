@@ -1,10 +1,3 @@
-/**
- * src/styles/harness/metro-timeline.css
- * ============================================================================
- * Linear Metro Rail Timeline (Google Gemini + DeepSeek Harness M3E Fusion)
- * ============================================================================
- */
-
 .harness-turn-timeline-slot {
   width: 100%;
   min-width: 0;
@@ -15,7 +8,6 @@
   margin-bottom: 6px;
 }
 
-/* 顶部折叠摘要条 (Completed / Streaming Summary Bar) */
 .metro-summary-bar {
   display: inline-flex;
   align-items: center;
@@ -98,7 +90,6 @@
   transition: transform 0.16s ease;
 }
 
-/* 地铁线性导览轨道 (Rail Container) */
 .metro-rail-container {
   margin-top: 8px;
   padding: 2px 0 4px 2px;
@@ -221,7 +212,6 @@
   display: none;
 }
 
-/* 节点正文行与对齐文本轴 */
 .metro-step-body {
   flex: 1;
   min-width: 0;
@@ -337,7 +327,6 @@
   border-color: transparent;
 }
 
-/* 思维展开抽屉 (限高独立滚动) */
 .metro-thinking-drawer {
   margin-top: 6px;
   padding: 8px 12px;
@@ -360,7 +349,6 @@
   word-break: break-word;
 }
 
-/* 工具参数与输出抽屉 (严格限高 220px，杜绝撑爆版面) */
 .metro-tool-drawer {
   margin-top: 6px;
   padding: 10px 12px;
@@ -435,7 +423,6 @@
   border-radius: 9999px;
 }
 
-/* 权限确认卡 (Inline Approval Card) */
 .metro-approval-card {
   padding: 11px 14px;
   border-radius: 12px;
@@ -519,7 +506,6 @@
   font-weight: 500;
 }
 
-/* 暗色主题微调 */
 [data-theme='dark'] .metro-node-dot {
   background-color: var(--md-sys-color-surface-container-high, #25262b);
 }
@@ -543,10 +529,6 @@
 [data-theme='dark'] .metro-tool-drawer::-webkit-scrollbar-thumb {
   background-color: rgba(255, 255, 255, 0.22);
 }
-
-/* ============================================================================
- * 交错时间流布局 (Interleaved Turn Stream & Inline Segments)
- * ========================================================================== */
 
 .harness-turn-stream {
   display: flex;

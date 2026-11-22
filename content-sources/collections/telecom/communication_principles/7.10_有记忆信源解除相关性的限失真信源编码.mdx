@@ -27,10 +27,8 @@ e_l = x_l - \hat{x}_l
 $$
 
 <div style="text-align: center; margin: 1.5rem 0;">
-  
 
 ![预测编码器原理图](./images/fig_7_10_1.png)
-
 
   <div style="font-size: 0.88rem; color: var(--sl-color-gray-3); margin-top: 0.5rem;">图 7.10.1 预测编码器开环工作原理概念模型</div>
 </div>
@@ -46,10 +44,8 @@ $$
 式中 $K$ 为预测阶数，$\{a_k\}$ 为线性预测加权系数。
 
 <div style="text-align: center; margin: 1.5rem 0;">
-  
 
 ![线性预测编码器原理图](./images/fig_7_10_2.png)
-
 
   <div style="font-size: 0.88rem; color: var(--sl-color-gray-3); margin-top: 0.5rem;">图 7.10.2 基于延迟单元与抽头加权的线性预测器内部结构</div>
 </div>
@@ -72,10 +68,8 @@ $$
 为了消除量化误差积累，必须采用**闭环反馈架构**，这便是**差分脉冲编码调制（Differential PCM, DPCM）**。
 
 <div style="text-align: center; margin: 1.5rem 0;">
-  
 
 ![DPCM 系统原理图](./images/fig_7_10_3.png)
-
 
   <div style="font-size: 0.88rem; color: var(--sl-color-gray-3); margin-top: 0.5rem;">图 7.10.3 具有量化误差内闭环跟踪特性的 DPCM 发射端与接收端系统架构</div>
 </div>
@@ -104,10 +98,8 @@ $$
 增量调制是 DPCM 的极限简化形态 —— **量化器采用最简的 1 比特硬判决器**。
 
 <div style="text-align: center; margin: 1.5rem 0;">
-  
 
 ![简单 ΔM 原理框图](./images/fig_7_10_4.png)
-
 
   <div style="font-size: 0.88rem; color: var(--sl-color-gray-3); margin-top: 0.5rem;">图 7.10.4 1 比特增量调制器（$\Delta$M）发端判决积分与收端解调结构</div>
 </div>
@@ -117,10 +109,8 @@ $$
 - 若输入信号低于预测积分值（$x_l < \hat{x}_l$），输出码元 `0`，本地重构值递减固定步长 $\Delta$。
 
 <div style="text-align: center; margin: 1.5rem 0;">
-  
 
 ![简单 ΔM 的波形图](./images/fig_7_10_5.png)
-
 
   <div style="font-size: 0.88rem; color: var(--sl-color-gray-3); margin-top: 0.5rem;">图 7.10.5 $\Delta$M 的阶梯追踪波形：斜率过载噪声与空载颗粒噪声</div>
 </div>

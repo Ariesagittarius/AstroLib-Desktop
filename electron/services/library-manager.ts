@@ -1,15 +1,3 @@
-/**
- * electron/services/library-manager.ts
- * ============================================================================
- * AstroLib 统一研读实体与书库聚合管理服务 (Unified Library Manager)
- * ============================================================================
- * 职责：
- * 1. 同级化聚合「ABP 教材书籍」与「MinerU 学术文献/论文」，构建一等公民实体池；
- * 2. 维护持久化用户书架、自建分类与阅读进度 (library-registry.json)；
- * 3. 配合 IPC 与 RESTful 接口向前端提供统一的书库数据源。
- * ============================================================================
- */
-
 import { app } from 'electron';
 import path from 'node:path';
 import fs from 'node:fs';
@@ -83,7 +71,7 @@ export class DesktopLibraryManager {
         const raw = fs.readFileSync(this.registryFile, 'utf8');
         this.store = JSON.parse(raw);
       } else {
-        // 初始化默认书架
+
         this.store = {
           shelves: [
             { id: 'shelf-math-core', name: '数学基础核心', itemCount: 0, createdAt: Date.now() },
@@ -107,9 +95,6 @@ export class DesktopLibraryManager {
     }
   }
 
-  /**
-   * 获取所有可能存放文献摄取任务的候选物理目录
-   */
   private getIngestCandidateDirs(): string[] {
     const candidates: string[] = [];
     if (process.env.ASTROLIB_INGEST_DIR) {
@@ -143,9 +128,6 @@ export class DesktopLibraryManager {
     this.entitiesCache = null;
   }
 
-  /**
-   * 聚合获取全库统一实体 (书籍 + 文献)，附带 3 秒短期内存缓存与并发去重
-   */
   public async getAllEntities(forceRefresh = false): Promise<UnifiedReadingEntity[]> {
     const now = Date.now();
     if (!forceRefresh && this.entitiesCache && now < this.entitiesCache.expiresAt) {
@@ -169,7 +151,6 @@ export class DesktopLibraryManager {
   private async scanAllEntities(): Promise<UnifiedReadingEntity[]> {
     const entities: UnifiedReadingEntity[] = [];
 
-    // 1. 聚合已安装的 ABP 书籍
     try {
       const installedBooks = await this.bookManager.getInstalledBooks();
       for (const b of installedBooks) {
@@ -208,7 +189,6 @@ export class DesktopLibraryManager {
       console.error('[DesktopLibraryManager] 聚合书籍失败:', err);
     }
 
-    // 2. 聚合 MinerU 解析的学术文献（异步并行目录扫描，避免同步 IO 卡死主线程）
     try {
       const candidateDirs = this.getIngestCandidateDirs();
       const taskMap = new Map<string, IngestTaskMetaLite>();
@@ -253,7 +233,6 @@ export class DesktopLibraryManager {
 
         const mappedStatus = mapIngestTaskToEntityStatus(t, taskManager.isJobActive(t.taskId));
 
-        // 智能提取干净文献名（去除 .pdf 扩展名）
         const cleanName = t.fileName.replace(/\.pdf$/i, '');
 
         entities.push({
@@ -287,7 +266,6 @@ export class DesktopLibraryManager {
       console.error('[DesktopLibraryManager] 聚合文献任务失败:', err);
     }
 
-    // 按最近阅读与创建时间倒序排列
     return entities.sort((a, b) => {
       const aTime = a.lastReadAt || a.createdAt;
       const bTime = b.lastReadAt || b.createdAt;

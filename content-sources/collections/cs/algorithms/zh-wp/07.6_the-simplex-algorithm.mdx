@@ -42,7 +42,7 @@ set  $v = v'$
 
 唯一确定一个点需要多少个等式？当存在 $n$ 个变量时，如果要求解唯一，则至少需要 $n$ 个线性方程。另一方面，当解唯一时，超过 $n$ 个的线性方程也是不必要的。因为其中至少会有一个方程可以表示为其它方程的线性组合，因此可以被忽略。总之，
 
-![](../images/3392a869d9ea6e86d9c12ac422121c5b5b6d4f53c3c4c3e3dcdd6608f7a6aeff.jpg)  
+![](../images/3392a869d9ea6e86d9c12ac422121c5b5b6d4f53c3c4c3e3dcdd6608f7a6aeff.jpg)
 图7-12 由7个不等式定义的多面体
 
 $$
@@ -137,7 +137,7 @@ $$
 
 <table><tr><td>初始LP: max 2x1+5x22x1-x2≤4 1x1+2x2≤9 2-x1+x2≤3 3x1≥0 4x2≥0 5</td><td>当前顶点:&#123;4,5&#125;(原点)。目标值:0。移动:增大x2。5被放松,3被绷紧。在x2=3停止。新顶点&#123;4,3&#125;具有局部坐标(y1,y2): y1=x1, y2=3+x1-x2</td></tr><tr><td>重写后的LP: max 15+7y1-5y2y1+y2≤7 13y1-2y2≤3 2y2≥0 3y1≥0 4-y1+y2≤3 5</td><td>当前顶点:&#123;4,3&#125;。目标值:15。移动:增大y1。4被放松,2被绷紧。在y1=1停止。新顶点&#123;2,3&#125;具有局部坐标(z1,z2): z1=3-3y1+2y2, z2=y2</td></tr><tr><td>重写后的LP: max 22-7/3z1-1/3z2-1/3z1+5/3z2≤6 1z1≥0 2z2≥0 31/3z1-2/3z2≤1 41/3z1+1/3z2≤4 5</td><td>当前顶点:&#123;2,3&#125;。目标值:22。最优:所有c1&lt;0。(在原LP中)解2,3得到最优解(x1,x2)=(1,4)。</td></tr><tr><td colspan="2"></td></tr></table>
 
-![](../images/24fc59f13d18eba38b1b8ac893cbfbfd2603f74f114e4cf6ed0df1e1baf79ee9.jpg)  
+![](../images/24fc59f13d18eba38b1b8ac893cbfbfd2603f74f114e4cf6ed0df1e1baf79ee9.jpg)
 图 7-13 单纯形法的求解过程
 
 ## 7.6.3 补遗
@@ -215,7 +215,7 @@ proceduregauss (E, X)
 
 Input: A system  $E = \{e_1, \ldots, e_n\}$  of equations in n unknowns  $X = \{x_1, \ldots, x_n\}$ ;
 
- $e_1 : a_{11}x_1 + a_{12}x_2 + \cdots + a_{1n}x_n = b_1; \cdots; e_n : a_{n1}x_1 + a_{n2}x_2 + \cdots + a_{nn}x_n = b_n$ 
+ $e_1 : a_{11}x_1 + a_{12}x_2 + \cdots + a_{1n}x_n = b_1; \cdots; e_n : a_{n1}x_1 + a_{n2}x_2 + \cdots + a_{nn}x_n = b_n$
 
 Output: A solution of the system, if one exists
 
@@ -223,13 +223,13 @@ If all coefficients  $a_{i1}$  are zero:
 
 halt with message "either infeasible or not linearly independent"
 
-if n = 1: return  $b_1/a_{11}$ 
+if n = 1: return  $b_1/a_{11}$
 
-choose the coefficient  $a_{p1}$  of largest magnitude, and swap equations  $e_1, e_p$ 
+choose the coefficient  $a_{p1}$  of largest magnitude, and swap equations  $e_1, e_p$
 
 for i = 2 to n:
 
- $e_i = e_i - (a_{i1}/a_{11}) \cdot e_i$ $(x_2; \ldots, x_n) = \text{gauss}(E - \{e_1\}, X - \{x_1\})$ $x_1 = (b_1 - \Sigma_{j>1} a_{1j}x_j)/a_{11}$ 
+ $e_i = e_i - (a_{i1}/a_{11}) \cdot e_i$ $(x_2; \ldots, x_n) = \text{gauss}(E - \{e_1\}, X - \{x_1\})$ $x_1 = (b_1 - \Sigma_{j>1} a_{1j}x_j)/a_{11}$
 
 return  $(x_1, \ldots, x_n)$
 </div>

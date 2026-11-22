@@ -1,4 +1,4 @@
-﻿  .hub-root-shell {
+.hub-root-shell {
     --hub-bg: var(--md-sys-color-surface, #ffffff);
     --hub-surface: var(--md-sys-color-surface, #ffffff);
     --hub-surface-container: var(--md-sys-color-surface-container, #f0f2f5);
@@ -304,9 +304,6 @@
     line-height: 1.5;
   }
 
-  /* =========================================================================
-   * 鍘熸湁 FeatureToggles UI 鐨?Hub 鑷€傚簲瀹藉害瀹夸富鏍峰紡瑕嗙洊
-   * 瀹屾暣淇濈暀 Chrome 涓婚杞洏銆佸垎娈垫寜閽€丮3 Filter Chips銆丼lider 涓?AI 鍧楄川鎰?   * ========================================================================= */
   html[data-site-theme='material-you'] starlight-feature-toggles.hub-ft-host,
   starlight-feature-toggles.hub-ft-host {
     display: block !important;
@@ -345,7 +342,6 @@
     gap: 14px !important;
   }
 
-  /* 覆盖层在未开启状态下，严格禁止拦截/消费任何鼠标点击事件 */
   :global(.hub-overlay-backdrop:not(.is-open)) starlight-feature-toggles.hub-ft-host .ft-panel.hub-ft-inline-panel,
   :global(.hub-overlay-backdrop:not(.is-open)) .hub-ft-host .ft-panel.hub-ft-inline-panel,
   :global(.hub-overlay-backdrop:not(.is-open)) * {
@@ -379,7 +375,6 @@
     border-top: none !important;
   }
 
-  /* 涓婚鍒囨崲 3 鍒嗘涓庡姞杞介鏍?2 鍒嗘銆侀鍔犺浇/缂撳瓨 5 鍒嗘鍧囪嚜閫傚簲鍏ㄥ */
   html[data-site-theme='material-you'] .hub-ft-host .ft-theme-mode-segmented,
   .hub-ft-host .ft-theme-mode-segmented {
     width: 100% !important;
@@ -396,7 +391,6 @@
     width: 100% !important;
   }
 
-  /* 4x4 鍦嗗舰涓婚鑹茶疆鐩樼煩闃碉細淇濇寔 68-76px 绮捐嚧鏂瑰舰鐡风爾锛屽灞忚嚜鍔?8x2锛岀獎灞忚嚜鍔?4x4 */
   html[data-site-theme='material-you'] .hub-ft-host .ft-chrome-swatches-grid,
   .hub-ft-host .ft-chrome-swatches-grid {
     display: grid !important;
@@ -449,7 +443,6 @@
     color: var(--hub-on-surface-variant) !important;
   }
 
-  /* 妗岄潰瀹㈡埛绔幆澧冧笅闅愯棌绾祻瑙堝櫒 PWA 瀹夎鎻愮ず鍗＄墖 */
   html.is-electron-app .hub-ft-host .ft-pwa-card,
   html.is-electron .hub-ft-host .ft-pwa-card {
     display: none !important;
@@ -460,7 +453,6 @@
     gap: 10px !important;
   }
 
-  /* 鐘舵€佹寚绀虹偣涓庤瘖鏂綉鏍?*/
   .status-indicator {
     display: inline-flex;
     align-items: center;
@@ -639,7 +631,6 @@
     display: flex;
   }
 
-  /* 文献解析与研读设置面板辅助布局 */
   .ingest-token-header {
     display: flex;
     align-items: center;
@@ -689,7 +680,6 @@
     flex-wrap: wrap;
   }
 
-  /* Agent 与工具中心 (panel-agent) */
   .agent-subtabs-bar {
     margin-bottom: 14px;
   }
@@ -899,7 +889,6 @@
     color: var(--hub-primary);
   }
 
-  /* 展开的工具详情检查器 */
   .agent-tool-inspector {
     margin-top: 16px;
     padding: 16px 18px;
@@ -1059,7 +1048,6 @@
     flex-shrink: 0;
   }
 
-  /* 模型与服务商 */
   .agent-providers-list {
     display: flex;
     flex-direction: column;
@@ -1126,7 +1114,6 @@
     margin-top: 12px;
   }
 
-  /* 源码与配置预览模态弹窗 */
   .agent-code-modal {
     position: fixed;
     inset: 0;

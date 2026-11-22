@@ -25,7 +25,7 @@ describe('Electron Packaging Hygiene & Forbidden Paths Contract', () => {
   it('若本地存在 release/win-unpacked/resources/app.asar，则禁止路径违规必须为 0 且体积 <= 200 MB', () => {
     const asarPath = path.join(ROOT, 'release', 'win-unpacked', 'resources', 'app.asar');
     if (!fs.existsSync(asarPath)) {
-      // 未运行 electron-builder --dir 的 CI/单元测试阶段仅校验打包配置契约
+
       return;
     }
 

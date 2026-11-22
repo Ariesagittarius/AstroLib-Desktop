@@ -1,10 +1,3 @@
-/**
- * tests/unit/exercise-state.test.ts
- * ============================================================================
- * Unit Tests for ExerciseStateMachine (DOM-free State Verification)
- * ============================================================================
- */
-
 import { describe, it, expect, beforeEach } from 'vitest';
 import { ExerciseStateMachine } from '../../src/components/exercises/exercise-controller.state';
 import { ExerciseCenterController, exerciseController } from '../../src/components/exercises/exercise-controller';
@@ -35,7 +28,7 @@ describe('ExerciseStateMachine', () => {
 
     sm.setMode('paper');
     expect(sm.getFilters().mode).toBe('paper');
-    expect(sm.getDisplayedLimit()).toBe(15); // reset on mode change
+    expect(sm.getDisplayedLimit()).toBe(15);
 
     sm.setSource('exam');
     sm.setGroup('A');
@@ -72,9 +65,8 @@ describe('ExerciseStateMachine', () => {
     expect(stats.done).toBe(0);
     expect(stats.accuracy).toBe(0);
 
-    // Answer q1 correctly
     sm.recordChoice('q1', 'A', 'A');
-    // Answer q2 incorrectly
+
     sm.recordChoice('q2', 'C', 'B');
 
     stats = sm.calculateStats(mockQuestions);
@@ -91,10 +83,9 @@ describe('ExerciseStateMachine', () => {
     expect(sm.toggleMastered('q1')).toBe(false);
     expect(sm.getRecord('q1')?.mastered).toBe(false);
 
-    // Reveal solution once
     expect(sm.revealSolution('q1')).toBe(true);
     expect(sm.getRecord('q1')?.revealedSolution).toBe(true);
-    // Duplicate reveal returns false (idempotent)
+
     expect(sm.revealSolution('q1')).toBe(false);
   });
 
@@ -125,7 +116,6 @@ describe('ExerciseStateMachine', () => {
     expect(stateMachine.getFilters().group).toBe('all');
     expect(stateMachine.getFilters().isOpen).toBe(false);
 
-    // 真实状态转换与公开入口联动断言
     controller.open();
     expect(stateMachine.getFilters().isOpen).toBe(true);
     expect(controller.isOpen).toBe(true);

@@ -1,10 +1,3 @@
-/**
- * electron/services/env-detector.ts
- * ============================================================================
- * AstroLib 运行环境自省引擎 (Hardware & Python & Model Environment Detector)
- * ============================================================================
- */
-
 import os from 'node:os';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -20,17 +13,11 @@ export class EnvDetector {
   private static readonly CACHE_TTL_MS = 15000;
   private static customPythonPath: string | null = null;
 
-  /**
-   * 手动设置用户自定义 Python 解释器路径
-   */
   static setCustomPythonPath(pythonPath: string | null) {
     this.customPythonPath = pythonPath;
-    this.cachedDiagnostics = null; // 清除缓存强制重新探测
+    this.cachedDiagnostics = null;
   }
 
-  /**
-   * 独立探测 NVIDIA 独立显卡与 CUDA 支持情况
-   */
   private static async probeGpu(): Promise<{
     name: string | null;
     vramMB: number | null;
@@ -57,14 +44,11 @@ export class EnvDetector {
         };
       }
     } catch {
-      // 无 nvidia-smi 或非 NVIDIA 显卡
+
     }
     return { name: null, vramMB: null, driverVersion: null, hasCuda: false };
   }
 
-  /**
-   * 探测全局系统硬件与运行环境
-   */
   static async getDiagnostics(projectRoot: string, customModelsDir?: string, force = false): Promise<SystemDiagnostics> {
     const now = Date.now();
     if (!force && this.cachedDiagnostics && now - this.lastProbeTime < this.CACHE_TTL_MS) {
@@ -76,7 +60,6 @@ export class EnvDetector {
     const totalMemMB = Math.round(os.totalmem() / (1024 * 1024));
     const freeMemMB = Math.round(os.freemem() / (1024 * 1024));
 
-    // 磁盘剩余空间 (GB)
     let diskFreeGB = 0;
     try {
       if (typeof fs.statfs === 'function') {
@@ -84,19 +67,16 @@ export class EnvDetector {
         diskFreeGB = Math.round((stats.bfree * stats.bsize) / (1024 * 1024 * 1024));
       }
     } catch {
-      diskFreeGB = 50; // 兜底默认值
+      diskFreeGB = 50;
     }
 
-    // 模型存储目录
     const hfCacheDir = process.env.HF_HOME
       ? path.join(process.env.HF_HOME, 'hub')
       : path.join(os.homedir(), '.cache', 'huggingface', 'hub');
     const modelsDir = customModelsDir || path.join(os.homedir(), '.cache', 'astrolib', 'models');
 
-    // 1. 独立探针：显卡硬件
     const gpuInfo = await this.probeGpu();
 
-    // 2. 启发式探测与优选 Python 运行环境
     const pythonInfo = await this.probePython(projectRoot);
 
     const diagnostics: SystemDiagnostics = {
@@ -127,9 +107,6 @@ export class EnvDetector {
     return diagnostics;
   }
 
-  /**
-   * 探测并优选 Python 环境及其依赖（按 PyTorch + CUDA 能力加权评分）
-   */
   private static async probePython(projectRoot: string): Promise<{
     path: string | null;
     version: string | null;
@@ -141,10 +118,8 @@ export class EnvDetector {
     const isWin = os.platform() === 'win32';
     const pyExe = isWin ? 'Scripts/python.exe' : 'bin/python';
 
-    // 智能收集所有可能存在的 Python 路径候选
     const candidateSet = new Set<string>();
 
-    // 1. 用户自定义与环境变量
     if (this.customPythonPath && fs.existsSync(this.customPythonPath)) {
       candidateSet.add(this.customPythonPath);
     }
@@ -152,7 +127,6 @@ export class EnvDetector {
       candidateSet.add(process.env.PYTHON_PATH);
     }
 
-    // 2. 本项目及常见虚拟环境 (基于 projectRoot 与用户目录相对探测)
     const localCandidates = [
       path.join(projectRoot, '.venv', pyExe),
       path.join(projectRoot, '.venv-agent', pyExe),
@@ -168,7 +142,6 @@ export class EnvDetector {
       }
     }
 
-    // 3. 系统全局 PATH
     candidateSet.add('python3');
     candidateSet.add('python');
 
@@ -211,7 +184,6 @@ export class EnvDetector {
             const jsonStr = stdout.slice(idx + marker.length).trim();
             const data = JSON.parse(jsonStr);
 
-            // 启发式评分：CUDA 加速(10分) > PyTorch(4分) > Transformers(2分) > 基础可用(1分)
             let score = 1;
             if (data.cuda) score += 10;
             if (data.torch) score += 4;
@@ -228,12 +200,11 @@ export class EnvDetector {
             });
           }
         } catch {
-          // 该候选执行失败，跳过继续测试下一个
+
         }
       })
     );
 
-    // 按得分由高到低排序，优选最高质量的环境
     evaluated.sort((a, b) => b.score - a.score);
 
     if (evaluated.length > 0) {

@@ -1,15 +1,3 @@
-/**
- * src/features/doc-ingestion/paper-reader-controller.ts
- * ============================================================================
- * 单文献纯净双栏阅读器主控制器 (Material Design 3 + MD3E)
- * ============================================================================
- * 设计铁律：
- * 1. 严格单文献绑定：仅依据 URL ?taskId= 载入唯一指定文献，绝不切换任务或篡改标题；
- * 2. 彻底去冗余：无侧栏、无独立 Logo、无独立设置、无常驻「开始解析」按钮；
- * 3. 状态自洽：正在解析显示 MD3 进度条并自动渲染；失败/中断/待解析右栏给出清晰提示与轻量重试。
- * ============================================================================
- */
-
 import katex from 'katex';
 import { getSavedMineruToken, readIngestSettings } from './ingest-settings';
 import { PaperTypographyManager } from './paper-typography';
@@ -272,7 +260,6 @@ export function initPaperReader(): void {
     { passive: true }
   );
 
-  // 空状态返回书库
   document.getElementById('btn-empty-goto-library')?.addEventListener('click', () => {
     if (window.parent && window.parent !== window) {
       window.parent.postMessage({ type: 'astrolib:switch-fragment', fragment: 'library' }, '*');
@@ -669,7 +656,6 @@ export function initPaperReader(): void {
     }, 2200);
   };
 
-  // 转入书籍合集 M3 Dialog
   const exportModal = document.getElementById('export-modal') as any;
   const exportColChips = document.getElementById('export-collection-chips');
   const exportSlugInput = document.getElementById('export-slug-input') as any;
@@ -755,7 +741,6 @@ export function initPaperReader(): void {
     }
   });
 
-  // 初始化入口：严格绑定单一文献
   if (!taskId) {
     if (emptyStage) emptyStage.style.display = 'flex';
     if (workspaceGrid) workspaceGrid.style.display = 'none';

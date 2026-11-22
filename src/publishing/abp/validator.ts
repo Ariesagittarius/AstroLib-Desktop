@@ -1,16 +1,3 @@
-/**
- * src/publishing/abp/validator.ts
- * ============================================================================
- * 独立无头 MDX 质量门禁与 ABP 归档完整性校验引擎
- * ============================================================================
- * 职责：
- * 1. 全真 MDX + JSX + KaTeX 编译校验（严格复刻 Astro 编译管线）；
- * 2. 图片存在性、禁止 <img src="images/...">、禁止嵌套 <figure> 检查；
- * 3. 五大学术出版防线检查（末尾标题泄漏、注解章误用 Knowledge、表格裸 ~）；
- * 4. .abp 归档包解包、Schema、HTML 内零 KaTeX 报错、内嵌资产闭环校验。
- * ============================================================================
- */
-
 import fs from 'node:fs';
 import path from 'node:path';
 import { compile } from '@mdx-js/mdx';
@@ -63,9 +50,6 @@ function walkMdxFiles(target: string): string[] {
   return list.sort(naturalSort);
 }
 
-/**
- * 校验单篇 MDX/MD 文件（供子代理自检与主门禁复用）
- */
 export async function validateMdxFile(
   filePath: string,
   options: { baseDir?: string; assetBaseDir?: string; skipMath?: boolean; skipMdxCompile?: boolean } = {}
@@ -89,7 +73,6 @@ export async function validateMdxFile(
     : path.basename(resolvedFile);
   const getLine = buildLineResolver(content);
 
-  // 1. Frontmatter 检查
   let frontmatterTitle = '';
   const fmMatch = content.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?/);
   if (!fmMatch) {
@@ -128,7 +111,6 @@ export async function validateMdxFile(
     });
   }
 
-  // 2. MDX/JSX 全真编译校验
   if (!options.skipMdxCompile) {
     try {
       const compiled = await compile(
@@ -162,7 +144,6 @@ export async function validateMdxFile(
     }
   }
 
-  // 3. 逐条 KaTeX 严格公式语法校验（跳过代码块）
   if (!options.skipMath) {
     const maskedCode = content.replace(/```[\s\S]*?```/g, (m) => ' '.repeat(m.length));
 
@@ -202,7 +183,6 @@ export async function validateMdxFile(
     }
   }
 
-  // 4. 图片资产存在性与原生 <img src="images/..."> / 双重 <figure> 检查
   const bookRootDir = path.dirname(resolvedFile);
   for (const m of content.matchAll(/!\[[^\]]*\]\(([^)\n]+)\)/g)) {
     const rawPath = (m[1] || '').trim();
@@ -260,8 +240,6 @@ export async function validateMdxFile(
     }
   }
 
-  // 5. 五大学术防线检查
-  // 5.1 章节末尾标题泄漏
   const lines = body.split(/\r?\n/);
   for (let i = lines.length - 1; i >= 0; i--) {
     const t = lines[i].trim();
@@ -279,7 +257,6 @@ export async function validateMdxFile(
     break;
   }
 
-  // 5.2 注解章节严禁包装 <Knowledge> 定理卡片
   if (/注解/.test(path.basename(resolvedFile)) && /<Knowledge\b/i.test(body)) {
     const m = /<Knowledge\b/i.exec(body);
     issues.push({
@@ -291,7 +268,6 @@ export async function validateMdxFile(
     });
   }
 
-  // 5.3 Markdown 表格中的数字波浪线 ~ 陷阱（warning）
   const bodyLines = body.split(/\r?\n/);
   for (let i = 0; i < bodyLines.length; i++) {
     const ln = bodyLines[i];
@@ -307,7 +283,6 @@ export async function validateMdxFile(
     }
   }
 
-  // 5.4 Mermaid 语法基础检查
   for (const m of content.matchAll(/```mermaid\s*\r?\n([\s\S]*?)```/gi)) {
     const code = m[1].trim();
     const firstLine = (code.split(/\r?\n/).find((l) => l.trim() && !l.trim().startsWith('%%')) || '').trim();
@@ -323,11 +298,9 @@ export async function validateMdxFile(
     }
   }
 
-  // 屏蔽围栏代码块以便精准执行正文结构校验（保留换行符以保持行号一致）
   const maskedBody = body.replace(/```[\s\S]*?```/g, (m) => m.replace(/[^\r\n]/g, ' '));
   const maskedBodyLines = maskedBody.split(/\r?\n/);
 
-  // 5.5 重复标题与正文禁用一级标题 H1 检查
   for (let i = 0; i < maskedBodyLines.length; i++) {
     const t = maskedBodyLines[i].trim();
     if (/^#\s+\S/.test(t)) {
@@ -381,7 +354,6 @@ export async function validateMdxFile(
     }
   }
 
-  // 5.6 <Algorithm> 伪代码语法合规性检查（禁止 <br/> / &nbsp;，强制原生换行与空格缩进）
   for (const am of body.matchAll(/<Algorithm\b[^>]*>([\s\S]*?)<\/Algorithm>/gi)) {
     const inner = am[1] || '';
     const badTag = inner.match(/<br\s*\/?>|&nbsp;/i);
@@ -398,7 +370,6 @@ export async function validateMdxFile(
     }
   }
 
-  // 5.7 脚注闭环与 MinerU 原始脚注提示残留检查
   const fnDefs = new Map<string, number[]>();
   const fnRefs = new Map<string, number[]>();
   for (let i = 0; i < maskedBodyLines.length; i++) {
@@ -470,9 +441,6 @@ export async function validateMdxFile(
   return issues;
 }
 
-/**
- * 批量校验目录或单个 MDX 文件
- */
 export async function validateBookDirectory(
   targetPath: string,
   options: { assetBaseDir?: string; skipMath?: boolean; skipMdxCompile?: boolean } = {}
@@ -506,9 +474,6 @@ export async function validateBookDirectory(
   };
 }
 
-/**
- * 对编译产出的 .abp 文件执行端到端解包、Schema、HTML 内 KaTeX 与资产闭环校验
- */
 export async function verifyAbpArchive(abpPath: string): Promise<AbpArchiveVerificationReport> {
   const resolved = path.resolve(abpPath);
   if (!fs.existsSync(resolved)) {
@@ -545,7 +510,6 @@ export async function verifyAbpArchive(abpPath: string): Promise<AbpArchiveVerif
       errors.push('ABP 包内 chapters 为空');
     }
 
-    // 检查各章节 HTML 质量与引用资产闭环
     const assetPrefix = `/collections/${manifest.colSlug}/${manifest.slug}/`;
     for (const [slug, ch] of Object.entries(chapters)) {
       if (!ch.html || ch.html.trim().length === 0) {
@@ -575,7 +539,6 @@ export async function verifyAbpArchive(abpPath: string): Promise<AbpArchiveVerif
       errors.push(`以下章节引用的图片资产未打包进 ABP assets: ${missingAssets.join('; ')}`);
     }
 
-    // 校验内嵌封面
     if (manifest.cover && manifest.cover.startsWith(`/abp-packs/${manifest.id}/`)) {
       const relCover = manifest.cover.slice(`/abp-packs/${manifest.id}/`.length);
       if (!Object.prototype.hasOwnProperty.call(assets, relCover)) {

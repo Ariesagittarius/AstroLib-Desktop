@@ -1,19 +1,4 @@
 ---
-/**
- * src/pages/desktop.astro
- * ============================================================================
- * AstroLib 桌面端专属 SPA 框架工作台 (Desktop Main Shell & Multi-Fragment Host)
- * ============================================================================
- * 规范：
- * 1. 严格践行“外层框架 + Android Fragment 范式”，左侧为 M3 主导航轨；
- * 2. 窗口主体挂载 3 大核心 Fragment：
- *    - Fragment 1: Agent 纵览大厅 (全幅 Lottie 矢量动画实验展台)
- *    - Fragment 2: 学术研读书库 (Google Play 图书级书架 / 书籍与文献一等公民)
- *    - Fragment 3: 研读视窗中心 (Chrome 风格多标签栏 + Windows 11 灵活分屏)
- * 3. 极速常驻状态，Fragment 切换零页面重刷、零白屏抖动，全面保持阅读会话与滚动位置。
- * ============================================================================
- */
-
 import '@fontsource-variable/noto-sans-sc/index.css';
 import '@fontsource-variable/noto-serif-sc/index.css';
 import '@fontsource-variable/plus-jakarta-sans/index.css';
@@ -40,9 +25,7 @@ const pageTitle = 'AstroLib - 理工科学术教辅系统';
     <title>{pageTitle}</title>
     <link rel="icon" href="/favicon.png" />
 
-    <!-- 性能与一致性保障：首屏秒级预注 M3 动态色彩与深浅模式，杜绝闪烁并与研读视窗绝对同步 -->
-    <script is:inline>
-      (function () {
+    <script is:inline>(function () {
         try {
           var themeKey = 'starlight-theme';
           var currentTheme = localStorage.getItem(themeKey);
@@ -67,7 +50,6 @@ const pageTitle = 'AstroLib - 理工科学术教辅系统';
             styleEl.textContent = cachedCss;
             document.head.appendChild(styleEl);
 
-            // 确保样式表在 DOM 解析完毕后仍然处于 head 末尾以压制静态 link 样式
             document.addEventListener('DOMContentLoaded', function () {
               if (styleEl && document.head.lastElementChild !== styleEl) {
                 document.head.appendChild(styleEl);
@@ -76,10 +58,10 @@ const pageTitle = 'AstroLib - 理工科学术教辅系统';
           }
         } catch (e) {}
       })();
-    </script>
+</script>
   </head>
   <body class="desktop-app-body">
-    <!-- 桌面端紧凑顶栏 (28px 拖拽区 + 左侧导航栏收纳开关 + 右侧自绘 Windows 11 窗口三键) -->
+
     <div class="desktop-titlebar-drag-region" id="desktop-titlebar">
       <div class="titlebar-left">
         <button
@@ -124,31 +106,26 @@ const pageTitle = 'AstroLib - 理工科学术教辅系统';
       </div>
     </div>
 
-    <!-- 外层主框架容器 -->
     <div class="desktop-shell-root">
-      <!-- 1. 最左侧 M3 导航轨 (Navigation Rail) -->
+
       <NavigationRail />
 
-      <!-- 2. 主 Fragment 挂载舞台 (Fragment Stage) -->
       <main class="desktop-fragment-stage" id="desktop-fragment-stage">
-        <!-- Fragment 1: Agent Harness 工作台 (默认首屏激活) -->
+
         <section class="fragment-view active" id="view-fragment-overview" aria-hidden="false">
           <HarnessStage />
         </section>
 
-        <!-- Fragment 2: 学术研读书库 (点击导航轨第 2 项激活) -->
         <section class="fragment-view fragment-view--inactive" id="view-fragment-library" inert aria-hidden="true">
           <FragmentLibrary />
         </section>
 
-        <!-- Fragment 3: 多篇研读中心 (默认隐藏，点击书籍或导航轨第 3 项激活) -->
         <section class="fragment-view fragment-view--inactive" id="view-fragment-reader" inert aria-hidden="true">
           <FragmentReaderHost />
         </section>
       </main>
     </div>
 
-    <!-- 窗口内覆盖层设置中心 (模仿 Antigravity / M3 Modal Sheet 交互，默认 display: none 彻底杜绝事件消费穿透) -->
     <div
       class="hub-overlay-backdrop"
       id="desktop-hub-overlay"
@@ -163,7 +140,6 @@ const pageTitle = 'AstroLib - 理工科学术教辅系统';
       </div>
     </div>
 
-    <!-- F11 沉浸全屏模式顶部边缘退出浮标 -->
     <div class="fullscreen-hover-zone" id="fullscreen-hover-zone">
       <button type="button" class="fullscreen-exit-pill" id="btn-exit-fullscreen" title="退出全屏沉浸视图 (F11)">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -176,9 +152,7 @@ const pageTitle = 'AstroLib - 理工科学术教辅系统';
       </button>
     </div>
 
-    <!-- 客户端 Fragment 调度状态机与 Material You 动态主题同步 -->
-    <script>
-      import '@material/web/chips/chip-set.js';
+    <script>import '@material/web/chips/chip-set.js';
       import '@material/web/chips/filter-chip.js';
       import { initColorEngine, applyThemeColor } from '../themes/material-you/color-engine';
       import { applyThemeMode, saveThemeMode, syncAllThemeModes } from '../scripts/settings/theme-prefs';
@@ -280,12 +254,11 @@ const pageTitle = 'AstroLib - 理工科学术教辅系统';
         }
 
         private initThemeSync() {
-          // 初始化 Material You 动态颜色引擎，并与 Windows 原生标题栏同步首屏状态
+
           initColorEngine();
           applyThemeColor();
           this.syncNativeTitleBar();
 
-          // 同窗口 SettingsHubContent 状态变更事件实时同步至主壳层及所有阅读/解析子视窗
           window.addEventListener('starlight-theme-change', () => {
             applyThemeColor();
             this.syncNativeTitleBar();
@@ -324,7 +297,6 @@ const pageTitle = 'AstroLib - 理工科学术教辅系统';
             this.broadcastThemeToPanes();
           });
 
-          // 监听系统深浅模式变化（当偏好设置为跟随系统 auto 时）
           try {
             window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (mq) => {
               const saved = localStorage.getItem('starlight-theme');
@@ -340,7 +312,6 @@ const pageTitle = 'AstroLib - 理工科学术教辅系统';
             });
           } catch {}
 
-          // 监听来自独立 /hub/ 页面或跨窗口的存储变更，实时双向同步
           window.addEventListener('storage', (e) => {
             if (e.key === 'starlight-m3-theme-color') {
               applyThemeColor(e.newValue || undefined);
@@ -377,7 +348,6 @@ const pageTitle = 'AstroLib - 理工科学术教辅系统';
             }
           });
 
-          // 监听子 iframe 的 postMessage 通知（如设置同步请求或主题色回传）
           window.addEventListener('message', (e) => {
             if (e.data && e.data.type === 'M3_THEME_COLOR_CHANGED' && e.data.color) {
               applyThemeColor(e.data.color);
@@ -459,7 +429,6 @@ const pageTitle = 'AstroLib - 理工科学术教辅系统';
             });
           });
 
-          // 全局亮暗切换（同步更新主外壳、Material You 动态色板、Native 标题栏三键、Hub 及所有子视窗）
           document.getElementById('rail-btn-theme')?.addEventListener('click', () => {
             const current = document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light';
             const next = current === 'dark' ? 'light' : 'dark';
@@ -471,7 +440,6 @@ const pageTitle = 'AstroLib - 理工科学术教辅系统';
             this.broadcastThemeToPanes();
           });
 
-          // 全局设置与控制中心入口（改为窗口内覆盖层模态窗）
           document.getElementById('rail-btn-settings')?.addEventListener('click', () => {
             if (this.isHubOpen) {
               this.closeSettingsHub();
@@ -482,7 +450,7 @@ const pageTitle = 'AstroLib - 理工科学术教辅系统';
         }
 
         private initGlobalEvents() {
-          // 监听全局切屏指令
+
           window.addEventListener('astrolib:switch-fragment', ((e: CustomEvent<string>) => {
             const fragmentId = e.detail;
             if (fragmentId) {
@@ -490,7 +458,6 @@ const pageTitle = 'AstroLib - 理工科学术教辅系统';
             }
           }) as EventListener);
 
-          // 监听来自全局自定义的 Snackbar 提示请求
           window.addEventListener('astrolib:show-snackbar', ((e: CustomEvent<{ message: string; durationMs?: number }>) => {
             if (e.detail?.message) {
               showMaterialSnackbar({
@@ -500,7 +467,6 @@ const pageTitle = 'AstroLib - 理工科学术教辅系统';
             }
           }) as EventListener);
 
-          // 监听来自阅读视窗 iframe postMessage 的章节未找到/404 事件（如实弹 snackbar 告知）
           window.addEventListener('message', (e) => {
             if (e.data && e.data.type === 'astrolib:chapter-not-found') {
               const chap = e.data.chapterSlug || '未知章节';
@@ -512,7 +478,6 @@ const pageTitle = 'AstroLib - 理工科学术教辅系统';
             }
           });
 
-          // 全局拦截 astrolib:// 协议与研读视窗定位链接，直接在 SPA 内派发节点跳转，杜绝弹窗与 404
           document.addEventListener(
             'click',
             (e) => {
@@ -539,7 +504,6 @@ const pageTitle = 'AstroLib - 理工科学术教辅系统';
             true
           );
 
-          // 监听 Electron 主进程广播的外部或拦截 URL
           const bridge = (window as any).astrolib;
           if (bridge && typeof bridge.onNavigateToUrl === 'function') {
             bridge.onNavigateToUrl((url: string) => {
@@ -555,7 +519,6 @@ const pageTitle = 'AstroLib - 理工科学术教辅系统';
             });
           }
 
-          // 监听窗口内打开/关闭设置覆盖层事件
           window.addEventListener('astrolib:open-settings-hub', ((e: CustomEvent<{ panel?: string; subtab?: string; section?: string }>) => {
             const detail = e?.detail || {};
             this.openSettingsHub(detail.panel, detail.subtab || detail.section);
@@ -570,7 +533,6 @@ const pageTitle = 'AstroLib - 理工科学术教辅系统';
           if (this.activeFragmentId === fragmentId) return;
           this.activeFragmentId = fragmentId;
 
-          // 1. 同步导航轨状态
           document.querySelectorAll('.rail-nav-item[data-fragment]').forEach((item) => {
             const f = item.getAttribute('data-fragment');
             if (f === fragmentId) {
@@ -580,7 +542,6 @@ const pageTitle = 'AstroLib - 理工科学术教辅系统';
             }
           });
 
-          // 2. 调度 Fragment 视图显隐（基于 content-visibility: hidden + inert 零动画瞬切，保留布局/绘制状态）
           const fragments: Record<string, string> = {
             overview: 'view-fragment-overview',
             library: 'view-fragment-library',
@@ -601,7 +562,6 @@ const pageTitle = 'AstroLib - 理工科学术教辅系统';
         }
       }
 
-      // 初始化桌面端路由器与桌面壳控制器
       if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', () => {
           initDesktopChromeController();
@@ -611,12 +571,11 @@ const pageTitle = 'AstroLib - 理工科学术教辅系统';
         initDesktopChromeController();
         new DesktopFragmentRouter();
       }
-    </script>
+</script>
   </body>
 </html>
 
-<style>
-  html.desktop-app-html, body.desktop-app-body {
+<style>html.desktop-app-html, body.desktop-app-body {
     margin: 0;
     padding: 0;
     width: 100vw;
@@ -632,7 +591,6 @@ const pageTitle = 'AstroLib - 理工科学术教辅系统';
     flex-direction: column;
   }
 
-  /* 外层主框架网格 */
   .desktop-shell-root {
     flex: 1;
     display: flex;
@@ -641,7 +599,6 @@ const pageTitle = 'AstroLib - 理工科学术教辅系统';
     height: calc(100vh - var(--desktop-titlebar-height, 28px));
   }
 
-  /* 主舞台 */
   .desktop-fragment-stage {
     flex: 1;
     height: 100%;
@@ -674,7 +631,6 @@ const pageTitle = 'AstroLib - 理工科学术教辅系统';
     z-index: -1;
   }
 
-  /* 窗口内覆盖层设置模态框（居中大视窗 + 背景遮罩） */
   .hub-overlay-backdrop {
     position: fixed;
     inset: 0;

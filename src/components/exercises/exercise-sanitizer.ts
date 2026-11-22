@@ -1,10 +1,3 @@
-/**
- * src/components/exercises/exercise-sanitizer.ts
- * ============================================================================
- * LaTeX 题目与题解字符串清洗规范化纯函数
- * ============================================================================
- */
-
 export function sanitizeLatexString(val: string): string {
   if (typeof val !== 'string') return '';
   let str = val;

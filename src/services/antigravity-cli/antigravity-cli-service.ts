@@ -1,16 +1,3 @@
-/**
- * src/services/antigravity-cli/antigravity-cli-service.ts
- * ============================================================================
- * AstroLib Antigravity CLI 本地智能体独立调度服务 (Independent CLI Service)
- * ============================================================================
- * 职责：
- * 1. 静默环境自省：探测本地是否安装 antigravity-cli (agy)，未安装时完全静默隐藏；
- * 2. 多模型矩阵管理：暴露 Gemini 3.8 Flash (High) / Claude Sonnet / Opus 等高表现力模型；
- * 3. 独立进程流式调度：基于 agy --output-format stream-json 实现全双工事件流；
- * 4. 具备与远程 API 相同规格的工具调用与任务执行能力，无缝打通 AstroLib 学术知识库。
- * ============================================================================
- */
-
 import os from 'node:os';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -60,9 +47,6 @@ export class AntigravityCliService {
     this.projectRoot = path.resolve(projectRoot);
   }
 
-  /**
-   * 默认支持的模型矩阵 (具备高表述能力与深度学术思考能力)
-   */
   public getDefaultModels(): AntigravityCliModelOption[] {
     return [
       {
@@ -103,15 +87,10 @@ export class AntigravityCliService {
     ];
   }
 
-  /**
-   * 启发式探测本地 antigravity-cli (agy) 可执行程序路径
-   * 若未安装则静默返回 null，杜绝抛出任何错误或产生可见垃圾日志
-   */
   public async findExecutable(): Promise<string | null> {
     const isWin = process.platform === 'win32';
     const binaryName = isWin ? 'agy.exe' : 'agy';
 
-    // 1. 尝试从常见默认安装目录探测
     const home = os.homedir();
     const candidatePaths: string[] = [];
 
@@ -137,13 +116,12 @@ export class AntigravityCliService {
           fs.accessSync(p, fs.constants.X_OK);
           return p;
         } catch {
-          // 在 Windows 下某些非执行权限文件跳过
+
           if (isWin) return p;
         }
       }
     }
 
-    // 2. 尝试从系统环境变量 PATH 查找
     try {
       const tool = isWin ? 'where.exe' : 'which';
       const { stdout } = await execFileAsync(tool, ['agy'], { timeout: 2000 });
@@ -152,16 +130,12 @@ export class AntigravityCliService {
         return firstLine;
       }
     } catch {
-      // PATH 中不存在 agy
+
     }
 
     return null;
   }
 
-  /**
-   * 静默环境自省 (Silent Diagnostics)
-   * 如果用户没有安装 antigravity-cli，此内容应当静默隐藏，不留痕迹
-   */
   public async detectCli(force = false): Promise<AntigravityCliStatus> {
     if (!force && this.cachedStatus) {
       return this.cachedStatus;
@@ -177,7 +151,6 @@ export class AntigravityCliService {
       const { stdout } = await execFileAsync(exePath, ['--version'], { timeout: 3000 });
       const version = stdout.trim();
 
-      // 确保 AstroLib 官方 MCP 工具集挂载在本地 agy 配置中
       await this.ensureMcpServer(exePath);
 
       this.cachedStatus = {
@@ -188,20 +161,15 @@ export class AntigravityCliService {
       };
       return this.cachedStatus;
     } catch {
-      // 无法正常执行，判定为不可用并静默隐藏
+
       this.cachedStatus = { available: false };
       return this.cachedStatus;
     }
   }
 
-  /**
-   * 解析安全可执行的宿主物理目录作为 CWD
-   * 杜绝将 Electron 内部虚拟路径 (app.asar) 作为子进程工作目录导致 ENOENT
-   */
   public getSafeCwd(): string {
     let candidate = this.projectRoot;
 
-    // 1. 如果路径包含 .asar（Electron 虚拟归档，外部 OS 进程无法作为 cwd），剥离并定位真实目录
     if (candidate.includes('.asar')) {
       const parts = candidate.split(path.sep);
       const asarIdx = parts.findIndex((p) => p.endsWith('.asar'));
@@ -210,7 +178,6 @@ export class AntigravityCliService {
       }
     }
 
-    // 2. 如果 candidate 是一个文件，取其所在父目录
     try {
       if (fs.existsSync(candidate)) {
         const stat = fs.statSync(candidate);
@@ -220,7 +187,6 @@ export class AntigravityCliService {
       }
     } catch {}
 
-    // 3. 向上回溯探测是否有 AstroLib 源码或可执行文件所在的实际工作根目录
     let curr = candidate;
     for (let i = 0; i < 4; i++) {
       if (fs.existsSync(path.join(curr, 'bin', 'astrolib-mcp.mjs')) || fs.existsSync(path.join(curr, 'package.json'))) {
@@ -231,7 +197,6 @@ export class AntigravityCliService {
       curr = parent;
     }
 
-    // 4. 优先检查当前 process.cwd()
     try {
       const cwd = process.cwd();
       if (fs.existsSync(cwd) && fs.statSync(cwd).isDirectory()) {
@@ -239,13 +204,9 @@ export class AntigravityCliService {
       }
     } catch {}
 
-    // 5. 兜底用户主目录
     return os.homedir();
   }
 
-  /**
-   * 确保 AstroLib 官方 MCP 工具集自动注册到本地 agy
-   */
   private async ensureMcpServer(exePath: string): Promise<void> {
     const safeCwd = this.getSafeCwd();
     let mcpScriptPath = path.resolve(safeCwd, 'bin', 'astrolib-mcp.mjs');
@@ -266,13 +227,10 @@ export class AntigravityCliService {
         });
       }
     } catch {
-      // 若注册遇到权限或网络问题，静默跳过，底层仍支持 CLI 兜底
+
     }
   }
 
-  /**
-   * 执行单次任务并以异步生成器模式推送结构化事件流 (Stream-JSON Relay)
-   */
   public async *streamTask(params: {
     prompt: string;
     model?: string;
@@ -420,7 +378,7 @@ export class AntigravityCliService {
             });
           }
         } catch {
-          // 非 JSON 输出行（例如 CLI 启动日志）
+
         }
       }
     });

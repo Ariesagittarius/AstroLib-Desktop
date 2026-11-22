@@ -1,10 +1,3 @@
-/**
- * src/components/harness/pdf2abp/pdf2abp-launcher-dialog.ts
- * ============================================================================
- * Material Design 3 Launcher Dialog for PDF -> ABP Conversion Pipeline
- * ============================================================================
- */
-
 import '@material/web/dialog/dialog.js';
 import '@material/web/textfield/outlined-text-field.js';
 import '@material/web/button/filled-button.js';
@@ -148,7 +141,6 @@ export async function openPdf2AbpLauncherDialog(
     };
   }
 
-  // Enforce single-select filter chip group for document mode
   modeChips.forEach((chip) => {
     chip.onclick = () => {
       const selectedMode = chip.dataset.mode || 'textbook';

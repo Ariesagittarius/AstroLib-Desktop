@@ -1,16 +1,3 @@
-/**
- * src/services/pdf2abp/book-analyzer.ts
- * ============================================================================
- * 确定性全书结构剖析器与覆盖度审计器 (Deterministic Book Structure & Coverage Tools)
- * ============================================================================
- * 为 PDF2ABP 主 Agent 提供零幻觉、确定性的统计与边界识别：
- * 1. analyzeBookStructure: 识别需跳过的目录/框目/索引页、提取章首导语 (chapter-intro)、
- *    按原书 1:1 二级小节输出精确物理起止页与同页切分锚点 (startAnchor/endAnchor)、标注脚注与算法密度页；
- * 2. auditBookCoverage: 对比 book/book.json + *.mdx 与 MinerU pages_blocks.json，
- *    核验正文文本覆盖率、插图与脚注留存率、sections[].intro 合规性及重复标题残留。
- * ============================================================================
- */
-
 import fs from 'node:fs';
 import path from 'node:path';
 import type { BookJsonConfig } from '../../publishing/abp/types.ts';
@@ -162,7 +149,7 @@ export function analyzeBookStructure(
       ) {
         codeHints.add('pseudocode_signature');
       }
-      // 统计疑似目录点阵行或章节页码行
+
       const lines = txt.split(/\r?\n/);
       for (const ln of lines) {
         if (/(?:\.{3,}|…{2,})\s*\d+\s*$/.test(ln.trim()) || /^\d+(?:\.\d+)*\s+\S.{2,45}\s+\d{1,4}\s*$/.test(ln.trim())) {
@@ -175,7 +162,6 @@ export function analyzeBookStructure(
     if (figCount > 0) pagesWithFigures.push({ page: p, count: figCount });
     if (codeHints.size > 0) pagesWithCodeOrAlgorithm.push({ page: p, hints: Array.from(codeHints) });
 
-    // 判断整页是否为纯目录/索引页
     for (const blk of blocks) {
       if (blk.type === 'title') {
         const cleanT = blk.text.replace(/\s+/g, ' ').trim();
@@ -190,7 +176,6 @@ export function analyzeBookStructure(
       continue;
     }
 
-    // 扫描本页所有 title 块构建层级边界
     for (let bi = 0; bi < blocks.length; bi++) {
       const blk = blocks[bi];
       if (blk.type !== 'title') continue;
@@ -209,7 +194,7 @@ export function analyzeBookStructure(
       }
 
       if (chapterRe.test(t)) {
-        // 检查下一个非空块是否为紧随其后的章标题（例如 "Chapter 0" 后紧跟 "Prologue" 或 "Algorithms with numbers"）
+
         let chapFullTitle = t;
         let anchorText = t;
         const nextBlk = blocks[bi + 1];
@@ -225,7 +210,6 @@ export function analyzeBookStructure(
         currentChapterNum = chNumMatch ? chNumMatch[0] : '';
         majorChapters.push({ page: p, title: chapFullTitle });
 
-        // 检查紧随章标题后、下一条二级小节前是否存在直属该章的章首导语 prose
         const remBlocks = blocks.slice(bi + 1);
         let hasProseBeforeSec = false;
         for (const rb of remBlocks) {
@@ -237,7 +221,7 @@ export function analyzeBookStructure(
             break;
           }
         }
-        // 也允许下一页在第一个 X.1 出现前有导语
+
         if (!hasProseBeforeSec && blocks.slice(bi + 1).every((rb) => rb.type !== 'title' || !sec2Re.test(rb.text.trim()))) {
           const nextPageBlocks = byPage.get(p + 1) || [];
           for (const rb of nextPageBlocks) {
@@ -299,14 +283,12 @@ export function analyzeBookStructure(
     }
   }
 
-  // 根据相邻边界计算每节精确起止页与同页 endAnchor
   const sections: AnalyzedSectionCandidate[] = [];
   for (let i = 0; i < boundaries.length; i++) {
     const cur = boundaries[i];
     const next = boundaries[i + 1];
     let endPage = next ? next.page : maxPage;
 
-    // 若下一页已被判定为跳过的目录/索引页，则上一节在该跳过页之前结束
     for (let p = cur.page + 1; p <= endPage; p++) {
       if (skippedPages.has(p)) {
         endPage = Math.max(cur.page, p - 1);
@@ -314,8 +296,6 @@ export function analyzeBookStructure(
       }
     }
 
-    // 若 cur 与 next 在不同页，但 next 紧随其后且 next.page 第一块就是 next.anchor，则前一小节通常在 next.page - 1 结束；
-    // 若 next 落在页面中部（该页在 next.anchor 之前还有属于上一节的段落/公式），则 endPage === next.page 且附带 endAnchor!
     let endAnchor: string | undefined;
     if (next && endPage === next.page) {
       if (cur.page === next.page) {

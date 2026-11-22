@@ -1,10 +1,3 @@
-/**
- * src/ai/client/chat-tools-view.ts
- * ============================================================================
- * Tools Calling Log & Inspection View Renderer for AI Chat
- * ============================================================================
- */
-
 import { esc, jsonHighlight, capJsonText } from './chat-formatter';
 import { formatExplorationSummary } from '../ai-config';
 

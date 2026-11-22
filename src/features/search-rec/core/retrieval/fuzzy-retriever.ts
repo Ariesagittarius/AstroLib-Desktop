@@ -1,8 +1,3 @@
-/**
- * src/features/search-rec/core/retrieval/fuzzy-retriever.ts
- * 传统算法模糊搜索通道：BM25 + CJK 2/3-gram + 拼音首字母/容错
- */
-
 import type { AcademicChunk, CandidateItem } from '../../types/candidate.ts';
 
 const CJK = /[\u4e00-\u9fff]/;
@@ -22,9 +17,9 @@ export function tokenizeText(text: string): string[] {
         words.push(tok);
       } else {
         for (let i = 0; i < tok.length - 1; i++) {
-          words.push(tok.slice(i, i + 2)); // bigram
+          words.push(tok.slice(i, i + 2));
         }
-        words.push(tok); // 全词
+        words.push(tok);
       }
     } else {
       words.push(tok);
@@ -99,7 +94,6 @@ export class FuzzyRetriever {
         }
       }
 
-      // 标题命中加权
       if (d.chunk.title.toLowerCase().includes(query.toLowerCase())) {
         score += 3.5;
       }

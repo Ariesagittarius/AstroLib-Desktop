@@ -1,16 +1,9 @@
-/**
- * src/services/pdf2abp/types.ts
- * ============================================================================
- * 自动化 PDF2ABP 管线核心领域类型定义
- * ============================================================================
- */
-
 import type { BookJsonConfig, AbpCompileResult, AbpArchiveVerificationReport, MdxValidationReport } from '../../publishing/abp/types.ts';
 
 export interface PdfOutlineItem {
   level: number;
   title: string;
-  /** 1-based physical page number */
+
   page: number;
 }
 
@@ -256,7 +249,7 @@ export interface Pdf2AbpEvent {
   seq: number;
   timestamp: number;
   jobId: string;
-  agentId: string; // 'main' | 'subagent:<id>' | 'system'
+  agentId: string;
   type:
     | 'job_started'
     | 'phase_changed'

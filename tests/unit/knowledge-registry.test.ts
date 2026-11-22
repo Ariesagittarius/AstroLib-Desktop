@@ -32,7 +32,6 @@ describe('KnowledgeRegistry 四源统一知识库认知与结构化测试', () =
     process.env.ASTROLIB_USER_ABP_DIR = abpRoot;
     process.env.ASTROLIB_INGEST_DIR = ingestRoot;
 
-    // 1. 构造模拟 pdf2abp 书籍（含 chapterIntro + KaTeX annotation + 学术卡片 + 无 ai-index）
     const pdf2abpDir = path.join(abpRoot, 'math-cmc_demo_tutorial');
     fs.mkdirSync(path.join(pdf2abpDir, 'chapters'), { recursive: true });
     fs.writeFileSync(
@@ -93,7 +92,6 @@ describe('KnowledgeRegistry 四源统一知识库认知与结构化测试', () =
       'utf-8'
     );
 
-    // 2. 构造模拟 EPUB 图书（含 Ruby 注音与长正文）
     const epubDir = path.join(abpRoot, 'acg-demo-light-novel');
     fs.mkdirSync(path.join(epubDir, 'chapters'), { recursive: true });
     fs.writeFileSync(
@@ -149,7 +147,6 @@ describe('KnowledgeRegistry 四源统一知识库认知与结构化测试', () =
       'utf-8'
     );
 
-    // 3. 构造模拟 MinerU 学术文献任务
     const paperDir = path.join(ingestRoot, 'task_test_paper_001');
     fs.mkdirSync(path.join(paperDir, 'unpacked', 'images'), { recursive: true });
     fs.writeFileSync(
@@ -261,7 +258,6 @@ $$
     expect(epubSection?.plainText).not.toContain('がくえんとし');
     expect(epubSection?.plainText).toContain('EPUB_TAIL_MARKER');
 
-    // 验证检索懒索引落盘于 .cache/ 而不污染源目录
     const abpHits = adapter.search('UNIQUE_ABP_TAIL_TOKEN');
     expect(abpHits.length).toBe(1);
     expect(abpHits[0].docSlug).toBe('cmc_demo_tutorial');

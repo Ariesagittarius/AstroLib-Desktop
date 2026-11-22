@@ -1,8 +1,3 @@
-/* src/components/harness/pdf2abp/pdf2abp.css */
-
-/* ============================================================================
-   1. Launcher Dialog (Preserved M3 Form Styles)
-   ============================================================================ */
 .pdf2abp-m3-dialog {
   --md-dialog-container-color: var(--md-sys-color-surface, #ffffff);
   min-width: min(560px, 92vw);
@@ -71,9 +66,6 @@
   overflow-wrap: anywhere;
 }
 
-/* ============================================================================
-   2. PDF2ABP Workshop Inspector Shell (Zero Clipping, Full-Height Flex)
-   ============================================================================ */
 .pdf2abp-panel {
   flex: 1 1 auto;
   min-width: 0;
@@ -98,7 +90,6 @@
   font-family: var(--harness-font-mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace);
 }
 
-/* Fixed Top Chrome */
 .pdf2abp-top-chrome {
   flex-shrink: 0;
   min-width: 0;
@@ -276,9 +267,6 @@
   white-space: nowrap;
 }
 
-/* ============================================================================
-   3. Accessible Single-Row 3-Tab Switcher (Compliant with M3 & web.dev Tabs)
-   ============================================================================ */
 .pdf2abp-tablist {
   display: flex;
   flex-wrap: nowrap;
@@ -342,7 +330,6 @@
   color: var(--harness-text-secondary, #5f6368);
 }
 
-/* Scrollable Tab Panels Area */
 .pdf2abp-tabpanel-host {
   flex: 1 1 0%;
   min-height: 0;
@@ -366,9 +353,6 @@
   display: none;
 }
 
-/* ============================================================================
-   4. GitHub Issue-Style Linear Milestone Guide (过程导览)
-   ============================================================================ */
 .pdf2abp-timeline-list {
   list-style: none;
   margin: 0;
@@ -384,7 +368,6 @@
   min-width: 0;
 }
 
-/* Left Rail + Node Icon */
 .pdf2abp-rail-col {
   width: 24px;
   flex-shrink: 0;
@@ -481,7 +464,6 @@
   display: none;
 }
 
-/* Stage Card Body */
 .pdf2abp-stage-card {
   flex: 1 1 auto;
   min-width: 0;
@@ -554,7 +536,6 @@
   color: var(--harness-text-secondary, #475569);
 }
 
-/* Subagent Proofreading Block Inside Stage 5 */
 .pdf2abp-subagent-block {
   margin-top: 8px;
   padding-top: 8px;
@@ -659,7 +640,6 @@
   text-overflow: ellipsis;
 }
 
-/* Vision Strip */
 .pdf2abp-vision-strip {
   display: flex;
   gap: 6px;
@@ -699,7 +679,6 @@
   text-overflow: ellipsis;
 }
 
-/* Collapsible Details & Tables */
 .pdf2abp-subdetails {
   margin-top: 6px;
 }
@@ -805,9 +784,6 @@
   color: var(--md-sys-color-error, #b3261e);
 }
 
-/* ============================================================================
-   5. Grouped Artifacts Browser & Inline Preview (产物浏览)
-   ============================================================================ */
 .pdf2abp-file-groups {
   display: flex;
   flex-direction: column;
@@ -901,9 +877,6 @@
   margin: 8px auto;
 }
 
-/* ============================================================================
-   6. Raw Event Stream (原始事件)
-   ============================================================================ */
 .pdf2abp-event-log {
   display: flex;
   flex-direction: column;

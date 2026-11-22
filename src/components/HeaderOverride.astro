@@ -3,15 +3,11 @@ import config from 'virtual:starlight/user-config';
 import Search from 'virtual:starlight/components/Search';
 import M3TopNavBar from './m3/M3TopNavBar.astro';
 
-/**
- * Render the `Search` component if Pagefind is enabled or default search is overridden.
- */
 const shouldRenderSearch =
 	Boolean(config.pagefind || config.components.Search !== '@astrojs/starlight/components/Search.astro');
 ---
 
-<script is:inline>
-	(function () {
+<script is:inline>(function () {
 		try {
 			var themeKey = 'starlight-site-theme';
 			var theme = localStorage.getItem(themeKey);
@@ -80,7 +76,7 @@ const shouldRenderSearch =
 	class="m3-header-starlight-override vp-header-inner"
 >
 	<div slot="brand-extra" class="m3-brand-wrapper vp-brand-wrapper">
-		<!-- 左侧栏收放切换按钮 (全视口统一：桌面折叠/移动端抽屉) -->
+
 		<button
 			type="button"
 			class="m3-icon-btn m3-sidebar-toggle-btn vp-sidebar-toggle-btn"
@@ -107,7 +103,7 @@ const shouldRenderSearch =
 	</div>
 
 	<div slot="actions" class="print:hidden m3-right-group vp-right-group right-group">
-		<!-- 0. 右侧栏 / 本章大纲收放按钮 (全视口统一：桌面折叠/移动端大纲) -->
+
 		<button
 			type="button"
 			class="m3-icon-btn m3-right-sidebar-toggle-btn vp-right-sidebar-toggle-btn"
@@ -124,7 +120,6 @@ const shouldRenderSearch =
 			</svg>
 		</button>
 
-		<!-- 翻译与双语助读专属入口 (Alt+Y) -->
 		<button
 			type="button"
 			class="m3-icon-btn m3-translate-btn vp-translate-btn"
@@ -137,7 +132,6 @@ const shouldRenderSearch =
 			<md-icon class="header-mdicon vp-translate-icon" aria-hidden="true">translate</md-icon>
 		</button>
 
-		<!-- 关注点透镜与信息高亮入口 (Alt+I) -->
 		<button
 			type="button"
 			class="m3-icon-btn m3-focus-btn vp-focus-btn"
@@ -150,7 +144,6 @@ const shouldRenderSearch =
 			<md-icon class="header-mdicon vp-focus-icon" aria-hidden="true">center_focus_strong</md-icon>
 		</button>
 
-		<!-- 章节 LaTeX / PDF 导出入口 (Alt+X) -->
 		<button
 			type="button"
 			class="m3-icon-btn m3-export-btn vp-export-btn"
@@ -165,8 +158,7 @@ const shouldRenderSearch =
 	</div>
 </M3TopNavBar>
 
-<style>
-	.vp-header-inner {
+<style>.vp-header-inner {
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
@@ -258,9 +250,6 @@ const shouldRenderSearch =
 		}
 	}
 
-	/* ==========================================================================
-	   Google Material 3 Plain Tooltip System for Header Action Buttons
-	   ========================================================================== */
 	.vp-sidebar-toggle-btn[data-tooltip],
 	.vp-right-sidebar-toggle-btn[data-tooltip],
 	.vp-translate-btn[data-tooltip] {
@@ -326,7 +315,6 @@ const shouldRenderSearch =
 		transform: translateX(-50%) translateY(0);
 	}
 
-	/* Left tooltip margin alignment */
 	.vp-sidebar-toggle-btn[data-tooltip]::before {
 		left: 0;
 		transform: translateX(0) translateY(-3px);
@@ -344,7 +332,6 @@ const shouldRenderSearch =
 		transform: translateX(-50%) translateY(0);
 	}
 
-	/* Right tooltip margin alignment */
 	.vp-right-sidebar-toggle-btn[data-tooltip]::before {
 		left: auto;
 		right: 0;
@@ -448,8 +435,7 @@ const shouldRenderSearch =
 	}
 </style>
 
-<script>
-	import { sidebarLayoutController } from './sidebar/sidebar-layout-controller';
+<script>import { sidebarLayoutController } from './sidebar/sidebar-layout-controller';
 	import { sideloadManager } from './sideload/sideload-manager';
 	import { initColorEngine, applyThemeColor } from '../themes/material-you/color-engine';
 	import { features } from '../config/features.config.ts';
@@ -585,7 +571,7 @@ const shouldRenderSearch =
 			rightBtn.dataset.bound = 'true';
 			rightBtn.addEventListener('click', () => {
 				if (window.matchMedia('(max-width: 71.999rem)').matches) {
-					// 移动端/平板端：触发大纲 popup/抽屉
+
 					const localNavBtn = document.querySelector('.vp-local-nav-btn') as HTMLButtonElement | null;
 					if (localNavBtn) {
 						localNavBtn.click();
@@ -593,7 +579,7 @@ const shouldRenderSearch =
 						sideloadManager.toggleRightSidebar();
 					}
 				} else {
-					// 桌面端：折叠或展开右侧分栏
+
 					sideloadManager.toggleRightSidebar();
 				}
 			});
@@ -625,7 +611,6 @@ const shouldRenderSearch =
 		sidebarLayoutController.subscribe(syncButtons);
 		sideloadManager.subscribe(syncButtons);
 
-		// 监听移动端菜单展开状态
 		const observer = new MutationObserver(syncButtons);
 		observer.observe(document.body, { attributes: true, attributeFilter: ['data-mobile-menu-expanded'] });
 	}
@@ -637,7 +622,6 @@ const shouldRenderSearch =
 	}
 	document.addEventListener('astro:page-load', setupHeaderSidebars);
 
-	// 全局监听 Alt+B 开启空白文档与学术工作台，并支持选中文段携带
 	if (typeof window !== 'undefined' && !(window as any).__blankDocBound) {
 		(window as any).__blankDocBound = true;
 		window.addEventListener('keydown', (e: KeyboardEvent) => {
@@ -673,7 +657,6 @@ const shouldRenderSearch =
 		});
 	}
 
-	// 全局监听 Alt+I 开启/切换关注点透镜
 	if (typeof window !== 'undefined' && !(window as any).__focusShortcutBound) {
 		(window as any).__focusShortcutBound = true;
 		window.addEventListener('keydown', (e: KeyboardEvent) => {
@@ -692,7 +675,6 @@ const shouldRenderSearch =
 			}
 		});
 
-		// 全局点击代理：确保点击顶栏或任何部位的透镜按钮能无缝唤起关注点透镜
 		document.addEventListener('click', (e) => {
 			const target = (e.target as HTMLElement | null)?.closest('[data-focus-trigger]');
 			if (target) {

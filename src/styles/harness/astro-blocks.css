@@ -1,12 +1,3 @@
-/**
- * src/styles/harness/astro-blocks.css
- * ============================================================================
- * Dual-Track Rich Presentation Styles:
- * - Track A: AstroBlocks (` ```astro-ui ` Declarative M3 Academic Primitives)
- * - Track B: AstroCanvas (Sandboxed Interactive HTML/SVG Workspace & Inline Card)
- * ============================================================================
- */
-
 .astro-ui-root {
   margin: 14px 0;
   display: flex;
@@ -20,7 +11,6 @@
   --astro-surface-muted: var(--md-sys-color-surface-container-low, #f8f9fa);
 }
 
-/* 可控字体家族 */
 .astro-ui-font-sans {
   font-family: var(--harness-font-family);
 }
@@ -33,7 +23,6 @@
   font-family: var(--harness-font-mono);
 }
 
-/* 语义色板 (Strict M3 Tones) */
 .astro-ui-tone-neutral {
   --astro-accent: var(--md-sys-color-on-surface, #1f1f1f);
   --astro-accent-bg: var(--md-sys-color-surface-container, #f1f3f4);
@@ -93,7 +82,6 @@
   --astro-on-accent: #ffddb3;
 }
 
-/* 排版密度 */
 .astro-ui-density-comfortable {
   --astro-pad: 16px 20px;
   --astro-gap: 10px;
@@ -104,7 +92,6 @@
   --astro-gap: 6px;
 }
 
-/* Card Primitive */
 .astro-ui-card,
 .astro-ui-metrics-card,
 .astro-ui-steps,
@@ -191,7 +178,6 @@
   margin-top: 2px;
 }
 
-/* Metrics Primitive */
 .astro-ui-metrics-section {
   display: flex;
   flex-direction: column;
@@ -281,7 +267,6 @@
   text-underline-offset: 3px;
 }
 
-/* Steps Primitive (垂直导览步骤) */
 .astro-ui-block-title {
   font-size: 0.96rem;
   font-weight: 600;
@@ -369,7 +354,6 @@
   color: var(--md-sys-color-on-surface-variant, var(--harness-text-secondary));
 }
 
-/* Checklist & Tabs Primitives */
 .astro-ui-chip-tabs {
   display: flex;
   flex-wrap: wrap;
@@ -452,7 +436,6 @@
   color: var(--md-sys-color-on-surface, var(--harness-text-primary));
 }
 
-/* Compare Primitive */
 .astro-ui-compare {
   display: flex;
   flex-direction: column;
@@ -511,7 +494,6 @@
   color: var(--md-sys-color-on-surface, var(--harness-text-primary));
 }
 
-/* Callout Primitive */
 .astro-ui-callout {
   padding: 12px 16px;
   border-radius: 10px;
@@ -534,7 +516,6 @@
   color: var(--md-sys-color-on-surface, var(--harness-text-primary));
 }
 
-/* Grid & Stack */
 .astro-ui-grid {
   display: grid;
   grid-template-columns: repeat(var(--astro-cols, 2), minmax(0, 1fr));
@@ -553,7 +534,6 @@
   gap: 12px;
 }
 
-/* Streaming Skeleton Placeholder */
 .astro-ui-skeleton {
   display: inline-flex;
   align-items: center;
@@ -581,9 +561,6 @@
   animation: astroUiSpin 1s linear infinite;
 }
 
-/* ============================================================================
- * Track B: AstroCanvas 交互沙箱卡片与独立工作台
- * ============================================================================ */
 .astro-canvas-card {
   margin: 12px 0;
   border-radius: 16px;
@@ -740,7 +717,6 @@
   color: var(--md-sys-color-on-surface-variant, var(--harness-text-secondary));
 }
 
-/* 右侧成果物 Canvas 全功能工作台 */
 .astro-canvas-workspace {
   display: flex;
   flex-direction: column;

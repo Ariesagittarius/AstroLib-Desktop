@@ -12,7 +12,6 @@ import SideNote from '@/components/SideNote.astro';
 import Block from '@/components/Block.astro';
 import Method from '@/components/Method.astro';
 
-
 ## 附录1 函数的参数表示与极坐标表示
 
 一般情况下，我们建立的函数都是在平面直角坐标系下，将因变量 $y$ 直接表示为自变量 $x$ 的函数 $y = f(x)$ 或利用二元方程 $F(x, y) = 0$ 来建立（隐函数）。然而在许多实际问题的研究中，有时直接建立 $x$ 与 $y$ 的关系比较困难，而需通过另一变量（称为参变量）来建立变量 $x$ 与 $y$ 间的关系，或者在所谓极坐标系下来建立函数关系更为方便。
@@ -49,10 +48,8 @@ y &= MP = NC - QC = a - a \cos t.
 $$
 
 <figure class="vp-figure">
-  
 
 ![旋轮线（摆线）生成示意图](./images/figure_1_1.png)
-
 
   <figcaption>图 1.1 旋轮线（摆线）</figcaption>
 </figure>
@@ -122,7 +119,7 @@ $$
 \begin{cases}
 x = t, \\
 y = \sqrt{a^2 - t^2},
-\end{cases} (-a \le t \le a), \quad \text{和} \quad 
+\end{cases} (-a \le t \le a), \quad \text{和} \quad
 \begin{cases}
 x = t, \\
 y = -\sqrt{a^2 - t^2},
@@ -141,10 +138,8 @@ $$
 对平面上任意一点 $P$，将线段 $OP$ 的长度记为 $\rho$，称为极径，从极轴 $Ox$ 开始按逆时针方向旋转到射线 $OP$ 的转角记作 $\varphi$，称为极角。如果点 $P$ 就是极点 $O$，则其极径 $\rho = 0$，极角 $\varphi$ 可以取任意值。如果限制 $\varphi \in [0, 2\pi), \rho \ge 0$，那么除极点外，平面上任一点 $P$ 便有唯一的有序数组 $(\rho, \varphi)$ 与之对应；反之，任给一数组 $(\rho, \varphi)$，以 $\varphi$ 为极角，$\rho$ 为极径，必有唯一的点与之对应。因此，我们把 $(\rho, \varphi)$ 称为点 $P$ 的极坐标。规定从极轴 $Ox$ 出发按逆时针方向旋转到射线 $OP$ 的角 $\varphi$ 取正值，而按顺时针旋转时 $\varphi$ 取负值。有时为了方便，也可将 $\varphi$ 限制在 $[-\pi, \pi]$。例如，点 $P\left(1, \frac{5}{4}\pi\right)$ 有时也可表示为 $\left(1, -\frac{3}{4}\pi\right)$（如图 1.2）。
 
 <figure class="vp-figure">
-  
 
 ![极坐标表示示意图](./images/figure_1_2.png)
-
 
   <figcaption>图 1.2</figcaption>
 </figure>
@@ -152,10 +147,8 @@ $$
 在极坐标系中，$\rho = a$（常数）是一个方程，满足该方程的所有点到极点 $O$ 的距离都等于常数 $a$，而极角 $\varphi$ 可以取 $[0, 2\pi)$ 上的任一值，因此 $\rho = a$ 表示圆心在极点 $O$，半径为 $a$ 的圆周；类似分析，$\varphi = b$ 表示从极点出发、转角为 $b$ 的射线（如图 1.3）。
 
 <figure class="vp-figure">
-  
 
 ![极坐标特殊方程图示](./images/figure_1_3.png)
-
 
   <figcaption>图 1.3</figcaption>
 </figure>
@@ -166,17 +159,15 @@ $$
 \begin{cases}
 x = \rho \cos \varphi, \\
 y = \rho \sin \varphi,
-\end{cases} \quad \text{或} \quad 
+\end{cases} \quad \text{或} \quad
 \begin{cases}
 \rho = \sqrt{x^2 + y^2}, \\
 \tan \varphi = \frac{y}{x}.
 \end{cases} \tag{1.4}
 $$
 <figure class="vp-figure">
-  
 
 ![直角坐标与极坐标的关系](./images/figure_1_4.png)
-
 
   <figcaption>图 1.4</figcaption>
 </figure>
@@ -202,7 +193,6 @@ $$
 \rho^2 = 2a^2 \cos 2\varphi. \tag{1.5}
 $$
 
-
 在上面的方程中，由于 $\cos 2\varphi$ 关于 $\varphi$ 是偶函数，故此方程的图像关于极轴对称；又由于将 $\varphi$ 换成 $\varphi + \pi$ 后方程不改变，所以图像也关于极点对称。因此，我们只需要使用类似于直角坐标系中的描点法画出该方程在 $xOy$ 平面第一象限 $\{(\rho, \varphi) \mid \rho \ge 0, 0 \le \varphi \le \frac{\pi}{2}\}$ 中的图像，由对称性便可得到整个图像。由该方程容易算出下列数据：
 
 | $\varphi$ | $0$ | $\frac{\pi}{6}$ | $\frac{\pi}{4}$ | $\left(\frac{\pi}{4}, \frac{\pi}{2}\right)$ |
@@ -212,10 +202,8 @@ $$
 对于表中 $(\rho, \varphi)$ 的每组数据，在平面上确定对应的点，用曲线连接，不难画出第一象限中的图像，再由对称性便得到方程的图像如图 1.5 所示。此曲线称为双纽线。
 
 <figure class="vp-figure">
-  
 
 ![双纽线图像](./images/figure_1_5.png)
-
 
   <figcaption>图 1.5 双纽线</figcaption>
 </figure>
@@ -259,9 +247,7 @@ $
 
 <figure class="vp-figure">
 
-
 ![幂函数曲线](./images/curve-1-power.png)
-
 
 <figcaption>图 1：幂函数曲线群 ($y=x^2, y=x, y=x^{1/2}, y=x^3, y=x^{-1}$)</figcaption>
 </figure>
@@ -273,9 +259,7 @@ $
 
 <figure class="vp-figure">
 
-
 ![指数函数曲线](./images/curve-2-exponential.png)
-
 
 <figcaption>图 2：指数函数曲线 ($a>1$ 与 $0<a<1$)</figcaption>
 </figure>
@@ -287,9 +271,7 @@ $
 
 <figure class="vp-figure">
 
-
 ![对数函数曲线](./images/curve-3-logarithmic.png)
-
 
 <figcaption>图 3：对数函数曲线 ($a>1$ 与 $0<a<1$)</figcaption>
 </figure>
@@ -305,9 +287,7 @@ $
 
 <figure class="vp-figure">
 
-
 ![正弦函数](./images/curve-4-sin.png)
-
 
 <figcaption>图 4：正弦曲线</figcaption>
 </figure>
@@ -319,9 +299,7 @@ $
 
 <figure class="vp-figure">
 
-
 ![余弦函数](./images/curve-5-cos.png)
-
 
 <figcaption>图 5：余弦曲线</figcaption>
 </figure>
@@ -333,9 +311,7 @@ $
 
 <figure class="vp-figure">
 
-
 ![正切函数](./images/curve-6-tan.png)
-
 
 <figcaption>图 6：正切曲线</figcaption>
 </figure>
@@ -347,9 +323,7 @@ $
 
 <figure class="vp-figure">
 
-
 ![余切函数](./images/curve-7-cot.png)
-
 
 <figcaption>图 7：余切曲线</figcaption>
 </figure>
@@ -361,9 +335,7 @@ $
 
 <figure class="vp-figure">
 
-
 ![正割函数](./images/curve-8-sec.png)
-
 
 <figcaption>图 8：正割曲线</figcaption>
 </figure>
@@ -375,9 +347,7 @@ $
 
 <figure class="vp-figure">
 
-
 ![余割函数](./images/curve-9-csc.png)
-
 
 <figcaption>图 9：余割曲线</figcaption>
 </figure>
@@ -393,9 +363,7 @@ $
 
 <figure class="vp-figure">
 
-
 ![半立方抛物线](./images/curve-10-semicubic-parabola.png)
-
 
 <figcaption>图 10：半立方抛物线</figcaption>
 </figure>
@@ -407,9 +375,7 @@ $
 
 <figure class="vp-figure">
 
-
 ![箕舌线](./images/curve-11-witch-of-agnesi.png)
-
 
 <figcaption>图 11：箕舌线</figcaption>
 </figure>
@@ -421,9 +387,7 @@ $
 
 <figure class="vp-figure">
 
-
 ![概率曲线](./images/curve-12-probability.png)
-
 
 <figcaption>图 12：概率曲线</figcaption>
 </figure>
@@ -435,9 +399,7 @@ $
 
 <figure class="vp-figure">
 
-
 ![悬链线](./images/curve-13-catenary.png)
-
 
 <figcaption>图 13：悬链线</figcaption>
 </figure>
@@ -460,12 +422,9 @@ $$
 x = a \arccos \frac{a-y}{a} \mp \sqrt{2ay - y^2}
 $$
 
-
 <figure class="vp-figure">
 
-
 ![摆线](./images/curve-14-cycloid.png)
-
 
 <figcaption>图 14：摆线及其生成几何</figcaption>
 </figure>
@@ -477,9 +436,7 @@ $$
 
 <figure class="vp-figure">
 
-
 ![蔓叶线](./images/curve-15-cissoid.png)
-
 
 <figcaption>图 15：蔓叶线</figcaption>
 </figure>
@@ -496,14 +453,11 @@ y = a \sin^3 \theta
 \end{cases}
 $$
 
-
 直角坐标方程：$x^{\frac{2}{3}} + y^{\frac{2}{3}} = a^{\frac{2}{3}}$
 
 <figure class="vp-figure">
 
-
 ![星形线](./images/curve-16-astroid.png)
-
 
 <figcaption>图 16：星形线</figcaption>
 </figure>
@@ -516,9 +470,7 @@ $$
 
 <figure class="vp-figure">
 
-
 ![心形线](./images/curve-17-cardioid.png)
-
 
 <figcaption>图 17：心形线</figcaption>
 </figure>
@@ -530,9 +482,7 @@ $$
 
 <figure class="vp-figure">
 
-
 ![笛卡儿叶形线](./images/curve-18-folium.png)
-
 
 <figcaption>图 18：笛卡儿叶形线</figcaption>
 </figure>
@@ -544,9 +494,7 @@ $$
 
 <figure class="vp-figure">
 
-
 ![一般抛物线](./images/curve-19-parabola-general.png)
-
 
 <figcaption>图 19：根式抛物线</figcaption>
 </figure>
@@ -562,9 +510,7 @@ $$
 
 <figure class="vp-figure">
 
-
 ![阿基米德螺线](./images/curve-20-archimedean-spiral.png)
-
 
 <figcaption>图 20：阿基米德螺线</figcaption>
 </figure>
@@ -576,9 +522,7 @@ $$
 
 <figure class="vp-figure">
 
-
 ![对数螺线](./images/curve-21-logarithmic-spiral.png)
-
 
 <figcaption>图 21：对数螺线</figcaption>
 </figure>
@@ -590,9 +534,7 @@ $$
 
 <figure class="vp-figure">
 
-
 ![双曲螺线](./images/curve-22-hyperbolic-spiral.png)
-
 
 <figcaption>图 22：双曲螺线</figcaption>
 </figure>
@@ -605,9 +547,7 @@ $$
 
 <figure class="vp-figure">
 
-
 ![双纽线 1](./images/curve-23-lemniscate-1.png)
-
 
 <figcaption>图 23：伯努利双纽线（余弦型）</figcaption>
 </figure>
@@ -620,9 +560,7 @@ $$
 
 <figure class="vp-figure">
 
-
 ![双纽线 2](./images/curve-24-lemniscate-2.png)
-
 
 <figcaption>图 24：双纽线（正弦型）</figcaption>
 </figure>
@@ -634,9 +572,7 @@ $$
 
 <figure class="vp-figure">
 
-
 ![三叶玫瑰线余弦](./images/curve-25-rose-3-cos.png)
-
 
 <figcaption>图 25：三叶玫瑰线 ($\rho = a\cos 3\theta$)</figcaption>
 </figure>
@@ -648,9 +584,7 @@ $$
 
 <figure class="vp-figure">
 
-
 ![三叶玫瑰线正弦](./images/curve-26-rose-3-sin.png)
-
 
 <figcaption>图 26：三叶玫瑰线 ($\rho = a\sin 3\theta$)</figcaption>
 </figure>

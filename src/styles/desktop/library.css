@@ -1,17 +1,3 @@
-/**
- * src/styles/desktop/library.css
- * ============================================================================
- * AstroLib 桌面端研读书库全局样式 (Google Play / Material 3 纯净学术规范)
- * ============================================================================
- * 规范：
- * 1. 字体：全界面统一使用 Google Sans & Google Sans Text；
- * 2. 勾边与阴影：所有卡片改用与研读视窗一致的 1px outline 浅色勾边，彻底消除阴影 (box-shadow: none)；
- * 3. 底色纯净：除搜索框外，抽屉、顶栏、主滚动区默认底色为无色 (跟随系统亮暗主题 surface)；
- * 4. 色彩统一：全面融入 Material You 动态色彩体系 (Primary / Secondary Container)，与研读视窗同频共振；
- * 5. 组件规范：Chip 严格对齐 @material/web md-filter-chip 标准。
- * ============================================================================
- */
-
 .fragment-library-container {
   width: 100%;
   height: 100%;
@@ -23,7 +9,6 @@
   font-family: var(--font-ui, 'Google Sans', 'Google Sans Text', 'Noto Sans SC Variable', 'Source Han Sans SC', 'Noto Sans SC', '思源黑体', sans-serif);
 }
 
-/* 1. 左侧二级书架抽屉 (Sub-shelf Drawer - 无杂底、1px 细线分隔) */
 .library-subnav {
   width: 220px;
   height: 100%;
@@ -152,7 +137,6 @@
   gap: 0.25rem;
 }
 
-/* 2. 主书架内容区 (纯净白底/暗色底，无色透明背景) */
 .library-main {
   flex: 1;
   height: 100%;
@@ -163,7 +147,6 @@
   background-color: var(--md-sys-color-surface, #ffffff);
 }
 
-/* 顶栏工具行：背景无色，仅留底部 1px 细线分割 */
 .library-toolbar {
   height: 52px;
   display: flex;
@@ -176,7 +159,6 @@
   gap: 1.5rem;
 }
 
-/* 搜索框 (唯一保留柔和浅色背景的特定组件) */
 .library-search-box {
   display: flex;
   align-items: center;
@@ -256,7 +238,6 @@
   border-color: var(--md-sys-color-outline, #737976);
 }
 
-/* 上传文件按钮：主题色平铺、零阴影、轻微 hover 响应 */
 .library-upload-btn {
   background-color: var(--md-sys-color-primary);
   color: var(--md-sys-color-on-primary, #ffffff);
@@ -304,7 +285,6 @@
   color: var(--md-sys-color-on-secondary-container);
 }
 
-/* 3. 学科 Chips 筛选条 (严格对齐 Material 3 md-filter-chip 与研读视窗风格) */
 .library-chips-row {
   display: flex;
   align-items: center;
@@ -321,7 +301,6 @@
   gap: 8px;
 }
 
-/* 官方 @material/web md-filter-chip 变量穿透与统一 */
 .lib-filter-chip,
 md-filter-chip.lib-filter-chip {
   --md-filter-chip-container-shape: 8px !important;
@@ -338,7 +317,6 @@ md-filter-chip.lib-filter-chip {
   cursor: pointer;
 }
 
-/* 兼容原生 div.library-chip 标签的对齐样式 */
 .library-chip {
   padding: 0 12px;
   height: 32px;
@@ -369,7 +347,6 @@ md-filter-chip.lib-filter-chip {
   border-color: transparent;
 }
 
-/* 状态通知横幅 */
 .library-status-banner {
   background-color: var(--md-sys-color-secondary-container);
   color: var(--md-sys-color-on-secondary-container);
@@ -416,7 +393,6 @@ md-filter-chip.lib-filter-chip {
   align-items: center;
 }
 
-/* 核心书架滚动区 (纯净无底色) */
 .library-content-scroll {
   flex: 1;
   overflow-y: auto;
@@ -424,7 +400,6 @@ md-filter-chip.lib-filter-chip {
   background-color: var(--md-sys-color-surface, #ffffff);
 }
 
-/* 3:4 实体书卡网格 (与研读视窗绝对一致：仅浅色勾边 outline，零阴影) */
 .library-entities-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
@@ -450,7 +425,6 @@ md-filter-chip.lib-filter-chip {
   transform: translateY(-2px);
 }
 
-/* 书封框：统一由外框承担 1px 圆角勾边，严格 box-sizing: border-box 避免溢出右边框 */
 .card-cover-box {
   position: relative;
   width: 100%;
@@ -476,7 +450,6 @@ md-filter-chip.lib-filter-chip {
   display: block;
 }
 
-/* 论文自适应极简封面：直接复用外层 .card-cover-box 圆角边框，避免内层叠加无圆角边框 */
 .paper-cover-fallback {
   width: 100%;
   height: 100%;
@@ -563,7 +536,6 @@ md-filter-chip.lib-filter-chip {
   font-family: var(--font-ui, 'Google Sans', 'Google Sans Text', 'Noto Sans SC Variable', 'Source Han Sans SC', 'Noto Sans SC', '思源黑体', sans-serif);
 }
 
-/* 列表视图模式：浅勾边、无阴影 */
 .library-entities-list .library-card {
   flex-direction: row;
   align-items: center;
@@ -736,14 +708,12 @@ md-filter-chip.lib-filter-chip {
   word-break: break-word;
 }
 
-/* 拖拽上传覆盖高亮 */
 .library-content-scroll.is-drag-over {
   outline: 2px dashed var(--md-sys-color-primary);
   outline-offset: -10px;
   background-color: color-mix(in srgb, var(--md-sys-color-primary) 4%, var(--md-sys-color-surface, #ffffff));
 }
 
-/* 解析中 / 待解析 / 异常中断覆层（遵循极简与 M3 规范） */
 .processing-overlay {
   position: absolute;
   inset: 0;
@@ -803,7 +773,6 @@ md-filter-chip.lib-filter-chip {
   height: 30px;
 }
 
-/* 列表视图下隐藏小封面的遮罩按钮，改在行末呈现 */
 .card-list-actions {
   display: none;
   align-items: center;
@@ -830,7 +799,6 @@ md-filter-chip.lib-filter-chip {
   color: var(--md-sys-color-error, #b3261e);
 }
 
-/* M3 对话框内容布局 */
 .lib-dialog-body {
   display: flex;
   flex-direction: column;
@@ -886,9 +854,6 @@ md-filter-chip.lib-filter-chip {
   color: var(--md-sys-color-error, #b3261e);
 }
 
-/* ============================================================================
-   MIT Press / 岩波文库克制学术极简缺省书封 (.academic-default-cover)
-   ============================================================================ */
 .academic-default-cover {
   --adc-bg: #faf8f4;
   --adc-fg: #1b1e23;
@@ -1067,7 +1032,6 @@ md-filter-chip.lib-filter-chip {
   display: none;
 }
 
-/* 列表紧凑缩略模式 (50x65px)：退让为书脊 + 居中首字徽识 */
 .library-entities-list .adc-spine {
   width: 3px;
 }

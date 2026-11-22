@@ -52,7 +52,6 @@ jobs:
           tag_name: latest
           name: "AstroLib Digital Textbooks EPUB Release (latest)"
           body: |
-            ## AstroLib Digital Textbooks EPUB Package
 
             Compiled EPUB3 distributions for the mathematics, science, and engineering collections.
 

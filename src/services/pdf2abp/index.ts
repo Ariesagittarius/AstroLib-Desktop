@@ -1,10 +1,3 @@
-/**
- * src/services/pdf2abp/index.ts
- * ============================================================================
- * PDF2ABP 核心领域服务导出
- * ============================================================================
- */
-
 export * from './types.ts';
 export { JobWorkspace, resolvePdf2AbpJobsRoot } from './workspace-manager.ts';
 export {

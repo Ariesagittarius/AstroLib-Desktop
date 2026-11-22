@@ -1,10 +1,5 @@
 ---
-/**
- * src/pages/index.astro
- * ============================================================================
- * AstroLib 桌面工作台统一入口重定向页面
- * ============================================================================
- */
+
 ---
 <!doctype html>
 <html lang="zh-CN">
@@ -14,13 +9,12 @@
     <meta http-equiv="refresh" content="0;url=/desktop/" />
     <link rel="canonical" href="/desktop/" />
     <title>AstroLib - 理工科学术教辅系统</title>
-    <script is:inline>
-      try {
+    <script is:inline>try {
         window.location.replace('/desktop/' + window.location.search);
       } catch {
         window.location.replace('/desktop/');
       }
-    </script>
+</script>
   </head>
   <body>
     <p style="font-family: system-ui, sans-serif; padding: 2rem; text-align: center;">

@@ -47,10 +47,6 @@ describe('PDF2ABP Subagent Orchestrator & Youlabber Vision Gate Mock', () => {
     pdfPath = path.join(tmpDir, 'sample.pdf');
     await createTinyPdf(pdfPath, 4);
 
-    // 模拟严苛的 Youlabber /chat/completions 网关：
-    // 1. 跨整个 messages[] 若出现 >1 张图直接 400
-    // 2. 任意 role:'tool' 带图或出现孤立 tool_call_id 直接 400
-    // 3. 记录并发峰值以验证 bounded concurrency
     server = http.createServer(async (req, res) => {
       if (req.method !== 'POST' || !req.url?.endsWith('/chat/completions')) {
         res.statusCode = 404;
@@ -71,7 +67,6 @@ describe('PDF2ABP Subagent Orchestrator & Youlabber Vision Gate Mock', () => {
         const messages = Array.isArray(body.messages) ? body.messages : [];
         lastWireMessages = messages;
 
-        // 统计全上下文图片数量 + 校验 tool 消息结构
         let imageCount = 0;
         const openToolIds = new Set<string>();
         for (const m of messages) {
@@ -110,10 +105,8 @@ describe('PDF2ABP Subagent Orchestrator & Youlabber Vision Gate Mock', () => {
           return;
         }
 
-        // 微小延迟以便测试真实并发峰值 <= concurrency
         await new Promise((r) => setTimeout(r, 45));
 
-        // 解析当前任务 ID / 输出路径与页码
         const userGoal = String(messages[1]?.content || '');
         const targetMatch = userGoal.match(/最终落盘路径[^`]*`([^`]+)`/);
         const draftMatch = userGoal.match(/初步草稿路径[^`]*`([^`]+)`/);
@@ -160,7 +153,7 @@ describe('PDF2ABP Subagent Orchestrator & Youlabber Vision Gate Mock', () => {
         };
 
         if (toolMessagesCount === 0) {
-          // 第 1 步：读草稿 + 看第 1 页图
+
           sendToolCalls([
             { id: `c_read_${startPage}`, name: 'read_workspace_file', args: { relPath: draftRel } },
             {
@@ -173,7 +166,7 @@ describe('PDF2ABP Subagent Orchestrator & Youlabber Vision Gate Mock', () => {
         }
 
         if (toolMessagesCount === 2) {
-          // 第 2 步：再看 1 次图以触发 Rolling Vision Slot 淘汰旧图，验证双轮带图绝不 400
+
           sendToolCalls([
             {
               id: `c_vis2_${endPage}`,
@@ -185,7 +178,7 @@ describe('PDF2ABP Subagent Orchestrator & Youlabber Vision Gate Mock', () => {
         }
 
         if (toolMessagesCount === 3) {
-          // 第 3 步：写入完整合法 MDX + 调用 validate_mdx 自检
+
           const mdxContent = [
             '---',
             `title: "Chapter Pages ${startPage}-${endPage}"`,
@@ -216,7 +209,6 @@ describe('PDF2ABP Subagent Orchestrator & Youlabber Vision Gate Mock', () => {
           return;
         }
 
-        // 第 4 步：输出最终 JSON 结果
         res.statusCode = 200;
         res.setHeader('Content-Type', 'application/json');
         res.end(
@@ -325,12 +317,10 @@ describe('PDF2ABP Subagent Orchestrator & Youlabber Vision Gate Mock', () => {
     expect(startedIds.length).toBe(3);
     expect(finishedIds.length).toBe(3);
 
-    // 验证多段切片磁盘落盘及检查点落盘
     expect(fs.existsSync(ws.resolveWorkspacePath('book/01_ch1.mdx'))).toBe(true);
     expect(fs.existsSync(ws.resolveWorkspacePath('chunks/c2__part1of2/proofread_part.mdx'))).toBe(true);
     expect(fs.existsSync(ws.resolveWorkspacePath('subagents/c1.result.json'))).toBe(true);
 
-    // 第二轮调用应 100% 命中检查点，发出 0 次 HTTP 请求
     const requestsBeforeSecondRun = totalHttpRequests;
     const secondRun = await runSubagentBatch({
       workspace: ws,
@@ -386,14 +376,12 @@ describe('PDF2ABP Subagent Orchestrator & Youlabber Vision Gate Mock', () => {
     expect(batch.allValidationPassed).toBe(true);
     expect(maxObservedConcurrency).toBeGreaterThanOrEqual(6);
 
-    // 验证 harness-runner 自动保留 syntheticVision 之后的 reasoningContent 摘要到 assistant.content
     expect(
       lastWireMessages.some(
         (m) => m?.role === 'assistant' && typeof m?.content === 'string' && m.content.includes('[视觉审视要点自动存档')
       )
     ).toBe(true);
 
-    // 验证 inspect_pdf_page 支持 notesForPreviousImage 并在重复查看同页时给出温和警告
     const baseTools = createBasePdf2AbpTools({ workspace: ws, includeOverviewTools: false });
     const inspectTool = baseTools.find((t) => t.name === 'inspect_pdf_page')!;
     const first = await inspectTool.execute({ pages: [1], mode: 'single' }, { agentId: 'test-agent', step: 1 });

@@ -1,16 +1,3 @@
-/**
- * src/server/plugins/bilingual-aligner/onnx-engine.ts
- * ============================================================================
- * AstroLib 端侧轻量向量推理引擎 (On-Device Lightweight Embedding Engine)
- * ============================================================================
- * 核心技术能力：
- * 1. Node.js 原生驱动多语言向量嵌入（ONNX Runtime / Transformers.js）；
- * 2. 硬件加速优先（Windows DirectML，适配 RTX 5060 等独显），自动回退至 CPU；
- * 3. 内存与显存自适应管理（惰性加载、计算后保持极轻量驻留、超期释放）；
- * 4. 离线/模型首次加载时的容错与降级机制。
- * ============================================================================
- */
-
 import { BipartiteMatcher } from '../../../services/bilingual/bipartite-matcher.ts';
 import { BilingualAlignerClient } from '../../../services/bilingual/aligner-client.ts';
 import { QwenEngine } from './qwen-engine.ts';
@@ -91,13 +78,10 @@ export class BilingualOnnxEngine {
         await pipe.dispose();
       }
     } catch {
-      // ignore disposal errors on ONNX session teardown
+
     }
   }
 
-  /**
-   * 惰性获取推理 Pipeline（优先 CPU q8，回退 DML）
-   */
   private async getPipeline(): Promise<any> {
     if (this.pipelineInstance) {
       this.touchIdleTimer();
@@ -105,7 +89,7 @@ export class BilingualOnnxEngine {
     }
 
     if (this.isLoading) {
-      // 等待加载完成
+
       while (this.isLoading) {
         await new Promise((r) => setTimeout(r, 100));
       }
@@ -131,7 +115,6 @@ export class BilingualOnnxEngine {
         env.cacheDir = process.env.ASTROLIB_MODELS_DIR;
       }
 
-      // 使用高效且内存稳定的 CPU / AVX2 引擎（INT8 q8 模型在 CPU 原生量化执行速度最优，且彻底免疫 Direct3D 12 缓冲区溢出与 TDR 崩溃）
       const loadWithTimeout = async () => {
         try {
           const pipe = await pipeline('feature-extraction', this.modelName, {
@@ -167,16 +150,12 @@ export class BilingualOnnxEngine {
     }
   }
 
-  /**
-   * 批量计算文本嵌入向量（分批 Mini-Batch 推理，彻底避免大数组导致的内存暴涨与命令缓冲区溢出）
-   */
   async embedTexts(texts: string[], batchSize = 16): Promise<number[][] | null> {
     this.activeCalls++;
     try {
       const pipe = await this.getPipeline();
       if (!pipe) return null;
 
-      // 过滤和清洗文本：截断至 1024 字符，兼顾完整语义与 Tokenizer 效率
       const cleanTexts = texts.map((t) => (t && t.trim().length > 0 ? t.trim().slice(0, 1024) : 'empty'));
       const embeddings: number[][] = [];
 
@@ -206,9 +185,6 @@ export class BilingualOnnxEngine {
     }
   }
 
-  /**
-   * 对齐两组段落文本并输出 M x N 矩阵（支持可选指定 Qwen3 或 MiniLM 模型）
-   */
   async alignParagraphs(
     sourceTexts: string[],
     targetTexts: string[],
@@ -216,7 +192,6 @@ export class BilingualOnnxEngine {
   ): Promise<AlignResultPayload> {
     const selectedModel = (options?.model || 'minilm-l12').toLowerCase();
 
-    // 1. 若指定 Qwen3-Embedding-0.6B，调度 QwenEngine
     if (selectedModel.includes('qwen')) {
       try {
         const qwenEngine = QwenEngine.getInstance();
@@ -241,7 +216,6 @@ export class BilingualOnnxEngine {
   private async alignWithMiniLM(sourceTexts: string[], targetTexts: string[]): Promise<AlignResultPayload> {
     const startTime = performance.now();
 
-    // 2. 尝试默认 MiniLM 神经网络向量计算
     const srcEmbeds = await this.embedTexts(sourceTexts);
     const tgtEmbeds = await this.embedTexts(targetTexts);
 
@@ -258,7 +232,6 @@ export class BilingualOnnxEngine {
       };
     }
 
-    // 3. 降级：词法启发式相似度
     const matrix = this.fallbackLexicalMatrix(sourceTexts, targetTexts);
     return {
       matrix,
@@ -271,9 +244,6 @@ export class BilingualOnnxEngine {
     };
   }
 
-  /**
-   * 获取当前系统可用的向量模型列表（动态感知硬件与运行环境）
-   */
   async getAvailableModels(): Promise<BilingualModelInfo[]> {
     const qwenEngine = QwenEngine.getInstance();
     const isQwenAvailable = await qwenEngine.isAvailable();
@@ -300,9 +270,6 @@ export class BilingualOnnxEngine {
     ];
   }
 
-  /**
-   * 目录章节标题多向语义对齐
-   */
   async matchToc(
     sourceChapters: { id: string; title: string }[],
     targetChapters: { id: string; title: string }[],

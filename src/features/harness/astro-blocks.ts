@@ -1,18 +1,3 @@
-/**
- * src/features/harness/astro-blocks.ts
- * ============================================================================
- * Track A: AstroBlocks 声明式学术富排版引擎 (```astro-ui 协议编译器)
- * ============================================================================
- * 职责：
- * 1. 解析并严格校验 AI 输出的 ```astro-ui 声明式 JSON 块；
- * 2. 将结构化语义原语 (card / metrics / steps / checklist / compare / tabs / callout / grid)
- *    渲染为严格遵循 Material Design 3 Expressive 与 AstroLib 学术克制规范的 DOM；
- * 3. 支持可控字体 (sans / serif / mono)、主题语义色 (neutral / primary / secondary / tertiary / success / warning)
- *    与排版密度 (comfortable / compact)，完全适配亮暗双色主题；
- * 4. 流式生成未闭合时输出优雅骨架占位，杜绝裸 JSON 闪烁与 XSS 注入。
- * ============================================================================
- */
-
 export type AstroBlockFont = 'sans' | 'serif' | 'mono';
 export type AstroBlockTone =
   | 'neutral'
@@ -125,7 +110,6 @@ function tryParseAstroUiJson(rawJson: string): any | null {
     repairControlCharsInJsonStrings(clean).replace(/,\s*([}\]])/g, '$1'),
   ];
 
-  // 容错提取最外层 {...} 或 [...]，防止模型在 JSON 后附带多余说明字符
   const firstBrace = clean.search(/[{[]/);
   const lastBrace = Math.max(clean.lastIndexOf('}'), clean.lastIndexOf(']'));
   if (firstBrace >= 0 && lastBrace > firstBrace) {

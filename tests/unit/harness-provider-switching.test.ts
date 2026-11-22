@@ -1,10 +1,3 @@
-/**
- * tests/unit/harness-provider-switching.test.ts
- * ============================================================================
- * AstroLib Agent Harness 模型服务商管理与热切换逻辑单元测试
- * ============================================================================
- */
-
 import { describe, it, expect } from 'vitest';
 import type { ProviderConfig } from '../../src/components/harness/harness-controller.ts';
 
@@ -101,7 +94,7 @@ describe('Harness Provider Switching & Settings Unit Tests', () => {
 
   it('4. 支持安全删除自定义提供商且不可误删关键预置提供商', () => {
     let list = [...initialProviders];
-    // 添加自定义项
+
     list.push({
       id: 'temp-custom',
       displayName: '临时服务商',
@@ -115,7 +108,6 @@ describe('Harness Provider Switching & Settings Unit Tests', () => {
 
     expect(list.length).toBe(4);
 
-    // 删除自定义项
     list = list.filter(p => p.id !== 'temp-custom');
     expect(list.length).toBe(3);
     expect(list.find(p => p.id === 'baigong')).toBeDefined();

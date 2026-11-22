@@ -1,15 +1,4 @@
 ---
-/**
- * src/components/m3/M3Icon.astro
- * ============================================================================
- * Google Material Symbols 官方标准矢量图标组件
- * ============================================================================
- * 规范：
- * 1. 图标名全部来自 Google Material Symbols (https://github.com/google/material-design-icons)
- * 2. 默认光学尺寸 20px / 24px，默认轮廓 (Outlined) 权重 400
- * 3. 严格对齐 AGENTS.md 6.5「光学度量与尺寸严格统一，优先选用空心或半空心设计」
- * ============================================================================
- */
 interface Props {
   name: string;
   size?: number | string;
@@ -50,8 +39,7 @@ const fontVariationSettings = `'FILL' ${fill ? 1 : 0}, 'wght' ${weight}, 'GRAD' 
   aria-label={ariaLabel}
 >{name}</span>
 
-<style>
-  .m3-icon {
+<style>.m3-icon {
     display: inline-flex;
     align-items: center;
     justify-content: center;

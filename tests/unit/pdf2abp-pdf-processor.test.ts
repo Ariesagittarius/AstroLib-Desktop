@@ -46,7 +46,7 @@ describe('PDF Processor (mupdf WASM + sharp)', () => {
   });
 
   it('splitPdfForMineru 能按页数上限与体积上限双重约束拆分 PDF', async () => {
-    // 1. 不超限时直接引用原文件
+
     const single = await splitPdfForMineru(SAMPLE_4P_PDF, path.join(tmpDir, 'single'), {
       maxPages: 200,
       maxSizeMB: 180,
@@ -56,7 +56,6 @@ describe('PDF Processor (mupdf WASM + sharp)', () => {
     expect(single[0].startPage).toBe(1);
     expect(single[0].endPage).toBe(4);
 
-    // 2. 超页数阈值拆分（maxPages: 2 -> 2 卷）
     const byPages = await splitPdfForMineru(SAMPLE_4P_PDF, path.join(tmpDir, 'by-pages'), {
       maxPages: 2,
       maxSizeMB: 180,
@@ -67,7 +66,6 @@ describe('PDF Processor (mupdf WASM + sharp)', () => {
     expect((await inspectPdf(byPages[0].filePath)).pageCount).toBe(2);
     expect((await inspectPdf(byPages[1].filePath)).pageCount).toBe(2);
 
-    // 3. 超体积阈值拆分（使用含 3 页的 print.pdf 并设定 maxSizeMB: 0.45 验证按体积强制拆分）
     const printPdf = path.resolve(process.cwd(), 'task/print.pdf');
     if (fs.existsSync(printPdf)) {
       const bySize = await splitPdfForMineru(printPdf, path.join(tmpDir, 'by-size'), {
@@ -86,7 +84,6 @@ describe('PDF Processor (mupdf WASM + sharp)', () => {
     expect(fs.existsSync(rendered[0].filePath)).toBe(true);
     expect(rendered[0].width).toBeGreaterThan(500);
 
-    // 2x2 contact sheet
     const sheet2x2 = await renderContactSheet(SAMPLE_4P_PDF, [1, 2, 3, 4], pagesDir, {
       cols: 2,
       rows: 2,
@@ -99,7 +96,6 @@ describe('PDF Processor (mupdf WASM + sharp)', () => {
     expect(meta2x2.format).toBe('jpeg');
     expect(meta2x2.width).toBe(sheet2x2.width);
 
-    // 2-up side-by-side
     const sheet2up = await renderContactSheet(SAMPLE_4P_PDF, [1, 2], pagesDir, {
       cols: 2,
       rows: 1,
@@ -108,7 +104,6 @@ describe('PDF Processor (mupdf WASM + sharp)', () => {
     expect(sheet2up.cols).toBe(2);
     expect(sheet2up.rows).toBe(1);
 
-    // cropPdfRegion
     const cropOut = path.join(tmpDir, 'cover.jpg');
     const cropped = await cropPdfRegion(SAMPLE_4P_PDF, 1, [0, 0, 1000, 400], cropOut, { dpi: 150 });
     expect(fs.existsSync(cropped.filePath)).toBe(true);

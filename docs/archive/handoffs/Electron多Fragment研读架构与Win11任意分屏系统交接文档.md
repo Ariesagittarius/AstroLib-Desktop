@@ -1,8 +1,8 @@
 # AstroLib 桌面端多 Fragment SPA 架构与 Win11 任意分屏系统交接文档
 
-> **文档版本**：v1.0.0  
-> **编写日期**：2026-11-11  
-> **核心归属**：AstroLib 桌面端工程团队（Electron / M3 UI / Universal Reader）  
+> **文档版本**：v1.0.0
+> **编写日期**：2026-11-11
+> **核心归属**：AstroLib 桌面端工程团队（Electron / M3 UI / Universal Reader）
 > **适用范围**：桌面端架构师、前端工程师、学术排版设计与运维人员
 
 ---

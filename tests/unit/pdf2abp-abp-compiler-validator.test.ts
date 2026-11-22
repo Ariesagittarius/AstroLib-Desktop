@@ -102,7 +102,7 @@ flowchart TD
     expect(html).toContain('class="exercise-trigger-card');
     expect(html).toContain('class="mermaid-container"');
     expect(html).toContain('src="/collections/math/test_linear/images/fig1.png"');
-    // 不可产生双重 <figure> 嵌套
+
     expect(html).not.toMatch(/<figure[^>]*>[\s\S]*?<figure/i);
   });
 

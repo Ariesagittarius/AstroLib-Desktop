@@ -1,10 +1,3 @@
-/**
- * tests/unit/library-ingest-status.test.ts
- * ============================================================================
- * 研读书库实体状态映射与 200 页阈值页码校验单元测试
- * ============================================================================
- */
-
 import { describe, it, expect } from 'vitest';
 import {
   mapIngestTaskToEntityStatus,
@@ -62,27 +55,22 @@ describe('Library Ingest Status Mapper & Page Range Validation', () => {
   it('4. validatePageRanges 应正确校验 200 页上限、空输入、格式与重叠去重', () => {
     expect(MINERU_MAX_PAGES_PER_PARSE).toBe(200);
 
-    // <=200 页允许留空
     expect(validatePageRanges('', 120).valid).toBe(true);
-    // >200 页禁止留空
+
     expect(validatePageRanges('', 479).valid).toBe(false);
 
-    // 刚好 200 页合法
     const exact200 = validatePageRanges('1-200', 479);
     expect(exact200.valid).toBe(true);
     expect(exact200.totalSelectedPages).toBe(200);
     expect(exact200.normalized).toBe('1-200');
 
-    // 201 页拒绝
     expect(validatePageRanges('1-201', 479).valid).toBe(false);
 
-    // 多段组合（兼容中文标点与波折号）且按去重计页数
     const multi = validatePageRanges('1-50，40–100, 200', 479);
     expect(multi.valid).toBe(true);
-    expect(multi.totalSelectedPages).toBe(101); // 1..100 + 200
+    expect(multi.totalSelectedPages).toBe(101);
     expect(multi.normalized).toBe('1-50,40-100,200');
 
-    // 越界页码与逆序区间拒绝
     expect(validatePageRanges('50-10', 479).valid).toBe(false);
     expect(validatePageRanges('480', 479).valid).toBe(false);
     expect(validatePageRanges('abc', 479).valid).toBe(false);

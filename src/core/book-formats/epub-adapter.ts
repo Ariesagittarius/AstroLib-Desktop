@@ -1,17 +1,3 @@
-/**
- * src/core/book-formats/epub-adapter.ts
- * ============================================================================
- * EPUB 2 / EPUB 3 标准电子书自适应归一化适配器
- * ============================================================================
- * 职责：
- * 1. 纯 TS 零重依赖解析 EPUB (container.xml -> OPF -> NAV/NCX -> Spine -> XHTML -> CSS/Assets)；
- * 2. 生成符合 ABP Schema 1.0.0 的完整标准数据包 (AbpBundlePayload + aiIndex)；
- * 3. 保留原书排版质感（Ruby 注音、着重号、悬挂标点、内嵌子集字体）并经由 css-harmonizer 作用域化；
- * 4. 提取跨文件 EPUB 3 脚注 (noteref/footnote) 与章节图像类型元数据，支撑现代阅读交互；
- * 5. 自动切分全书纯文本切片写入 aiIndex，让 AI 问答、检索与批注能力零改造即刻可用。
- * ============================================================================
- */
-
 import {
   ABP_SCHEMA_VERSION,
   type AbpBundlePayload,
@@ -241,7 +227,6 @@ function parseOpfDocument(opfXml: string, opfPath: string): {
   let coverIdFromMeta: string | null = null;
   let coverHref: string | null = null;
 
-  // 解析 <meta name="cover" content="...">
   const metaRe = /<meta\b([^>]*?)\/?>/gi;
   let mm: RegExpExecArray | null;
   while ((mm = metaRe.exec(opfXml)) !== null) {
@@ -251,7 +236,6 @@ function parseOpfDocument(opfXml: string, opfPath: string): {
     }
   }
 
-  // 解析 <manifest> 条目
   const itemRe = /<item\b([^>]*?)\/?>/gi;
   while ((mm = itemRe.exec(opfXml)) !== null) {
     const attrs = parseAttributes(mm[1]);
@@ -289,7 +273,6 @@ function parseOpfDocument(opfXml: string, opfPath: string): {
     }
   }
 
-  // 解析 <spine>
   const spineTagMatch = opfXml.match(/<spine\b([^>]*)>([\s\S]*?)<\/spine>/i);
   const spineAttrs = spineTagMatch ? parseAttributes(spineTagMatch[1]) : {};
   const ppd = (spineAttrs['page-progression-direction'] || '').toLowerCase();
@@ -334,7 +317,6 @@ function parseNavOlList(olInnerHtml: string, baseFilePath: string): NavTocNode[]
     const liTagEnd = olInnerHtml.indexOf('>', liOpenIdx);
     if (liTagEnd < 0) break;
 
-    // 匹配对应的 </li>（支持嵌套 <ol>/<li>）
     let depth = 1;
     let scan = liTagEnd + 1;
     const liRegex = /<\/?li\b[^>]*>/gi;
@@ -444,7 +426,6 @@ function extractFootnotesFromXhtml(
 ): Record<string, BookFootnoteEntry> {
   const entries: Record<string, BookFootnoteEntry> = {};
 
-  // 1. 显式标记 epub:type="footnote" / "endnote" / "rearnote" 或 class="footnote"
   const explicitRe =
     /<([a-z0-9]+)\b([^>]*\b(?:epub:type\s*=\s*["'][^"']*(?:footnote|endnote|rearnote)[^"']*["']|class\s*=\s*["'][^"']*\bfootnote\b[^"']*["'])[^>]*)>/gi;
   let m: RegExpExecArray | null;
@@ -469,7 +450,6 @@ function extractFootnotesFromXhtml(
     }
   }
 
-  // 2. 回退：匹配正文中 <a epub:type="noteref" href="...#id"> 指向的任意同 id 容器
   for (const targetId of referencedTargetIds) {
     if (entries[targetId]) continue;
     const escaped = targetId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -579,7 +559,7 @@ export class EpubFormatAdapter implements IBookFormatAdapter {
       return true;
     }
     if (data && data.byteLength >= 4) {
-      // ZIP Local File Header PK\x03\x04 且含 mimetype 特征
+
       if (data[0] === 0x50 && data[1] === 0x4b && data[2] === 0x03 && data[3] === 0x04) {
         try {
           const zip = ZipArchive.fromBytes(data);
@@ -623,7 +603,6 @@ export class EpubFormatAdapter implements IBookFormatAdapter {
     const bookId = `${colSlug}-${bookSlug}`;
     const readingProfile = options.readingProfile || 'literary';
 
-    // 1. 解析目录 (NAV 优先，回退 NCX)
     let navNodes: NavTocNode[] = [];
     if (opf.navFullPath && zip.hasEntry(opf.navFullPath)) {
       const navHtml = await zip.readEntryText(opf.navFullPath);
@@ -657,7 +636,6 @@ export class EpubFormatAdapter implements IBookFormatAdapter {
     };
     walkNav(navNodes, true);
 
-    // 2. 收集全部静态资源 (图片、字体、SVG) 与样式表
     const bundleAssets: Record<string, string> = {};
     const manifestAssetList: string[] = [];
     const zipPathToAssetRelPath = new Map<string, string>();
@@ -687,7 +665,6 @@ export class EpubFormatAdapter implements IBookFormatAdapter {
       zipPathToAssetRelPath.set(item.fullPath.toLowerCase(), assetRel);
     }
 
-    // 处理全部 CSS 并合并生成作用域隔离样式表 styles/epub-book.css
     let combinedScopedCss = '';
     let hasEmbeddedFonts = false;
     const assetRoutePrefix = `/collections/${colSlug}/${bookSlug}/`;
@@ -718,7 +695,6 @@ export class EpubFormatAdapter implements IBookFormatAdapter {
       stylesheets.push(cssRel);
     }
 
-    // 3. 建立 Spine 列表并分配规范 chapterSlug
     const spinePaths: string[] = [];
     for (const idref of opf.spineIds) {
       const item = opf.manifestById.get(idref);
@@ -755,7 +731,6 @@ export class EpubFormatAdapter implements IBookFormatAdapter {
       slugBySpinePath.set(fullPath.toLowerCase(), candidate);
     });
 
-    // 4. 预扫描所有 XHTML 中的原始 HTML、noteref 引用集合与脚注正文
     const rawHtmlBySpinePath = new Map<string, string>();
     const referencedNoteIdsByPath = new Map<string, Set<string>>();
 
@@ -796,7 +771,6 @@ export class EpubFormatAdapter implements IBookFormatAdapter {
       }
     }
 
-    // 5. 逐章清洗 HTML、重写资源链接、收集 headings 与章节类型
     const records: SpineChapterRecord[] = [];
     const illustrationCounter = { count: 0 };
     const updatedAt = new Date().toISOString();
@@ -834,10 +808,8 @@ export class EpubFormatAdapter implements IBookFormatAdapter {
           illustrationCounter,
         });
 
-      // 清洗危险标签并展开非 void 自闭合标签（AST 白名单净化）
       let cleanBody = sanitizeAcademicHtml(expandNonVoidSelfClosingTags(rawBody));
 
-      // 重写资源链接 src / xlink:href / poster 与 SVG2 <image href>
       cleanBody = cleanBody.replace(
         /(\b(?:src|xlink:href|poster)\s*=\s*)(["'])([^"']+)\2/gi,
         (full, prefix, quote, rawVal: string) => {
@@ -869,7 +841,6 @@ export class EpubFormatAdapter implements IBookFormatAdapter {
         }
       );
 
-      // 重写超链接 href 并注入脚注交互标记
       const chapterFootnotes: Record<string, BookFootnoteEntry> = {};
       cleanBody = cleanBody.replace(/<a\b([^>]*)>/gi, (full, attrText: string) => {
         const attrs = parseAttributes(attrText);
@@ -913,7 +884,6 @@ export class EpubFormatAdapter implements IBookFormatAdapter {
         return updatedTag;
       });
 
-      // 为缺少 id 的章节级标题补全确定性 id 并提取 headings
       let autoHeadingSeq = 0;
       const headings: ChapterHeadingItem[] = [];
       const seenHeadingIds = new Set<string>();
@@ -936,7 +906,6 @@ export class EpubFormatAdapter implements IBookFormatAdapter {
         return resultTag;
       });
 
-      // 合并 NAV 声明的页内二级锚点（如果尚未被正文 h2~h4 捕获）
       const navSubs = navSubHeadingsByPath.get(spinePath.toLowerCase()) || [];
       for (const sub of navSubs) {
         if (!seenHeadingIds.has(sub.fragment)) {
@@ -945,7 +914,6 @@ export class EpubFormatAdapter implements IBookFormatAdapter {
         }
       }
 
-      // 为无 id 的正文顶层段落分配确定性 id，确保批注锚点稳定
       let autoParaSeq = 0;
       cleanBody = cleanBody.replace(/<p\b([^>]*)>/gi, (full, attrText: string) => {
         if (/\bid\s*=/.test(attrText)) return full;
@@ -971,7 +939,6 @@ export class EpubFormatAdapter implements IBookFormatAdapter {
       });
     }
 
-    // 6. 组装章节有效负载字典 & 分组 Sections
     const chapters: Record<string, AstroBookChapterPayload> = {};
     const contentSeedParts: string[] = [resolvedTitle, opf.author, opf.publisher];
 
@@ -999,7 +966,6 @@ export class EpubFormatAdapter implements IBookFormatAdapter {
       };
     }
 
-    // 智能聚合卷首彩插与前置页分组，其余章节保持自然阅读流顺序
     const frontmatterRecords: SpineChapterRecord[] = [];
     const mainRecords: SpineChapterRecord[] = [];
     let passedBodyStart = false;
@@ -1054,7 +1020,6 @@ export class EpubFormatAdapter implements IBookFormatAdapter {
       chapters: mainRecords.map((r, i) => toChapterSummary(r, i)),
     });
 
-    // 确定合理入口章节（优先第一篇真实目录正文，避开封面空白跳转体验，同时保留封面可点）
     const preferredEntry =
       records.find((r) => r.inNav && r.chapterKind === 'body') ||
       records.find((r) => r.chapterKind === 'body') ||
@@ -1063,7 +1028,6 @@ export class EpubFormatAdapter implements IBookFormatAdapter {
     const coverAssetRel = opf.coverHref ? zipPathToAssetRelPath.get(opf.coverHref.toLowerCase()) : undefined;
     const coverUrl = coverAssetRel ? `/abp-packs/${bookId}/${coverAssetRel}` : undefined;
 
-    // 7. 构建自包含 ai-index.json，保证 AI 问答、检索与章节读取原生生效
     const aiChunks: Array<{
       id: string;
       kind: 'heading' | 'paragraph';
@@ -1078,7 +1042,7 @@ export class EpubFormatAdapter implements IBookFormatAdapter {
     for (const rec of records) {
       const pageUrl = `/collections/${colSlug}/${bookSlug}/${rec.slug}/`;
       if (rec.plainText.length > 0) {
-        // 先插入章节标题节点供 book_toc / book_chapter_outline 识别
+
         aiChunks.push({
           id: `${rec.slug}-heading`,
           kind: 'heading',
@@ -1091,7 +1055,6 @@ export class EpubFormatAdapter implements IBookFormatAdapter {
         });
       }
 
-      // 将整章纯文本按约 750 字切成可检索片段
       const text = rec.plainText;
       const chunkLen = 750;
       for (let pos = 0, partIdx = 0; pos < text.length; pos += chunkLen, partIdx++) {

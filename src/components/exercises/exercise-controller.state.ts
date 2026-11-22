@@ -1,15 +1,3 @@
-/**
- * src/components/exercises/exercise-controller.state.ts
- * ============================================================================
- * Pure Headless State Machine for Exercise Center Controller
- * ============================================================================
- * 规范：
- * 1. 绝对无 DOM 依赖：严禁出现 window, document, querySelector, addEventListener；
- * 2. 状态转移确定性与幂等性：严格管理做题记录、筛选条件、分页和统计；
- * 3. 序列化与水合支持：支持作答快照恢复与统计重新计算。
- * ============================================================================
- */
-
 import type { SlimQuestionItem } from '../../types/exercises';
 
 export type ExerciseMode = 'practice' | 'paper';
@@ -29,7 +17,7 @@ export interface ExerciseStats {
   total: number;
   done: number;
   correct: number;
-  accuracy: number; // 0.0 ~ 1.0
+  accuracy: number;
 }
 
 export interface ExerciseFilterState {
@@ -84,8 +72,6 @@ export class ExerciseStateMachine {
     }
   }
 
-  // --- Getters ---
-
   public getFilters(): Readonly<ExerciseFilterState> {
     return { ...this.filters };
   }
@@ -105,8 +91,6 @@ export class ExerciseStateMachine {
   public getActiveSolutionVersion(questionId: string): string | undefined {
     return this.activeSolutionVersions.get(questionId);
   }
-
-  // --- Modal Open/Close & View State ---
 
   public open(): boolean {
     if (this.filters.isOpen) return false;
@@ -129,8 +113,6 @@ export class ExerciseStateMachine {
     this.filters.isFilterCollapsed = !this.filters.isFilterCollapsed;
     return this.filters.isFilterCollapsed;
   }
-
-  // --- Filter Actions ---
 
   public setMode(mode: ExerciseMode): void {
     this.filters.mode = mode;
@@ -193,8 +175,6 @@ export class ExerciseStateMachine {
     return this.displayedLimit;
   }
 
-  // --- Practice & Answering ---
-
   public recordChoice(questionId: string, choice: string, correctChoice?: string): UserPracticeRecord {
     const existing = this.records.get(questionId) || { answered: false };
     const isCorrect = correctChoice !== undefined ? choice.trim() === correctChoice.trim() : undefined;
@@ -232,25 +212,21 @@ export class ExerciseStateMachine {
     this.activeSolutionVersions.set(questionId, versionId);
   }
 
-  // --- Filtering & Stats Calculation (Pure Functions) ---
-
   public filterQuestions(questions: SlimQuestionItem[]): SlimQuestionItem[] {
     if (!Array.isArray(questions)) return [];
 
     return questions.filter((q) => {
-      // 1. Source filter
+
       if (this.filters.source !== 'all') {
         const isExam = Boolean(q.source && (q.source.includes('考研') || q.source.includes('真题')));
         if (this.filters.source === 'exam' && !isExam) return false;
         if (this.filters.source === 'textbook' && isExam) return false;
       }
 
-      // 2. Group filter
       if (this.filters.group !== 'all') {
         if (q.group !== this.filters.group) return false;
       }
 
-      // 3. Section filter
       if (this.filters.mode === 'practice') {
         if (this.filters.section !== 'all' && q.sec !== this.filters.section) {
           return false;
@@ -261,12 +237,10 @@ export class ExerciseStateMachine {
         }
       }
 
-      // 4. Type filter
       if (this.filters.type !== 'all' && q.type !== this.filters.type) {
         return false;
       }
 
-      // 5. Search query
       if (this.filters.searchQuery) {
         const sq = this.filters.searchQuery;
         const matchStem = (q.stem_raw || q.stem_html || '').toLowerCase().includes(sq);
@@ -297,8 +271,6 @@ export class ExerciseStateMachine {
     const accuracy = done > 0 ? Number((correct / done).toFixed(2)) : 0;
     return { total, done, correct, accuracy };
   }
-
-  // --- Snapshot Serialization & Hydration ---
 
   public serialize(): ExerciseStateSnapshot {
     const recordsObj: Record<string, UserPracticeRecord> = {};

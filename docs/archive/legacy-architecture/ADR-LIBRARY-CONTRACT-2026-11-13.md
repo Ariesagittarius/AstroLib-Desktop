@@ -1,10 +1,10 @@
 # 架构决策记录 (ADR-LIBRARY-CONTRACT-2026-11-13)
 
-**标题**：AstroLib 书库管理、统一校验入口、原子安装与幂等清理契约决策  
-**编号**：ADR-P1-C0-2026-11-13  
-**状态**：`PROPOSED (待审核后执行 C1)`  
-**对应任务**：P1-C0（P1-C 阶段架构决策，不修改业务源码）  
-**基准分支**：`electron/main` @ `d4e09245`（Tag `v0.0.4` @ `df68e42c` 保持不变）  
+**标题**：AstroLib 书库管理、统一校验入口、原子安装与幂等清理契约决策
+**编号**：ADR-P1-C0-2026-11-13
+**状态**：`PROPOSED (待审核后执行 C1)`
+**对应任务**：P1-C0（P1-C 阶段架构决策，不修改业务源码）
+**基准分支**：`electron/main` @ `d4e09245`（Tag `v0.0.4` @ `df68e42c` 保持不变）
 **约束规范**：`AGENTS.md` Rule 1 (UI not domain model), Rule 3 (Source of truth), Rule 6 (Feature isolation), Rule 7 (Utils purity), Rule 10 (One boundary -> One migration -> One verification)
 
 ---

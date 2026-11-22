@@ -1,10 +1,3 @@
-/**
- * tests/unit/chat-state.test.ts
- * ============================================================================
- * Unit Tests for ChatControllerStateMachine (DOM-free State Verification)
- * ============================================================================
- */
-
 import { describe, it, expect, beforeEach } from 'vitest';
 import { ChatControllerStateMachine } from '../../src/ai/client/chat-controller.state';
 import { AIAskElement } from '../../src/ai/client/chat-controller';
@@ -39,15 +32,13 @@ describe('ChatControllerStateMachine', () => {
   });
 
   it('3. Illegal Transitions: blocks invalid status changes', () => {
-    // Cannot enter streaming from idle directly
+
     expect(sm.enterStreaming()).toBe(false);
     expect(sm.getStatus()).toBe('idle');
 
-    // Cannot finish generating from idle
     expect(sm.finishGenerating()).toBe(false);
     expect(sm.getStatus()).toBe('idle');
 
-    // Cannot start generating if already busy
     expect(sm.startGenerating()).toBe(true);
     expect(sm.startGenerating()).toBe(false);
     expect(sm.getStatus()).toBe('busy');
@@ -81,29 +72,26 @@ describe('ChatControllerStateMachine', () => {
     expect(sm.getStatus()).toBe('error');
     expect(sm.getErrorMessage()).toBe('Rate limit exceeded');
 
-    // Resetting error brings state back to idle
     expect(sm.resetError()).toBe(true);
     expect(sm.getStatus()).toBe('idle');
     expect(sm.getErrorMessage()).toBeNull();
 
-    // Resetting when not in error returns false
     expect(sm.resetError()).toBe(false);
   });
 
   it('6. Idempotency & Duplicate Guards: prevents duplicate chapter references and duplicate aborts', () => {
     const ch = { title: 'Chapter 2', url: '/ch2' };
     expect(sm.addReferencedChapter(ch)).toBe(true);
-    expect(sm.addReferencedChapter(ch)).toBe(false); // Duplicate rejected
+    expect(sm.addReferencedChapter(ch)).toBe(false);
     expect(sm.getReferencedChapters().length).toBe(1);
 
     expect(sm.removeReferencedChapter('/ch2')).toBe(true);
-    expect(sm.removeReferencedChapter('/ch2')).toBe(false); // Already removed
+    expect(sm.removeReferencedChapter('/ch2')).toBe(false);
 
-    // Duplicate aborts in idle
     expect(sm.abortGenerating()).toBe(false);
     sm.startGenerating();
     expect(sm.abortGenerating()).toBe(true);
-    expect(sm.abortGenerating()).toBe(false); // Already idle
+    expect(sm.abortGenerating()).toBe(false);
   });
 
   it('7. Controller Integration: AIAskElement delegates state to ChatControllerStateMachine', () => {
@@ -120,7 +108,6 @@ describe('ChatControllerStateMachine', () => {
     expect(el.getStateMachine().getStatus()).toBe('idle');
     expect(el._busy).toBe(false);
 
-    // 状态机流式生成、错误处理与终止断言
     el._busy = true;
     el.getStateMachine().enterStreaming();
     expect(el.getStateMachine().getStatus()).toBe('streaming');

@@ -1,8 +1,3 @@
-/**
- * tests/unit/search-rec-finalize.test.ts
- * 验证 SearchRecEngine 与 FuzzyRetriever 增量累积 + finalize 机制的等价性、幂等性与去重保证
- */
-
 import { describe, it, expect } from 'vitest';
 import { SearchRecEngine } from '../../src/features/search-rec/core/engine.ts';
 import { FuzzyRetriever } from '../../src/features/search-rec/core/retrieval/fuzzy-retriever.ts';
@@ -95,20 +90,18 @@ describe('SearchRecEngine & FuzzyRetriever Finalize & Incremental Registration',
   ];
 
   it('T1 (等价性): 逐本 register + finalize vs 一次性构造，top-10 id 序列相同、分数差 <1e-9', async () => {
-    // 方案 A: 逐本 registerBook + finalize
+
     const engineA = new SearchRecEngine();
     engineA.registerBook(book1Chunks);
     engineA.registerBook(book2Chunks);
     engineA.registerBook(book3Chunks);
     engineA.finalize();
 
-    // 方案 B: 一次性全量 registerBook + finalize
     const allChunks = [...book1Chunks, ...book2Chunks, ...book3Chunks];
     const engineB = new SearchRecEngine();
     engineB.registerBook(allChunks);
     engineB.finalize();
 
-    // FuzzyRetriever 对比验证
     const fuzzyIncremental = new FuzzyRetriever();
     fuzzyIncremental.addChunks(book1Chunks);
     fuzzyIncremental.addChunks(book2Chunks);
@@ -119,7 +112,7 @@ describe('SearchRecEngine & FuzzyRetriever Finalize & Incremental Registration',
 
     const testQueries = ['定理', '中值定理', '正交对角化', '香农公式'];
     for (const q of testQueries) {
-      // 验证 FuzzyRetriever 逐位一致
+
       const fHitsInc = fuzzyIncremental.search(q, 10);
       const fHitsOne = fuzzyOneShot.search(q, 10);
       expect(fHitsInc.length).toBe(fHitsOne.length);
@@ -128,7 +121,6 @@ describe('SearchRecEngine & FuzzyRetriever Finalize & Incremental Registration',
         expect(Math.abs((fHitsInc[i].channelScore || 0) - (fHitsOne[i].channelScore || 0))).toBeLessThan(1e-9);
       }
 
-      // 验证 Engine 检索一致
       const resA = await engineA.search({ raw: q, mode: 'fuzzy', topK: 10 });
       const resB = await engineB.search({ raw: q, mode: 'fuzzy', topK: 10 });
       expect(resA.items.length).toBe(resB.items.length);
@@ -149,7 +141,6 @@ describe('SearchRecEngine & FuzzyRetriever Finalize & Incremental Registration',
     engine.finalize();
     const resFirst = await engine.search({ raw: '矩阵', mode: 'fuzzy', topK: 5 });
 
-    // 重复调用 finalize
     engine.finalize();
     const resSecond = await engine.search({ raw: '矩阵', mode: 'fuzzy', topK: 5 });
 
@@ -165,14 +156,11 @@ describe('SearchRecEngine & FuzzyRetriever Finalize & Incremental Registration',
     engine.registerBook(book1Chunks);
     engine.finalize();
 
-    // 此时不应命中通信原理切片
     const beforeRes = await engine.search({ raw: '香农公式', mode: 'fuzzy' });
     expect(beforeRes.items.some((it) => it.chunk.id === 'ee-1')).toBe(false);
 
-    // 迟到注册新书
     engine.registerBook(book3Chunks);
 
-    // 未手动调用 finalize，search 内部 ensureFinalized 自动触发增量补齐
     const afterRes = await engine.search({ raw: '香农公式', mode: 'fuzzy' });
     expect(afterRes.items.some((it) => it.chunk.id === 'ee-1')).toBe(true);
     expect(afterRes.items[0].chunk.id).toBe('ee-1');
@@ -185,7 +173,6 @@ describe('SearchRecEngine & FuzzyRetriever Finalize & Incremental Registration',
     const { buffer } = serializeEmbeddingsBinary([v1, v2], 'int8');
     const dummyBinary = buffer as ArrayBuffer;
 
-    // 注册第一次
     engine.registerBook(book1Chunks, dummyBinary);
     const countFirst = (engine as any).chunks.length;
     const denseCountFirst = (engine as any).denseIndex.chunks.length;
@@ -195,7 +182,6 @@ describe('SearchRecEngine & FuzzyRetriever Finalize & Incremental Registration',
     expect(denseCountFirst).toBe(book1Chunks.length);
     expect(vectorCountFirst).toBe(book1Chunks.length);
 
-    // 重复注册相同切片
     engine.registerBook(book1Chunks, dummyBinary);
     const countSecond = (engine as any).chunks.length;
     const denseCountSecond = (engine as any).denseIndex.chunks.length;
@@ -240,7 +226,7 @@ describe('SearchRecEngine & FuzzyRetriever Finalize & Incremental Registration',
         url: '/math/math-senior/ch1/#1.1',
       },
       {
-        id: 'dup-chunk-0', // 重复 ID（模拟同一章节同一卡片被打包器写进 meta 两次）
+        id: 'dup-chunk-0',
         bookId: 'math-senior',
         colSlug: 'math',
         bookSlug: 'math-senior',
@@ -271,7 +257,6 @@ describe('SearchRecEngine & FuzzyRetriever Finalize & Incremental Registration',
       },
     ];
 
-    // 向量首分量编码原始在 rawChunks 中的下标 0, 1, 2，第二分量为 127 确保 scale=1.0
     const v0 = new Float32Array([0, 127]);
     const v1 = new Float32Array([1, 127]);
     const v2 = new Float32Array([2, 127]);
@@ -282,13 +267,11 @@ describe('SearchRecEngine & FuzzyRetriever Finalize & Incremental Registration',
     engine.finalize();
 
     const denseIndex = (engine as any).denseIndex;
-    const expectedRawIndexes = [0, 2]; // 下标 1 的重复 chunk 应被跳过
+    const expectedRawIndexes = [0, 2];
 
-    // 断言 1: denseIndex.chunks 长度与 int8Vectors 长度严格相等
     expect(denseIndex.chunks.length).toBe(expectedRawIndexes.length);
     expect((denseIndex.int8Vectors || []).length).toBe(expectedRawIndexes.length);
 
-    // 断言 2: 对每个 i，denseIndex.int8Vectors[i] 编码的下标 === denseIndex.chunks[i] 在原始包内的下标
     for (let i = 0; i < denseIndex.chunks.length; i++) {
       const rawIdx = expectedRawIndexes[i];
       const encodedIdx = denseIndex.int8Vectors[i].data[0];
@@ -306,7 +289,7 @@ describe('SearchRecEngine & FuzzyRetriever Finalize & Incremental Registration',
 
     const engineAsync = new SearchRecEngine();
     engineAsync.registerBook(allChunks);
-    await engineAsync.finalizeAsync(2); // 以 batchSize=2 分批执行
+    await engineAsync.finalizeAsync(2);
 
     const q = '中值定理';
     const resSync = await engineSync.search({ raw: q, mode: 'fuzzy' });

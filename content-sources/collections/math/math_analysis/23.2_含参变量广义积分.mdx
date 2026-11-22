@@ -10,7 +10,6 @@ import Note from '@/components/Note.astro';
 import Block from '@/components/Block.astro';
 import Method from '@/components/Method.astro';
 
-
 函数项级数可看成离散求和的含参变量广义积分，其中函数的自变量对应着参变量。因此含参变量广义积分的分析性质的研究与函数项级数的分析性质的研究在许多地方是类似的，可以比照第十四章相关内容。此外还可以参见§16.1的内容，其中涉及以$n$为参变量的无穷限广义积分。
 
 ## 23.2.1 一致收敛性
@@ -42,23 +41,23 @@ $$
 </Method>
 
 <Method title="$Weierstrass$ 判别法 ($M$-判别法)">
-设 $\int_{a}^{+\infty} f(x, t) \, dx$ 在 $t \in T$ 上收敛，如果  
-(1) $|f(x,t)| \leqslant F(x), a \leqslant x < +\infty, t \in T,$  
-(2) $\int_{a}^{+\infty}F(x)\mathrm{d}x$ 收敛，  
+设 $\int_{a}^{+\infty} f(x, t) \, dx$ 在 $t \in T$ 上收敛，如果
+(1) $|f(x,t)| \leqslant F(x), a \leqslant x < +\infty, t \in T,$
+(2) $\int_{a}^{+\infty}F(x)\mathrm{d}x$ 收敛，
 则 $\int_{a}^{+\infty}f(x,t)\mathrm{d}x$ 关于 $t\in T$ 一致收敛.
 </Method>
 
 <Method title="$Abel$ 判别法">
-设  
-(1) $\int_{a}^{+\infty} f(x, t) \mathrm{d}x$ 关于 $t \in T$ 一致收敛，  
-(2) 函数 $g(x,t)$ 关于 $x$ 单调，且作为二元函数是有界的，  
+设
+(1) $\int_{a}^{+\infty} f(x, t) \mathrm{d}x$ 关于 $t \in T$ 一致收敛，
+(2) 函数 $g(x,t)$ 关于 $x$ 单调，且作为二元函数是有界的，
 则 $\int_{a}^{+\infty}f(x,t)g(x,t)\mathrm{d}x$ 关于 $t \in T$ 一致收敛.
 </Method>
 
 <Method title="$Dirichlet$ 判别法">
-设  
-(1) $\int_{a}^{A} f(x, t) \mathrm{d}x, \forall A \geqslant a, t \in T$ 是一致有界的，  
-(2) 函数 $g(x,t)$ 关于 $x$ 单调，且 $\lim_{x\to +\infty}g(x,t) = 0$ 关于 $t\in T$ 是一致的，  
+设
+(1) $\int_{a}^{A} f(x, t) \mathrm{d}x, \forall A \geqslant a, t \in T$ 是一致有界的，
+(2) 函数 $g(x,t)$ 关于 $x$ 单调，且 $\lim_{x\to +\infty}g(x,t) = 0$ 关于 $t\in T$ 是一致的，
 则 $\int_{a}^{+\infty}f(x,t)g(x,t)\mathrm{d}x$ 关于 $t\in T$ 一致收敛.
 </Method>
 

@@ -1,10 +1,3 @@
-/**
- * src/plugins/harness/builtin/read.plugin.ts
- * ============================================================================
- * AstroLib 精准内容节点读取插件 (/read & read_content_node)
- * ============================================================================
- */
-
 import type { HarnessPlugin, PluginContext } from '../types.ts';
 import { UniversalLocatorResolver } from '../../../core/content-api/content-locator.ts';
 

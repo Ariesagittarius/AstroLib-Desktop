@@ -78,16 +78,16 @@ describe('Universal Reader Layout Geometry & Preferences Tests', () => {
     expect(dual.pageWidth).toBe(1048);
     expect(dual.pageStride).toBe(2 * (500 + 48));
 
-    const colStride = dual.columnWidth + dual.columnGap; // 548
-    // 第0/1栏均属第0页
+    const colStride = dual.columnWidth + dual.columnGap;
+
     expect(calculatePageIndexForOffset(10, dual, 5)).toBe(0);
     expect(calculatePageIndexForOffset(colStride + 10, dual, 5)).toBe(0);
-    // 第2/3栏属第1页
+
     expect(calculatePageIndexForOffset(colStride * 2 + 10, dual, 5)).toBe(1);
     expect(calculatePageIndexForOffset(colStride * 3 + 10, dual, 5)).toBe(1);
-    // 第4栏属第2页
+
     expect(calculatePageIndexForOffset(colStride * 4 + 10, dual, 5)).toBe(2);
-    // 超出总页数时应正确 clamp
+
     expect(calculatePageIndexForOffset(colStride * 20, dual, 5)).toBe(4);
   });
 
@@ -119,7 +119,6 @@ describe('Universal Reader Layout Geometry & Preferences Tests', () => {
       useBookFonts: false,
     });
 
-    // 其他书籍偏好不受影响
     expect(loadBookReadingPrefs('math-calc-1', { sourceFormat: 'abp' }).styleMode).toBe('harmonized');
   });
 
@@ -134,37 +133,31 @@ describe('Universal Reader Layout Geometry & Preferences Tests', () => {
     expect(epubDefault.punctStyle).toBe('circle');
     expect(epubDefault.readingProfile).toBe('literary');
 
-    // 修改 EPUB 格式默认字号不应影响 ABP 格式
     saveFormatDefaults('epub', { fontSize: 18, cjk: 'serif' });
     expect(loadFormatDefaults('epub').fontSize).toBe(18);
     expect(loadFormatDefaults('epub').cjk).toBe('serif');
     expect(loadFormatDefaults('abp').fontSize).toBe(15);
 
-    // 继承 EPUB 格式默认配置
     const novel = loadEffectiveBookPrefs('acg-railgun', { sourceFormat: 'epub' });
     expect(novel.fontSize).toBe(18);
     expect(novel.cjk).toBe('serif');
     expect(novel.hasOverrides).toBe(false);
     expect(novel.useBookFonts).toBe(true);
 
-    // 在本书内手动选择 CJK 字体时自动将 useBookFonts 置为 false
     const updatedNovel = saveBookPrefOverride('acg-railgun', { cjk: 'han-sans' }, { sourceFormat: 'epub' });
     expect(updatedNovel.cjk).toBe('han-sans');
     expect(updatedNovel.useBookFonts).toBe(false);
     expect(updatedNovel.hasOverrides).toBe(true);
 
-    // 另一本 EPUB 不受本书覆写影响
     const otherNovel = loadEffectiveBookPrefs('acg-index', { sourceFormat: 'epub' });
     expect(otherNovel.cjk).toBe('serif');
     expect(otherNovel.useBookFonts).toBe(true);
 
-    // 恢复本书为格式默认
     const resetBook = resetBookPrefOverrides('acg-railgun', { sourceFormat: 'epub' });
     expect(resetBook.cjk).toBe('serif');
     expect(resetBook.fontSize).toBe(18);
     expect(resetBook.hasOverrides).toBe(false);
 
-    // 重置 EPUB 格式默认回内置 思源宋体 + 16px
     const resetFmt = resetFormatDefaults('epub');
     expect(resetFmt.cjk).toBe('han-serif');
     expect(resetFmt.fontSize).toBe(16);

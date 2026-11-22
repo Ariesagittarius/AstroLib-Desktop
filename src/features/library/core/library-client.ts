@@ -1,15 +1,3 @@
-/**
- * src/features/library/core/library-client.ts
- * ============================================================================
- * Unified Library Client Adapter (Material 3 Desktop & Dev HTTP Pipeline)
- * ============================================================================
- * 规范：
- * 1. 显式分支：优先桥接 Electron IPC (window.astrolib)，回退至 Dev HTTP (/api/library/)；
- * 2. 纯粹适配器模式：书库状态与远程安装操作统一抽象，杜绝 DOM 内部碎片化 fetch；
- * 3. Ingest 解耦：文档 OCR/摄取流统一由 features/doc-ingestion 承接，书库专注教材包与实体目录。
- * ============================================================================
- */
-
 import type { UnifiedReadingEntity, LibraryShelf } from '../../../types/library-entity';
 
 export interface OfficialCatalogBook {

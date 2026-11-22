@@ -1,15 +1,3 @@
-/**
- * src/core/annotations/annotation-ast-linker.ts
- * ============================================================================
- * 批注元数据与教材 AST 语法树外接关联引擎 (Annotation-AST Linker)
- * ============================================================================
- * 职责：
- * 1. 将独立解耦存储的批注（高亮/侧注/手写笔迹/画布引用）与章节 AST 节点精准关联；
- * 2. 为无源码的纯 ABP 桌面环境提供 HTML -> 最小 AST 节点树回退提取；
- * 3. 为 Agent 生成整书批注全景概览 (BookAnnotationsOverview) 与全文检索。
- * ============================================================================
- */
-
 import { flattenTree } from '../content-api/ast-extractor.ts';
 import type { AstDocumentNode } from '../content-api/types.ts';
 import type {
@@ -36,9 +24,6 @@ function stripHtmlTags(html: string): string {
     .trim();
 }
 
-/**
- * 在仅存在编译后 ABP HTML 时反推兼容的 AST 节点列表（供打包桌面端无源码场景外接使用）
- */
 export function buildFallbackAstTreeFromHtml(html: string): AstDocumentNode[] {
   const nodes: AstDocumentNode[] = [];
   if (!html) return nodes;
@@ -161,9 +146,6 @@ function resolveAstNodeForId(
   return null;
 }
 
-/**
- * 将单章批注与自由画布引用外接至章节 AST 树节点
- */
 export function linkChapterAnnotationsWithAst(params: {
   colSlug: string;
   bookSlug: string;
@@ -220,9 +202,6 @@ export function linkChapterAnnotationsWithAst(params: {
   };
 }
 
-/**
- * 聚合整本书的批注全景概览 (供 Agent 了解全局批注分布与核心笔记本摘要)
- */
 export function aggregateBookAnnotationsOverview(params: {
   storage: AnnotationStorageService;
   colSlug: string;
@@ -340,9 +319,6 @@ export function aggregateBookAnnotationsOverview(params: {
   };
 }
 
-/**
- * 检索单本书或全书库中的批注、侧注与画布笔记卡片
- */
 export function searchAnnotationsAcrossBooks(params: {
   storage: AnnotationStorageService;
   books: Array<{ colSlug: string; slug: string }>;

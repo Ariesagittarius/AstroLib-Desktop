@@ -1,8 +1,8 @@
 # AI 侧载问答体验升级与 Chrome Gemini 输入框完全对齐交接文档
 
-> **文档性质**：技术架构交接与下阶段实施蓝图（Handover & Implementation Blueprint）  
-> **交接对象**：接替本任务的后续开发/重构 AI Agent  
-> **编写日期**：2026-09-19  
+> **文档性质**：技术架构交接与下阶段实施蓝图（Handover & Implementation Blueprint）
+> **交接对象**：接替本任务的后续开发/重构 AI Agent
+> **编写日期**：2026-09-19
 > **项目范围**：AstroLib（my-astro-site）AI 书内问答侧载模式（Sideload Dock Mode）体验升级
 
 ---
@@ -276,7 +276,7 @@
 <div class="ask-input-bar">
   <!-- Gemini 统一圆角复合输入卡片 -->
   <div class="ask-gemini-input-card">
-    
+
     <!-- 1. 顶层：上下文引用行 (Context Row) -->
     <div class="ask-context-row" id="ask-context-row" style="display: none;">
       <div class="ask-context-indicator">

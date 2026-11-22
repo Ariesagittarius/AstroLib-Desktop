@@ -25,13 +25,13 @@ But if you look closely at the expanded region of Figure 2.6, you'll notice that
 
 Now imagine that you have a variable z that depends on two other variables, say x and y, so $z = f ( x , y )$ . One way to picture such a case is to visualize a surface in three-dimensional space, as in Figure 2.7. The height of this surface above the xy plane is z, which gets higher and lower at different values of x and y. And since the height z may change at a different rate in different directions, a single derivative will not generally be sufficient to characterize the total change in height as you move from one point to another. You can see the height z changing at different rates in Figure 2.8; at the location shown in the figure, the slope of the surface is quite steep if you move in the direction of increasing y (while remaining at the same value of x), but the slope is almost zero if you move in the direction of increasing x (while holding your y-value constant).
 
-![](images/c96b7cdec4b22f822a74e369bce42e04bdbb1532565138b97b154ab3878a753d.jpg)  
+![](images/c96b7cdec4b22f822a74e369bce42e04bdbb1532565138b97b154ab3878a753d.jpg)
 Figure 2.6 Slope of the line $y = f ( x )$
 
-![](images/205f46ee6738d7eae75501d852de078c61d804eb68677e3261fcbc144459e91b.jpg)  
+![](images/205f46ee6738d7eae75501d852de078c61d804eb68677e3261fcbc144459e91b.jpg)
 Figure 2.7 Surface in 3-D space (z = f (x, y)).
 
-![](images/c3ad43bbc4cc390235916fac36058cfd4c456874e0518ae520f0f3514cf1b549.jpg)  
+![](images/c3ad43bbc4cc390235916fac36058cfd4c456874e0518ae520f0f3514cf1b549.jpg)
 Figure 2.8 Surface in 3-D space (z = f (x, y)).
 
 This illustrates the usefulness of partial derivatives, which are derivatives formed by allowing one independent variable (such as x or y in Figure 2.8) to change while holding other independent variables constant. So the partia derivative $\textstyle { \frac { \partial z } { \partial x } }$ represents the slope of the surface at a given location if you move only along the x-direction from that location, and the partial derivative $\frac { \partial z } { \partial y }$ represents the slope if you move only along the y-direction. You may find these partial derivatives written as $\frac { \partial z } { \partial x } | _ { y }$ and ${ \frac { \partial z } { \partial y } } | _ { x } .$ , where the variables that appear in the subscript after the vertical line are held constant.
@@ -46,7 +46,7 @@ The process of taking a partial derivative of a given function is quite straight
 
 Consider a function such as $z = f ( x , y ) = 6 x ^ { 2 } y + 3 x + 5 x y + 1 0$ . The terms of this polynomial are sufficiently complex to make its shape less than obvious, which is where a computational tool such as Mathematica or MATLAB can be very handy. Writing a few lines of code will help you understand how this function behaves, as you can see in Figure 2.9. Even a quick look at this warped little plane makes it clear that the slope of the function is quite different in the x- and y-directions, and the slope is also highly dependent on the location on the surface. In a 3D plot such as Figure 2.9, it's always easiest to see the slope at the edges of the plotted region, so take a look at the slope along the x-direction for a y value of 3. As x varies from 3 to +3 (while y is held constant at $^ { - 3 ) }$ , the slope starts off positive and gets less steep as you move in the +x-direction from $x = - 3$ toward $x = 0$ . The slope then becomes zero somewhere near $x = 0$ , then turns negative and becomes increasingly steep as x approaches +3. Doing the same quick analysis along the y-direction while holding x constant at 3 indicates that the slope is approximately constant and positive as y varies from 3 to +3.
 
-![](images/226aef7f558a0c5d35bb1ed4709b4a77a8c12c8f947687d8aebd81dfc72362bd.jpg)  
+![](images/226aef7f558a0c5d35bb1ed4709b4a77a8c12c8f947687d8aebd81dfc72362bd.jpg)
 Figure 2.9 Plot of the function $z \ = \ f ( x , y ) = 6 x ^ { 2 } y + 3 x + 5 x y + 1 0$ for $- 3 \leq x \leq 3$ and $- 3 \leq y \leq 3$
 
 Now that you have some idea of what to expect, you can take the partia derivative of $z = 6 x ^ { 2 } y + 3 x + 5 x y + 1 0$ with respect to x simply by treating the variable y as a constant:

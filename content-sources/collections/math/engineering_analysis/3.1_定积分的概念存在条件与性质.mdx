@@ -26,7 +26,6 @@ $$
 s = \lim_{d \to 0} \sum_{k=1}^{n} v(\xi_k) \Delta t_k \tag{1.1}
 $$
 
-
 在实际问题中，还有很多几何量与物理量的计算都归结为求与 (1.1) 式具有同样形式的极限，下面再举两个例子：
 
 <Example title="例 1.1 曲边梯形的面积问题">
@@ -47,7 +46,6 @@ $$
 $$
 A = \text{底} \times \text{高} = (b - a)H \tag{1.2}
 $$
-
 
 然而，如果 $f(x) \neq \text{常数}$，那么曲边梯形的“高” $f(x)$ 随 $x$ 的变化而变化，因此，它的面积随底边长度的变化是非均匀的（即在不同点 $x$ 处，底边长度的改变量 $\Delta x$ 同时时，相应的曲边梯形面积的改变量 $\Delta A$ 不尽相同），不能直接用公式 (1.2) 来计算。
 
@@ -85,7 +83,6 @@ $$
 A = \lim_{d \to 0} \sum_{k=1}^{n} f(\xi_k) \Delta x_k \tag{1.3}
 $$
 
-
 ---
 $\textcircled{1}$ 若曲边梯形的一条底边退缩为一点，则称之为曲边三角形。
 </Example>
@@ -115,7 +112,6 @@ $$
 a = x_0 < x_1 < x_2 < \cdots < x_{n-1} < x_n = b, \tag{1.5}
 $$
 
-
 把 $[a, b]$ 分割成 $n$ 个子区间，第 $k$ 个子区间的长度为
 
 $$
@@ -129,7 +125,6 @@ $$
 $$
 \int_a^b f(x) \mathrm{d}x = \lim_{d \to 0} \sum_{k=1}^n f(\xi_k) \Delta x_k. \tag{1.6}
 $$
-
 
 </Knowledge>
 
@@ -258,7 +253,6 @@ $$
 \sum_{k=1}^n \omega_k \Delta x_k < \varepsilon \tag{1.6}
 $$
 
-
 (证明从略)。
 </Knowledge>
 
@@ -344,7 +338,6 @@ $$
 \int_a^b [\alpha f(x) + \beta g(x)] \mathrm{d}x = \alpha \int_a^b f(x) \mathrm{d}x + \beta \int_a^b g(x) \mathrm{d}x. \tag{1.7}
 $$
 
-
 这个性质可由定积分的定义和极限的运算法则直接得到。
 </Knowledge>
 
@@ -377,7 +370,6 @@ $$
 \left| \int_a^b f(x) \mathrm{d}x \right| \le \int_a^b |f(x)| \mathrm{d}x. \tag{1.8}
 $$
 
-
 </Knowledge>
 
 <SideNote title="思路分析">
@@ -389,7 +381,6 @@ $$
 $$
 ||f(x)| - |f(y)|| \le |f(x) - f(y)|, \quad \forall x, y \in [x_{k-1}, x_k] \tag{1.8}
 $$
-
 
 并且不难证明
 
@@ -432,7 +423,6 @@ $$
 \int_a^b f(x) \mathrm{d}x = \int_a^c f(x) \mathrm{d}x + \int_c^b f(x) \mathrm{d}x \tag{1.9}
 $$
 
-
 </Knowledge>
 
 <Solution title="证明">
@@ -472,7 +462,6 @@ $$
 \int_a^b f(x)g(x) \mathrm{d}x = f(\xi) \int_a^b g(x) \mathrm{d}x \tag{1.10}
 $$
 
-
 </Knowledge>
 
 <SideNote title="几何解释">
@@ -495,7 +484,6 @@ $$
 $$
 m \int_a^b g(x) \mathrm{d}x \le \int_a^b f(x)g(x) \mathrm{d}x \le M \int_a^b g(x) \mathrm{d}x \tag{1.11}
 $$
-
 
 若 $\int_a^b g(x) \mathrm{d}x > 0$，上式两边同除以 $\int_a^b g(x) \mathrm{d}x$，得
 
@@ -526,7 +514,6 @@ $$
 $$
 \int_a^b f(x) \mathrm{d}x = f(\xi)(b - a) \tag{1.12}
 $$
-
 
 </Knowledge>
 
@@ -580,7 +567,6 @@ $$
 $$
 \overline{y} = \lim_{n \to \infty} \overline{y}_n = \frac{1}{b-a} \lim_{n \to \infty} \sum_{k=1}^{n} f(x_k) \Delta x_k = \frac{1}{b-a} \int_{a}^{b} f(x) \mathrm{d}x \tag{1.13}
 $$
-
 
 因此，连续函数 $y=f(x)$ 在区间 $[a, b]$ 上的平均值就等于该函数在 $[a, b]$ 上的积分中值。
 

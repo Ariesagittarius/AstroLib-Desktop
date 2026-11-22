@@ -1,10 +1,3 @@
-/**
- * tests/unit/annotations-system.test.ts
- * ============================================================================
- * 书籍段落批注、数位板混合双层手写、自由画布与只读 Agent 接口自动化测试套件
- * ============================================================================
- */
-
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import fs from 'node:fs';
 import os from 'node:os';
@@ -49,8 +42,8 @@ describe('AstroLib 批注、手写同步、自由画布与只读 Agent 系统测
     it('1.1 正文块内锚定 (node-relative) 应在窗口放大与节点尺寸重排后无误差逆投影', () => {
       const originNodeRect = { left: 100, top: 200, width: 600, height: 120 };
       const pt = toAnchoredInkPoint({
-        clientX: 400, // 中心 X: u = 0.5
-        clientY: 260, // 中心 Y: v = 0.5
+        clientX: 400,
+        clientY: 260,
         pressure: 0.72,
         nodeRect: originNodeRect,
         anchorMode: 'node-relative',
@@ -60,7 +53,6 @@ describe('AstroLib 批注、手写同步、自由画布与只读 Agent 系统测
       expect(pt.u).toBeCloseTo(0.5, 4);
       expect(pt.v).toBeCloseTo(0.5, 4);
 
-      // 模拟窗口放大 1.5x 且上方折叠块展开导致节点向下位移 180px，同时容器左上角也在 1.5x 下偏移
       const zoomedScale = 1.5;
       const zoomedContainerRect = { left: 40, top: 80, width: 1200, height: 1800 };
       const movedZoomedNodeRect = { left: 130, top: 470, width: 900, height: 180 };
@@ -73,14 +65,13 @@ describe('AstroLib 批注、手写同步、自由画布与只读 Agent 系统测
         zoomScale: zoomedScale,
       });
 
-      // 屏幕中心为 (130 + 450, 470 + 90) = (580, 560)，减容器 (40, 80) 除以 1.5 = (360, 320)
       expect(projected.x).toBeCloseTo(360, 2);
       expect(projected.y).toBeCloseTo(320, 2);
     });
 
     it('1.2 页边距/空白区锚定 (margin-offset) 应在缩放 1.6x 与节点下移后保持相对偏移向量同步', () => {
       const originNodeRect = { left: 200, top: 300, width: 500, height: 100 };
-      // 在左侧页边距 clientX = 160（距节点左边 -40px），clientY = 320（距节点顶部 +20px）
+
       const pt = toAnchoredInkPoint({
         clientX: 160,
         clientY: 320,
@@ -93,7 +84,6 @@ describe('AstroLib 批注、手写同步、自由画布与只读 Agent 系统测
       expect(pt.u).toBeCloseTo(-40, 3);
       expect(pt.v).toBeCloseTo(20, 3);
 
-      // 模拟缩放 1.6x，节点下移到 top = 540
       const zoom = 1.6;
       const containerRect = { left: 20, top: 50, width: 1400, height: 2000 };
       const movedNodeRect = { left: 260, top: 540, width: 800, height: 160 };
@@ -106,7 +96,6 @@ describe('AstroLib 批注、手写同步、自由画布与只读 Agent 系统测
         zoomScale: zoom,
       });
 
-      // 预期屏幕位置: (260 + (-40)*1.6, 540 + 20*1.6) = (196, 572) -> 转本地逻辑坐标: ((196-20)/1.6, (572-50)/1.6) = (110, 326.25)
       expect(projected.x).toBeCloseTo(110, 2);
       expect(projected.y).toBeCloseTo(326.25, 2);
     });
@@ -231,7 +220,6 @@ describe('AstroLib 批注、手写同步、自由画布与只读 Agent 系统测
       };
       contentApi.saveChapterCanvasNote(colSlug, bookSlug, chapterSlug, canvasNote, '6.2 高阶导数及其他求导法则');
 
-      // 验证外接 AST 读取
       const withAst = contentApi.getChapterAnnotationsWithAst(colSlug, bookSlug, chapterSlug);
       expect(withAst.summary.highlightsCount).toBe(1);
       expect(withAst.summary.sidenotesCount).toBe(1);
@@ -273,10 +261,8 @@ describe('AstroLib 批注、手写同步、自由画布与只读 Agent 系统测
       expect(exported.schemaVersion).toBe(ANP_SCHEMA_VERSION);
       expect(Object.keys(exported.chapters).length).toBe(1);
 
-      // 校验非法 ANP 包会抛出异常
       expect(() => validateAnpPackage({ schemaVersion: '0.0.1' })).toThrowError(/ANP/);
 
-      // 在新隔离存储中导入，再补充新批注做幂等合并验证
       const remoteDir = fs.mkdtempSync(path.join(os.tmpdir(), 'astrolib-anp-remote-'));
       try {
         const remoteStorage = new AnnotationStorageService(remoteDir);
@@ -285,7 +271,6 @@ describe('AstroLib 批注、手写同步、自由画布与只读 Agent 系统测
         expect(importRes.totalAnnotations).toBe(3);
         expect(importRes.totalCanvasBlocks).toBe(1);
 
-        // 重复导入同一份包应保持幂等不重复
         const secondImport = remoteStorage.importBookAnp(exported, 'merge');
         expect(secondImport.totalAnnotations).toBe(3);
         expect(secondImport.totalCanvasBlocks).toBe(1);

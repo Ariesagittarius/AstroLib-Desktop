@@ -1,11 +1,3 @@
-/**
- * src/server/plugins/pdf2abp/dev-server-plugin.mjs
- * ============================================================================
- * Vite / Electron LocalServer 插件：自动化 PDF2ABP 多智能体管线服务
- * (/api/v1/pdf2abp/*)
- * ============================================================================
- */
-
 import fs from 'node:fs';
 import path from 'node:path';
 import {
@@ -72,7 +64,7 @@ export function pdf2abpDevServerPlugin() {
           server.watcher.unwatch('**/.tmp/**');
           server.watcher.unwatch(path.resolve('.tmp'));
         } catch {
-          // ignore
+
         }
       }
 
@@ -94,7 +86,7 @@ export function pdf2abpDevServerPlugin() {
         const relRoute = pathname.slice(PDF2ABP_PREFIX.length) || '/';
 
         try {
-          // 1. GET /api/v1/pdf2abp/health
+
           if (req.method === 'GET' && relRoute === '/health') {
             const [mineru, python] = await Promise.all([
               checkMineruAvailability(),
@@ -117,12 +109,10 @@ export function pdf2abpDevServerPlugin() {
             });
           }
 
-          // 2. GET /api/v1/pdf2abp/skills
           if (req.method === 'GET' && relRoute === '/skills') {
             return sendJson(res, 200, { skills: listPdf2AbpSkills() });
           }
 
-          // 3. GET /api/v1/pdf2abp/skills/:id
           const skillMatch = relRoute.match(/^\/skills\/([^/]+)$/);
           if (req.method === 'GET' && skillMatch) {
             const skillId = decodeURIComponent(skillMatch[1]);
@@ -137,7 +127,6 @@ export function pdf2abpDevServerPlugin() {
             }
           }
 
-          // 4. POST /api/v1/pdf2abp/jobs
           if (req.method === 'POST' && relRoute === '/jobs') {
             let body;
             try {
@@ -189,12 +178,10 @@ export function pdf2abpDevServerPlugin() {
             return sendJson(res, 202, { job });
           }
 
-          // 5. GET /api/v1/pdf2abp/jobs
           if (req.method === 'GET' && relRoute === '/jobs') {
             return sendJson(res, 200, { jobs: manager.listJobs() });
           }
 
-          // 6. GET /api/v1/pdf2abp/jobs/:id
           const jobMatch = relRoute.match(/^\/jobs\/([^/]+)$/);
           if (req.method === 'GET' && jobMatch) {
             const jobId = decodeURIComponent(jobMatch[1]);
@@ -205,7 +192,6 @@ export function pdf2abpDevServerPlugin() {
             return sendJson(res, 200, { job });
           }
 
-          // 7. GET /api/v1/pdf2abp/jobs/:id/stream (SSE)
           const streamMatch = relRoute.match(/^\/jobs\/([^/]+)\/stream$/);
           if (req.method === 'GET' && streamMatch) {
             const jobId = decodeURIComponent(streamMatch[1]);
@@ -273,7 +259,6 @@ export function pdf2abpDevServerPlugin() {
             return;
           }
 
-          // 8. POST /api/v1/pdf2abp/jobs/:id/cancel
           const cancelMatch = relRoute.match(/^\/jobs\/([^/]+)\/cancel$/);
           if (req.method === 'POST' && cancelMatch) {
             const jobId = decodeURIComponent(cancelMatch[1]);
@@ -287,7 +272,6 @@ export function pdf2abpDevServerPlugin() {
             }
           }
 
-          // 9. POST /api/v1/pdf2abp/jobs/:id/resume
           const resumeMatch = relRoute.match(/^\/jobs\/([^/]+)\/resume$/);
           if (req.method === 'POST' && resumeMatch) {
             const jobId = decodeURIComponent(resumeMatch[1]);
@@ -302,7 +286,6 @@ export function pdf2abpDevServerPlugin() {
             }
           }
 
-          // 10. GET /api/v1/pdf2abp/jobs/:id/files
           const filesMatch = relRoute.match(/^\/jobs\/([^/]+)\/files$/);
           if (req.method === 'GET' && filesMatch) {
             const jobId = decodeURIComponent(filesMatch[1]);
@@ -324,7 +307,6 @@ export function pdf2abpDevServerPlugin() {
             }
           }
 
-          // 11. GET /api/v1/pdf2abp/jobs/:id/file?path=...
           const fileMatch = relRoute.match(/^\/jobs\/([^/]+)\/file$/);
           if (req.method === 'GET' && fileMatch) {
             const jobId = decodeURIComponent(fileMatch[1]);

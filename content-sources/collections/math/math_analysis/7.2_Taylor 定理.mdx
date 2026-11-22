@@ -10,7 +10,6 @@ import Note from '@/components/Note.astro';
 import Block from '@/components/Block.astro';
 import Method from '@/components/Method.astro';
 
-
 这一节主要是两个 $Taylor$ 公式 (也称为 $Taylor$ 展开式), 即分别带有 $Peano$ 余项和 $Lagrange$ 余项的 $Taylor$ 公式, 统称为 $Taylor$ 定理. 前者是上一章中的无穷小增量公式的推广, 而后者是 $Lagrange$ 中值定理 (即有限增量公式) 的推广.
 
 $Taylor$ 定理的内容和证明对初学者有一定的困难. 仅仅从两个公式的复杂形式看, 就有点使人望而生畏. 因此我们将对它们的内容和证明做一定的剖析. 实际上这里的根本问题就是怎样用多项式来逼近函数. 但是从方法上来说, 则只是上一节中已用过多次的方法的重复 (参见例题 $7.1.3$ 的两个证明).
@@ -291,7 +290,7 @@ $$
 1 + x + \frac {x ^ {2}}{2 !} + \frac {x ^ {3}}{3 !} + \dots + \frac {x ^ {n}}{n !}.
 $$
 
-![](images/b9c689400bce4328c29598a45e5a79c8db08879dc3d3a58c1fdef55b5e44ee4e.jpg)  
+![](images/b9c689400bce4328c29598a45e5a79c8db08879dc3d3a58c1fdef55b5e44ee4e.jpg)
 图 $7.6$
 
 我们看到, 对于 $n = 3,4$ , $Taylor$ 多项式在 $|x|$ 不很大时已提供了对 $\mathbf{e}^x$ 的较好的逼近. 但是当 $|x|$ 足够大时, 情况完全不是如此. 例如, 当 $n$ 为奇数时 $P_{n}(x)$ 都有零点. 关于 $\mathbf{e}^x$ 的 $Taylor$ 多项式的一般性结论可参看第八章的第二组参考题 $4$.

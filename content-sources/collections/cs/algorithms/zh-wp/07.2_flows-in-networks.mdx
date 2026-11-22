@@ -20,7 +20,7 @@ import Algorithm from '@/components/Algorithm.astro';
 
 图 7-4(a)的有向图代表一个输送石油的管道网络。我们的目标是利用这一网络由源点 s 向汇点 t 输送尽可能多的石油。每条管线都有自身的容量，并且在输送过程中原油无法被存储。图 7-4(b)表示由 s 到 t 的一个流，总输送量为 7 个单位。它是最优的吗？
 
-![](../images/1c1ed98b44e91571dc32e036afebe32600b765d9a0b49f0025dc27457ed2383c.jpg)  
+![](../images/1c1ed98b44e91571dc32e036afebe32600b765d9a0b49f0025dc27457ed2383c.jpg)
 图7-4 (a)一个限定容量的网络。(b)网络中的一个流
 
 ## 7.2.2 最大流
@@ -67,22 +67,22 @@ $$
 
 有一种更复杂的情况。如果我们起初选择了不同的路径，如图7-5(e)。该路径最多仅允许规模为1的流，并且它阻断了所有的其它路径。单纯形法对于该问题的处理方式是允许撤销路径上的某些流。在我们的例子中，它将随后选择图7-5(f)的路径。该路径上的边 $(b, a)$ 并不在最初的网络中，加入该边产生的一个效果是取消了原来分配给边 $(a, b)$ 的流。
 
-(a)  
+(a)
 ![](../images/2cfabfa56b07d6d5199d9a5ad8b81138abe79b265fb3b5a375414df73237ed7f.jpg)
 
-(b)  
+(b)
 ![](../images/ad8cf59ed7245918d7ff19933de43d62cb505aba9a518b3bd5e901207b2f6166.jpg)
 
-(c)  
+(c)
 ![](../images/159c3f9f726991e6122b5f80753865dc7a47f06f01f97afd0a8e7a49cdc8a12a.jpg)
 
-(d)  
+(d)
 ![](../images/2db6267efcd673f1119d0116c71612b01af9a745d91fb6d349b2f9aed77a088f.jpg)
 
-(e)  
+(e)
 ![](../images/174ae34529bbadd3c5f0d01a12b697805b487a5b29f3b172bfc6d5fd7ccce419.jpg)
 
-(f)  
+(f)
 ![](../images/56c74bafe6dc10aac7656d710b33081897b8de7515411a49bd542e62e0ce7c7a.jpg)
 
 图7-5 最大流算法示意。(a)一个网络示例。(b)选定的第一条路径。(c)选定的第二条路径。(d)最终的流。(e)我们可以首先选择该路径。(f)在什么情况下，我们会选择该路径为第二条路径
@@ -109,7 +109,7 @@ $$
 
 ![](../images/29cb0fe523652ec326c9694b5eecc8bb323b77110da26c33f0fd2cae2b76e3f6.jpg)
 
-![](../images/a33757379ebcedf6def94a2fff904a2a2dbbdf470ef4adf422d99f2e09296b47.jpg)  
+![](../images/a33757379ebcedf6def94a2fff904a2a2dbbdf470ef4adf422d99f2e09296b47.jpg)
 图7-6 最大流算法应用于图7-4的网络。对应于每次迭代，左侧为当前的流，右侧为对应的剩余网络。选定路径加粗表示
 
 ![](../images/7b3d91ae57f5ee1ca710dda45a904f40cc46bb7b4b62ead039e38abae0471685.jpg)

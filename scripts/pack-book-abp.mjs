@@ -1,20 +1,4 @@
 #!/usr/bin/env node
-/**
- * scripts/pack-book-abp.mjs
- * ============================================================================
- * AstroLib 官方标准 ABP 内容包编译器 (AstroBook Package Compiler)
- * ============================================================================
- * 职责：
- * 1. 扫描目标书籍 MDX/Markdown 章节与图片资产目录；
- * 2. 运行 AstroLib 同款编译管线：
- *    - KaTeX 纯 HTML 预渲染 (output: html, 源码回填 data-latex)；
- *    - 提取标题大纲 (TOC Headings)；
- *    - 卡片类名与结构化元数据提取；
- * 3. 产出：
- *    - 散列流式分发目录：dist/abp-packs/{colSlug}-{bookSlug}/
- *    - 单文件离线归档包：dist/abp-packs/{colSlug}-{bookSlug}.abp (Gzip 压缩)
- * ============================================================================
- */
 
 import fs from 'node:fs';
 import path from 'node:path';
@@ -44,7 +28,6 @@ import {
 
 const SUPPORTED_EXERCISE_SLUGS = new Set(SUPPORTED_EXERCISE_BOOKS.map((b) => b.slug));
 
-// 嵌入模型 Pipeline 单例缓存 (避免重复加载)
 let embeddingPipelineInstance = null;
 async function getEmbeddingPipeline() {
   if (!embeddingPipelineInstance) {
@@ -72,9 +55,6 @@ function computeHash(content) {
   return crypto.createHash('sha256').update(content).digest('hex').slice(0, 16);
 }
 
-/**
- * 编译单本图书为 ABP (复用 src/publishing/abp/compiler.ts 单一编译内核)
- */
 export async function packBook({
   bookDir,
   outDir,
@@ -89,13 +69,11 @@ export async function packBook({
     throw new Error(`目标书籍目录不存在: ${bookDir}`);
   }
 
-  // 1. 推断合集与图书标识
   const resolvedDir = path.resolve(bookDir);
   const dirParts = resolvedDir.replace(/\\/g, '/').split('/');
   const bookSlug = dirParts[dirParts.length - 1];
   const colSlug = dirParts[dirParts.length - 2] || 'general';
 
-  // 从唯一 SSOT 目录配置检索权威书籍元数据
   let existingBook = null;
   for (const col of getCatalogCollections()) {
     const found = (col.books || []).find((b) => b.slug === bookSlug && col.slug === colSlug)
@@ -153,7 +131,6 @@ export async function packBook({
     assets: [],
   };
 
-  // 2. 扫描所有 .md 与 .mdx 章节 (支持递归子目录，跳过 images)
   function findChapterFiles(dir, baseDir = dir) {
     const entries = fs.readdirSync(dir, { withFileTypes: true });
     let results = [];
@@ -195,7 +172,6 @@ export async function packBook({
     const chapterHash = computeHash(rawContent);
     combinedHashData += chapterHash;
 
-    // 提取学术卡片语义切片
     try {
       const fileChunks = chunkMdx({ source: rawContent, modules: manifest.modules || {} });
       for (const fc of fileChunks) {
@@ -265,7 +241,6 @@ export async function packBook({
   manifest.totalChapters = sectionChapters.length;
   manifest.contentHash = computeHash(combinedHashData);
 
-  // 3. 收集图片资产 (assets/)
   const imagesDir = path.join(resolvedDir, 'images');
   const assetBuffers = {};
   if (fs.existsSync(imagesDir)) {
@@ -280,7 +255,6 @@ export async function packBook({
     }
   }
 
-  // 4. 输出散列流式分发目录（先清理旧章节防止历史未净化 slug 残留）
   const bookOutDir = path.join(outDir, `${manifest.colSlug}-${manifest.slug}`);
   const chaptersOutDir = path.join(bookOutDir, 'chapters');
   if (fs.existsSync(chaptersOutDir)) {
@@ -305,7 +279,6 @@ export async function packBook({
     }
   }
 
-  // 4.5 离线内置向量化与词法倒排表生成
   let embeddingAsset = null;
   if (withVectors && allBookChunks.length > 0) {
     try {
@@ -352,7 +325,6 @@ export async function packBook({
     }
   }
 
-  // 4.6 自包含书籍附属索引打包 (AI 索引 / 跨页引用 / 可选题库切片)
   let aiIndex = null;
   let crossRefs = null;
   let exercisesBundle = null;
@@ -380,7 +352,6 @@ export async function packBook({
       console.warn(`   ⚠️ 跨页引用生成跳过: ${e.message}`);
     }
 
-    // 若存在对应书目的编译题库切片，一并编入 .abp（唯一权威来源：artifacts/exercises/<slug>）
     const primaryExDir = path.join(ROOT, 'artifacts', 'exercises', manifest.slug);
     const legacyExDir = path.join(ROOT, 'public', 'data', 'exercises', manifest.slug);
     let exSrcDir = fs.existsSync(primaryExDir) ? primaryExDir : null;
@@ -430,7 +401,6 @@ export async function packBook({
     }
   }
 
-  // 5. 原子输出单文件 .abp 离线归档包 (Gzip 压缩)
   const fullBundle = {
     manifest,
     chapters: chapterPayloads,
@@ -453,7 +423,6 @@ export async function packBook({
   console.log(`   - 散列目录: ${bookOutDir}`);
   console.log(`   - 单文件包: ${abpPath} (${abpSizeMb} MB)`);
 
-  // 6. 增量更新/重新生成 outDir/catalog.json 与权威投影 content-sources/catalog.json
   updateCatalogJson(outDir, manifest, `${manifest.colSlug}-${manifest.slug}.abp`, abpBuffer.length, {
     releaseRepo,
     releaseTag,
@@ -467,9 +436,6 @@ export async function packBook({
   };
 }
 
-/**
- * 原子更新或创建书库总清单 catalog.json
- */
 export function updateCatalogJson(outDir, manifest, packFileName, sizeBytes, releaseOpts = {}) {
   const catalogPath = path.join(outDir, 'catalog.json');
   const releaseRepo = normalizeReleaseRepo(releaseOpts.releaseRepo || DEFAULT_DESKTOP_RELEASE_REPO);
@@ -537,7 +503,6 @@ export function updateCatalogJson(outDir, manifest, packFileName, sizeBytes, rel
   fs.renameSync(tmpPath, catalogPath);
 }
 
-// CLI 执行入口
 if (process.argv[1] && process.argv[1].endsWith('pack-book-abp.mjs')) {
   const args = process.argv.slice(2);
   const outArg = args.find((a) => a.startsWith('--out='))?.slice('--out='.length);
@@ -587,7 +552,6 @@ if (process.argv[1] && process.argv[1].endsWith('pack-book-abp.mjs')) {
         });
       }
 
-      // 同步权威投影 content-sources/catalog.json
       const generatedCatalog = path.join(outDir, 'catalog.json');
       if (fs.existsSync(generatedCatalog)) {
         fs.copyFileSync(generatedCatalog, path.join(ROOT, CONTENT_CATALOG_REL));

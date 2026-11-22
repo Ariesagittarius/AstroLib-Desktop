@@ -1,18 +1,3 @@
-/**
- * src/services/pdf2abp/abp-importer.ts
- * ============================================================================
- * ABP 内容包应用内一键热导入器 (Rule 9 Compliant Library Installer)
- * ============================================================================
- * 职责：
- * 1. 读取并经由 AbpFormatAdapter + validateInstallPayload 校验 .abp 包；
- * 2. 根据运行环境原子安装至：
- *    - Electron 主进程钩子（DesktopBookManager -> userData/abp-packs + 刷新书库与通知窗口）；
- *    - 或 ASTROLIB_USER_ABP_DIR 环境变量目录；
- *    - 或开发态 .tmp/dev-abp-packs/<col>-<slug>/；
- * 3. 严守 Rule 9：绝不篡改 tracked Git 源码 (collections.config.ts / content-sources/)。
- * ============================================================================
- */
-
 import fs from 'node:fs';
 import path from 'node:path';
 import { AbpFormatAdapter } from '../../core/book-formats/abp-adapter.ts';
@@ -24,9 +9,6 @@ export type ElectronAbpInstallHook = (abpBuffer: Buffer, abpPath: string) => Pro
 
 let electronInstallHook: ElectronAbpInstallHook | null = null;
 
-/**
- * 由 electron/main.ts 注册的原生书库安装钩子
- */
 export function registerElectronAbpInstaller(hook: ElectronAbpInstallHook | null): void {
   electronInstallHook = hook;
 }
@@ -201,7 +183,6 @@ export async function importAbpToAppLibrary(
     targetMode = 'dev-abp-packs';
   }
 
-  // 若 ContentApiService 已在内存中实例化，则刷新其全局章节与统一知识库索引缓存
   try {
     const mod = await import('../../core/content-api/content-api-service.ts');
     const ServiceCls = mod.ContentApiService as any;

@@ -4,8 +4,6 @@ import { BilingualAlignerClient } from '../../src/services/bilingual/aligner-cli
 import { BilingualOnnxEngine } from '../../src/server/plugins/bilingual-aligner/onnx-engine.ts';
 import type { ParagraphToken } from '../../src/services/bilingual/types.ts';
 
-// Model-dependent tests require explicit ASTROLIB_RUN_MODEL_TESTS=1 opt-in
-// so clean clones never rely on hidden local HuggingFace caches or network downloads.
 const RUN_MODEL_TESTS = process.env.ASTROLIB_RUN_MODEL_TESTS === '1';
 
 describe('BipartiteMatcher', () => {
@@ -17,7 +15,7 @@ describe('BipartiteMatcher', () => {
 
     expect(BipartiteMatcher.cosineSimilarity(a, b)).toBe(1);
     expect(BipartiteMatcher.cosineSimilarity(a, c)).toBe(0);
-    expect(BipartiteMatcher.cosineSimilarity(a, d)).toBe(0); // clamped to 0
+    expect(BipartiteMatcher.cosineSimilarity(a, d)).toBe(0);
   });
 
   it('builds an M x N similarity matrix', () => {
@@ -69,7 +67,7 @@ describe('BipartiteMatcher', () => {
 
   it('applies monotonic bias for sequential chapters when enabled', () => {
     const matrix = [
-      [0.85, 0.3, 0.86], // src-0 is slightly similar to tgt-2, but tgt-2 is far away
+      [0.85, 0.3, 0.86],
     ];
     const sources: ParagraphToken[] = [
       { id: 'src-0', index: 0, text: 'first paragraph', type: 'paragraph' },
@@ -80,7 +78,6 @@ describe('BipartiteMatcher', () => {
       { id: 'tgt-2', index: 2, text: '结尾段', type: 'paragraph' },
     ];
 
-    // Without monotonic bias, tgt-2 has higher score (0.86 > 0.85)
     const unbiased = BipartiteMatcher.extractLinks(matrix, sources, targets, {
       threshold: 0.6,
       maxPerSource: 1,
@@ -88,7 +85,6 @@ describe('BipartiteMatcher', () => {
     });
     expect(unbiased[0].targetId).toBe('tgt-2');
 
-    // With monotonic bias, tgt-2 is penalized because of position distance (posDiff = 1.0)
     const biased = BipartiteMatcher.extractLinks(matrix, sources, targets, {
       threshold: 0.6,
       maxPerSource: 1,
@@ -130,11 +126,9 @@ describe('BilingualOnnxEngine', () => {
     expect(result.matrix.length).toBe(2);
     expect(result.matrix[0].length).toBe(2);
 
-    // 对角线对应段落的跨语言相似度必须显著高于阈值 0.70
     expect(result.matrix[0][0]).toBeGreaterThan(0.7);
     expect(result.matrix[1][1]).toBeGreaterThan(0.7);
 
-    // 对角线相似度必须显著高于非对应错位段落
     expect(result.matrix[0][0]).toBeGreaterThan(result.matrix[0][1]);
     expect(result.matrix[1][1]).toBeGreaterThan(result.matrix[1][0]);
   }, 30000);
@@ -164,7 +158,7 @@ describe('BilingualOnnxEngine', () => {
     ];
     const zh = [
       '我们如何将两个数字相乘？我们在学校学过的算法需要 O(n^2) 时间来将两个 n 位整数相乘。我们可以做得更好吗？',
-      '西红柿炒鸡蛋是一道经典的家常菜，鲜嫩多汁。', // 完全不相关的干扰段落
+      '西红柿炒鸡蛋是一道经典的家常菜，鲜嫩多汁。',
     ];
 
     const result = await engine.alignParagraphs(en, zh, { model: 'qwen3-0.6b' });
@@ -174,14 +168,11 @@ describe('BilingualOnnxEngine', () => {
     expect(result.modelId).toBe('qwen3-0.6b');
     expect(result.dim).toBe(1024);
 
-    // 1. 真实翻译对的相似度极高 (>= 0.85)
     expect(result.matrix[0][0]).toBeGreaterThan(0.85);
 
-    // 2. 跨领域无关段落（算法 vs 西红柿炒鸡蛋）必须被强力压制至 0.30 以下，杜绝各向异性底噪
     expect(result.matrix[0][1]).toBeLessThan(0.30);
     expect(result.matrix[1][1]).toBeLessThan(0.30);
 
-    // 3. 动态对比度跨度必须大于 0.55
     expect(result.matrix[0][0] - result.matrix[0][1]).toBeGreaterThan(0.55);
   }, 45000);
 });
@@ -194,7 +185,7 @@ describe('BilingualAlignerClient (Multilingual Paragraph Tokenizer & Fallback)',
     expect(tokensEn.has('1960')).toBe(true);
     expect(tokensEn.has('karatsuba')).toBe(true);
     expect(tokensEn.has('$t(n)=3t(n/2)+o(n)$')).toBe(true);
-    // Cognate mapping: algorithm -> 算法, divide -> 分治
+
     expect(tokensEn.has('算法')).toBe(true);
     expect(tokensEn.has('分治')).toBe(true);
 
@@ -222,14 +213,12 @@ describe('BilingualAlignerClient (Multilingual Paragraph Tokenizer & Fallback)',
 
     const matrix = BilingualAlignerClient.fallbackLexicalMatrix(sources, targets);
 
-    // Diagonal elements should be highest
     expect(matrix[0][0]).toBeGreaterThan(matrix[0][1]);
     expect(matrix[1][1]).toBeGreaterThan(matrix[1][0]);
     expect(matrix[2][2]).toBeGreaterThan(matrix[2][0]);
 
-    // Heading match score
     expect(matrix[0][0]).toBeGreaterThan(0.5);
-    // Formula and number match scores
+
     expect(matrix[1][1]).toBeGreaterThan(0.5);
     expect(matrix[2][2]).toBeGreaterThan(0.5);
 
@@ -248,4 +237,3 @@ describe('BilingualAlignerClient (Multilingual Paragraph Tokenizer & Fallback)',
     expect(links[2].targetId).toBe('tgt-2');
   });
 });
-

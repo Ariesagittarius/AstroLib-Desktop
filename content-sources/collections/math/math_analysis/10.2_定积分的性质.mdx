@@ -10,7 +10,6 @@ import Note from '@/components/Note.astro';
 import Block from '@/components/Block.astro';
 import Method from '@/components/Method.astro';
 
-
 本节只列出最重要的两个积分中值定理, 介绍一般书中不放在正文中的两个基本性质, 并讨论第一中值定理的中值 $\xi$ 的取值范围. 此外还介绍对积分求极限的几个重要例题. 关于积分中值定理的应用将在 $10.4.5$ 小节作专题介绍.
 
 ## $10.2.1$ 积分中值定理
@@ -221,7 +220,7 @@ $$
 <Solution title="证明">
 **分析** 首先是从几何上作观察. 在图 $10.3$ 中作出了 $n = 1,4,20,100,500$ 时的函数 $\sin^n x$ 的几何图像.
 
-![](images/a844ed89ca70758cc11b901cf4271bcacc18d7dd56caf4d04b1a315401417841.jpg)  
+![](images/a844ed89ca70758cc11b901cf4271bcacc18d7dd56caf4d04b1a315401417841.jpg)
 图$10.3$
 
 从图中可以看出, 由于 $\sin \frac{\pi}{2} = 1$ , 因此对每个 $n$ , 当 $x$ 与 $\frac{\pi}{2}$ 充分接近时, 函数值 $\sin^n x$ 一定接近 $1$. 另一方面, 对于固定的 $x$ 值, 只要 $x$ 小于 $\frac{\pi}{2}$ , 则当 $n$ 增加时函数值 $\sin^n x$ 就很快趋于 $0$. 这就是下面的“分而治之”方法的几何背景.

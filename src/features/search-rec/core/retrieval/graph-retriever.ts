@@ -1,8 +1,3 @@
-/**
- * src/features/search-rec/core/retrieval/graph-retriever.ts
- * 知识图谱拓扑游走与前驱后继召回通道
- */
-
 import type { AcademicChunk, CandidateItem } from '../../types/candidate.ts';
 
 export interface RelationNode {
@@ -50,21 +45,17 @@ export class GraphRetriever {
       if (!this.adjacency.has(link.source)) this.adjacency.set(link.source, []);
       if (!this.adjacency.has(link.target)) this.adjacency.set(link.target, []);
       this.adjacency.get(link.source)!.push({ target: link.target, type: link.type, weight: w });
-      // 无向关联或反向关联
+
       this.adjacency.get(link.target)!.push({ target: link.source, type: link.type, weight: w * 0.8 });
     }
   }
 
-  /**
-   * 基于当前章节或当前命中节点执行 1-2 步拓扑游走
-   */
   walk(seedId: string, limit = 20): CandidateItem[] {
     if (!this.graph || !this.adjacency.has(seedId)) return [];
 
     const visited = new Set<string>([seedId]);
     const candidates: Array<{ chunk: AcademicChunk; score: number; reason: string }> = [];
 
-    // Step 1: 1-hop 直接关联
     const neighbors1 = this.adjacency.get(seedId) || [];
     for (const n1 of neighbors1) {
       if (visited.has(n1.target)) continue;
@@ -84,7 +75,6 @@ export class GraphRetriever {
         });
       }
 
-      // Step 2: 2-hop 间接关联 (限制前 3 个邻居展开)
       if (candidates.length < limit) {
         const neighbors2 = this.adjacency.get(n1.target) || [];
         for (const n2 of neighbors2.slice(0, 3)) {

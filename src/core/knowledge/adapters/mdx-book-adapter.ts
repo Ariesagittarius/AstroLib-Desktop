@@ -1,10 +1,3 @@
-/**
- * src/core/knowledge/adapters/mdx-book-adapter.ts
- * ============================================================================
- * MDX 源码教材适配器 (content-sources/collections/*)
- * ============================================================================
- */
-
 import fs from 'node:fs';
 import path from 'node:path';
 import { sourceCollections } from '../../../config/collections.config.ts';

@@ -1,10 +1,3 @@
-/**
- * tests/contract/cli-runner.test.ts
- * ============================================================================
- * Phase 1 astrolib-cli 命令行运行器端到端测试 (供第三方审计)
- * ============================================================================
- */
-
 import { describe, it, expect } from 'vitest';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';

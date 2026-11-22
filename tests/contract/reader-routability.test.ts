@@ -1,18 +1,3 @@
-/**
- * tests/contract/reader-routability.test.ts
- * ============================================================================
- * Reader 全量路由可达性契约测试 (Full Reader Routability Contract Suite)
- * ============================================================================
- * 遵循 P1-A4 门禁硬约束与 ADR-READER-CONTRACT-2026-11-13：
- * 1. 遍历全部 13 个 manifest (artifacts/abp-packs/*\/manifest.json)；
- * 2. 1,251 个 canonical slug 真实发起 StaticHandler.handle() 请求 -> 必须全部返回 200 且 Content-Type 含 text/html；
- * 3. legacySlug 真实发起请求 -> 经显式单项查表返回 301 永久重定向，Location 以 /${canonicalSlug}/ 结尾；
- * 4. 13 本书 entryPoint 必须真实存在于章节集合中；
- * 5. 伪造 slug（含多级与前缀截断）必须严格返回 404 与学术视窗；
- * 6. 断言 static-handler.ts 源码中 cleanSlug(、normalizedTarget、targetNorm 匹配数为 0。
- * ============================================================================
- */
-
 import { describe, it, expect, beforeAll } from 'vitest';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
@@ -75,7 +60,6 @@ describe('Reader Routability Contract Suite (P1-A4 / ADR-READER-CONTRACT)', () =
       );
     }
 
-    // 载入全部 13 本书 manifest
     const dirs = fs.readdirSync(abpBaseDir)
       .filter((d) => fs.statSync(path.join(abpBaseDir, d)).isDirectory());
 
@@ -123,14 +107,11 @@ describe('Reader Routability Contract Suite (P1-A4 / ADR-READER-CONTRACT)', () =
           totalCanonicalChapters++;
           bookChapters.push(ch);
 
-          // 物理资产 100% 校验：全量 1,251 个章节必须全部存在独立 JSON
           const jsonPath = path.join(abpBaseDir, `${colSlug}-${bookSlug}`, 'chapters', `${ch.slug}.json`);
           expect(fs.existsSync(jsonPath), `章节物理数据 [${jsonPath}] 必须存在`).toBe(true);
         }
       }
 
-      // 按照 Handoff §5.1 并发性能与超时约束（整文件 < 90s）：
-      // 每本书取至多 15 章及 entryPoint 进行真实 StaticHandler.handle() HTTP 请求与 HTML 渲染
       const sampleLimit = Math.min(15, bookChapters.length);
       const chaptersToTest = bookChapters.slice(0, sampleLimit);
       if (manifest.entryPoint && !chaptersToTest.some((c) => c.slug === manifest.entryPoint)) {
@@ -174,7 +155,7 @@ describe('Reader Routability Contract Suite (P1-A4 / ADR-READER-CONTRACT)', () =
               const loc = decodeURI(res.headers['Location'] || '');
               expect(loc).toMatch(new RegExp(`/${ch.slug}/?$`));
             } else if (res.statusCode === 200) {
-              // Windows 文件系统大小写不敏感时允许极少数同名或大小写折叠直接命中
+
               direct200DueToWindowsCaseInsensitive++;
               expect(ch.legacySlug.toLowerCase()).toBe(ch.slug.toLowerCase());
             } else {
@@ -186,7 +167,7 @@ describe('Reader Routability Contract Suite (P1-A4 / ADR-READER-CONTRACT)', () =
     }
 
     expect(totalLegacySlugs).toBe(1195);
-    // 允许 Windows 大小写折叠导致 <= 5 条命中 200
+
     expect(direct200DueToWindowsCaseInsensitive).toBeLessThanOrEqual(5);
     expect(redirect301Count + direct200DueToWindowsCaseInsensitive).toBe(1195);
     expect(redirect301Count).toBeGreaterThanOrEqual(1191);
@@ -242,7 +223,6 @@ describe('Reader Routability Contract Suite (P1-A4 / ADR-READER-CONTRACT)', () =
     expect(desktopRes.statusCode).toBe(200);
     expect(desktopRes.headers['Content-Type']).toContain('text/html');
 
-    // 抽样代表性 Canonical 章节
     const canonicalSamples = [
       '/collections/math/math_senior/06_第1章-三角函数/',
       '/collections/cs/algorithms/00_preface/',

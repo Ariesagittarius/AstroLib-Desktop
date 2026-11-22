@@ -1,17 +1,4 @@
 ---
-/**
- * src/pages/workspace/ingest.astro
- * ============================================================================
- * AstroLib 纯净单文献双栏研读视窗 (Material Design 3 & MD3 Expressive)
- * ============================================================================
- * 规范：
- * 1. 严格单文献阅读：无侧栏、无重复 Logo、无独立设置、无常驻解析按钮；
- * 2. 所有文献统一由「研读书库」打开（?taskId=...）；
- * 3. 全局设置同步驱动字体、行距、字阶、版面显示及即点即译；
- * 4. 全部交互控件采用官方 @material/web 与 @m3e/web 组件。
- * ============================================================================
- */
-
 import '@fontsource-variable/noto-sans-sc';
 import '@fontsource-variable/noto-serif-sc';
 import '@fontsource-variable/plus-jakarta-sans';
@@ -34,9 +21,7 @@ const siteTitle = '学术文献双栏研读 · AstroLib';
     <title>{siteTitle}</title>
     <link rel="icon" href="/favicon.png" />
 
-    <!-- 首屏免闪烁预注入 Material You 动态主题色与亮暗模式 -->
-    <script is:inline>
-      (function () {
+    <script is:inline>(function () {
         try {
           var t = localStorage.getItem('starlight-theme');
           var resolvedT =
@@ -67,12 +52,12 @@ const siteTitle = '学术文献双栏研读 · AstroLib';
           }
         } catch (e) {}
       })();
-    </script>
+</script>
 
   </head>
   <body class="ingest-app-body">
     <div class="ingest-workspace-root">
-      <!-- 纯净单文献顶栏 -->
+
       <header class="ingest-topbar">
         <div class="topbar-left">
           <div class="doc-name-badge">
@@ -99,10 +84,8 @@ const siteTitle = '学术文献双栏研读 · AstroLib';
         </div>
       </header>
 
-      <!-- MD3 顶部进度条 -->
       <md-linear-progress id="paper-linear-progress" class="paper-linear-progress" value="0" style="display: none;"></md-linear-progress>
 
-      <!-- 错误提示横幅 -->
       <div class="ingest-error-banner" id="ingest-error-banner" style="display: none;" role="alert">
         <div class="ingest-error-content">
           <span class="material-symbols-outlined" style="font-size: 20px; color: var(--md-sys-color-error, #ba1a1a);">error</span>
@@ -113,7 +96,6 @@ const siteTitle = '学术文献双栏研读 · AstroLib';
         </md-icon-button>
       </div>
 
-      <!-- 无指定文献时的极简空状态 -->
       <div class="paper-empty-stage" id="paper-empty-stage" style="display: none;">
         <span class="material-symbols-outlined paper-empty-icon">description</span>
         <h3 class="paper-empty-title">请从研读书库打开学术文献</h3>
@@ -121,9 +103,8 @@ const siteTitle = '学术文献双栏研读 · AstroLib';
         <md-filled-tonal-button id="btn-empty-goto-library">返回研读书库</md-filled-tonal-button>
       </div>
 
-      <!-- 双栏对照主体 -->
       <main class="workspace-grid" id="paper-workspace-grid">
-        <!-- 左栏：PDF 原文视图 -->
+
         <section class="pane-pdf">
           <div class="pdf-toolbar">
             <span class="pdf-toolbar-title">原文件</span>
@@ -154,7 +135,6 @@ const siteTitle = '学术文献双栏研读 · AstroLib';
           <div class="pdf-canvas-scroll-area" id="pdf-canvas-scroll-area"></div>
         </section>
 
-        <!-- 右栏：结构化内容与阅读视窗 -->
         <section class="pane-markdown" id="pane-markdown">
           <div class="content-toolbar">
             <m3e-segmented-button id="content-tab-segmented" hide-selection-indicator class="content-tab-segmented" aria-label="解析视图格式">
@@ -182,7 +162,6 @@ const siteTitle = '学术文献双栏研读 · AstroLib';
       </main>
     </div>
 
-    <!-- 转入 AstroLib 书籍合集弹窗 (标准 MD3 Dialog) -->
     <md-dialog id="export-modal">
       <div slot="headline">转入 AstroLib 书籍合集</div>
       <div slot="content" class="export-dialog-body">
@@ -204,15 +183,11 @@ const siteTitle = '学术文献双栏研读 · AstroLib';
       </div>
     </md-dialog>
 
-    <!-- 单例脚注悬停微浮窗 -->
     <div class="doc-footnote-popover" id="doc-footnote-popover"></div>
 
-    <!-- 单例 M3 单词即点即译浮动卡片 -->
     <div class="m3-word-popover" id="m3-word-popover" role="dialog" aria-hidden="true" style="display: none;"></div>
 
-    <!-- 客户端核心控制器与标准组件注册 -->
-    <script>
-      import '@material/web/button/filled-button.js';
+    <script>import '@material/web/button/filled-button.js';
       import '@material/web/button/filled-tonal-button.js';
       import '@material/web/button/outlined-button.js';
       import '@material/web/button/text-button.js';
@@ -282,6 +257,6 @@ const siteTitle = '学术文献双栏研读 · AstroLib';
       });
 
       initPaperReader();
-    </script>
+</script>
   </body>
 </html>

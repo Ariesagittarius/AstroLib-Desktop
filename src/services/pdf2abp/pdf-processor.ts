@@ -1,17 +1,3 @@
-/**
- * src/services/pdf2abp/pdf-processor.ts
- * ============================================================================
- * 零 Python 依赖跨平台 PDF 处理引擎 (基于官方 mupdf WASM + sharp)
- * ============================================================================
- * 职责：
- * 1. PDF 体检与原生书签大纲提取 (inspectPdf)；
- * 2. 自动按照最大页数 (≤200) 与体积上限 (≤180MB) 物理拆分 PDF (splitPdfForMineru)；
- * 3. 按需缓存渲染单页高 DPI JPEG (renderPdfPages)；
- * 4. 拼合 2×2 总览拼图 / 2-up 对开双页图 (renderContactSheet)，突破网关单图限制；
- * 5. 精确裁剪封面或漏切插图 (cropPdfRegion)。
- * ============================================================================
- */
-
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
@@ -64,9 +50,6 @@ function openPdfDocument(pdfPath: string) {
   return { doc, buf, resolved };
 }
 
-/**
- * 读取 PDF 元数据、总页数、书签大纲与文字层密度抽样
- */
 export async function inspectPdf(pdfPath: string): Promise<PdfInspectResult> {
   const { doc, buf, resolved } = openPdfDocument(pdfPath);
   const pageCount = doc.countPages();
@@ -128,9 +111,6 @@ export async function inspectPdf(pdfPath: string): Promise<PdfInspectResult> {
   };
 }
 
-/**
- * 按页数上限 (默认 200 页) 与体积上限 (默认 180 MB) 自动拆分 PDF
- */
 export async function splitPdfForMineru(
   pdfPath: string,
   outDir: string,
@@ -173,8 +153,8 @@ export async function splitPdfForMineru(
   fs.mkdirSync(outDir, { recursive: true });
   const rawParts: Array<{ startPage: number; endPage: number; bytes: Uint8Array }> = [];
 
-  let cursor = rangeStart - 1; // 0-based
-  const cursorLimit = rangeEnd; // exclusive 0-based upper bound
+  let cursor = rangeStart - 1;
+  const cursorLimit = rangeEnd;
   while (cursor < cursorLimit) {
     let span = Math.min(maxPages, cursorLimit - cursor);
     let chosenBytes: Uint8Array | null = null;
@@ -228,9 +208,6 @@ export async function splitPdfForMineru(
   return parts;
 }
 
-/**
- * 按需将指定物理页码渲染为高清晰度 JPEG（带磁盘缓存，不重复渲染）
- */
 export async function renderPdfPages(
   pdfPath: string,
   pages: number[],
@@ -297,9 +274,6 @@ export async function renderPdfPages(
   return results;
 }
 
-/**
- * 将多页 PDF 拼接为单张带页码角标的高可读性拼图（支持 2x2 总览图或 2-up 双页校对图）
- */
 export async function renderContactSheet(
   pdfPath: string,
   pages: number[],
@@ -437,9 +411,6 @@ export async function renderContactSheet(
   };
 }
 
-/**
- * 根据归一化 1000 分制坐标 [x0, y0, x1, y1] 精准裁剪 PDF 单页区域（如封面或漏切插图）
- */
 export async function cropPdfRegion(
   pdfPath: string,
   pageNum: number,

@@ -1,10 +1,3 @@
-/**
- * src/features/desktop-shell/chrome-controller.ts
- * ============================================================================
- * AstroLib 桌面壳顶栏三键、左侧导航轨收纳与 F11 全屏沉浸状态控制器
- * ============================================================================
- */
-
 import type { AstroLibDesktopBridge } from '../../../electron/types';
 
 const NAV_RAIL_STORAGE_KEY = 'astrolib_nav_rail_collapsed';
@@ -69,7 +62,6 @@ export function initDesktopChromeController(): void {
     }
   };
 
-  // 初始化左侧导航轨收纳状态
   applyNavRailCollapsed(readStoredNavRailCollapsed(), false);
 
   toggleRailBtn?.addEventListener('click', () => {
@@ -128,7 +120,6 @@ export function initDesktopChromeController(): void {
     });
   });
 
-  // 浏览器环境快捷键回退：Electron 下由 mainWindow before-input-event 统一拦截（含 iframe 内部焦点）
   if (!isElectron) {
     window.addEventListener('keydown', (e) => {
       if ((e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey && (e.key === '\\' || e.code === 'Backslash')) {

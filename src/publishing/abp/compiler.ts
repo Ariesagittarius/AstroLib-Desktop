@@ -1,20 +1,3 @@
-/**
- * src/publishing/abp/compiler.ts
- * ============================================================================
- * 独立无头 ABP (AstroBook Package 1.0.0) 内容包编译器
- * ============================================================================
- * 规范：
- * 1. 纯无头模块（Rule 2 / Rule 8），可直接在 Electron、Node 服务、Vitest 中运行；
- * 2. 完整支持 AstroLib 全部 13+ 学术组件与嵌套卡片（Knowledge/Example/Exercise/
- *    Solution/Analysis/Variant/Note/Block/Method/Summary/Algorithm/SideNote/
- *    MarginNote/DigitalResource/QRCodeVideo/ExerciseTrigger）及 Mermaid 图表；
- * 3. 支持工作区级 book.json（多级 sections、modules、元数据、内嵌封面）；
- * 4. 工作区直算附属索引（aiIndex、crossRefs、relationGraph、inspectorData），
- *    不硬编码依赖 content-sources/collections/；
- * 5. 编译产物落盘前强制经过 validateInstallPayload() 校验。
- * ============================================================================
- */
-
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
@@ -245,9 +228,6 @@ export interface CompileMarkdownResult {
   footnotes: Record<string, BookFootnoteEntry>;
 }
 
-/**
- * 将 Markdown / MDX 编译为 AstroLib 语义 HTML 与结构化脚注映射
- */
 export function compileMarkdownToSemanticResult(
   body: string,
   {
@@ -258,13 +238,12 @@ export function compileMarkdownToSemanticResult(
     includeBuptExerciseBank = false,
   }: CompileMarkdownOptions = {}
 ): CompileMarkdownResult {
-  // 1. 剔除 MDX 顶部或内部 import 语句
+
   let cleaned = body
     .replace(/^import\s+[\s\S]*?from\s+['"][^'"]+['"];?\s*$/gm, '')
     .replace(/import\s+[^;\n]+;\s*/g, '')
     .trim();
 
-  // 1.5 若 <Algorithm> 内部仅包裹单层 fenced code block，则提前解包以便其内数学公式与行级缩进正常编译
   cleaned = cleaned.replace(
     /(<Algorithm(?:\s+[^>]*)?>)([\s\S]*?)(<\/Algorithm>)/gi,
     (_m, openTag, inner, closeTag) => {
@@ -277,7 +256,6 @@ export function compileMarkdownToSemanticResult(
     }
   );
 
-  // 2. 保护 fenced code blocks (含 mermaid 图表与 highlight.js 编译期语法高亮)
   const codePlaceholders: string[] = [];
   cleaned = cleaned.replace(/```([a-zA-Z0-9_+#.-]*)[ \t]*\r?\n([\s\S]*?)```/g, (_m, lang, code) => {
     const idx = codePlaceholders.length;
@@ -309,10 +287,8 @@ export function compileMarkdownToSemanticResult(
     return `\n\n%%%CODE_${idx}%%%\n\n`;
   });
 
-  // 3. 规范化填空题下划线
   cleaned = cleaned.replace(/(?:\\_){2,}|_{3,}/g, '<span class="fill-in-blank">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>');
 
-  // 4. 保护并预渲染 KaTeX 公式（保存 rawTex 与 pre-rendered HTML）
   const mathPlaceholders: Array<{ rawTex: string; html: string }> = [];
   cleaned = cleaned.replace(/\$\$([\s\S]*?)\$\$/g, (match, tex) => {
     const idx = mathPlaceholders.length;
@@ -356,7 +332,6 @@ export function compileMarkdownToSemanticResult(
     return `%%%MATH_INLINE_${idx}%%%`;
   });
 
-  // 4.5 提取并编译 Markdown 学术脚注 ([^id] / [^id]: ...，支持跨行续写与内联 KaTeX)
   const rawFootnoteDefs = new Map<string, string>();
   const linesForFn = cleaned.split(/\r?\n/);
   const filteredFnLines: string[] = [];
@@ -452,7 +427,6 @@ export function compileMarkdownToSemanticResult(
     });
   }
 
-  // 5. 图片路径规范化与图注绑定（避免双重 <figure> 嵌套）
   const rewriteImageSrc = (rawSrc: string): string => {
     const cleanSrc = (rawSrc || '').trim();
     if (!cleanSrc || cleanSrc.startsWith('http://') || cleanSrc.startsWith('https://') || cleanSrc.startsWith('data:')) {
@@ -485,7 +459,6 @@ export function compileMarkdownToSemanticResult(
     return `<img ${pre}src="${escapeAttr(finalSrc)}"${post}>`;
   });
 
-  // 6. 转换 Astro MDX 学术组件为 Semantic Card DOM
   const cardPlaceholders: string[] = [];
 
   const renderTitleHelper = (rawTitle: string): { plainTitle: string; titleHtml: string; cleanId: string } => {
@@ -501,7 +474,6 @@ export function compileMarkdownToSemanticResult(
     return String(marked.parse(innerMd.trim(), { gfm: true, breaks: false }));
   };
 
-  // 6.1 可折叠解答/提示组件 <Solution>
   cleaned = cleaned.replace(
     /<Solution(?:\s+([^>]*?))?>([\s\S]*?)<\/Solution>/gi,
     (_m, attrsStr, content) => {
@@ -515,7 +487,6 @@ export function compileMarkdownToSemanticResult(
     }
   );
 
-  // 6.2 数字资源组件 <DigitalResource> & <QRCodeVideo>
   cleaned = cleaned.replace(
     /<(?:DigitalResource|QRCodeVideo)\s+([^>]*?)(?:\/>|>([\s\S]*?)<\/(?:DigitalResource|QRCodeVideo)>)/gi,
     (_m, attrsStr) => {
@@ -568,7 +539,6 @@ export function compileMarkdownToSemanticResult(
     }
   );
 
-  // 6.3 课后习题触发卡 <ExerciseTrigger />
   cleaned = cleaned.replace(/<ExerciseTrigger\s*([^>]*?)\/?>/gi, (_m, attrsStr) => {
     const ch = getTagAttr(attrsStr || '', 'chapter') || '1';
     const sec = getTagAttr(attrsStr || '', 'section') || 'all';
@@ -588,7 +558,6 @@ export function compileMarkdownToSemanticResult(
     return `\n\n%%%CARD_${idx}%%%\n\n`;
   });
 
-  // 6.4 旁注组件 <SideNote> & <MarginNote>
   cleaned = cleaned.replace(/<(?:SideNote|MarginNote)(?:\s+([^>]*?))?>([\s\S]*?)<\/(?:SideNote|MarginNote)>/gi, (_m, attrsStr, content) => {
     const rawTitle = getTagAttr(attrsStr || '', 'title') || '注';
     const explicitType = getTagAttr(attrsStr || '', 'type');
@@ -603,7 +572,6 @@ export function compileMarkdownToSemanticResult(
     return `\n\n%%%CARD_${idx}%%%\n\n`;
   });
 
-  // 6.5 算法块组件 <Algorithm>（专属行级编译，精确保真缩进与行内 KaTeX）
   cleaned = cleaned.replace(/<Algorithm(?:\s+([^>]*?))?>([\s\S]*?)<\/Algorithm>/gi, (_m, attrsStr, content) => {
     const rawTitle = getTagAttr(attrsStr || '', 'title') || getTagAttr(attrsStr || '', 'caption') || '算法';
     const { plainTitle, cleanId } = renderTitleHelper(rawTitle);
@@ -628,7 +596,6 @@ export function compileMarkdownToSemanticResult(
     return `\n\n%%%CARD_${idx}%%%\n\n`;
   });
 
-  // 6.6 标准学术卡片组件（按“可能在内层 -> 外层”的顺序编译，保障嵌套无损，并兼容主题与旧测试类名）
   const cardConfigs = [
     { tag: 'Analysis', cls: 'analysis-card toc-chunk', headerCls: 'card-header analysis-header', bodyCls: 'card-body analysis-content', defaultTitle: '分析' },
     { tag: 'Method', cls: 'method-card toc-chunk', headerCls: 'card-header', bodyCls: 'card-body', defaultTitle: '方法总结' },
@@ -655,10 +622,8 @@ export function compileMarkdownToSemanticResult(
     });
   }
 
-  // 剔除空 <Guide /> 占位
   cleaned = cleaned.replace(/<Guide[^>]*\/>/gi, '');
 
-  // 7. 使用独立 Marked 实例编译外层 Markdown（不污染全局 marked 单例）
   const localMarked = new Marked({
     gfm: true,
     breaks: false,
@@ -676,7 +641,6 @@ export function compileMarkdownToSemanticResult(
 
   let html = String(localMarked.parse(cleaned));
 
-  // 8. 递归还原卡片、代码块、脚注上标与公式占位符
   let prevHtml = '';
   while (html !== prevHtml && html.includes('%%%CARD_')) {
     prevHtml = html;
@@ -715,7 +679,6 @@ export function compileMarkdownToSemanticResult(
     html += `\n<section class="academic-footnotes" role="doc-endnotes" aria-label="本节脚注"><ol class="academic-footnotes-list">${itemsHtml}</ol></section>`;
   }
 
-  // 9. 重写去重章节内标题 ID
   html = rewriteHeadingIdsInHtml(html);
 
   return {
@@ -724,9 +687,6 @@ export function compileMarkdownToSemanticResult(
   };
 }
 
-/**
- * 兼容入口：返回语义 HTML 字符串
- */
 export function compileMarkdownToSemanticHtml(
   body: string,
   options: CompileMarkdownOptions = {}
@@ -790,7 +750,6 @@ function buildWorkspaceAuxiliaryData(params: {
 }) {
   const { bookDir, colSlug, bookSlug, title, modules, chapterRecords } = params;
 
-  // 1. aiIndex
   const aiIndex = buildBookIndex({
     colSlug,
     bookSlug,
@@ -799,7 +758,6 @@ function buildWorkspaceAuxiliaryData(params: {
     title,
   });
 
-  // 2. crossRefs
   const crossRefs: Record<string, Array<{ url: string; chapterTitle: string; rawTitle: string; cleanTitle: string }>> = {};
   const tagRegex = /<(Example|Variant|Knowledge|Summary|Method|Conclusion|Block|Exercise|Solution|Algorithm|Note)\s+[^>]*?\btitle\s*=\s*(?:"((?:\\.|[^"\\])*)"|'((?:\\.|[^'\\])*)')/g;
 
@@ -827,7 +785,6 @@ function buildWorkspaceAuxiliaryData(params: {
     }
   }
 
-  // 3. inspectorData & relationGraph
   const cardByType: Record<string, number> = {};
   const inspectorCards: Array<{ chapterSlug: string; chapterTitle: string; tag: string; title: string }> = [];
   const graphNodes: Array<{ id: string; name: string; category: number; symbolSize: number; url: string }> = [];
@@ -992,7 +949,6 @@ function buildHierarchicalSections(
     if (sections.length > 0) return sections;
   }
 
-  // 自动目录分组：若存在子目录结构，则按顶级目录自动分组
   const hasSubDirs = chapterFiles.some((f) => f.includes('/'));
   if (hasSubDirs) {
     const groups = new Map<string, AstroBookChapterSummary[]>();
@@ -1037,9 +993,6 @@ function buildHierarchicalSections(
   ];
 }
 
-/**
- * 独立无头打包单本图书工作区为标准 .abp 内容包
- */
 export async function compileBookToAbp(options: AbpCompileOptions): Promise<AbpCompileResult> {
   const {
     bookDir,
@@ -1058,7 +1011,6 @@ export async function compileBookToAbp(options: AbpCompileOptions): Promise<AbpC
 
   const warnings: string[] = [];
 
-  // 1. 读取 book.json（工作区元数据 SSOT）
   let bookJson: BookJsonConfig = {};
   const bookJsonPath = path.join(resolvedDir, 'book.json');
   if (fs.existsSync(bookJsonPath)) {
@@ -1122,7 +1074,6 @@ export async function compileBookToAbp(options: AbpCompileOptions): Promise<AbpC
     language: mergedMeta.language || 'zh-CN',
   };
 
-  // 2. 扫描并编译全部章节
   const chapterFiles = findChapterFiles(resolvedDir);
   if (chapterFiles.length === 0) {
     throw new Error(`未在目录 ${bookDir} 中找到任何 .mdx 或 .md 章节文件`);
@@ -1214,7 +1165,6 @@ export async function compileBookToAbp(options: AbpCompileOptions): Promise<AbpC
 
   manifest.sections = buildHierarchicalSections(chapterFiles, summaryMap, mergedMeta.sections);
 
-  // 处理独立章首导语文件 (chapter-intro)：标记 chapterKind 并挂载到该章第一节的 chapterIntro
   for (const sec of manifest.sections) {
     if (sec.introSlug && chapterPayloads[sec.introSlug]) {
       const introPayload = chapterPayloads[sec.introSlug];
@@ -1234,7 +1184,7 @@ export async function compileBookToAbp(options: AbpCompileOptions): Promise<AbpC
               ...(targetPayload.footnotes || {}),
             };
           }
-          // 同步更新 summary sizeBytes
+
           const firstSummary = sec.chapters[0];
           firstSummary.sizeBytes = Buffer.byteLength(JSON.stringify(targetPayload), 'utf8');
         }
@@ -1242,7 +1192,6 @@ export async function compileBookToAbp(options: AbpCompileOptions): Promise<AbpC
     }
   }
 
-  // 解析 entryPoint（确保精确命中 chapters 映射，默认优先落在可导航章节而非孤立导语）
   const firstNavigableSlug =
     manifest.sections.flatMap((s) => s.chapters)[0]?.slug || chapterRecords[0].slug;
   if (manifest.entryPoint) {
@@ -1267,7 +1216,6 @@ export async function compileBookToAbp(options: AbpCompileOptions): Promise<AbpC
   manifest.totalChapters = chapterRecords.length;
   manifest.contentHash = computeHash(combinedHashData);
 
-  // 3. 收集 images/ 资产并内嵌封面
   const imagesDir = path.join(resolvedDir, 'images');
   const assetBuffers: Record<string, string> = {};
   let detectedCoverRel: string | null = null;
@@ -1289,7 +1237,6 @@ export async function compileBookToAbp(options: AbpCompileOptions): Promise<AbpC
     manifest.cover = `/abp-packs/${manifest.id}/${detectedCoverRel}`;
   }
 
-  // 4. 可选向量化与附属索引
   let embeddingAsset: AbpBundlePayload['embeddings'] = null;
   if (withVectors && allBookChunks.length > 0) {
     try {
@@ -1355,7 +1302,6 @@ export async function compileBookToAbp(options: AbpCompileOptions): Promise<AbpC
     }
   }
 
-  // 5. 组装并落盘前强制契约校验
   const fullBundle: AbpBundlePayload = {
     manifest,
     chapters: chapterPayloads,
@@ -1370,7 +1316,6 @@ export async function compileBookToAbp(options: AbpCompileOptions): Promise<AbpC
 
   validateInstallPayload(fullBundle);
 
-  // 6. 原子写入 .abp 单文件包与可选展开目录
   const resolvedOutDir = path.resolve(outDir);
   fs.mkdirSync(resolvedOutDir, { recursive: true });
 

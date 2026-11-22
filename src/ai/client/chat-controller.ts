@@ -197,7 +197,7 @@ export class AIAskElement extends CustomElementBase {
   }
 
   connectedCallback() {
-    // 单例守卫：确保全站仅存在一个活跃的 ai-ask 根实例（防止 SPA 切页在 main-pane 产生重复实例）
+
     const allInstances = document.querySelectorAll('ai-ask');
     if (allInstances.length > 1) {
       for (const inst of allInstances) {
@@ -218,13 +218,13 @@ export class AIAskElement extends CustomElementBase {
         this._history.classList.remove('open');
         this._historyBtn && this._historyBtn.classList.remove('ask-settings-open');
       }
-      // 点击外部关闭模型菜单
+
       if (this._modelMenu && this._modelMenu.style.display !== 'none') {
         if (!this._modelMenu.contains(target) && (!this._modelPillBtn || !this._modelPillBtn.contains(target))) {
           this._closeModelMenu();
         }
       }
-      // 点击外部关闭章节选择器
+
       if (this._chapterPickerPopover && this._chapterPickerPopover.style.display !== 'none') {
         if (!this._chapterPickerPopover.contains(target) && (!this._addChapterBtn || !this._addChapterBtn.contains(target))) {
           this._closeChapterPicker();
@@ -263,7 +263,6 @@ export class AIAskElement extends CustomElementBase {
     window.addEventListener('keydown', this._onKeyDownAltD);
     window.addEventListener('keydown', this._onKeyDownEsc);
 
-    // 订阅侧载管理器状态变更：若非 AI 面板激活（如 Esc 或切回大纲），自动将 DOM 归位并关闭浮窗；若为 AI 面板则停靠
     this._unsubSideload = sideloadManager.subscribe((state) => {
       if (state.activePanelId !== 'ai' && this._isDocked) {
         this._undockInternal(false);
@@ -408,7 +407,6 @@ export class AIAskElement extends CustomElementBase {
       });
     }
 
-    // 章节多选选择器 Popover 元素与交互
     this._addChapterBtn = this.querySelector('#ask-add-chapter-btn') as HTMLButtonElement;
     this._chapterPickerPopover = this.querySelector('#ask-chapter-picker-popover') as HTMLElement;
     this._chapterSearchInput = this.querySelector('#ask-chapter-search-input') as HTMLInputElement;
@@ -451,7 +449,6 @@ export class AIAskElement extends CustomElementBase {
       });
     }
 
-    // 模型快捷切换 Popover 菜单与药丸按钮
     this._modelPillBtn = this.querySelector('#ask-model-pill-btn') as HTMLButtonElement;
     this._modelPillName = this.querySelector('#ask-model-pill-name') as HTMLElement;
     this._modelMenu = this.querySelector('#ask-model-menu') as HTMLElement;
@@ -487,7 +484,6 @@ export class AIAskElement extends CustomElementBase {
     this._messages = this.querySelector('.ask-messages') as HTMLElement;
     this._bookEl = this.querySelector('.ask-book') as HTMLElement;
 
-    // Apply saved panel dimensions if present
     const dims = getAiPanelDimensions();
     if (this._panel) {
       if (dims.width) this._panel.style.setProperty('--ask-panel-width', `${dims.width}px`);
@@ -574,7 +570,6 @@ export class AIAskElement extends CustomElementBase {
     }
     if (this._close) this._close.addEventListener('click', () => this._closePanel());
 
-    // Settings trigger dispatches global event to open quick settings AI panel
     if (this._settingsBtn) {
       this._settingsBtn.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -919,7 +914,6 @@ export class AIAskElement extends CustomElementBase {
     if (cached && cached.meta && cached.meta.title) this._setBookTitle(cached.meta.title);
     else this._setBookTitle(this.getAttribute('data-book-title') || m[2]);
 
-    // 路由切换时，重置章节缓存；若处于侧载且引用激活，更新当前章节引用
     this._bookChaptersCache = null;
     if (this._isDocked && this._refCurrentChapter) {
       const cur = this._getCurrentChapterInfo();
@@ -932,7 +926,6 @@ export class AIAskElement extends CustomElementBase {
       this._updateContextRow();
     }
 
-    // 探测并平滑恢复侧载停靠态
     const isAiDocked = sideloadManager.getActivePanelId() === 'ai' ||
       (typeof localStorage !== 'undefined' && (
         localStorage.getItem('astrolib_sideload_active_panel') === 'ai' ||
@@ -1073,7 +1066,6 @@ export class AIAskElement extends CustomElementBase {
     const lastUserMsg = t.messages[userIndex].text;
     if (!lastUserMsg) return;
 
-    // 回滚该提问及后续可能失败的消息
     t.messages = t.messages.slice(0, userIndex);
     this._saveActiveThread();
     this._renderThread(t);
@@ -1324,7 +1316,6 @@ export class AIAskElement extends CustomElementBase {
     const q = this._input.value.trim();
     if (!q || this._busy) return;
 
-    // 收集引用的章节列表
     const chapterRefs: ReferencedChapter[] = this._referencedChapters.slice();
     if (this._isDocked && this._refCurrentChapter) {
       const cur = this._getCurrentChapterInfo();
@@ -1333,7 +1324,6 @@ export class AIAskElement extends CustomElementBase {
       }
     }
 
-    // 确保引用的所有章节文本在发送前已完成拉取 (最多等待 1.2s)
     await Promise.all(
       chapterRefs.map(async (c) => {
         if (!c.text) {
@@ -1370,7 +1360,6 @@ export class AIAskElement extends CustomElementBase {
     const sourcesEl = aiMsg.querySelector('.ask-sources') as HTMLElement;
     if (discussion) sourcesEl.style.display = 'none';
 
-    // 立即插入 Material 3 官方微光思考占位
     blocksEl.innerHTML = createM3LoadingHtml({
       variant: 'default',
       size: 'compact',

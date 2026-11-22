@@ -1,10 +1,3 @@
-/**
- * src/components/exercises/exercise-view-renderer.ts
- * ============================================================================
- * HTML and Component View Renderer for Exercise Center Cards and Solution Boxes
- * ============================================================================
- */
-
 import { renderAcademicSolutionMarkdown as renderSolutionMarkdown } from './exercise-markdown';
 import { exerciseDb, type CommunityAiSolution } from '../../utils/exercise-db/exercise-db-client';
 import { getActiveAiModel, getAiProvider, type AiProviderId } from '../../ai/ai-config';

@@ -1,17 +1,3 @@
-/**
- * tests/unit/reader-shell-links.test.ts
- * ============================================================================
- * P1-A2 门禁测试：Reader Shell 与 iframe 容器契约
- * ============================================================================
- * 验证目标：
- * 1. reader-shell-template 生成的左侧目录树 / 右侧大纲 / 上一章-下一章 链接
- *    必须 100% 指向 manifest 中的 Canonical Slug，且绝不出现 legacySlug；
- * 2. 多级章节 slug（zh-wp/…、zh/…）同样必须出现在链接中且保持 Canonical；
- * 3. reader-shell-template 不得再引入或调用 cleanSlug（slug 归一化只发生在编译器）；
- * 4. FragmentReaderHost 必须存在 iframe -> 父窗口的 astrolib:switch-fragment 消息桥接。
- * ============================================================================
- */
-
 import { describe, it, expect } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -75,7 +61,7 @@ describe('Reader Shell canonical link contract (P1-A2)', () => {
 
       for (const link of links) {
         const parts = link.split('/');
-        // 链接至少包含 <col>/<book>；章节段可为空（书籍根入口）
+
         expect(parts.length, `非法链接: ${link}`).toBeGreaterThanOrEqual(2);
         const [col, book, ...rest] = parts;
         const canonicalSet = canonicalByBook.get(`${col}/${book}`);

@@ -1,22 +1,8 @@
 import { NOTICE_PRESETS } from './notices.config.ts';
 import type { Collection, Book } from '../types/collections.ts';
 
-/**
- * 中央书库配置：合集（collections）与图书（books）的唯一数据源。
- *
- * 遵循 Rule 1 (UI is not a domain model) & Rule 3 (Source of Truth)
- */
-/**
- * 静态构建期零预置书籍架构 (Zero-Built-in Books)
- * 确保 Astro 静态构建不会固化任何预编译书籍，彻底消除 dist/collections
- */
 export const collections: Collection[] = [];
 
-/**
- * 完整源书库元数据配置 (Source Collections Registry — 13 本教材 SSOT)
- * 权威模块定义 (modules)、交叉引用类名 (trackClasses) 及双语对齐配置。
- * 供 ABP 编译器 (pack-book-abp.mjs)、内容索引/图谱/巡检管线和离线测试统一消费。
- */
 export const sourceCollections: Collection[] = [
   {
     id: 'math',
@@ -697,16 +683,10 @@ export interface FlatBook extends Book {
   collectionTitle: string;
 }
 
-/**
- * 获取权威内容目录合集（唯一 SSOT：sourceCollections，绝不回退空静态构建开关 collections）
- */
 export function getCatalogCollections(): Collection[] {
   return sourceCollections;
 }
 
-/**
- * 仅用于 Astro 静态构建期判断当前内置预编译书籍列表（Zero-Built-in 模式下为空数组）
- */
 export function getBuiltinStaticBooks(): FlatBook[] {
   const list: FlatBook[] = [];
   for (const col of collections) {
@@ -722,9 +702,6 @@ export function getBuiltinStaticBooks(): FlatBook[] {
   return list;
 }
 
-/**
- * 获取全库扁平书目列表（默认返回完整 13 本权威目录；仅在显式传入 false / 'builtin-static' 时返回静态内置列表）
- */
 export function getAllBooks(scope: boolean | 'catalog' | 'builtin-static' = 'catalog'): FlatBook[] {
   if (scope === false || scope === 'builtin-static') {
     return getBuiltinStaticBooks();
@@ -732,9 +709,6 @@ export function getAllBooks(scope: boolean | 'catalog' | 'builtin-static' = 'cat
   return getCatalogBooks();
 }
 
-/**
- * 获取权威源书库中的全部扁平书目列表（在任何静态构建开关状态下始终精确返回 13 本）
- */
 export function getCatalogBooks(): FlatBook[] {
   const list: FlatBook[] = [];
   for (const col of sourceCollections) {

@@ -1,16 +1,3 @@
-/**
- * src/services/bilingual/aligner-client.ts
- * ============================================================================
- * AstroLib 双语对照与关联分析客户端调度中心 (Bilingual Aligner Client)
- * ============================================================================
- * 负责客户端：
- * 1. 依托 SemanticParagraphExtractor 从左右双栏文章 DOM 中提取结构化段落；
- * 2. 调度服务端/端侧推理端点（/__bilingual__/align）；
- * 3. 维护客户端结果缓存（避免重复滚动与对比时重复推理）；
- * 4. 计算综合矩阵统计、自适应阈值校准与未匹配状态探测。
- * ============================================================================
- */
-
 import { BipartiteMatcher } from './bipartite-matcher.ts';
 import { SemanticParagraphExtractor } from './semantic-extractor.ts';
 import type { AlignmentMatrixResult, ParagraphLink, SemanticParagraph, BilingualModelInfo } from './types.ts';
@@ -18,9 +5,6 @@ import type { AlignmentMatrixResult, ParagraphLink, SemanticParagraph, Bilingual
 export class BilingualAlignerClient {
   private static cache = new Map<string, AlignmentMatrixResult>();
 
-  /**
-   * 从 DOM 容器中提取结构化语义段落（依托 SemanticParagraphExtractor，彻底保护 KaTeX 公式与自愈 OCR 碎片）
-   */
   static extractTokens(container: HTMLElement, prefix: 'src' | 'tgt'): SemanticParagraph[] {
     if (!container) return [];
     return SemanticParagraphExtractor.extractFromDom(container, {
@@ -29,9 +13,6 @@ export class BilingualAlignerClient {
     });
   }
 
-  /**
-   * 查询当前服务支持的向量对齐模型清单
-   */
   static async getAvailableModels(): Promise<BilingualModelInfo[]> {
     try {
       const resp = await fetch('/__bilingual__/models');
@@ -42,7 +23,7 @@ export class BilingualAlignerClient {
         }
       }
     } catch {
-      // 离线环境静默使用内置预设
+
     }
 
     return [
@@ -67,9 +48,6 @@ export class BilingualAlignerClient {
     ];
   }
 
-  /**
-   * 调度向量对齐计算（支持按需选择模型：轻量 MiniLM 或高精 Qwen3-Embedding）
-   */
   static async computeAlignment(
     sources: SemanticParagraph[],
     targets: SemanticParagraph[],
@@ -91,7 +69,7 @@ export class BilingualAlignerClient {
     const startTime = performance.now();
 
     try {
-      // 发送至服务端端点
+
       const resp = await fetch('/__bilingual__/align', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -142,10 +120,9 @@ export class BilingualAlignerClient {
         return result;
       }
     } catch {
-      // 后台服务离线或未运行时的降级处理：使用轻量词法相似度兜底
+
     }
 
-    // 本地降级轻量对齐（基于 Jaccard + 共有词元匹配）
     const matrix = this.fallbackLexicalMatrix(sources, targets);
     const stats = BipartiteMatcher.computeMatrixStats(matrix);
     const links = BipartiteMatcher.extractLinks(matrix, sources, targets, {
@@ -175,9 +152,6 @@ export class BilingualAlignerClient {
     return result;
   }
 
-  /**
-   * 计算机科学与数学高频跨语言双语同义词/同义概念词典
-   */
   private static readonly CS_MATH_COGNATES: Record<string, string[]> = {
     prologue: ['序言', '前言'],
     preface: ['前言', '序言'],
@@ -223,20 +197,15 @@ export class BilingualAlignerClient {
     rsa: ['rsa'],
   };
 
-  /**
-   * 提取中英文本中的跨语言词元特征集合（含数学公式、数值、拉丁专有词与汉字二元组）
-   */
   public static tokenizeMultilingual(text: string): Set<string> {
     const tokens = new Set<string>();
     const lower = text.toLowerCase();
 
-    // 1. 提取所有数值 (例如 02.1, 1960, 3, 1.585)
     const numbers = lower.match(/\b\d+(?:\.\d+)?\b/g);
     if (numbers) {
       numbers.forEach((n) => tokens.add(n));
     }
 
-    // 2. 提取 LaTeX 数学公式表达式与核心符号
     const mathFormulas = lower.match(/\$[^$]+\$/g);
     if (mathFormulas) {
       mathFormulas.forEach((m) => {
@@ -244,7 +213,6 @@ export class BilingualAlignerClient {
       });
     }
 
-    // 3. 提取英文词汇并进行同源词映射
     const words = lower.match(/[a-z]{3,}/g);
     if (words) {
       words.forEach((w) => {
@@ -256,7 +224,6 @@ export class BilingualAlignerClient {
       });
     }
 
-    // 4. 提取中文汉字及连续二元字组 (Bigram)
     const zhChars = lower.match(/[\u4e00-\u9fa5]/g);
     if (zhChars) {
       zhChars.forEach((c) => tokens.add(c));
@@ -268,9 +235,6 @@ export class BilingualAlignerClient {
     return tokens;
   }
 
-  /**
-   * 词法启发式备选矩阵构建（用于离线或服务未就绪时的无缝降级）
-   */
   public static fallbackLexicalMatrix(
     sources: SemanticParagraph[],
     targets: SemanticParagraph[]
@@ -299,7 +263,6 @@ export class BilingualAlignerClient {
         const overlap = minSize > 0 ? common / minSize : 0;
         const lexicalScore = jaccard * 0.4 + overlap * 0.6;
 
-        // 局部位置亲和度
         const relPosA = M > 1 ? i / (M - 1) : 0;
         const relPosB = N > 1 ? j / (N - 1) : 0;
         const posProximity = Math.max(0, 1 - Math.abs(relPosA - relPosB) * 1.3);

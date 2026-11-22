@@ -20,32 +20,32 @@ import Algorithm from '@/components/Algorithm.astro';
 
 Dijkstra 算法之所以能够运行，有一部分原因在于：从起始点 $s$ 到任意顶点 $\nu$ 的最短路径一定会经过比 $\nu$ 距离 $s$ 更近的顶点。而当边的长度可以为负值时，这一论断将不再成立。比如在图4-12中，从 $S$ 到 $A$ 的最短路径经过 $B$ ，而 $B$ 却比 $A$ 距离 $S$ 更远！
 
-(a)  
+(a)
 ![](../images/e8c65834e0862a0ffda140a8818fa185493d9a1e654653540fa310a4f1a7c8dd.jpg)
 
-(b)  
+(b)
 ![](../images/8e2737554310554c33070ae5b5d1b7e3ca1f03b1a93711dbd6b73823c1a394c1.jpg)
 
-(c)  
+(c)
 ![](../images/9dfc58aa3dae9077cea853cf571ea7f40076b217311b5bd89c52202cc5f3c193.jpg)
 
-(d)  
+(d)
 ![](../images/6cbb0274dc4b55ad800b42865bbb87c82b7e14711d79812ec67e81f49cec015c.jpg)
 
-(e)  
+(e)
 ![](../images/9d852dab18cfaedf2152e3d6d93ac4c056bb58e4b9fb37ed3c531f0bd4826e29.jpg)
 
-(f)  
+(f)
 ![](../images/b5e46835f221a7051633a68014a1c069afc303e6669d70008a9972de7ba8a999.jpg)
 
-(g)  
+(g)
 ![](../images/1f1035a6649d524419ad3bb53e6b29d8098bd88d31bc6ef7f3388314f2d77715.jpg)
 
-(h)  
-![](../images/738bdd764856fb171db485b18b940ccac8b9c43d993bc4f672613db53c071633.jpg)  
+(h)
+![](../images/738bdd764856fb171db485b18b940ccac8b9c43d993bc4f672613db53c071633.jpg)
 图 4-11 (a)一个含有 10 个元素的二分堆，图中只标记了键值。(b)-(d)插入键值为 7 的元素经历的中间“冒泡”步骤。(e)-(g)在 delete-min 操作中经历的“向下过滤”步骤
 
-![](../images/89c1b6a3817363ab02d95dd840c29b7af2d91e505a1768894349469fa9653ca8.jpg)  
+![](../images/89c1b6a3817363ab02d95dd840c29b7af2d91e505a1768894349469fa9653ca8.jpg)
 图 4-12 如果图中含有负边，Dijkstra 算法将不再适用
 
 为了应对这一新的复杂性，原有算法应该做出什么样的调整呢？要回答这一问题，首先让我们从一个较高的层次上重新审视Dijkstra算法。其中一个不变的重要事实是：算法维护的dist值在被准确设定之前常常被高估。它们初始时刻被设为 $\infty$ ，之后算法只会沿着图中的一条边对它们进行更新：
@@ -83,7 +83,7 @@ dist(s)=0
 repeat |V|-1 times:
     for all e∈E:
     update(e)
-```  
+```
 图 4-13 Bellman-Ford 算法应用于一般图的单源最短路径问题
 
 ![](../images/19813dec7e3010153608aac89012e1a00f6e4b8d72006ae14d49d4a48a62d4b8.jpg)

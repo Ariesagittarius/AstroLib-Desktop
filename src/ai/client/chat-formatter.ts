@@ -1,10 +1,3 @@
-/**
- * src/ai/client/chat-formatter.ts
- * ============================================================================
- * Helper formatters and markdown/json renderers for AI Ask Component
- * ============================================================================
- */
-
 export function esc(s: string): string {
   return (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
@@ -43,7 +36,7 @@ export function capJsonText(v: any, cap = 1200): string {
 export function decorateFootnotes(html: string, decorate = true): string {
   if (!decorate || !html) return html || '';
   const protectedBlocks: string[] = [];
-  // 保护 pre, code, a 标签，以及包含数学公式的标签与 HTML 属性，避免数学公式下标被误换为链接
+
   let safe = html.replace(/(<(?:pre|code|a|p\s+class="md-math")[^>]*>[\s\S]*?<\/(?:pre|code|a|p)>|<[^>]+>)/gi, (m) => {
     protectedBlocks.push(m);
     return `___FN_PROT_${protectedBlocks.length - 1}___`;
@@ -104,4 +97,3 @@ export const CHAT_LITERARY_SUGGESTIONS = [
 export function getElementDataConfig(el: Element): any {
   try { return JSON.parse(el.getAttribute('data-config') || '{}'); } catch { return {}; }
 }
-

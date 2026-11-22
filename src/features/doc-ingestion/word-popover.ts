@@ -1,10 +1,3 @@
-/**
- * src/features/doc-ingestion/word-popover.ts
- * ============================================================================
- * 学术英文文献单词即点即译浮窗控制器 (Click-to-Define + M3 Popover)
- * ============================================================================
- */
-
 import { safeParsePaperMarkdown } from './bilingual-translator';
 
 interface DictLookupResult {

@@ -1,10 +1,3 @@
-/**
- * src/components/exercises/exercise-ai-flow.ts
- * ============================================================================
- * AI Solution Deduction and Community Flow Manager for Exercise Center
- * ============================================================================
- */
-
 import { streamChat } from '../../ai/llm.mjs';
 import renderMathInElement from 'katex/dist/contrib/auto-render.mjs';
 import { StreamThrottleScheduler } from './stream-scheduler';
@@ -127,7 +120,6 @@ ${q.answer ? `参考结果：${q.answer}` : ''}`;
     let accumulatedReasoning = '';
     this.activeSolutionVersions.set(qid, 'local');
 
-    // 初始化流式批处理节流调度器（100ms 窗口）
     const scheduler = new StreamThrottleScheduler(() => {
       this.aiSolutions.set(qid, accumulatedMd);
       if (contentEl) {

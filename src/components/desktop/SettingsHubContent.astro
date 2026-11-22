@@ -1,15 +1,4 @@
 ---
-/**
- * src/components/desktop/SettingsHubContent.astro
- * ============================================================================
- * AstroLib 控制中心、阅读设置与扩展仓库共享核心视图 (单一生产实现)
- * ============================================================================
- * 职责：
- * 1. 作为窗口内覆盖层模态框（Desktop In-Window Modal）与独立 /hub/ 路由的统一 UI；
- * 2. 严格按 Material Design 3 (M3) 规范提供 <md-switch> 与 Filter Chips；
- * 3. 单一宿主契约：全局仅保留一个 starlight-feature-toggles 宿主，杜绝重复绑定与状态冲突。
- * ============================================================================
- */
 import { features } from '../../config/features.config.ts';
 import { DEFAULT_DESKTOP_RELEASE_REPO } from '../../config/release.config';
 import { CJK_PRESETS, LATIN_PRESETS, DEFAULT_PREF } from '../../scripts/font-presets';
@@ -68,7 +57,7 @@ const metaJson = JSON.stringify(featureMeta);
   )}
 
   <div class="hub-container">
-    <!-- 左侧导航栏 -->
+
     <nav class="hub-sidebar" aria-label="设置分类导航">
       {isOverlay && (
         <div class="hub-sidebar-top">
@@ -108,7 +97,6 @@ const metaJson = JSON.stringify(featureMeta);
       </div>
     </nav>
 
-    <!-- 右侧主内容列 -->
     <div class="hub-main-column">
       {isOverlay && (
         <div class="hub-modal-topbar">
@@ -128,7 +116,7 @@ const metaJson = JSON.stringify(featureMeta);
       )}
 
       <main class="hub-workspace" id="hub-workspace">
-        <!-- 网页端降级提示 -->
+
         <div id="web-banner" class="web-degraded-banner">
           <span>当前处于 Web 预览模式。硬件探测、模型下载与本地引擎仅在 AstroLib 桌面端可用。</span>
           <a href={`https://github.com/${DEFAULT_DESKTOP_RELEASE_REPO}/releases`} target="_blank" style="color: var(--hub-primary); text-decoration: underline; font-weight: 500;">
@@ -136,9 +124,8 @@ const metaJson = JSON.stringify(featureMeta);
           </a>
         </div>
 
-        <!-- 唯一全局设置宿主 -->
         <starlight-feature-toggles data-meta={metaJson} data-inline-hub="true" class="hub-ft-host" aria-label="AstroLib 全局控制中心与设置">
-          <!-- 面板 0: 外观与排版偏好 -->
+
           <section id="panel-appearance" class="hub-panel active" data-panel-title="外观与排版偏好">
             <div class="panel-section-title">
               <div>
@@ -151,14 +138,14 @@ const metaJson = JSON.stringify(featureMeta);
             </div>
 
             <div class="ft-panel hub-ft-inline-panel" role="region" aria-label="外观与排版">
-              <!-- 分组：界面与主题 -->
+
               {features.theme.enabled && (
                 <div class="hub-card">
                   <div class="ft-section hub-ft-section">
                     <div class="ft-section-title">界面与主题</div>
                     <div class="ft-stack">
                       <div class="ft-m3-color-section hub-ft-color-section">
-                        <!-- Chrome 风格外观模式分段控制 (浅色 / 深色 / 设备) -->
+
                         <div class="ft-theme-mode-segmented" role="radiogroup" aria-label="外观模式">
                           <button
                             type="button"
@@ -201,7 +188,6 @@ const metaJson = JSON.stringify(featureMeta);
                           </button>
                         </div>
 
-                        <!-- 4x4 Chrome 风格精致色盘网格与取色器 -->
                         <div class="ft-chrome-swatches-grid">
                           {THEME_COLOR_PRESETS.map((preset) => (
                             <button
@@ -227,7 +213,6 @@ const metaJson = JSON.stringify(featureMeta);
                             </button>
                           ))}
 
-                          <!-- 第 16 项：自定义取色器 (Chrome Eyedropper) -->
                           <div
                             class="ft-chrome-color-tile ft-custom-color-tile"
                             data-action="open-custom-color"
@@ -257,7 +242,6 @@ const metaJson = JSON.stringify(featureMeta);
                         </div>
                       </div>
 
-                      <!-- 主题平滑过渡动画 (M3 Switch) -->
                       <div class="ft-item-row">
                         <div class="ft-row-info">
                           <span class="ft-row-name">主题过渡</span>
@@ -265,7 +249,6 @@ const metaJson = JSON.stringify(featureMeta);
                         <md-switch data-theme-transition aria-label="平滑主题过渡"></md-switch>
                       </div>
 
-                      <!-- 加载动画风格 (Segmented Button) -->
                       <div class="ft-segment-wrapper ft-loading-style-wrapper">
                         <div class="ft-sub-label">加载动画风格</div>
                         <div class="ft-segment-track ft-grid-2 ft-loading-style-track">
@@ -282,7 +265,6 @@ const metaJson = JSON.stringify(featureMeta);
                 </div>
               )}
 
-              <!-- 分组：字体与排版偏好 -->
               {features.fonts.enabled && (
                 <div class="hub-card hub-format-defaults-card">
                   <div class="ft-section hub-ft-section">
@@ -298,7 +280,7 @@ const metaJson = JSON.stringify(featureMeta);
                       <md-filter-chip label="EPUB 电子书" data-format-tab="epub"></md-filter-chip>
                     </md-chip-set>
                     <div class="ft-stack">
-                      <!-- 正文字号大小滑块 -->
+
                       <div class="ft-segment-wrapper">
                         <div class="ft-slider-header">
                           <div class="ft-sub-label">默认正文字号</div>
@@ -321,7 +303,6 @@ const metaJson = JSON.stringify(featureMeta);
                         </div>
                       </div>
 
-                      <!-- 西文字体预设 -->
                       <div class="ft-segment-wrapper">
                         <div class="ft-sub-label">默认西文 / 公式字体</div>
                         <md-chip-set class="ft-font-chip-set" id="hub-format-latin-chips">
@@ -336,7 +317,6 @@ const metaJson = JSON.stringify(featureMeta);
                         </md-chip-set>
                       </div>
 
-                      <!-- 中文字体预设 -->
                       <div class="ft-segment-wrapper">
                         <div class="ft-sub-label">默认正文中文字体</div>
                         <md-chip-set class="ft-font-chip-set" id="hub-format-cjk-chips">
@@ -351,7 +331,6 @@ const metaJson = JSON.stringify(featureMeta);
                         </md-chip-set>
                       </div>
 
-                      <!-- 段前空两格 (M3 Switch) -->
                       <div class="ft-item-row">
                         <div class="ft-row-info">
                           <span class="ft-row-name">默认段前空两格</span>
@@ -359,7 +338,6 @@ const metaJson = JSON.stringify(featureMeta);
                         <md-switch id="hub-format-indent-switch" aria-label="默认段落首行缩进两格" selected></md-switch>
                       </div>
 
-                      <!-- 默认排版体裁 -->
                       <div class="ft-segment-wrapper">
                         <div class="ft-sub-label">默认排版体裁</div>
                         <md-chip-set class="ft-font-chip-set" id="hub-format-profile-chips">
@@ -368,7 +346,6 @@ const metaJson = JSON.stringify(featureMeta);
                         </md-chip-set>
                       </div>
 
-                      <!-- 句号形态 -->
                       <div class="ft-segment-wrapper">
                         <div class="ft-sub-label">默认句末标点形式</div>
                         <md-chip-set class="ft-font-chip-set" id="hub-format-punct-chips">
@@ -377,7 +354,6 @@ const metaJson = JSON.stringify(featureMeta);
                         </md-chip-set>
                       </div>
 
-                      <!-- 默认阅读布局 -->
                       <div class="ft-segment-wrapper">
                         <div class="ft-sub-label">默认阅读布局</div>
                         <md-chip-set class="ft-font-chip-set" id="hub-format-layout-chips">
@@ -393,7 +369,6 @@ const metaJson = JSON.stringify(featureMeta);
             </div>
           </section>
 
-          <!-- 面板 1: 阅读设置 -->
           <section id="panel-reading" class="hub-panel" data-panel-title="阅读设置">
             <div class="panel-section-title">
               <div>
@@ -406,7 +381,7 @@ const metaJson = JSON.stringify(featureMeta);
             </div>
 
             <div class="ft-panel hub-ft-inline-panel" role="region" aria-label="阅读设置">
-              <!-- 核心模式：低性能模式 (M3 Switch) -->
+
               <div class="ft-lite-mode-card" id="ft-lite-mode-card">
                 <div class="ft-lite-mode-main">
                   <div class="ft-lite-mode-icon-wrap" aria-hidden="true">
@@ -429,7 +404,6 @@ const metaJson = JSON.stringify(featureMeta);
                 </div>
               </div>
 
-              <!-- 阅读特性与缓存策略 -->
               <div class="hub-card">
                 <div class="ft-section hub-ft-section">
                   <div class="ft-section-title">阅读交互与性能策略</div>
@@ -492,7 +466,6 @@ const metaJson = JSON.stringify(featureMeta);
                 </div>
               </div>
 
-              <!-- AI 与知识拓扑卡片 -->
               <div class="hub-card">
                 <div class="ft-section hub-ft-section">
                   <div class="ft-section-title">AI 学术模型与知识拓扑</div>
@@ -598,7 +571,6 @@ const metaJson = JSON.stringify(featureMeta);
                 </div>
               </div>
 
-              <!-- 多窗口与分屏行为设置卡片 -->
               <div class="hub-card">
                 <div class="ft-section hub-ft-section">
                   <div class="ft-section-title">多窗口与分屏行为</div>
@@ -621,19 +593,15 @@ const metaJson = JSON.stringify(featureMeta);
           </section>
         </starlight-feature-toggles>
 
-        <!-- 面板 2: 文献解析与研读 -->
         <SettingsIngestPanel />
 
-        <!-- 面板 2b: Agent 与工具 -->
         <SettingsAgentPanel />
 
-        <!-- 面板 3-6: 系统硬件自省、模型仓库、本地服务与扩展生态 -->
         <SettingsSystemPanels />
       </main>
     </div>
   </div>
 </div>
 
-<script>
-  import '../../scripts/pages/settings-hub-client';
+<script>import '../../scripts/pages/settings-hub-client';
 </script>

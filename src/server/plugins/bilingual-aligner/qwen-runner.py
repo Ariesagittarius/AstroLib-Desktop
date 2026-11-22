@@ -17,7 +17,6 @@ import os
 import json
 import time
 
-# Strictly offline execution with domestic mirror configuration
 os.environ["HF_HUB_OFFLINE"] = "1"
 os.environ["HF_ENDPOINT"] = "https://hf-mirror.com"
 
@@ -26,7 +25,6 @@ MODEL_ID = "Qwen/Qwen3-Embedding-0.6B"
 _model = None
 _tokenizer = None
 _device = None
-
 
 def load_model():
     global _model, _tokenizer, _device
@@ -39,18 +37,16 @@ def load_model():
     _device = "cuda" if torch.cuda.is_available() else "cpu"
     dtype = torch.float16 if _device == "cuda" else torch.float32
 
-    # Attempt local cache load
     try:
         _tokenizer = AutoTokenizer.from_pretrained(MODEL_ID, local_files_only=True)
         _model = AutoModel.from_pretrained(MODEL_ID, local_files_only=True, dtype=dtype).to(_device)
     except Exception as e:
-        # If local_files_only throws due to cache resolution, retry with mirror
+
         _tokenizer = AutoTokenizer.from_pretrained(MODEL_ID)
         _model = AutoModel.from_pretrained(MODEL_ID, dtype=dtype).to(_device)
 
     _model.eval()
     return _model, _tokenizer, _device
-
 
 def embed_texts(model, tokenizer, texts, device, batch_size=16, max_length=1024):
     import torch
@@ -71,7 +67,7 @@ def embed_texts(model, tokenizer, texts, device, batch_size=16, max_length=1024)
 
         with torch.no_grad():
             outputs = model(**inputs)
-            # CausalLM last-token pooling
+
             seq_lens = inputs["attention_mask"].sum(dim=1) - 1
             pooled = outputs.last_hidden_state[torch.arange(len(chunk), device=device), seq_lens]
             normed = F.normalize(pooled.float(), p=2, dim=1)
@@ -80,7 +76,6 @@ def embed_texts(model, tokenizer, texts, device, batch_size=16, max_length=1024)
     if all_embeds:
         return torch.cat(all_embeds, dim=0)
     return torch.empty((0, 1024))
-
 
 def run_align(source_texts, target_texts, batch_size=16):
     import torch
@@ -118,18 +113,15 @@ def run_align(source_texts, target_texts, batch_size=16):
         "device": dev_name,
     }
 
-
 def daemon_loop():
-    # Force UTF-8 encoding on stdin/stdout if possible
+
     if hasattr(sys.stdin, "reconfigure"):
         sys.stdin.reconfigure(encoding="utf-8")
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8")
 
-    # Pre-warm model into VRAM during daemon startup
     model, _, device = load_model()
 
-    # Signal daemon ready
     sys.stdout.write(json.dumps({"status": "ready", "model": MODEL_ID, "device": device}) + "\n")
     sys.stdout.flush()
 
@@ -170,7 +162,6 @@ def daemon_loop():
             sys.stdout.write(json.dumps({"status": "error", "error": str(e)}) + "\n")
             sys.stdout.flush()
 
-
 def main():
     if hasattr(sys.stdin, "reconfigure"):
         sys.stdin.reconfigure(encoding="utf-8")
@@ -183,7 +174,7 @@ def main():
         model, _, device = load_model()
         print(json.dumps({"status": "ok", "device": device, "model": MODEL_ID}))
     else:
-        # One-shot JSON from stdin
+
         raw = sys.stdin.read().strip().lstrip("\ufeff")
         if raw:
             data = json.loads(raw)
@@ -191,7 +182,6 @@ def main():
             print(json.dumps(res))
         else:
             print(json.dumps({"error": "No input provided"}))
-
 
 if __name__ == "__main__":
     main()

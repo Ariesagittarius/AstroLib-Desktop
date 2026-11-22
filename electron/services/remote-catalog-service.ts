@@ -1,10 +1,3 @@
-/**
- * electron/services/remote-catalog-service.ts
- * ============================================================================
- * AstroLib 官方 Release 书库拉取与完整性校验安装服务 (Mode A Distribution)
- * ============================================================================
- */
-
 import zlib from 'node:zlib';
 import {
   ABP_SCHEMA_VERSION,

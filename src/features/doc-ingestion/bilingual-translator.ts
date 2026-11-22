@@ -1,10 +1,3 @@
-/**
- * src/features/doc-ingestion/bilingual-translator.ts
- * ============================================================================
- * 学术文献双语研判翻译与结构化 KaTeX 保护渲染器
- * ============================================================================
- */
-
 import { marked } from 'marked';
 import katex from 'katex';
 import type { PdfBlockItem } from './pdf-viewport';

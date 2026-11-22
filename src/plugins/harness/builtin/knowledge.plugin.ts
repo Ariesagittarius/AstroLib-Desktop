@@ -1,10 +1,3 @@
-/**
- * src/plugins/harness/builtin/knowledge.plugin.ts
- * ============================================================================
- * AstroLib 统一知识库认知与四源检索读取插件 (MDX / pdf2abp / EPUB / 学术文献)
- * ============================================================================
- */
-
 import type { HarnessPlugin, PluginContext } from '../types.ts';
 
 const SOURCE_FILE = 'src/plugins/harness/builtin/knowledge.plugin.ts';
@@ -48,7 +41,7 @@ export const KnowledgePlugin: HarnessPlugin = {
     '打通内置 MDX 教材、pdf2abp 入库书目、EPUB 电子书与 MinerU 学术文献的统一目录、大纲与全文阅读能力。',
   sourceFile: SOURCE_FILE,
   activate: (context: PluginContext) => {
-    // 0. /papers 快捷指令
+
     context.registerCommand({
       command: '/papers',
       aliases: ['/docs'],
@@ -101,7 +94,6 @@ export const KnowledgePlugin: HarnessPlugin = {
       },
     });
 
-    // 1. list_library_items
     context.registerTool({
       name: 'list_library_items',
       displayName: '列举全库书籍与文献',
@@ -180,7 +172,6 @@ export const KnowledgePlugin: HarnessPlugin = {
       },
     });
 
-    // 2. get_document_outline
     context.registerTool({
       name: 'get_document_outline',
       displayName: '读取文档结构化大纲',
@@ -256,7 +247,6 @@ export const KnowledgePlugin: HarnessPlugin = {
       },
     });
 
-    // 3. read_document_section
     context.registerTool({
       name: 'read_document_section',
       displayName: '精读任意书籍或文献分节正文',

@@ -59,7 +59,6 @@ describe('Content Provider Engine Unit Tests', () => {
 
     const gzipped = zlib.gzipSync(Buffer.from(JSON.stringify(bundle), 'utf8'));
 
-    // 测试内存与 IndexedDB 回退解压
     const meta = await provider.installBookFromAbp(gzipped);
     expect(meta.manifest.id).toBe('math-test_book');
     expect(meta.manifest.title).toBe('测试数学教材');
@@ -107,7 +106,6 @@ describe('Content Provider Engine Unit Tests', () => {
     const gzipped = zlib.gzipSync(Buffer.from(JSON.stringify(bundle), 'utf8'));
     await expect(provider.installBookFromAbp(gzipped)).rejects.toThrow('未检测到 Electron 桌面端 IPC 桥接接口');
 
-    // 当注入 window.astrolib IPC 时，严格透传原生通道
     const installed: any[] = [{ manifest: mockManifest, installedAt: new Date().toISOString(), sourceType: 'local-file' }];
     vi.stubGlobal('window', {
       astrolib: {
@@ -199,7 +197,6 @@ describe('Content Provider Engine Unit Tests', () => {
 
     const renderedHtml = renderReaderPageHtml(mockManifest, mockPayload);
 
-    // 1. 验证顶栏纯净：保留单窗口阅读控制器，剔除全局设置/主题/工作台/GitHub/Brand 设施
     const headerMatch = renderedHtml.match(/<header[\s\S]*?<\/header>/i);
     const headerHtml = headerMatch ? headerMatch[0] : '';
     expect(headerHtml).toContain('vp-sidebar-toggle-btn');
@@ -214,18 +211,16 @@ describe('Content Provider Engine Unit Tests', () => {
     expect(headerHtml).not.toContain('vp-tools-wrapper');
     expect(headerHtml).not.toContain('vp-social-group');
 
-    // 2. 验证左侧目录树仅渲染当前书目章节（不含跨学科及其他书目）与 KaTeX 公式渲染
     const sidebarMatch = renderedHtml.match(/<sl-sidebar-state-persist[\s\S]*?<\/sl-sidebar-state-persist>/i);
     const sidebarHtml = sidebarMatch ? sidebarMatch[0] : '';
     expect(sidebarHtml).toContain('current-book-sidebar');
     expect(sidebarHtml).not.toContain('sidebar-category-item');
     expect(sidebarHtml).toContain('gdocs-outline-link');
     expect(sidebarHtml).toContain('aria-current="page"');
-    // $e$ 和 $\gamma$ 必须渲染为 KaTeX HTML 而非裸字符
+
     expect(sidebarHtml).toContain('annotation encoding="application/x-tex">e</annotation>');
     expect(sidebarHtml).toContain('annotation encoding="application/x-tex">\\gamma</annotation>');
 
-    // 3. 验证 MinerU OCR 提示框架与出版信息元数据 Chips
     expect(renderedHtml).toContain('astrolib-notice-framework');
     expect(renderedHtml).toContain('chapter-meta-chip-set');
     expect(renderedHtml).toContain('孙振绮 主编');
@@ -234,7 +229,6 @@ describe('Content Provider Engine Unit Tests', () => {
     expect(renderedHtml).toContain('大学本科 · 教材');
     expect(renderedHtml).toContain('双语助读 (Alt+Y)');
 
-    // 4. 验证右侧 Sideload Dock 与 AI FAB
     expect(renderedHtml).toContain('astrolib-sideload-dock');
     expect(renderedHtml).toContain('custom-toc-list');
     expect(renderedHtml).toContain('ask-fab');
@@ -245,7 +239,7 @@ describe('Content Provider Engine Unit Tests', () => {
       const provider = new WebContentProvider();
       const badBundle = {
         manifest: {
-          schemaVersion: '9.9.9', // invalid
+          schemaVersion: '9.9.9',
           id: 'math-corrupt',
           slug: 'corrupt',
           colSlug: 'math',
@@ -312,26 +306,22 @@ describe('Content Provider Engine Unit Tests', () => {
         return zlib.gzipSync(Buffer.from(JSON.stringify({ manifest, chapters }), 'utf8'));
       };
 
-      // 1. 初次安装：包含 01_intro, 02_next
       await provider.installBookFromAbp(makeBundle(['01_intro', '02_next']));
       let books = await provider.getInstalledBooks();
       expect(books.filter((b) => b.manifest.id === 'math-idempotent')).toHaveLength(1);
       expect(await provider.getChapterPayload('math', 'idempotent', '01_intro')).not.toBeNull();
       expect(await provider.getChapterPayload('math', 'idempotent', '02_next')).not.toBeNull();
 
-      // 2. 重复安装相同版本：条目唯一，内容一致
       await provider.installBookFromAbp(makeBundle(['01_intro', '02_next']));
       books = await provider.getInstalledBooks();
       expect(books.filter((b) => b.manifest.id === 'math-idempotent')).toHaveLength(1);
 
-      // 3. 降级安装：仅包含 01_intro；旧章节 02_next 必须被清除
       await provider.installBookFromAbp(makeBundle(['01_intro']));
       books = await provider.getInstalledBooks();
       expect(books.filter((b) => b.manifest.id === 'math-idempotent')).toHaveLength(1);
       expect(await provider.getChapterPayload('math', 'idempotent', '01_intro')).not.toBeNull();
       expect(await provider.getChapterPayload('math', 'idempotent', '02_next')).toBeNull();
 
-      // 4. 清理卸载
       await provider.removeBook('math', 'idempotent');
       books = await provider.getInstalledBooks();
       expect(books.filter((b) => b.manifest.id === 'math-idempotent')).toHaveLength(0);
@@ -386,7 +376,6 @@ describe('Content Provider Engine Unit Tests', () => {
       };
       const gzipped = zlib.gzipSync(Buffer.from(JSON.stringify(bundle), 'utf8'));
 
-      // Mock putManifest 抛错
       const originalPutManifest = (provider as any).db.putManifest;
       (provider as any).db.putManifest = vi.fn().mockRejectedValue(new Error('IndexedDB QuotaExceededError'));
 
@@ -397,14 +386,11 @@ describe('Content Provider Engine Unit Tests', () => {
         })
       ).rejects.toThrow('IndexedDB QuotaExceededError');
 
-      // 验证：绝对不应报告 100% 进度
       expect(onProgressCalls).not.toContain(100);
 
-      // 验证：书库列表中绝对不可见该书（零半残状态）
       const books = await provider.getInstalledBooks();
       expect(books.some((b) => b.manifest.id === 'math-rollback_demo')).toBe(false);
 
-      // 恢复 originalPutManifest
       (provider as any).db.putManifest = originalPutManifest;
     });
 
@@ -624,7 +610,7 @@ describe('Content Provider Engine Unit Tests', () => {
       const targetDir = path.resolve(process.cwd(), '.tmp/dev-abp-packs/cs-dev_test');
 
       try {
-        // A. 初始安装: c1, c2
+
         const res1 = await simulateDevRequest({
           method: 'POST',
           url: '/api/library/upload-abp',
@@ -635,7 +621,6 @@ describe('Content Provider Engine Unit Tests', () => {
         expect(fs.existsSync(path.join(targetDir, 'chapters/c1.json'))).toBe(true);
         expect(fs.existsSync(path.join(targetDir, 'chapters/c2.json'))).toBe(true);
 
-        // B. 降级安装: 仅 c1。旧章节 c2 必须被物理清除！
         const res2 = await simulateDevRequest({
           method: 'POST',
           url: '/api/library/upload-abp',
@@ -645,7 +630,6 @@ describe('Content Provider Engine Unit Tests', () => {
         expect(fs.existsSync(path.join(targetDir, 'chapters/c1.json'))).toBe(true);
         expect(fs.existsSync(path.join(targetDir, 'chapters/c2.json'))).toBe(false);
 
-        // C. DELETE 端点测试
         const res3 = await simulateDevRequest({
           method: 'DELETE',
           url: '/api/library/books/cs-dev_test',

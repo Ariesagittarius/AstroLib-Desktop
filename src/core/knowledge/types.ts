@@ -1,28 +1,16 @@
-/**
- * src/core/knowledge/types.ts
- * ============================================================================
- * AstroLib 统一知识库协议契约 (Unified Knowledge Registry & Document Adapters)
- * ============================================================================
- * 职责：
- * 1. 解耦 MDX 源码教材、pdf2abp 编译包、EPUB 电子书与 MinerU 学术文献四种内容来源；
- * 2. 提供一致的文档元数据、分层目录树 (Outline)、语义块 (Blocks) 与全文检索模型；
- * 3. 保持纯 TypeScript 接口定义，严禁依赖 UI 或前端框架状态。
- * ============================================================================
- */
-
 export type KnowledgeEntityKind = 'book' | 'paper';
 
 export type KnowledgeSourceFormat = 'mdx' | 'abp' | 'epub' | 'paper';
 
 export interface KnowledgeDocumentSummary {
-  /** 规范唯一 URI，如 astrolib://math/math_analysis 或 astrolib://paper/task_xxx */
+
   uri: string;
-  /** 内部唯一键，如 book:math-math_analysis 或 paper:task_xxx */
+
   id: string;
   kind: KnowledgeEntityKind;
   sourceFormat: KnowledgeSourceFormat;
   colSlug: string;
-  /** 书籍为 bookSlug，文献为 taskId */
+
   slug: string;
   title: string;
   author?: string;
@@ -38,7 +26,7 @@ export interface KnowledgeDocumentSummary {
   updatedAt?: number;
   pageCount?: number;
   imageCount?: number;
-  /** 物理根路径（仅后端内部使用，不对外部透出敏感路径） */
+
   sourceRoot?: string;
 }
 

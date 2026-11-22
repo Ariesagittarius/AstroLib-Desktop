@@ -1,14 +1,3 @@
-/**
- * src/features/reader-layout/runtime-enhancer.ts
- * ============================================================================
- * 阅读视窗运行时增强器：
- * 1. 按本书独立的排版/字体配置与按格式全局默认继承（ABP 思源黑体体系 vs EPUB 思源宋体体系）；
- * 2. 扩展“版式与视图”浮层（字号、拉丁/中文字体、首行缩进、标点风格、恢复格式默认）；
- * 3. 双栏对页平滑淡入/淡出翻页转场（消除内容横穿中缝的违和滑动）；
- * 4. 阅读区左右侧栏无业务拖拽分割线与宽度持久化。
- * ============================================================================
- */
-
 import { CJK_PRESETS, LATIN_PRESETS, type CjkFont, type LatinFont } from '../../scripts/font-presets.ts';
 import {
   formatFontSizePt,
@@ -281,7 +270,6 @@ function enhanceLayoutPopover(pop: HTMLElement): void {
     pop.appendChild(typoSection);
   }
 
-  // 在捕获阶段快照当前的排版覆写，防止旧版 reader-layout-addon 写入 4 字段时冲刷字体配置
   pop.addEventListener(
     'click',
     (ev) => {
@@ -699,7 +687,6 @@ export function initReaderRuntimeEnhancer(): void {
   if (isInitialized) return;
   isInitialized = true;
 
-  // 延迟再次挂接双栏动画器与浮层增强，兼容异步挂载或旧壳脚本后注入情形
   setTimeout(() => {
     const delayedPop = document.getElementById('astrolib-layout-popover');
     if (delayedPop) enhanceLayoutPopover(delayedPop);

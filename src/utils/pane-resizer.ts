@@ -1,33 +1,23 @@
-/**
- * src/utils/pane-resizer.ts
- * ============================================================================
- * 通用无业务语义分栏拖拽缩放器 (Reusable Split-Pane Drag Resizer)
- * ============================================================================
- * - 基于 Pointer Events Capture 实现丝滑拖拽，不依赖具体业务组件；
- * - 动态约束 min/max 安全区，防止挤压中心阅读区或对话区至不可读宽度；
- * - 支持双击恢复默认宽度，以及键盘 ArrowLeft/ArrowRight 无障碍微调。
- */
-
 export type ResizerSide = 'left' | 'right';
 
 export interface PaneResizerOptions {
-  /** 作为拖拽热区的分割线 DOM 元素 */
+
   handle: HTMLElement;
-  /** 面板位于主视口左侧还是右侧 */
+
   side: ResizerSide;
-  /** 读取当前面板像素宽度 */
+
   getInitialWidth: () => number;
-  /** 获取允许的最小像素宽度 */
+
   getMinWidth: () => number;
-  /** 获取允许的最大像素宽度 */
+
   getMaxWidth: () => number;
-  /** 拖拽或键盘调整过程中实时应用的回调 */
+
   onResize: (widthPx: number) => void;
-  /** 拖拽结束或键盘微调完成时的持久化回调 */
+
   onCommit?: (widthPx: number) => void;
-  /** 双击分割线或按下 Home 键时的重置回调 */
+
   onReset?: () => void;
-  /** 键盘方向键单步微调像素（默认 16px） */
+
   stepPx?: number;
 }
 

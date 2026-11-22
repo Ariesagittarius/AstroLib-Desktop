@@ -1,15 +1,3 @@
-/**
- * src/services/translation/client/translation-dock-controller.state.ts
- * ============================================================================
- * Pure Headless State Machine for Translation Dock Controller
- * ============================================================================
- * 规范：
- * 1. 绝对无 DOM 依赖：严禁出现 window, document, querySelector, addEventListener；
- * 2. 状态转移确定性与幂等性：严格约束 idle <-> translating -> completed/error 闭环；
- * 3. 序列化与水合支持：段落状态与导出配置纯数据管理。
- * ============================================================================
- */
-
 import type { ParagraphUnit, TranslationProviderId, TranslationExportFormat, TranslationDisplayMode } from '../types';
 
 export type TranslationStatus = 'idle' | 'translating' | 'error';
@@ -18,7 +6,7 @@ export interface TranslationProgress {
   total: number;
   completed: number;
   failed: number;
-  percent: number; // 0 ~ 100
+  percent: number;
 }
 
 export interface TranslationDockStateSnapshot {
@@ -52,8 +40,6 @@ export class TranslationDockStateMachine {
       this.hydrate(initialSnapshot);
     }
   }
-
-  // --- Getters ---
 
   public getStatus(): TranslationStatus {
     return this.status;
@@ -99,11 +85,9 @@ export class TranslationDockStateMachine {
     return this.errorMessage;
   }
 
-  // --- State Transitions ---
-
   public startTranslation(): boolean {
     if (this.status === 'translating') {
-      return false; // 正在翻译中禁止重复启动
+      return false;
     }
     this.status = 'translating';
     this.errorMessage = null;
@@ -138,8 +122,6 @@ export class TranslationDockStateMachine {
     this.errorMessage = null;
     return true;
   }
-
-  // --- Configuration & Mode Actions ---
 
   public setProvider(provider: TranslationProviderId): void {
     this.currentProvider = provider;
@@ -184,8 +166,6 @@ export class TranslationDockStateMachine {
     return true;
   }
 
-  // --- Pure Function Calculations ---
-
   public calculateProgress(): TranslationProgress {
     const total = this.paragraphs.length;
     if (total === 0) {
@@ -206,8 +186,6 @@ export class TranslationDockStateMachine {
     const percent = Math.min(100, Math.round(((completed + failed) / total) * 100));
     return { total, completed, failed, percent };
   }
-
-  // --- Serialization & Hydration ---
 
   public serialize(): TranslationDockStateSnapshot {
     return {

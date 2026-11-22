@@ -1,16 +1,3 @@
-/**
- * src/core/content-api/exercise-bridge.ts
- * ============================================================================
- * AstroLib 习题库与解析桥接器 (Exercise Database & AI Solution Bridge)
- * ============================================================================
- * 职责：
- * 1. 扫描与索引 src/data/exercises/ 下的题库数据 (线性代数、工科数分、数理统计等)；
- * 2. 桥接 chapter_index.json 实现按图书与章节精确过滤习题；
- * 3. 关联 community_ai_solutions.json 注入多模型题解与评分；
- * 4. 提供模糊搜索与多关键词智能分词检索能力，支持题干、解析与知识点多维命中。
- * ============================================================================
- */
-
 import fs from 'node:fs';
 import path from 'node:path';
 import { findProjectRoot } from '../catalog/content-paths.ts';
@@ -72,9 +59,6 @@ let cachedChapterIndex: Record<string, Record<string, string[]>> | null = null;
 let cachedCommunitySolutions: Record<string, any[]> | null = null;
 const cachedBookQuestions = new Map<string, RawQuestion[]>();
 
-/**
- * 加载 chapter_index.json
- */
 function getChapterIndex(): Record<string, Record<string, string[]>> {
   if (!cachedChapterIndex) {
     const dir = resolveExercisesDir();
@@ -92,9 +76,6 @@ function getChapterIndex(): Record<string, Record<string, string[]>> {
   return cachedChapterIndex || {};
 }
 
-/**
- * 加载 community_ai_solutions.json
- */
 function getCommunitySolutions(): Record<string, any[]> {
   if (!cachedCommunitySolutions) {
     const dir = resolveExercisesDir();
@@ -112,9 +93,6 @@ function getCommunitySolutions(): Record<string, any[]> {
   return cachedCommunitySolutions || {};
 }
 
-/**
- * 读取某本书的所有题目
- */
 function loadBookQuestions(bookSlug: string): RawQuestion[] {
   if (cachedBookQuestions.has(bookSlug)) {
     return cachedBookQuestions.get(bookSlug)!;
@@ -154,9 +132,6 @@ function loadBookQuestions(bookSlug: string): RawQuestion[] {
   return questions;
 }
 
-/**
- * 转换为统一的 ExerciseItem 实体
- */
 function mapToExerciseItem(q: RawQuestion, bookSlug: string): ExerciseItem {
   const communitySols = getCommunitySolutions();
   const rawCommunity = communitySols[q.id] || [];
@@ -170,7 +145,6 @@ function mapToExerciseItem(q: RawQuestion, bookSlug: string): ExerciseItem {
 
   const mappingInfo = q.mapping?.[bookSlug];
 
-  // 提取官方解答与步骤（兼容 string 与 object 结构）
   let solText = q.content?.solution || q.content?.analysis || '';
   let ansText = q.content?.answer || '';
 
@@ -203,9 +177,6 @@ function mapToExerciseItem(q: RawQuestion, bookSlug: string): ExerciseItem {
   };
 }
 
-/**
- * 根据 bookSlug 与 chapterSlug 获取习题列表
- */
 export function getExercisesForChapter(
   colSlug: string,
   bookSlug: string,
@@ -246,13 +217,9 @@ export function getExercisesForChapter(
   return matched.map((q) => mapToExerciseItem(q, bookSlug));
 }
 
-/**
- * 全局搜索习题 (按多关键词智能分词、题号、知识点与题干综合检索)
- */
 export function searchExercises(query: string, limit: number = 20): ExerciseItem[] {
   if (!query || !query.trim()) return [];
 
-  // 将查询拆分为关键词数组 (支持逗号、空格、分号、竖线等多分隔符)
   const tokens = query
     .toLowerCase()
     .split(/[,，\s+、|;；/]+/)
@@ -287,7 +254,6 @@ export function searchExercises(query: string, limit: number = 20): ExerciseItem
         const title = (item.source?.clean_title || item.source?.raw_title || '').toLowerCase();
         const course = (item.source?.course_name || '').toLowerCase();
 
-        // 提取 mapping 知识点
         let kps = '';
         if (item.mapping) {
           for (const m of Object.values(item.mapping)) {
@@ -315,7 +281,6 @@ export function searchExercises(query: string, limit: number = 20): ExerciseItem
     } catch {}
   }
 
-  // 命中关键词越多的排在前面
   scoredItems.sort((a, b) => b.score - a.score);
 
   return scoredItems.slice(0, limit).map(({ item, book }) => mapToExerciseItem(item, book));

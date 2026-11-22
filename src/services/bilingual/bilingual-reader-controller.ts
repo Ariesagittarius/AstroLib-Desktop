@@ -1,16 +1,3 @@
-/**
- * src/services/bilingual/bilingual-reader-controller.ts
- * ============================================================================
- * AstroLib 双语分栏与跨书对照全屏控制器 (Bilingual Split Reader Controller)
- * ============================================================================
- * 负责：
- * 1. 协调双栏 DOM 段落提取与端侧向量对齐请求；
- * 2. 驱动中缝 SVG 贝塞尔曲线箭头动态连线渲染；
- * 3. 驱动底部热力图抽屉；
- * 4. 驱动点击段落联动定位高亮与平滑滚动。
- * ============================================================================
- */
-
 import { BilingualAlignerClient } from './aligner-client.ts';
 import { SvgArrowRenderer } from './svg-arrow-renderer.ts';
 import { HeatmapController } from './heatmap-controller.ts';
@@ -32,8 +19,8 @@ export class BilingualReaderController {
 
   private activeSourceId: string | null = null;
   private activeTargetIds: string[] = [];
-  private currentThreshold = 0.55; // 经基准评测验证集校准的最佳初始阈值
-  private selectedModelId = 'minilm-l12'; // 默认轻量级 CPU/AVX2 模型，亦可一键切换为 Qwen3-0.6B
+  private currentThreshold = 0.55;
+  private selectedModelId = 'minilm-l12';
   private isSyncScrollLocked = true;
 
   init(container: HTMLElement) {
@@ -44,7 +31,6 @@ export class BilingualReaderController {
 
     if (!this.sourceCol || !this.targetCol || !this.svgEl) return;
 
-    // 读取持久化的模型首选偏好
     if (typeof localStorage !== 'undefined') {
       const savedModel = localStorage.getItem('astrolib_bilingual_model');
       if (savedModel) {
@@ -71,9 +57,6 @@ export class BilingualReaderController {
     this.runAlignment();
   }
 
-  /**
-   * 同步界面阈值滑块与数值标签
-   */
   private syncThresholdSliderUi() {
     const slider = document.getElementById('heatmap-threshold-slider') as HTMLInputElement | null;
     const valLabel = document.getElementById('heatmap-threshold-val');
@@ -83,9 +66,6 @@ export class BilingualReaderController {
     }
   }
 
-  /**
-   * 初始化 M3 向量模型选择芯片交互
-   */
   private initModelSelector(sheetEl: HTMLElement) {
     const chipBtns = sheetEl.querySelectorAll<HTMLButtonElement>('.model-chip-set [data-model-id]');
     chipBtns.forEach((btn) => {
@@ -103,7 +83,6 @@ export class BilingualReaderController {
       });
     });
 
-    // 动态探测后端多模型就绪状态
     BilingualAlignerClient.getAvailableModels().then((models) => {
       const qwenInfo = models.find((m) => m.id === 'qwen3-0.6b');
       const qwenBtn = sheetEl.querySelector<HTMLButtonElement>('.model-chip-set [data-model-id="qwen3-0.6b"]');
@@ -117,13 +96,10 @@ export class BilingualReaderController {
         }
       }
     }).catch(() => {
-      // 离线环境静默忽略
+
     });
   }
 
-  /**
-   * 动态切换对齐向量模型（轻量 MiniLM 与高精 Qwen3-0.6B 无缝互切）
-   */
   async switchModel(modelId: string) {
     if (this.selectedModelId === modelId) return;
     this.selectedModelId = modelId;
@@ -132,7 +108,6 @@ export class BilingualReaderController {
       localStorage.setItem('astrolib_bilingual_model', modelId);
     }
 
-    // 更新界面芯片状态
     const sheetEl = document.getElementById('bilingual-heatmap-sheet');
     if (sheetEl) {
       const chipBtns = sheetEl.querySelectorAll<HTMLButtonElement>('.model-chip-set [data-model-id]');
@@ -144,15 +119,13 @@ export class BilingualReaderController {
       });
     }
 
-    // 针对不同模型的几何表示空间校准推荐阈值
     if (modelId === 'qwen3-0.6b') {
-      this.currentThreshold = 0.50; // Qwen3 跨领域底噪压制至 0.15~0.25，0.50 能清晰剔除干扰
+      this.currentThreshold = 0.50;
     } else {
       this.currentThreshold = 0.55;
     }
     this.syncThresholdSliderUi();
 
-    // 立即向用户展示加载反馈
     this.updateEngineBadge({
       state: 'loading',
       modelId: this.selectedModelId,
@@ -177,7 +150,6 @@ export class BilingualReaderController {
   private bindDomEvents() {
     if (!this.sourceCol || !this.targetCol) return;
 
-    // 1. 点击左栏段落 -> 聚焦连线并滚动右栏对应段落
     this.sourceCol.addEventListener('click', (e) => {
       const targetEl = (e.target as HTMLElement).closest('[data-trans-id]') as HTMLElement | null;
       if (!targetEl) return;
@@ -187,7 +159,6 @@ export class BilingualReaderController {
       }
     });
 
-    // 2. 点击右栏段落 -> 反向聚焦左栏关联段落
     this.targetCol.addEventListener('click', (e) => {
       const targetEl = (e.target as HTMLElement).closest('[data-trans-id]') as HTMLElement | null;
       if (!targetEl) return;
@@ -197,7 +168,6 @@ export class BilingualReaderController {
       }
     });
 
-    // 3. 滚动重绘连线
     const handleScroll = () => {
       window.requestAnimationFrame(() => {
         this.redrawArrows();
@@ -209,9 +179,6 @@ export class BilingualReaderController {
     window.addEventListener('resize', handleScroll, { passive: true });
   }
 
-  /**
-   * 执行段落提取与向量对齐推理
-   */
   async runAlignment() {
     if (!this.sourceCol || !this.targetCol) return;
 
@@ -222,7 +189,6 @@ export class BilingualReaderController {
       return;
     }
 
-    // 立即更新为加载状态，提供即时视觉反馈与呼吸感脉冲
     this.updateEngineBadge({
       state: 'loading',
       modelId: this.selectedModelId,
@@ -239,7 +205,6 @@ export class BilingualReaderController {
         }
       );
 
-      // 若服务端返回自适应校准阈值，结合当前状态优化
       if (this.currentResult.calibratedThreshold) {
         this.currentThreshold = Math.max(0.40, Math.min(0.70, this.currentResult.calibratedThreshold));
         this.syncThresholdSliderUi();
@@ -271,7 +236,6 @@ export class BilingualReaderController {
       this.heatmapController.setData(this.currentResult, this.currentThreshold);
       this.updateUnmatchedStates();
 
-      // 默认高亮首个具备关联匹配的段落，使箭头连线与对侧对齐微光即时生效可见
       const firstMatchedLink = this.currentResult.links.find((l) => l.similarity >= this.currentThreshold);
       if (firstMatchedLink) {
         this.selectSourceParagraph(firstMatchedLink.sourceId);
@@ -288,9 +252,6 @@ export class BilingualReaderController {
     }
   }
 
-  /**
-   * 更新右下角向量推理引擎徽标状态（多态：加载、就绪、降级、异常）
-   */
   private updateEngineBadge(status: {
     state: 'loading' | 'ready' | 'fallback' | 'error';
     modelId: string;
@@ -304,7 +265,6 @@ export class BilingualReaderController {
     const badge = document.getElementById('heatmap-engine-badge');
     if (!badge) return;
 
-    // 确保内部结构完整
     if (!badge.querySelector('.engine-status-dot')) {
       badge.innerHTML = `
         <span class="engine-status-dot" aria-hidden="true"></span>
@@ -421,20 +381,17 @@ export class BilingualReaderController {
   private selectSourceParagraph(srcId: string) {
     this.activeSourceId = srcId;
 
-    // 清空现有高亮
     this.clearHighlights();
 
     const srcEl = this.container?.querySelector(`[data-trans-id="${srcId}"]`);
     srcEl?.classList.add('bilingual-highlight-active');
 
-    // 查找对侧关联段落
     const matchingLinks = (this.currentResult?.links || []).filter(
       (l) => l.sourceId === srcId && l.similarity >= this.currentThreshold
     );
 
     this.activeTargetIds = matchingLinks.map((l) => l.targetId);
 
-    // 高亮并平滑滚动首要关联目标
     matchingLinks.forEach((link, idx) => {
       const tgtEl = this.container?.querySelector(`[data-trans-id="${link.targetId}"]`) as HTMLElement | null;
       if (tgtEl) {
@@ -449,7 +406,7 @@ export class BilingualReaderController {
   }
 
   private selectTargetParagraph(tgtId: string) {
-    // 逆向查找源段落
+
     const matchingLinks = (this.currentResult?.links || []).filter(
       (l) => l.targetId === tgtId && l.similarity >= this.currentThreshold
     );

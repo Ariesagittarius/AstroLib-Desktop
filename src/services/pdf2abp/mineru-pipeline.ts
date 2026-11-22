@@ -1,20 +1,3 @@
-/**
- * src/services/pdf2abp/mineru-pipeline.ts
- * ============================================================================
- * MinerU PDF 自动分卷摄取与多卷确定性缝合管线
- * ============================================================================
- * 职责：
- * 1. 检测云端 MinerU API Token 与本地 MinerU Pipeline 可用性（遵循决策 A2）；
- * 2. 对超出 200 页或 180 MB 的 PDF 自动拆分并在工作区内逐卷运行 MinerU；
- * 3. 支持断点缓存：单卷完成后落盘标记，重跑自动跳过已完成分卷；
- * 4. 确定性多卷缝合（stitchMineruParts）：
- *    - 汇聚 images/ 并以 p{partIndex}_{name} 防冲突重命名；
- *    - 全局 1-based 物理页码重映射（pages_blocks.json）；
- *    - 缝合 full.md 并防止拼接处 $$ 状态翻转；
- *    - 生成轻量化 mineru-summary.json（标题树、每页字数/公式/图表统计）。
- * ============================================================================
- */
-
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
@@ -112,9 +95,6 @@ function normalizeImageBasename(rawPath: string | undefined): string | null {
   return path.basename(clean);
 }
 
-/**
- * 解析单卷 MinerU 解压目录中的所有内容文件（兼容扁平或 UUID 子目录）
- */
 function locateMineruArtifactDir(partUnpackedDir: string): {
   artifactDir: string;
   fullMdPath: string | null;
@@ -150,9 +130,6 @@ export interface StitchPartInput {
   unpackedDir: string;
 }
 
-/**
- * 确定性缝合多个 MinerU 分卷产物为全局对齐的 Markdown、PageBlocks 与 Images
- */
 export function stitchMineruParts(
   parts: StitchPartInput[],
   stitchedDir: string,
@@ -178,9 +155,8 @@ export function stitchMineruParts(
 
   for (const part of parts) {
     const located = locateMineruArtifactDir(part.unpackedDir);
-    const imgRenameMap = new Map<string, string>(); // origName -> prefixedName
+    const imgRenameMap = new Map<string, string>();
 
-    // 1. 收集并防冲突重命名图片
     if (located.imagesDir && fs.existsSync(located.imagesDir)) {
       for (const fileName of fs.readdirSync(located.imagesDir)) {
         const srcImg = path.join(located.imagesDir, fileName);
@@ -199,18 +175,16 @@ export function stitchMineruParts(
       return `images/${renamed}`;
     };
 
-    // 2. 重写并缝合 full.md
     if (located.fullMdPath && fs.existsSync(located.fullMdPath)) {
       let mdText = fs.readFileSync(located.fullMdPath, 'utf-8');
       for (const [origName, prefixed] of imgRenameMap.entries()) {
         mdText = mdText.replaceAll(`images/${origName}`, `images/${prefixed}`);
       }
-      // 修复尾部未闭合 $$ 或首部 $$ 粘连
+
       mdText = mdText.trim();
       mdChunks.push(`<!-- ASTROLIB_MINERU_PART ${part.partIndex} PAGES ${part.startPage}-${part.endPage} -->\n\n${mdText}`);
     }
 
-    // 3. 解析并重映射 content_list_v2.json（优先）或 content_list.json
     let parsedPartBlocks = false;
 
     if (located.contentListV2Path && fs.existsSync(located.contentListV2Path)) {
@@ -404,7 +378,6 @@ export function stitchMineruParts(
   const fullMdPath = path.join(stitchedDir, 'full.md');
   const pagesBlocksPath = path.join(stitchedDir, 'pages_blocks.json');
 
-  // 防止跨分卷接缝处的 $$ 折叠反转
   const combinedMd = mdChunks.join('\n\n').replace(/\$\$\s*\$\$/g, '$$\n\n$$');
   fs.writeFileSync(fullMdPath, combinedMd, 'utf-8');
   fs.writeFileSync(pagesBlocksPath, JSON.stringify(allBlocks, null, 2), 'utf-8');
@@ -438,9 +411,6 @@ function computePdfFingerprint(pdfPath: string): string {
   return hash.digest('hex').slice(0, 16);
 }
 
-/**
- * 端到端在工作区内执行 MinerU 摄取（自动分卷、云端或本地执行、断点复用、多卷缝合）
- */
 export async function runMineruOnPdf(params: {
   pdfPath: string;
   workspace: JobWorkspace;
@@ -561,7 +531,7 @@ export async function runMineruOnPdf(params: {
           };
         }
       } catch {
-        // corrupt done marker, re-run
+
       }
     }
 

@@ -43,10 +43,10 @@ If you write the Laplacian operator as $\begin{array} { r } { \nabla ^ { 2 } = \
 
 To understand why the Laplacian performs such a diverse set of useful tasks, it helps to understand that at each point in space, the Laplacian of a function represents the difference between the value of the function at that point and the average of the values at surrounding points. How does it do that? Consider the region around the point labeled (0, 0, 0) in Figure 2.17. The function $\phi$ exists in all three dimensions around this region, and the cube is shown only to illustrate the location of six points around the central point (0, 0, 0), where the value of the function $\phi$ is $\phi _ { 0 }$ . Notice that there are points in front of and behind the central point (along the x-axis), points to the left and right (along the y-axis), and points above and below (along the z-axis). To see how the change in the change in $\phi$ is related to $\phi _ { 0 } .$ , consider for now the points along the x-axis, as shown in Figure 2.18. Notice that the value of $\phi$ at the point in back of the central point is labeled $\phi _ { B a c k }$ and the value of $\phi$ in front of the central point is labeled $\phi _ { F r o n t }$ . If each of these points is located a distance of $\Delta x$ from $( 0 , 0 , 0 )$ , then the partial derivative of $\phi$ at point B can be approximated by $( \phi _ { 0 } - \phi _ { B a c k } ) / \Delta x$ . Likewise, the partial derivative of $\phi$ at point A can be approximated by $( \phi _ { F r o n t } - \phi _ { 0 } ) / \Delta x$
 
-![](images/dc9233f3cd290165a3d4725a8cf43996148bb426abbb6c95478fe3013cc5fbce.jpg)  
+![](images/dc9233f3cd290165a3d4725a8cf43996148bb426abbb6c95478fe3013cc5fbce.jpg)
 Figure 2.17 Points surrounding (0, 0, 0) at which $\phi = \phi _ { 0 }$
 
-![](images/edacf190076a822dd731f98db1eca9811b8be3e064bbe7fe704004eeba079dfe.jpg)  
+![](images/edacf190076a822dd731f98db1eca9811b8be3e064bbe7fe704004eeba079dfe.jpg)
 Figure 2.18 Change in $\phi$ along x-axis.
 
 But the Laplacian involves not just the change in $\phi .$ , but the change in the change of $\phi .$ . For that, you can write
@@ -87,18 +87,18 @@ And how does the difference between a function's value at a point and the averag
 
 To better understand how peaks and valleys relate to the divergence of the gradient of a function, recall that the gradient points in direction of steepest incline (or decline if the gradient is negative), and divergence measures the "flow" of a vector field out of a region (or into the region if the divergence is negative). Now consider the peak of the function shown in Figure 2.19(a) and the gradient of the function in the vicinity of that peak, shown in Fig ure 2.19(b). Near the peak, the gradient vectors "flow" toward the peak from all directions. Vector fields that converge upon a point have negative divergence, so this means that the divergence of the gradient in the vicinity of a peak will be a large negative number. This is consistent with the conclusion that the Laplacian is negative near a function's maximum point.
 
-![](images/b8dbe06a1f709a371a86a6bc3e45ed53193ef720ea7544e58049bef9fd8fcf1a.jpg)  
+![](images/b8dbe06a1f709a371a86a6bc3e45ed53193ef720ea7544e58049bef9fd8fcf1a.jpg)
 (a)
 
-![](images/c5d9446e9fce5c7f22edc8790c8b5655e45a303bc9c744adbc64f6337e426af1.jpg)  
-(b)  
+![](images/c5d9446e9fce5c7f22edc8790c8b5655e45a303bc9c744adbc64f6337e426af1.jpg)
+(b)
 Figure 2.19 Function $\phi$ (varying as 1/r) and the gradient and contours of $\phi$ near the peak.
 
-![](images/0e62284122d6c2caf47ce26e881f216b70629aa96a3f2c42d21e3d8038198581.jpg)  
+![](images/0e62284122d6c2caf47ce26e881f216b70629aa96a3f2c42d21e3d8038198581.jpg)
 (a)
 
-![](images/2d074a5810e4e5a114f7d75608fc5910feda1e8fa87a026f79fd4ee826b5591e.jpg)  
-(b)  
+![](images/2d074a5810e4e5a114f7d75608fc5910feda1e8fa87a026f79fd4ee826b5591e.jpg)
+(b)
 Figure 2.20 Function $\phi$ (varying as 1/r) and the gradient and contours of $\phi$ near the bottom of the valley.
 
 The alternative case is shown in Figures 2.20(a) and 2.20(b). Near the bot tom of a valley, the gradient "flows" outward in all directions, so the divergence of the gradient is a large positive number in this case (again consistent with the conclusion that the Laplacian of a minimum point is positive). And what is the value of the Laplacian of a function away from a peak or valley? The answer to that question depends on the shape of the function in the vicinity of the point in question. As described in Section 2.9, the value of the divergence depends on how strongly the function "flows" away from a small volume surrounding the point of interest. Since the Laplacian involves the divergence of the gradient, the question is whether the gradient vectors "flow" toward or away from the point (in other words, whether the gradient vectors tend to concentrate toward or disperse away from that point). If the inward flow of gradient vectors equals the outward flow, then the Laplacian of the function is zero at that point. But if the length and direction of the gradient vectors conspire to make the outward flow greater than the inward flow at some point, then the Laplacian is positive at that point.

@@ -1,20 +1,7 @@
-/**
- * src/styles/harness/tokens.css
- * ============================================================================
- * AstroLib Agent Harness 专属设计系统设计变量 (Tokens & Visual Theme)
- * ============================================================================
- * 极简、通透、高质感工程师美学：
- * - 纯净微灰边框与自适应表面色
- * - 精致圆角 (6px, 10px, 14px, pill)
- * - 紧凑高信息密度排版
- * ============================================================================
- */
-
 :root {
   --harness-font-family: 'Google Sans', 'Google Sans Text', 'Source Han Sans SC', 'Source Han Sans CN', 'Noto Sans SC', 'Noto Sans SC Variable', '思源黑体', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --harness-font-mono: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'SF Mono', Consolas, 'Source Han Sans SC', 'Noto Sans SC Variable', '思源黑体', monospace;
 
-  /* 基础色彩系统 (深度接入 Material Design 3 / Material You 动态色彩系统，纯净轻灵无滞重灰底) */
   --harness-bg-window: var(--md-sys-color-surface, #ffffff);
   --harness-bg-sidebar: var(--md-sys-color-surface, #ffffff);
   --harness-bg-chat: var(--md-sys-color-surface, #ffffff);
@@ -30,7 +17,6 @@
   --harness-text-tertiary: var(--md-sys-color-outline, #80868b);
   --harness-text-accent: var(--md-sys-color-primary, #00668b);
 
-  /* 主题色直接联动系统主色 (随主题色盘动态切换，杜绝特立独行) */
   --harness-accent-blue: var(--md-sys-color-primary, #00668b);
   --harness-accent-blue-hover: var(--md-sys-color-primary, #00506e);
   --harness-accent-blue-subtle: var(--md-sys-color-primary-container, #c2e8ff);

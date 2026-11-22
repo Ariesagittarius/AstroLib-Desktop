@@ -23,7 +23,7 @@ function mergesort(a[1...n])
 Input: An array of numbers a[1...n]
 Output: A sorted version of this array
 if n > 1:
-    return merge(mergesort(a[1...lf/2]), 
+    return merge(mergesort(a[1...lf/2]),
     mergesort(a[lf/2]+1...n]))
 else:
     return a
@@ -62,7 +62,7 @@ while |Q| &gt; 1:
 return eject(Q)
 </div>
 
-![](../images/b4c81a0e400f98486b79dbb46ca30ab6c9ca7df7ff4ff1b365a7f4fa1cc05d2f.jpg)  
+![](../images/b4c81a0e400f98486b79dbb46ca30ab6c9ca7df7ff4ff1b365a7f4fa1cc05d2f.jpg)
 图 2-4 mergesort(合并排序)中合并操作的顺序
 
 上述算法思想也暗示了 mergesort 可以通过迭代的形式实现。在任意时刻，都有一组“活动的”数组——起初是单元素数组——当前的活动数组成对地进行合并，形成下一批活动数组。这些数组可以通过一个队列来组织，同时不断地从队列头部取出两个数组进行合并，然后把合并的结果插入队列尾部。
@@ -73,7 +73,7 @@ return eject(Q)
 
 排序算法可以通过树结构来描述。图2-5中的树实现了对一个数组的排序，该数组中含有三个元素， $a_1, a_2, a_3$ 。排序过程的步骤如下：首先比较 $a_1$ 和 $a_2$ ，如果前者更大，则将它与 $a_3$ 比较；否则，比较 $a_2$ 和 $a_3$ 。按照这一思路不断进行下去。最终排序过程在树的某个叶节点终止，这个叶节点以1,2,3三个数排列的方式，给出了三个元素的实际顺序。例如，如果 $a_2 < a_1 < a_3$ ，则我们最终得到的叶节点上标记的顺序为“213”。
 
-![](../images/bdad63c18aaab69fed7ce856abe11d320513b21423f9ab5bbf9fb78d2d351c0c.jpg)  
+![](../images/bdad63c18aaab69fed7ce856abe11d320513b21423f9ab5bbf9fb78d2d351c0c.jpg)
 图2-5 一个数组的排序
 
 这棵树的深度(depth)——即从树根节点到树叶节点的最长路径上的比较次数，在本例中是3——恰好是该算法时间复杂度的最差情况。

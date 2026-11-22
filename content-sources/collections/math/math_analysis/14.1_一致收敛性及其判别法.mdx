@@ -10,7 +10,6 @@ import Note from '@/components/Note.astro';
 import Block from '@/components/Block.astro';
 import Method from '@/components/Method.astro';
 
-
 函数是数学分析的主要研究对象。将函数展开为函数项级数，使得级数的通项是比较简单的函数，这样就为函数的研究和计算提供了新工具。对于以函数项级数的和函数形式出现的大量非初等函数，如何利用级数来研究它们的基本性质，如连续性、可微性、可积性以及如何计算它们的导数和积分就成为需要解决的基本理论问题。为此我们需要引进新的概念，这就是一致收敛性。
 
 ## 14.1.1 基本内容
@@ -36,7 +35,7 @@ import Method from '@/components/Method.astro';
 <Example title="例题 14.1.1">
 非负连续函数列
 
-(1) $\{xe^{-nx}\}$ ， (2) $\{nxe^{-nx}\}$ ， (3) $\{n^{2}xe^{-nx}\}$ 
+(1) $\{xe^{-nx}\}$ ， (2) $\{nxe^{-nx}\}$ ， (3) $\{n^{2}xe^{-nx}\}$
 
 在区间 $[0,1]$ 上收敛于同一个极限函数 $S(x) \equiv 0$ 。从图 $14.1$ 上可以看出它们在 $[0,1]$ 上的收敛情况大不相同。 (1) 是一致收敛的； (2) 不一致收敛，但还是一致有界的； (3) 不一致收敛，而且不一致有界。（图中对 (3) 只作出 $0 \leqslant x \leqslant 0.1$ 的部分。）
 
@@ -44,7 +43,7 @@ import Method from '@/components/Method.astro';
 
 ![](images/ed853c0336b001c33ed2f01e80838a8c52a6b0db4631ab8dd2addd7ddc73c166.jpg)
 
-![](images/1edfa0b536698f830d100cd451e9fc724aaaff28a750ae4113c029b66c0a4a67.jpg)  
+![](images/1edfa0b536698f830d100cd451e9fc724aaaff28a750ae4113c029b66c0a4a67.jpg)
 图 $14.1$
 
 容易看出三个函数列中的第 $n$ 个函数都在点 $x = 1 / n$ 处达到最大值。这些最大值分别为 $1 / (ne)$ ， $1 / e$ 和 $n / e$ 。又不难计算出，对这三个函数列都存在（曲边梯形面积的）极限 $\lim_{n\to \infty}\int_0^1 f_n(x)\mathrm{d}x$ ，极限值分别为 $0$， $0$ 和 $1$。
@@ -314,7 +313,7 @@ $$
 
 这里将从 § $2.6$ 的迭代生成数列的几何理论出发，配合图 $14.2$ 观察本题，说明如何在分析论证之前就可以发现以上全部事实。
 
-![](images/ad4759e3fb22ba5775ecccd3bac42cfd7de877bee898c7a2c6253b37fad76cfe.jpg)  
+![](images/ad4759e3fb22ba5775ecccd3bac42cfd7de877bee898c7a2c6253b37fad76cfe.jpg)
 图 $14.2$
 
 考虑 $[0,1]$ 上的点收敛，则从 $a_{n}$ 到 $a_{n + 1}$ 的迭代方程是

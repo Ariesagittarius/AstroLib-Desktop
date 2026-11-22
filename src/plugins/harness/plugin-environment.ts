@@ -1,16 +1,3 @@
-/**
- * src/plugins/harness/plugin-environment.ts
- * ============================================================================
- * AstroLib Harness 独立动态插件宿主运行环境 (Plugin Runtime Host Environment)
- * ============================================================================
- * 职责：
- * 1. 纯解耦与可插拔架构：管理所有 HarnessPlugin 实例的生命周期 (activate / deactivate)；
- * 2. 动态指令分发与启发式建议：输入框打字即时返回 suggest 建议，消除编译期写死；
- * 3. 动态内联指令提取与上下文注入：支持自然语言中嵌入指令并自动转化为学术上下文；
- * 4. 动态 Agent Tools 注入、权限仲裁（read-only / workspace / full）与元数据自省。
- * ============================================================================
- */
-
 import type {
   AgentPermissionMode,
   AgentToolDefinition,
@@ -97,7 +84,6 @@ export class PluginEnvironment {
     this.registerPlugin(WebSearchPlugin);
     this.registerPlugin(InteractionPlugin);
 
-    // 注册全局定位协议工具与指令
     this.agentTools.set('locate_content', {
       name: 'locate_content',
       displayName: '统一内容协议寻址',
@@ -257,9 +243,6 @@ export class PluginEnvironment {
     return def?.displayName || `调用工具 ${toolName}`;
   }
 
-  /**
-   * 评估指定工具在当前权限模式与参数下的执行策略
-   */
   public evaluateToolPermission(
     toolName: string,
     mode: AgentPermissionMode = 'workspace',
@@ -294,7 +277,6 @@ export class PluginEnvironment {
       return { decision: 'allow' };
     }
 
-    // mode === 'workspace'
     if (risk === 'system') {
       return {
         decision: 'prompt',
@@ -316,9 +298,6 @@ export class PluginEnvironment {
     return { decision: 'allow' };
   }
 
-  /**
-   * 生成全部注册工具的完整元数据快照（供全局设置中心「Agent 与工具」检查器使用）
-   */
   public getToolRegistrySnapshot(
     mode: AgentPermissionMode = 'workspace',
     overrides: Record<string, ToolOverrideConfig> = {}

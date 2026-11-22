@@ -1,18 +1,3 @@
-/**
- * electron/server/reader-annotations-addon.ts
- * ============================================================================
- * AstroLib 桌面阅读器文本批注、侧注与章节自由画布联动注入模块
- * ============================================================================
- * 核心能力：
- * 1. 兼容 Astro ViewTransitions (astro:page-load) 软切章无感重挂载，切章后划选批注
- *    与右侧分屏画布同步自动切换；
- * 2. DOM ↔ AST 节点确定性绑定 ([data-ast-node-id], [data-ast-uri]);
- * 3. 任意颜色段落/句子高亮 + Ctrl+Z / Ctrl+Y 撤销恢复批注；
- * 4. 可展开 Markdown + KaTeX 学术侧注卡片（Material 3 纯白无阴影浅边框规范，零 Emoji）；
- * 5. 右侧 Sideload Dock「批注与笔记」面板 + 一键呼出 Win11 分屏自由画布 + .anp 无损导入导出。
- * ============================================================================
- */
-
 export function buildAnnotationsHeaderButtonsHtml(): string {
   return `
       <button

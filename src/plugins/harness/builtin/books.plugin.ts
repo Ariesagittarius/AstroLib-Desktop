@@ -1,10 +1,3 @@
-/**
- * src/plugins/harness/builtin/books.plugin.ts
- * ============================================================================
- * AstroLib 教材库总览插件 (/books)
- * ============================================================================
- */
-
 import type { HarnessPlugin, PluginContext } from '../types.ts';
 
 function escapeHtml(str: string): string {

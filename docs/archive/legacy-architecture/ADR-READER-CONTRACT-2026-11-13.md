@@ -1,11 +1,11 @@
 # 架构决策记录 (ADR-READER-CONTRACT-2026-11-13)
 
-**标题**：AstroLib 阅读器契约、Canonical Slug 规范与多环境路由边界架构决策  
-**编号**：ADR-P1-A0-2026-11-13 (Rev.2 审计修正版)  
-**状态**：`ACCEPTED (已通过 P1-A0 审计裁决，进入 P1-A1 执行门禁)`  
-**对应任务**：P1-A0（P1 第一阶段架构决策，不修改任何业务源码）  
-**基准分支**：`electron/main` @ `24360c7d`（Tag `v0.0.4` @ `df68e42c` 保持不变）  
-**约束规范**：`AGENTS.md` Rule 1 (UI not domain model), Rule 2 (Publishing independent), Rule 8 (Scripts boundary), Rule 10 (One boundary -> One migration -> One verification)  
+**标题**：AstroLib 阅读器契约、Canonical Slug 规范与多环境路由边界架构决策
+**编号**：ADR-P1-A0-2026-11-13 (Rev.2 审计修正版)
+**状态**：`ACCEPTED (已通过 P1-A0 审计裁决，进入 P1-A1 执行门禁)`
+**对应任务**：P1-A0（P1 第一阶段架构决策，不修改任何业务源码）
+**基准分支**：`electron/main` @ `24360c7d`（Tag `v0.0.4` @ `df68e42c` 保持不变）
+**约束规范**：`AGENTS.md` Rule 1 (UI not domain model), Rule 2 (Publishing independent), Rule 8 (Scripts boundary), Rule 10 (One boundary -> One migration -> One verification)
 
 ---
 
@@ -162,7 +162,7 @@ export function cleanSlug(rawSlug: string): string {
 
 > [!IMPORTANT]
 > **规则冲突消除与分阶段生效说明**：
-> `AGENTS.md` §8.2 将“桌面端章节阅读基于 `dist/reader-shell/index.html`（预编译 Starlight Master Shell），在 `electron/server/reader-shell-template.ts` 中动态装配 HTML”列为当前架构铁律。  
+> `AGENTS.md` §8.2 将“桌面端章节阅读基于 `dist/reader-shell/index.html`（预编译 Starlight Master Shell），在 `electron/server/reader-shell-template.ts` 中动态装配 HTML”列为当前架构铁律。
 > **生效顺序严格裁定如下**：
 > 1. **P1-A ~ P1-D 迁移过渡期**：`AGENTS.md` §8.2 **继续保持完全有效**。`reader-shell-template.ts` 的装配机制在 P1-A1 ~ P1-A4 中保持运作，P1-A 仅负责净化其生成的 URL 链接为 100% Canonical Slug，严禁在 P1-A 中顺手推倒该模板引入 Big Bang 重构（违背 Rule 10）；
 > 2. **P1-E 文档与架构治理期**：在 Universal Reader 纯 M3 组件方案完全具备生产替换能力并通过全量测试后，在 P1-E 阶段统一修订 `AGENTS.md` §8.2 与相关文档，完成框架倒置的历史解绑。

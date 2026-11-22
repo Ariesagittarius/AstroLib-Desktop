@@ -1,10 +1,3 @@
-/**
- * tests/unit/translation-dock-state.test.ts
- * ============================================================================
- * Unit Tests for TranslationDockStateMachine (DOM-free State Verification)
- * ============================================================================
- */
-
 import { describe, it, expect, beforeEach } from 'vitest';
 import { TranslationDockStateMachine } from '../../src/services/translation/client/translation-dock-controller.state';
 import { TranslationDockController } from '../../src/services/translation/client/translation-dock-controller';
@@ -37,13 +30,12 @@ describe('TranslationDockStateMachine', () => {
   });
 
   it('3. Illegal Transitions: blocks duplicate start and finish when idle', () => {
-    // Cannot finish when already idle
+
     expect(sm.finishTranslation()).toBe(false);
     expect(sm.getStatus()).toBe('idle');
 
-    // Start translation
     expect(sm.startTranslation()).toBe(true);
-    // Duplicate start rejected
+
     expect(sm.startTranslation()).toBe(false);
     expect(sm.getStatus()).toBe('translating');
   });
@@ -61,7 +53,7 @@ describe('TranslationDockStateMachine', () => {
     expect(progress.total).toBe(4);
     expect(progress.completed).toBe(1);
     expect(progress.failed).toBe(1);
-    expect(progress.percent).toBe(50); // (1 + 1) / 4 = 50%
+    expect(progress.percent).toBe(50);
   });
 
   it('5. Paragraph Updates & Error State: updates individual paragraphs and error state', () => {
@@ -116,7 +108,6 @@ describe('TranslationDockStateMachine', () => {
     instance.displayMode = 'inline';
     expect(stateMachine.getDisplayMode()).toBe('inline');
 
-    // 翻译生命周期状态与异常断言
     stateMachine.startTranslation();
     expect(stateMachine.getStatus()).toBe('translating');
 

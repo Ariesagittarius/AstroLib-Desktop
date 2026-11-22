@@ -1,8 +1,3 @@
-/**
- * tests/unit/search-rec.test.ts
- * AstroLib 跨书知识整合与搜索推荐系统单元测试套件
- */
-
 import { describe, it, expect, beforeEach } from 'vitest';
 import {
   quantizeToInt8,
@@ -180,7 +175,7 @@ describe('Search & Recommendation Engine Unit Tests', () => {
     it('应有效惩罚同书连续堆叠，提升跨书多样性', () => {
       const duplicateBookChunks = [
         { chunk: sampleChunks[0], channel: 'dense' as const, channelScore: 0.95, channelRank: 1, rankScore: 0.95 },
-        // 伪造一条来自同一本书的切片
+
         {
           chunk: { ...sampleChunks[0], id: 'math-la-ch1-2', title: '定理 1.5 伴随矩阵' },
           channel: 'dense' as const,
@@ -188,13 +183,13 @@ describe('Search & Recommendation Engine Unit Tests', () => {
           channelRank: 2,
           rankScore: 0.94,
         },
-        // 来自不同书的切片 (虽然分数略低一点)
+
         { chunk: sampleChunks[2], channel: 'dense' as const, channelScore: 0.90, channelRank: 3, rankScore: 0.90 },
       ];
 
       const diversified = diversifyWithMmr(duplicateBookChunks, 3, 0.5);
       expect(diversified.length).toBe(3);
-      // 第 2 条应优先选不同书目的切片 (telecom-cp-ch4-1)
+
       expect(diversified[1].chunk.bookSlug).toBe('communication_principles');
     });
   });
@@ -234,7 +229,7 @@ describe('Search & Recommendation Engine Unit Tests', () => {
       }, 5);
 
       expect(stream.length).toBeGreaterThan(0);
-      // 应包含跨书建议
+
       const crossBook = stream.find((item) => item.chunk.bookSlug !== 'linear_algebra');
       expect(crossBook).toBeDefined();
     });

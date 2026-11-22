@@ -1,16 +1,3 @@
-/**
- * src/services/info-highlight/client.ts
- * ============================================================================
- * AstroLib 关注点透镜前端控制器 (InfoLens Focus Client Controller)
- * ============================================================================
- * 职责：
- * 1. 优先调用 Electron 原生 IPC (window.astrolib.analyzeTextHighlight)，兼顾 Localhost HTTP 回退；
- * 2. 调度文本提取与 CSS Custom Highlight 极速渲染；
- * 3. 驱动 PageSidebarOverride 右侧面板与顶栏按钮联动；
- * 4. 会话级缓存（sessionStorage），避免重复推理，节省计算资源。
- * ============================================================================
- */
-
 import { InfoHighlightRenderer } from './renderer.ts';
 import type {
   InfoHighlightResult,
@@ -46,9 +33,6 @@ export class InfoHighlightClient {
     return this.currentResult;
   }
 
-  /**
-   * 探测本地服务与 Qwen 模型健康状态
-   */
   async getStatus(): Promise<InfoHighlightStatus> {
     if (typeof window !== 'undefined' && (window as any).astrolib?.getInfoHighlightStatus) {
       try {
@@ -74,9 +58,6 @@ export class InfoHighlightClient {
     };
   }
 
-  /**
-   * 执行推理分析（优先 Electron IPC，其次 Localhost HTTP）
-   */
   async analyzeText(text: string): Promise<InfoHighlightResult> {
     const isElectron = Boolean((window as any).astrolib?.isElectron && (window as any).astrolib?.analyzeTextHighlight);
 
@@ -98,9 +79,6 @@ export class InfoHighlightClient {
     return resp.json();
   }
 
-  /**
-   * 分析当前正文区域并实时渲染
-   */
   async analyzeCurrentPage(): Promise<InfoHighlightResult> {
     if (this.isAnalyzing) {
       throw new Error('已有分析任务正在进行中');
@@ -125,10 +103,8 @@ export class InfoHighlightClient {
         throw new Error('当前文章正文为空');
       }
 
-      // 截取前 4000 字符以内最核心正文（或全篇）
       const analyzeSlice = text.length > 3500 ? text.slice(0, 3500) : text;
 
-      // 检查当前 URL 会话缓存
       const cacheKey = `astrolib-focus-${window.location.pathname}`;
       let result: InfoHighlightResult;
 
@@ -157,9 +133,6 @@ export class InfoHighlightClient {
     }
   }
 
-  /**
-   * 更新高亮配置并即时重绘（零延迟）
-   */
   updateConfig(newConfig: Partial<HighlightConfig>): void {
     this.config = { ...this.config, ...newConfig };
     if (this.currentResult) {
@@ -167,17 +140,11 @@ export class InfoHighlightClient {
     }
   }
 
-  /**
-   * 清除正文高亮
-   */
   clearHighlight(): void {
     InfoHighlightRenderer.clear();
     this.updateUiState('idle');
   }
 
-  /**
-   * 更新右侧面板 UI 状态
-   */
   private updateUiState(
     state: 'idle' | 'analyzing' | 'ready' | 'error',
     result?: InfoHighlightResult,
@@ -231,7 +198,7 @@ export class InfoHighlightClient {
     }
 
     if (keywordsList && result && Array.isArray(result.tokens)) {
-      // 提取惊异度最高的前 6 个非标点实体词
+
       const topTokens = [...result.tokens]
         .filter((t) => t.raw.trim().length >= 2 && !/^[，。！？；：、“”‘’（）《》【】\s]+$/.test(t.raw))
         .sort((a, b) => b.surprisalBits - a.surprisalBits)
@@ -249,9 +216,6 @@ export class InfoHighlightClient {
     }
   }
 
-  /**
-   * 绑定 DOM 事件交互 (面板打开时自动触发或由用户按钮触发)
-   */
   bindUi(): void {
     const analyzeBtn = document.getElementById('focus-analyze-btn');
     const clearBtn = document.getElementById('focus-clear-btn');
@@ -274,7 +238,6 @@ export class InfoHighlightClient {
       this.updateConfig({ thresholdPct: val });
     });
 
-    // 模式切换 Chip
     document.querySelectorAll('[data-focus-mode]').forEach((btn) => {
       btn.addEventListener('click', (e) => {
         const mode = (btn as HTMLElement).dataset.focusMode as HighlightMode;
@@ -285,7 +248,6 @@ export class InfoHighlightClient {
       });
     });
 
-    // 异步查询并展示设备信息
     this.getStatus().then((status) => {
       const badge = document.getElementById('focus-hardware-badge');
       if (badge) {

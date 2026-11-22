@@ -1,10 +1,3 @@
-/**
- * src/services/translation/client/translation-card-helpers.ts
- * ============================================================================
- * AstroLib 双语助读卡片辅助渲染与内联微调纯函数
- * ============================================================================
- */
-
 import type { ParagraphUnit } from '../types';
 import { TranslationStorage } from '../storage/translation-storage';
 import { renderMathInElementSafely } from './translation-inline-view';

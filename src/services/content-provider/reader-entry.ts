@@ -1,15 +1,3 @@
-/**
- * src/services/content-provider/reader-entry.ts
- * ============================================================================
- * Universal Reader 运行时入口纯函数模块 (Runtime Entry Pure Utilities)
- * ============================================================================
- * 架构规范：
- * - 纯函数模块，禁止引用 node:* / astro:*，确保浏览器/Electron客户端安全打包
- * - 遵循 Rule 1 (UI is not a domain model) & Rule 7 (Utils purity)
- * - 遵循 P1-A3 门禁规格与 ADR-READER-CONTRACT-2026-11-13
- * ============================================================================
- */
-
 import type { ChapterHeadingItem } from '../../types/content-package.ts';
 
 export type EmptyStateReason =
@@ -46,12 +34,6 @@ export interface ReaderOutlineItem {
   depth: 2 | 3;
 }
 
-/**
- * 将章节 payload 的 headings 映射为右侧大纲条目。
- * 仅保留 h2/h3 且具备有效锚点 id 的标题：payload 的 ChapterHeadingItem 字段为
- * `{ depth, text, id }`，锚点必须取自 `id`（历史实现误用不存在的 `slug` 字段，
- * 导致所有大纲链接退化为 `#undefined`）。
- */
 export function buildOutlineItems(
   headings: readonly ChapterHeadingItem[] | null | undefined
 ): ReaderOutlineItem[] {
@@ -71,10 +53,6 @@ export function buildOutlineItems(
   return items;
 }
 
-/**
- * 解析 Reader URL 查询字符串
- * @param search location.search 字符串（可带或不带前置 '?'）
- */
 export function parseReaderQuery(search: string): ReaderQueryParams {
   if (!search || search.trim() === '') {
     return { bookId: null, chapterSlug: null, error: 'missing-book' };
@@ -104,11 +82,6 @@ export function parseReaderQuery(search: string): ReaderQueryParams {
   return { bookId, chapterSlug, error: null };
 }
 
-/**
- * 分割书本标识为学科集合标识与书籍标识
- * 规则：以第一个 '-' 为界，前置为 colSlug，后续为 bookSlug
- * 若格式不符合（无 '-' 或某一部分为空），返回 null
- */
 export function splitBookId(bookId: string): SplitBookIdResult | null {
   if (!bookId || typeof bookId !== 'string') {
     return null;
@@ -127,9 +100,6 @@ export function splitBookId(bookId: string): SplitBookIdResult | null {
   return { colSlug, bookSlug };
 }
 
-/**
- * 构建学术克制空态视图模型
- */
 export function buildEmptyStateViewModel(
   reason: EmptyStateReason | 'invalid-book-id'
 ): EmptyStateViewModel {

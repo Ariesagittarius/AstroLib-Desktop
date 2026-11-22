@@ -1,9 +1,3 @@
-/**
- * ============================================================================
- * 特性模块（Feature Modules）注册表 —— 全站功能的唯一声明源
- * ============================================================================
- */
-
 import type {
   FeatureCategory,
   FeatureConfig,
@@ -12,7 +6,6 @@ import type {
   FeatureRegistry,
 } from '../types/features.ts';
 
-/** 是否 dev 模式（astro dev）：决定 devOnly 功能的真正启用 */
 export const IS_DEV = typeof process !== 'undefined' && Boolean(process.argv?.includes('dev'));
 
 const CATS = new Set<FeatureCategory>(['reader', 'extra', 'dev']);
@@ -173,7 +166,7 @@ const featureDefs: Record<string, FeatureManifest<any>> = {
       defaultProvider: 'gemini',
       defaultModel: 'gemini-3.8-flash',
       endpoint: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',
-      // AI 模型目录统一由 src/ai/ai-config.ts 权威管理，此处不再硬编码重复清单
+
     },
   }),
 

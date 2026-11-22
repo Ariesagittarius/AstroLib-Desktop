@@ -1,19 +1,3 @@
-/**
- * src/services/info-highlight/renderer.ts
- * ============================================================================
- * AstroLib CSS Custom Highlight 渲染引擎 (Non-Destructive Text Range Highlighter)
- * ============================================================================
- * 核心技术优势：
- * 1. 采用 W3C 标准 CSS Custom Highlight API (CSS.highlights)；
- * 2. 纯零 DOM 污染，不插入任何 <span> 标签，绝不破坏 KaTeX 公式、目录与代码块；
- * 3. 毫秒级原生 GPU 渲染，支持无损动态调节过滤阈值与高亮形态；
- * 4. 完美支持三种阅读专注模式：
- *    - Fade: 极速跳读（智能淡化低信息量虚词/搭配，保留核心学术实体）
- *    - Block: 柔和色块（基于香农惊异度梯度着色）
- *    - Underline: 学术下划线（学术重点实体下划线提示）
- * ============================================================================
- */
-
 import type { TokenSurprisal, HighlightConfig } from '../../types/info-highlight.ts';
 
 interface TextNodeMapping {
@@ -28,9 +12,6 @@ export class InfoHighlightRenderer {
   private static mappedText = '';
   private static textNodes: TextNodeMapping[] = [];
 
-  /**
-   * 初始化/注入 CSS Custom Highlight 样式规则
-   */
   private static ensureStyles(): void {
     if (this.styleElement && document.head.contains(this.styleElement)) {
       return;
@@ -77,14 +58,10 @@ export class InfoHighlightRenderer {
     this.styleElement = el;
   }
 
-  /**
-   * 收集容器内可读文本并构建字符偏移到 DOM Text 节点的无损映射表
-   */
   static extractTextWithMapping(root: HTMLElement): { text: string; nodes: TextNodeMapping[] } {
     const nodes: TextNodeMapping[] = [];
     let currentOffset = 0;
 
-    // 忽略标签：脚本、公式源码回填、隐藏元素、侧边栏、假名注音
     const ignoredTags = new Set(['SCRIPT', 'STYLE', 'NOSCRIPT', 'TEMPLATE', 'MD-ICON', 'SVG', 'RT', 'RP']);
 
     const walker = document.createTreeWalker(
@@ -132,9 +109,6 @@ export class InfoHighlightRenderer {
     return { text: textAcc, nodes };
   }
 
-  /**
-   * 将字符偏移 [start, end] 映射为标准 DOM Range
-   */
   private static createRangeFromOffsets(start: number, end: number): Range | null {
     if (start >= end || this.textNodes.length === 0) return null;
 
@@ -167,9 +141,6 @@ export class InfoHighlightRenderer {
     }
   }
 
-  /**
-   * 应用高亮
-   */
   static apply(tokens: TokenSurprisal[], config: HighlightConfig): void {
     if (typeof CSS === 'undefined' || !(CSS as any).highlights) {
       console.warn('[InfoHighlightRenderer] 当前环境不支持 CSS Custom Highlight API');
@@ -192,10 +163,10 @@ export class InfoHighlightRenderer {
 
       if (config.mode === 'fade') {
         if (tok.ciRatio < threshold) {
-          // 低惊异度词元智能淡化
+
           fadeRanges.push(range);
         } else if (tok.ciRatio >= 0.65 || tok.level >= 10) {
-          // 极具信息密度的核心实体轻微锚定
+
           anchorRanges.push(range);
         }
       } else if (config.mode === 'block') {
@@ -231,9 +202,6 @@ export class InfoHighlightRenderer {
     }
   }
 
-  /**
-   * 清除全量高亮
-   */
   static clear(): void {
     if (typeof CSS === 'undefined' || !(CSS as any).highlights) return;
     const hlRegistry = (CSS as any).highlights;

@@ -1,9 +1,3 @@
-/**
- * src/features/search-rec/ui/search-modal-client.ts
- * AstroLib 跨书知识整合、多模态搜索与推荐模态框客户端状态机
- * 严格遵循学术克制规约，消除一切 Emoji 与视效噪点，对齐工业级前沿检索推荐标准
- */
-
 import { SearchRecEngine } from '../core/engine.ts';
 import type { AcademicChunk, CandidateItem } from '../types/candidate.ts';
 import type { SearchMode } from '../types/search.ts';
@@ -35,7 +29,6 @@ export function initSearchModalClient(): void {
   const dialog = document.getElementById('astrolib-search-dialog') as (HTMLDialogElement & { __astrolibSearchBound?: boolean }) | null;
   if (!dialog) return;
 
-  // 防抖与重复绑定守卫 (兼容 Astro 页面切换与 SPA 路由)
   if (dialog.__astrolibSearchBound) return;
   dialog.__astrolibSearchBound = true;
 
@@ -56,7 +49,6 @@ export function initSearchModalClient(): void {
   const inp = input;
   const resBox = resultsContainer;
 
-  // 单例初始化核心引擎
   const engine = window.__astrolibSearchEngine || new SearchRecEngine();
   window.__astrolibSearchEngine = engine;
 
@@ -66,7 +58,6 @@ export function initSearchModalClient(): void {
   let selectedIdx = -1;
   let currentResults: CandidateItem[] = [];
 
-  // 获取当前阅读上下文
   function getCurrentContext(): UserLearningContext {
     const pathParts = window.location.pathname.replace(/^\/|\/$/g, '').split('/');
     let colSlug = window.__currentColSlug || '';
@@ -86,7 +77,6 @@ export function initSearchModalClient(): void {
     };
   }
 
-  // 更新当前图书按钮文案
   function syncCurrentBookBadge() {
     const ctx = getCurrentContext();
     if (currentBookBtn) {
@@ -103,7 +93,6 @@ export function initSearchModalClient(): void {
   let packsPromise: Promise<void> | null = null;
   let isPacksLoaded = false;
 
-  // 动态填充图书下拉选择框
   function fillBookSelect(books: any[]) {
     if (bookSelect && bookSelect.options.length <= 1) {
       for (const b of books || []) {
@@ -115,7 +104,6 @@ export function initSearchModalClient(): void {
     }
   }
 
-  // 渲染首次搜索索引准备骨架态 (严格学术极简，无装饰动效)
   function renderLoadingState() {
     resBox.innerHTML = `
       <div class="astrolib-search-loading-hint" style="padding: 2.5rem 1rem; text-align: center; color: var(--sl-color-gray-3, #888); font-size: 0.875rem;">
@@ -128,7 +116,6 @@ export function initSearchModalClient(): void {
     }
   }
 
-  // 渲染索引加载异常态并提供重试交互
   function renderErrorState() {
     resBox.innerHTML = `
       <div class="astrolib-search-error-hint" style="padding: 2.5rem 1rem; text-align: center; color: var(--sl-color-gray-3, #888); font-size: 0.875rem;">
@@ -158,7 +145,6 @@ export function initSearchModalClient(): void {
     });
   }
 
-  // 异步按需加载全书库切片索引与向量 (Promise 单例管理)
   function ensurePacksLoaded(): Promise<void> {
     if (window.__astrolibSearchLoaded) {
       isPacksLoaded = true;
@@ -227,12 +213,11 @@ export function initSearchModalClient(): void {
           if (pack && pack.chunks.length > 0) {
             engine.registerBook(pack.chunks, pack.binBuffer);
           }
-          slots[next] = null; // 及时释放已注册包引用，避免常驻推高加载期峰值
+          slots[next] = null;
           next++;
         }
       }
 
-      // 抓取并行度 4，完成后写入 slots[i] 并按 catalog 顺序流式注册
       await runWithConcurrency(books, 4, async (b, i) => {
         slots[i] = await fetchBookPack(b.colSlug, b.slug, b.title);
         flush();
@@ -242,7 +227,7 @@ export function initSearchModalClient(): void {
       isPacksLoaded = true;
     } catch (err) {
       loadFallbackChunksFromCatalog();
-      // 不在此处置位 isPacksLoaded，保留错误重试入口与正确错误态
+
       throw err;
     }
   }
@@ -280,7 +265,6 @@ export function initSearchModalClient(): void {
       }
     } catch {}
 
-    // 兜底回退：若该书未打包预编译向量或离线，从书籍 manifest.json 中读取完整章节目录
     try {
       const manifestRes = await fetch(`/abp-packs/${colSlug}-${bookSlug}/manifest.json`);
       if (manifestRes.ok) {
@@ -315,7 +299,6 @@ export function initSearchModalClient(): void {
     return null;
   }
 
-  // 兜底：若网络受限或离线，从全局章节目录构建基础知识单元
   function loadFallbackChunksFromCatalog() {
     const catalog = window.__allBooksCatalog || [];
     if (catalog.length === 0) return;
@@ -341,12 +324,10 @@ export function initSearchModalClient(): void {
     }
   }
 
-  // 渲染首屏：即时上下文探索流 (Context-Aware Discovery Stream)
   function renderContextStream() {
     const ctx = getCurrentContext();
     const rawItems = engine.getContextDiscoveryStream(ctx, 12);
 
-    // 根据当前范围过滤
     let items = rawItems;
     if (currentScope === 'current' && ctx.currentBookSlug) {
       items = items.filter((it) => it.chunk.bookSlug === ctx.currentBookSlug);
@@ -382,7 +363,6 @@ export function initSearchModalClient(): void {
     return '#';
   }
 
-  // 高亮检索词辅助函数 (HTML 转义后再包裹 <mark>，消除 XSS 注入)
   function highlightKeywords(text: string, queryStr: string): string {
     if (!text) return '';
     if (!queryStr) return escapeHtml(text);
@@ -412,7 +392,6 @@ export function initSearchModalClient(): void {
     }
   }
 
-  // 渲染卡片流 (严格遵循极端减法原则：纯净学术片段)
   function renderCards(items: CandidateItem[], headerTitle: string, queryHighlight: string) {
     if (items.length === 0) {
       resBox.innerHTML = `
@@ -458,7 +437,6 @@ export function initSearchModalClient(): void {
     resBox.innerHTML = html;
   }
 
-  // 执行搜索
   async function executeSearch() {
     const q = inp.value.trim();
     if (clearBtn) {
@@ -466,7 +444,7 @@ export function initSearchModalClient(): void {
     }
 
     if (!isPacksLoaded && !window.__astrolibSearchLoaded) {
-      // 索引包仍在后台按需加载中，不执行空检索，避免覆盖骨架加载态
+
       return;
     }
 
@@ -485,7 +463,6 @@ export function initSearchModalClient(): void {
       topK: 30,
     });
 
-    // 根据当前范围过滤
     let filteredItems = searchRes.items;
     if (currentScope === 'current' && ctx.currentBookSlug) {
       filteredItems = filteredItems.filter((it) => it.chunk.bookSlug === ctx.currentBookSlug);
@@ -537,7 +514,6 @@ export function initSearchModalClient(): void {
     }
   }
 
-  // 1. 触发与关闭事件绑定
   triggerBtn?.removeAttribute('disabled');
   triggerBtn?.addEventListener('click', (e) => {
     e.preventDefault();
@@ -560,12 +536,10 @@ export function initSearchModalClient(): void {
     if (e.target === dlg) closeModal();
   });
 
-  // 2. 搜索输入即时响应
   inp.addEventListener('input', () => {
     executeSearch();
   });
 
-  // 3. 范围选择 Filter Chips 交互
   if (scopeChipsContainer) {
     const scopeButtons = Array.from(scopeChipsContainer.querySelectorAll('.astrolib-scope-chip'));
     scopeButtons.forEach((btn) => {
@@ -597,7 +571,6 @@ export function initSearchModalClient(): void {
     });
   }
 
-  // 4. 三模态切换 Filter Chips 交互 (纯文本，严禁 Emoji)
   if (modeChipsContainer) {
     const modeButtons = Array.from(modeChipsContainer.querySelectorAll('.astrolib-mode-chip'));
     modeButtons.forEach((chip) => {
@@ -618,7 +591,6 @@ export function initSearchModalClient(): void {
     });
   }
 
-  // 5. 全局键盘快捷键: Ctrl+K / Cmd+K / Slash / Escape / Arrow navigation
   window.addEventListener('keydown', (e) => {
     if ((e.ctrlKey || e.metaKey) && (e.key === 'k' || e.key === 'K')) {
       e.preventDefault();
@@ -657,7 +629,6 @@ export function initSearchModalClient(): void {
     }
   });
 
-  // 6. 兜底捕获页面所有其他搜索触发器
   document.querySelectorAll('button[data-open-modal], .vp-search-wrapper button, [data-open-search]').forEach((btn) => {
     btn.removeAttribute('disabled');
     if (btn !== triggerBtn) {
@@ -668,7 +639,6 @@ export function initSearchModalClient(): void {
     }
   });
 
-  // 运行模式灰度开关：'lazy' (默认，按需打开模态框时加载) | 'eager' (回滚用：初始化即预载全站索引)
   const searchIndexMode = (typeof window !== 'undefined' && (window as any).__astrolibSearchIndexMode) || 'lazy';
   if (searchIndexMode === 'eager') {
     ensurePacksLoaded().catch(() => {});

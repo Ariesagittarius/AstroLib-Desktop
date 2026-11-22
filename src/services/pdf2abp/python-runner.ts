@@ -1,15 +1,3 @@
-/**
- * src/services/pdf2abp/python-runner.ts
- * ============================================================================
- * 沙箱化 Python 脚本执行器 (Workspace-Scoped Python Runner)
- * ============================================================================
- * 职责：
- * 1. 自动探测最佳可用 Python 解释器（.venv / EnvDetector / 系统 python）；
- * 2. 将内联代码或工作区脚本限制在当前任务工作区内执行，注入 ASTROLIB_* 环境变量；
- * 3. 返回受控长度的 stdout/stderr（同时把全量日志写入工作区），并返回工作区新增/修改文件。
- * ============================================================================
- */
-
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -41,11 +29,6 @@ export function clearAgentPythonCache(): void {
   cachedAgentEnvInfo = null;
 }
 
-/**
- * 为通用学术计算 Agent 探测独立隔离的 Python 解释器。
- * 优先级：用户显式 customPath / ASTROLIB_AGENT_PYTHON -> .venv-agent -> .venv -> 系统 Python。
- * 与 pdf2abp 流水线使用的 findBestPythonExecutable() 彻底解耦。
- */
 export async function findAgentPythonExecutable(customPath?: string): Promise<string | null> {
   const customKey = (customPath || process.env.ASTROLIB_AGENT_PYTHON || '').trim();
   if (cachedAgentPythonExe && cachedAgentPythonExe.customKey === customKey) {
@@ -87,7 +70,7 @@ export async function findAgentPythonExecutable(customPath?: string): Promise<st
         return resolved;
       }
     } catch {
-      // try next
+
     }
   }
 
@@ -144,7 +127,7 @@ export async function getAgentPythonEnvInfo(
       }));
     }
   } catch {
-    // keep basic executable info
+
   }
 
   const info: AgentPythonEnvInfo = {
@@ -188,7 +171,7 @@ export async function findBestPythonExecutable(): Promise<string | null> {
         return cachedPythonExe;
       }
     } catch {
-      // try next
+
     }
   }
 

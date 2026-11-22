@@ -1,8 +1,8 @@
 # P1 整改第二轮独立审计与闭环裁决（2026-11-14）
 
-**审计对象**：执行端对 `P1_FINAL_AUDIT_2026-11-14.md` 所列 F1–F5 的整改，及其 `P1_FINAL_SIGNOFF_2026-11-14.md` Rev.2 “P1 CLOSED” 结论。  
-**审计基线**：`5498542a`（首轮复核基线）→ `165ee6e3`（整改终态 HEAD）。  
-**审计方式**：独立复跑门禁、逐文件复核、对 evidence 与源码做交叉比对；不以执行端报告中的自述数字作为结论依据。  
+**审计对象**：执行端对 `P1_FINAL_AUDIT_2026-11-14.md` 所列 F1–F5 的整改，及其 `P1_FINAL_SIGNOFF_2026-11-14.md` Rev.2 “P1 CLOSED” 结论。
+**审计基线**：`5498542a`（首轮复核基线）→ `165ee6e3`（整改终态 HEAD）。
+**审计方式**：独立复跑门禁、逐文件复核、对 evidence 与源码做交叉比对；不以执行端报告中的自述数字作为结论依据。
 **裁决**：**P1 整体 NOT CLOSED；Rev.2 的 `P1 CLOSED` 结论不予采信。**
 
 ---
@@ -223,7 +223,7 @@
    - Chat：`error` / `abort` 路径断言，避免只测 `_busy` 的两态。
 4. 重新生成 `p1-d-evidence` 的 `lines` 与 signoff 表格；数字必须来自终态命令输出。
 
-**验收**：三个文件均 `<1,500`；`npm test` 全绿；新增断言能捕获“删掉委托”这类回归。  
+**验收**：三个文件均 `<1,500`；`npm test` 全绿；新增断言能捕获“删掉委托”这类回归。
 **提交**：`refactor(core): keep p1 controllers below line cap` + `test(core): assert controller state transitions`（可拆两个原子 commit）。
 
 ### R2（P0）让 D5 视觉证据可复核，或明确降级
@@ -234,7 +234,7 @@
 - 方案 B：把报告改为“人工 spot check，未做截图级验证”，D5 保持 `CONDITIONAL`，删除 `0 regression` / `Formally Verified`。
 - 无论 A/B，`docs/README.md:62` 的“18 个全真场景、0 回归”必须同步修正。
 
-**验收**：任一结论都能由第三方按文档复现；若选 B，不得再宣称 D5 PASS。  
+**验收**：任一结论都能由第三方按文档复现；若选 B，不得再宣称 D5 PASS。
 **提交**：`docs(ui): make p1-d visual smoke evidence reproducible` 或 `docs(ui): downgrade unverified visual smoke claim`。
 
 ### R3（P0）处理 `any` 红线
@@ -244,7 +244,7 @@
 - 方案 A：将 `: any` / `as any` 降回 `≤316 / ≤183`（优先处理 `exercise-controller.ts:544` 等可直接替换处）。
 - 方案 B：取得用户书面豁免，在 evidence/ADR/signoff 记录精确增量、原因、到期时间；停止使用“零新增”。
 
-**验收**：evidence、signoff、ADR 三处数字一致；不再出现“零新增 any”与 `+29/+12` 并存。  
+**验收**：evidence、signoff、ADR 三处数字一致；不再出现“零新增 any”与 `+29/+12` 并存。
 **提交**：`refactor(core): reduce any usage to p1 baseline` 或 `docs(core): register approved any exception`。
 
 ### R4（P1）修正 evidence 的自洽性
@@ -289,9 +289,9 @@ npm run build
 
 因此：
 
-> **P1-D：FAIL；P1-E：CONDITIONAL FAIL；P1 整体：NOT CLOSED。**  
+> **P1-D：FAIL；P1-E：CONDITIONAL FAIL；P1 整体：NOT CLOSED。**
 > **Rev.2 的 `P1 CLOSED` 签署撤销；按 R1 → R2 → R3 → R4 → R5 重新整改并复核后，方可讨论 Rev.3。**
 
-**审计代表**：Independent Audit Agent  
-**审计时间**：2026-11-14  
+**审计代表**：Independent Audit Agent
+**审计时间**：2026-11-14
 **审计基线**：`5498542a` → `165ee6e3`

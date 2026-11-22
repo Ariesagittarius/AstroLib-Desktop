@@ -1,11 +1,3 @@
-/**
- * src/plugins/harness/builtin/runtime-tools.plugin.ts
- * ============================================================================
- * AstroLib 首屏 Agent 扩展工具集插件：
- * Python 科学计算沙箱 / Ripgrep 全库搜索 / 本地文件与 PDF 研读 / MDX 质检
- * ============================================================================
- */
-
 import type { HarnessPlugin, PluginContext } from '../types.ts';
 
 function escapeHtml(str: string): string {
@@ -26,7 +18,7 @@ export const RuntimeToolsPlugin: HarnessPlugin = {
   description: '提供隔离 Python 计算与绘图、Ripgrep 全库检索、本地文件/PDF 阅读与 MDX 学术防线校验能力。',
   sourceFile: SOURCE_FILE,
   activate: (context: PluginContext) => {
-    // 1. /search 全库全文检索指令 & search_library_text 工具
+
     context.registerCommand({
       command: '/search',
       aliases: ['/rg', '/grep'],
@@ -189,7 +181,6 @@ export const RuntimeToolsPlugin: HarnessPlugin = {
       },
     });
 
-    // 2. run_python (与 /python 指令)
     context.registerCommand({
       command: '/python',
       aliases: ['/py', '/calc'],
@@ -338,7 +329,6 @@ export const RuntimeToolsPlugin: HarnessPlugin = {
       },
     });
 
-    // 2.5 install_python_package (自动为独立沙箱安装预编译科学计算 wheel)
     context.registerTool({
       name: 'install_python_package',
       displayName: '安装 Agent Python 科学计算包',
@@ -398,7 +388,6 @@ export const RuntimeToolsPlugin: HarnessPlugin = {
       },
     });
 
-    // 3. list_local_files
     context.registerTool({
       name: 'list_local_files',
       displayName: '浏览目录文件列表',
@@ -451,7 +440,6 @@ export const RuntimeToolsPlugin: HarnessPlugin = {
       },
     });
 
-    // 4. read_local_file
     context.registerTool({
       name: 'read_local_file',
       displayName: '分页读取本地文件',
@@ -503,7 +491,6 @@ export const RuntimeToolsPlugin: HarnessPlugin = {
       },
     });
 
-    // 5. write_workspace_file
     context.registerTool({
       name: 'write_workspace_file',
       displayName: '写入沙箱工作区文件',
@@ -554,7 +541,6 @@ export const RuntimeToolsPlugin: HarnessPlugin = {
       },
     });
 
-    // 6. inspect_pdf
     context.registerTool({
       name: 'inspect_pdf',
       displayName: '勘测本地 PDF 元信息与大纲',
@@ -604,7 +590,6 @@ export const RuntimeToolsPlugin: HarnessPlugin = {
       },
     });
 
-    // 7. render_pdf_page
     context.registerTool({
       name: 'render_pdf_page',
       displayName: '渲染本地 PDF 页面图像',
@@ -672,7 +657,6 @@ export const RuntimeToolsPlugin: HarnessPlugin = {
       },
     });
 
-    // 8. validate_mdx
     context.registerTool({
       name: 'validate_mdx',
       displayName: '校验 MDX 语法与学术防线',
@@ -720,7 +704,6 @@ export const RuntimeToolsPlugin: HarnessPlugin = {
       },
     });
 
-    // 9. inspect_image (读取本地或工作区生成图像并接入滚动视觉槽)
     context.registerTool({
       name: 'inspect_image',
       displayName: '查看与审核本地/产物图像',

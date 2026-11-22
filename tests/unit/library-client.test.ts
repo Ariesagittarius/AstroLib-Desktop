@@ -1,10 +1,3 @@
-/**
- * tests/unit/library-client.test.ts
- * ============================================================================
- * Unit Tests for Unified LibraryClient Adapter
- * ============================================================================
- */
-
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { LibraryClient } from '../../src/features/library/core/library-client';
 
@@ -59,7 +52,6 @@ describe('LibraryClient Adapter', () => {
   it('creates custom shelf via HTTP or bridge', async () => {
     const mockShelf = { id: 'shelf-1', name: 'Algebra', itemCount: 0, createdAt: 1000 };
 
-    // 1. HTTP mode
     globalThis.fetch = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({ shelf: mockShelf }),
@@ -72,10 +64,8 @@ describe('LibraryClient Adapter', () => {
       body: JSON.stringify({ name: 'Algebra' }),
     }));
 
-    // 2. Empty name validation
     await expect(client.createShelf('   ')).rejects.toThrow('Shelf name cannot be empty');
 
-    // 3. Bridge mode
     (globalThis as any).window = {
       astrolib: {
         createLibraryShelf: vi.fn().mockResolvedValue(mockShelf),
@@ -89,7 +79,6 @@ describe('LibraryClient Adapter', () => {
   it('installs ABP packages via HTTP upload or bridge', async () => {
     const buffer = new Uint8Array([1, 2, 3]).buffer;
 
-    // 1. HTTP mode
     globalThis.fetch = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({ success: true }),
@@ -101,7 +90,6 @@ describe('LibraryClient Adapter', () => {
       body: buffer,
     }));
 
-    // 2. Bridge mode
     const mockInstall = vi.fn().mockResolvedValue(undefined);
     (globalThis as any).window = {
       astrolib: {

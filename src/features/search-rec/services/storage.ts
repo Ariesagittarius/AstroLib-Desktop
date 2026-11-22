@@ -1,8 +1,3 @@
-/**
- * src/features/search-rec/services/storage.ts
- * 端侧向量资产加载与未打包书籍增量持久化服务 (IndexedDB / LocalStorage)
- */
-
 import type { AcademicChunk } from '../types/candidate.ts';
 import { quantizeToInt8, dequantizeFromInt8 } from '../core/vector/quantizer.ts';
 
@@ -15,14 +10,13 @@ export interface StoredBookVectors {
   dim: number;
   format: 'int8' | 'float32';
   count: number;
-  // Int8 量化二进制
+
   scales: number[];
   int8Data: ArrayBuffer;
   chunks: AcademicChunk[];
   updatedAt: string;
 }
 
-/** 打开或初始化端侧 IndexedDB 数据库 */
 function openDatabase(): Promise<IDBDatabase | null> {
   if (typeof window === 'undefined' || !window.indexedDB) {
     return Promise.resolve(null);
@@ -44,9 +38,6 @@ function openDatabase(): Promise<IDBDatabase | null> {
   });
 }
 
-/**
- * 将增量向量化的切片持久化保存至端侧数据库
- */
 export async function saveBookVectorsToLocal(record: StoredBookVectors): Promise<boolean> {
   const db = await openDatabase();
   if (!db) return false;
@@ -64,9 +55,6 @@ export async function saveBookVectorsToLocal(record: StoredBookVectors): Promise
   });
 }
 
-/**
- * 从端侧数据库读取某本书的增量向量
- */
 export async function loadBookVectorsFromLocal(bookId: string): Promise<StoredBookVectors | null> {
   const db = await openDatabase();
   if (!db) return null;
@@ -84,9 +72,6 @@ export async function loadBookVectorsFromLocal(bookId: string): Promise<StoredBo
   });
 }
 
-/**
- * 二进制格式解析：将 embeddings.bin 解析为内存在用的 Int8 与 Float32 向量数组
- */
 export function parseEmbeddingsBinary(buffer: ArrayBuffer): {
   dim: number;
   format: 'int8' | 'float32';
@@ -95,7 +80,7 @@ export function parseEmbeddingsBinary(buffer: ArrayBuffer): {
   float32Vectors?: Float32Array[];
 } {
   const dataView = new DataView(buffer);
-  // 读取 Magic ABP1
+
   const m0 = String.fromCharCode(dataView.getUint8(0));
   const m1 = String.fromCharCode(dataView.getUint8(1));
   const m2 = String.fromCharCode(dataView.getUint8(2));
@@ -132,9 +117,6 @@ export function parseEmbeddingsBinary(buffer: ArrayBuffer): {
   }
 }
 
-/**
- * 二进制格式序列化：将 Float32 向量批量压缩序列化为 embeddings.bin
- */
 export function serializeEmbeddingsBinary(
   vectors: Float32Array[],
   format: 'int8' | 'float32' = 'int8',
@@ -142,7 +124,6 @@ export function serializeEmbeddingsBinary(
   const count = vectors.length;
   const dim = count > 0 ? vectors[0].length : 0;
 
-  // Header 11 bytes: 4 magic + 1 format + 2 dim + 4 count
   const headerSize = 11;
   const bodySize = format === 'int8' ? count * (4 + dim) : count * (dim * 4);
   const totalSize = headerSize + bodySize;
@@ -150,7 +131,6 @@ export function serializeEmbeddingsBinary(
   const buffer = new ArrayBuffer(totalSize);
   const view = new DataView(buffer);
 
-  // Magic 'ABP1'
   view.setUint8(0, 'A'.charCodeAt(0));
   view.setUint8(1, 'B'.charCodeAt(0));
   view.setUint8(2, 'P'.charCodeAt(0));

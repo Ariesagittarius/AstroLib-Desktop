@@ -1,14 +1,3 @@
-/**
- * src/components/harness/pdf2abp/pdf2abp-timeline.ts
- * ============================================================================
- * Pure Linear Milestone & Subagent Timeline Projector for PDF2ABP Workshop
- * ============================================================================
- * Transforms raw job-state snapshots, untruncated structural milestone events,
- * live subagent tracker records, and workspace manifests (book-plan.json,
- * chunks/manifest.json, mineru-summary.json) into a deterministic, UI-ready
- * 8-stage linear milestone guide (GitHub Issue timeline inspired).
- */
-
 import type {
   Pdf2AbpEvent,
   Pdf2AbpJobState,
@@ -344,7 +333,6 @@ export function projectPdf2AbpTimeline(input: TimelineProjectorInput): Pdf2AbpTi
       tInfo.startedAt = evt.timestamp;
     }
 
-    // Subagent milestones have their own dedicated slice matrix; keep stage highlights concise & semantic
     if (!evt.agentId.startsWith('subagent:') || evt.type === 'error' || evt.type === 'warning') {
       if (evt.type !== 'thinking') {
         const list = stageHighlights.get(stageForEvt)!;
@@ -369,7 +357,6 @@ export function projectPdf2AbpTimeline(input: TimelineProjectorInput): Pdf2AbpTi
     }
   }
 
-  // Fallback stage artifacts presence detection
   const hasBookPlanArtifact =
     Boolean(bookPlan) || artifactPaths.some((p) => p === 'book-plan.json');
   const hasChunksArtifact =
@@ -379,7 +366,6 @@ export function projectPdf2AbpTimeline(input: TimelineProjectorInput): Pdf2AbpTi
     artifactPaths.some((p) => p.startsWith('vision/sheet_') || p.startsWith('vision/page_'));
   const hasCoverageAudit = artifactPaths.some((p) => p === 'chunks/coverage-audit.json');
 
-  // Construct Subagent Matrix
   const rawResults = jobState.subagentTasks || {};
   const completedSlices: SubagentSliceItem[] = [];
   const failedSlices: SubagentSliceItem[] = [];
@@ -466,7 +452,6 @@ export function projectPdf2AbpTimeline(input: TimelineProjectorInput): Pdf2AbpTi
     knownSliceTotal - completedSlices.length - failedSlices.length - activeSlices.length
   );
 
-  // Determine current phase index cleanly from jobState.phase and actual progress
   let activeStageIdx = PHASE_TO_STAGE_INDEX[jobState.phase] ?? 0;
   if (jobState.status === 'completed' || jobState.phase === 'done') {
     activeStageIdx = 8;

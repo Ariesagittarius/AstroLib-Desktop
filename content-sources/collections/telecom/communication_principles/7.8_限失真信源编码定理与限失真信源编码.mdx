@@ -42,11 +42,11 @@ import ExerciseTrigger from '@/components/exercises/ExerciseTrigger.astro';
 graph TD
     A["香农信源编码统一架构"] --> B["无失真信源编码 (Lossless)"]
     A --> C["限失真信源编码 (Lossy)"]
-    
+
     B --> B1["保真度要求：失真 D = 0"]
     B --> B2["编码物理极限：信源信息熵 H(X)"]
     B --> B3["设计目标：R → H(X)（熵匹配）"]
-    
+
     C --> C1["保真度要求：允许失真 D > 0"]
     C --> C2["编码物理极限：率失真函数 R(D)"]
     C --> C3["设计目标：R → R(D)（率失真匹配）"]

@@ -10,7 +10,6 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const PROJECT_ROOT = path.resolve(__dirname, '..');
 
-// 1. 查找可用 Git 可执行文件路径
 function getGitPath() {
   const candidates = [
     'git',
@@ -22,7 +21,7 @@ function getGitPath() {
       execSync(`"${cmd}" --version`, { stdio: 'ignore' });
       return cmd;
     } catch {
-      // continue
+
     }
   }
   throw new Error('未找到 Git 可执行程序，请确认系统已安装 Git！');
@@ -35,11 +34,10 @@ function runGit(args, cwd = PROJECT_ROOT, options = {}) {
   return execSync(cmd, { cwd, encoding: 'utf8', stdio: options.stdio || 'pipe', maxBuffer: 64 * 1024 * 1024, ...options });
 }
 
-// 2. 解析 CLI 参数
 function parseArgs() {
   const args = process.argv.slice(2);
   const options = {
-    mode: 'clean', // 'clean', 'private', 'all'
+    mode: 'clean',
     dryRun: false,
     force: false,
     remote: '',
@@ -97,7 +95,6 @@ AstroLib Git 双模式推送工具 (Clean / Private / All)
 `);
 }
 
-// 3. 检查并获取当前分支与提交
 function getRepoInfo() {
   const branch = runGit('rev-parse --abbrev-ref HEAD').trim();
   const commit = runGit('rev-parse HEAD').trim();
@@ -106,7 +103,6 @@ function getRepoInfo() {
   return { branch, commit, commitMsg, remotes };
 }
 
-// 4. 执行私有仓库推送（完整注释版）
 async function pushPrivate(options, repoInfo) {
   console.log('\n[private-push] [1/2] Preparing full-comment push to private remote...');
   const targetBranch = options.branch || repoInfo.branch;
@@ -135,7 +131,6 @@ async function pushPrivate(options, repoInfo) {
   return true;
 }
 
-// 5. 执行公共仓库推送（剥离注释版，基于 Git Worktree 隔离沙箱）
 async function pushClean(options, repoInfo) {
   console.log('\n[clean-push] [2/2] Preparing comment-stripped push to public remote...');
   const targetBranch = options.branch || repoInfo.branch;
@@ -147,22 +142,19 @@ async function pushClean(options, repoInfo) {
     );
   }
 
-  // 临时沙箱目录
   const tempDir = path.join(PROJECT_ROOT, 'node_modules', '.cache', `_git_clean_${Date.now()}`);
   fs.mkdirSync(path.dirname(tempDir), { recursive: true });
 
   console.log(`[clean-push] Creating temporary worktree: ${path.basename(tempDir)}`);
   try {
-    // 创建 detached worktree，指向当前 HEAD
+
     runGit(`worktree add --detach "${tempDir}" HEAD`);
 
-    // 获取沙箱中所有被 Git 追踪的文件（禁用路径转义以确保中文路径正确剥离）
     const trackedFiles = runGit('-c core.quotePath=false ls-files', tempDir)
       .split(/\r?\n/)
       .map(f => f.trim())
       .filter(Boolean);
 
-    // 净化沙箱：移除任何 Agent/Skill 目录、秘钥配置、本地脚本、构建衍生数据与孤儿文件
     const bannedPrefixes = [
       '.agents',
       '.dsh',
@@ -279,7 +271,6 @@ async function pushClean(options, repoInfo) {
 
     console.log(`[clean-push] Stripped comments from ${strippedCount} files`);
 
-    // 校验剥离后沙箱的关键 JS 入口与 MDX 章节语法健康
     console.log('[clean-push] Verifying syntax in stripped worktree...');
     for (const checkTarget of ['bin/astrolib-cli.mjs', 'bin/astrolib-mcp.mjs', 'scripts/pack-book-abp.mjs']) {
       if (fs.existsSync(path.join(tempDir, checkTarget))) {
@@ -294,7 +285,6 @@ async function pushClean(options, repoInfo) {
     }
     console.log('[clean-push] Stripped worktree syntax and MDX checks passed');
 
-    // 检查沙箱是否有修改
     const status = runGit('status --porcelain', tempDir).trim();
     let strippedCommit = repoInfo.commit;
 
@@ -309,7 +299,6 @@ async function pushClean(options, repoInfo) {
       console.log(`[clean-push] No comment diffs; using current commit ${strippedCommit.slice(0, 8)}`);
     }
 
-    // 推送到远程公共仓库（纯净镜像分支需 --force 覆盖发布）
     const forceFlag = ' --force';
     const pushCmd = `push ${remote} ${strippedCommit}:refs/heads/${targetBranch}${forceFlag}`;
 
@@ -322,7 +311,7 @@ async function pushClean(options, repoInfo) {
       console.log(`[clean-push] Public repository push completed.`);
     }
   } finally {
-    // 清理 Worktree
+
     try {
       console.log('[clean-push] Cleaning up temporary worktree...');
       runGit(`worktree remove --force "${tempDir}"`, PROJECT_ROOT);
@@ -331,12 +320,11 @@ async function pushClean(options, repoInfo) {
         fs.rmSync(tempDir, { recursive: true, force: true });
       }
     } catch (cleanupErr) {
-      // ignore cleanup errors
+
     }
   }
 }
 
-// 主入口
 async function main() {
   const options = parseArgs();
   if (options.help) {

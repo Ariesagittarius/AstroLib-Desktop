@@ -1,10 +1,3 @@
-/**
- * tests/unit/library-entity.test.ts
- * ============================================================================
- * AstroLib 统一研读实体模型与书库聚合服务单元测试
- * ============================================================================
- */
-
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import path from 'node:path';
 import fs from 'node:fs';
@@ -18,7 +11,7 @@ import type {
 
 describe('Unified Reading Entity & Library System Unit Tests', () => {
   it('应准确区隔书籍与文献的元数据载荷，保持一等公民同级化', () => {
-    // 1. 书籍实体契约
+
     const bookEntity: UnifiedReadingEntity = {
       id: 'book:math-advanced-algebra',
       kind: 'book',
@@ -42,7 +35,6 @@ describe('Unified Reading Entity & Library System Unit Tests', () => {
     expect(bookEntity.metadata.colSlug).toBe('math');
     expect(bookEntity.status).toBe('ready');
 
-    // 2. 学术文献实体契约
     const paperEntity: UnifiedReadingEntity = {
       id: 'paper:task_attention_is_all_you_need',
       kind: 'paper',
@@ -93,11 +85,9 @@ describe('Unified Reading Entity & Library System Unit Tests', () => {
     expect(tabs[0].kind).toBe('book');
     expect(tabs[1].kind).toBe('paper');
 
-    // 左右分屏契约 (1x2)
     const splitMode: SplitLayoutMode = 'split-vertical';
     expect(splitMode).toBe('split-vertical');
 
-    // 模拟窗格绑定
     const paneBindings = [tabs[0].id, tabs[1].id];
     expect(paneBindings[0]).toBe('tab-1');
     expect(paneBindings[1]).toBe('tab-2');

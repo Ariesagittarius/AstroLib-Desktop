@@ -1,8 +1,8 @@
 # AstroLib 桌面端与 Agent 系统内存占用全景审计与轻量化架构演进方案报告
 
-> **编制版本**：v1.0.0  
-> **面向对象**：技术委员会、架构评审方、第三方审计团队  
-> **当前状态**：技术方案已就绪 / 审计就绪  
+> **编制版本**：v1.0.0
+> **面向对象**：技术委员会、架构评审方、第三方审计团队
+> **当前状态**：技术方案已就绪 / 审计就绪
 > **核心指标**：当前全功能常驻运存 **~1.1GB** $\longrightarrow$ 目标收敛至 **280MB ~ 380MB**（降幅 ~65-75%）
 
 ---
@@ -20,28 +20,28 @@
 ```mermaid
 flowchart TD
     Total["整体常驻内存: ~1,100 MB"]
-    
+
     subgraph S1["进程拓扑与基础开销 (~400MB)"]
         MP["Electron Main (Node.js) + 14个插件中间件: ~200MB"]
         GP["Chromium GPU Process (字体/合成层/Canvas显存): ~200MB"]
     end
-    
+
     subgraph S2["外层 SPA 宿主 Shell (~280MB)"]
         Shell["desktop.astro 渲染进程: ~280MB"]
         ShellLib["首屏静态全量打包: xterm + diff2html + mermaid + katex + Harness"]
     end
-    
+
     subgraph S3["内嵌研读视窗 Iframe 冗余 (~300MB)"]
         Frame1["Iframe 1: 独立 Starlight 站点 (Header/Sidebar/M3/KaTeX)"]
         Frame2["Iframe 2: 独立 Starlight 站点 (多屏并发)"]
         FrameLeak["暴力 innerHTML 替换导致的 Detached Frame 泄漏"]
     end
-    
+
     subgraph S4["文献与 AI 常驻进程 (~200MB~400MB)"]
         PDF["PDF.js Canvas 高分屏位图无上限缓存"]
         Python["Qwen 0.6B Python 常驻 Daemon (按需启动即独占显存)"]
     end
-    
+
     Total --> S1
     Total --> S2
     Total --> S3
@@ -64,17 +64,17 @@ sequenceDiagram
     participant Runner as MemLab CLI / Puppeteer
     participant App as AstroLib Desktop (Localhost)
     participant V8 as Chromium V8 Heap Engine
-    
+
     Runner->>App: 导航至首页 (Baseline)
     Runner->>V8: 拍摄 Heap Snapshot 1 (S1)
-    
+
     Runner->>App: 执行动作：打开书库 -> 点击分屏打开教材 -> 激活文献研读
     Runner->>V8: 拍摄 Heap Snapshot 2 (S2)
-    
+
     Runner->>App: 逆向动作：关闭所有研读标签页 -> 返回 Agent Harness 首页
     Runner->>V8: 触发强制垃圾回收 (Forced GC)
     Runner->>V8: 拍摄 Heap Snapshot 3 (S3)
-    
+
     Runner->>Runner: Diff 分析: 计算 S3 - S1 残留对象
     Runner-->>Runner: 生成 Retainer Trace (支配树支配路径与泄漏代码定位)
 ```
@@ -88,17 +88,17 @@ sequenceDiagram
 module.exports = {
   // 1. 基准状态 (S1)
   url: () => 'http://127.0.0.1:62960/desktop/',
-  
+
   // 2. 目标交互 (S2)：在分屏中打开一本教材与一篇文献
   action: async (page) => {
     // 点击导航轨进入书库
     await page.click('#rail-btn-library');
     await page.waitForSelector('.library-grid-root');
-    
+
     // 打开第一本教材
     await page.click('[data-book-card]:first-child');
     await page.waitForSelector('.pane-reader-iframe');
-    
+
     // 切换至双屏并打开第二篇文献
     await page.click('#split-btn-1x2');
     await page.click('#btn-reader-new-tab');
@@ -106,7 +106,7 @@ module.exports = {
     await page.click('[data-paper-card]:first-child');
     await page.waitForTimeout(2000);
   },
-  
+
   // 3. 闭环复原 (S3)：逐一关闭所有标签页，返回 Harness 工作台
   back: async (page) => {
     const closeButtons = await page.$$('.tab-close-btn');
@@ -117,7 +117,7 @@ module.exports = {
     await page.click('#rail-btn-overview');
     await page.waitForSelector('#harness-root');
   },
-  
+
   // 泄漏判定断言：禁止残存任何 Detached HTMLIFrameElement 或 WindowProxy
   leakFilter: (node, _heap) => {
     return (
@@ -180,7 +180,7 @@ module.exports = {
 针对上述审计出的 6 大缺陷，本方案制定五项可落地的架构重构手段：
 
 ### 手段 1：研读视窗去 Iframe 化 —— 升级为「Single-Page Dynamic Article Shell」
-> **解决缺陷**：MEM-01 (P0)  
+> **解决缺陷**：MEM-01 (P0)
 > **预期收益**：直接抹除每个分屏 80MB~150MB 的重复引擎开销，根治 Detached Frame 泄漏。
 
 ```mermaid
@@ -190,7 +190,7 @@ graph LR
         D1 --> IFR1["Iframe 1: 完整 Starlight 站点 (Header/Sidebar/M3/KaTeX)"]
         D1 --> IFR2["Iframe 2: 完整 Starlight 站点 (Header/Sidebar/M3/KaTeX)"]
     end
-    
+
     subgraph New["新架构: 统一 SPA 单 DOM 树 (轻盈统一)"]
         D2["desktop.astro Shell (共享单套 M3/KaTeX 运行时)"]
         D2 --> Pane1["&lt;astrolib-article-pane&gt; (仅挂载纯净正文 HTML)"]
@@ -212,7 +212,7 @@ graph LR
 ---
 
 ### 手段 2：外设沉重库与中间件的「全链路异步懒加载」
-> **解决缺陷**：MEM-02 (P0), MEM-03 (P1)  
+> **解决缺陷**：MEM-02 (P0), MEM-03 (P1)
 > **预期收益**：首屏 JS Bundle 体积减少 60% 以上，首屏渲染进程 JS Heap 降低 100MB~150MB。
 
 #### 1. 前端 `harness-controller.ts` 按需代码切片 (Dynamic Import)
@@ -245,7 +245,7 @@ public async switchInspectorTab(tab: 'catalog' | 'artifacts' | 'terminal' | 'dif
 ---
 
 ### 手段 3：文献研读 (PDF.js) 的 Canvas 实例池与视口显存回收
-> **解决缺陷**：MEM-04 (P1)  
+> **解决缺陷**：MEM-04 (P1)
 > **预期收益**：浏览 20 页以上学术文献时，GPU 显存与渲染堆占用稳定在 60MB 以内，消除 200MB+ 的显存泄漏。
 
 在 `src/features/doc-ingestion/ingest-controller.ts` 中建立**固定视口滑动窗口（3-Page Window）**：
@@ -267,7 +267,7 @@ public async switchInspectorTab(tab: 'catalog' | 'artifacts' | 'terminal' | 'dif
 ---
 
 ### 手段 4：Python AI 守护进程的「闲置自动休眠机制 (Idle Auto-Suspend)」
-> **解决缺陷**：MEM-05 (P1)  
+> **解决缺陷**：MEM-05 (P1)
 > **预期收益**：用户使用完信息高亮透镜后，5 分钟内自动清空 500MB~1GB 的外置常驻物理内存。
 
 在 `src/services/info-highlight/qwen-highlight-service.ts` 中引入防抖闲置计时器：
@@ -297,7 +297,7 @@ export class QwenHighlightService {
 ---
 
 ### 手段 5：学术长文档与海量 KaTeX 公式的「CSS 引擎原生虚拟化」
-> **解决缺陷**：长文档渲染卡顿、数十万 KaTeX 嵌套 DOM 挤爆 Blink 内存与 GPU 合成层  
+> **解决缺陷**：长文档渲染卡顿、数十万 KaTeX 嵌套 DOM 挤爆 Blink 内存与 GPU 合成层
 > **预期收益**：免写脆弱的 JS 虚拟滚动，长文档 DOM 节点常驻渲染数降低 70%，内存直接节省 100MB+。
 
 由于大学教材一章常有数百至上千个复杂数学公式，JS 运行时遍历或手写虚拟列表极易破坏阅读器原生平滑滚动与 `Ctrl+F` 页面搜索。业界（如 Chrome DevRel 与现代高刷阅读器）首选**原生标准 CSS 视口隔离**：
@@ -336,7 +336,7 @@ class ArticlePaneController {
 ---
 
 ### 手段 6：本地向量模型与 ONNX Runtime 隔离至「Electron utilityProcess」
-> **解决缺陷**：本地 Embedding / 向量检索计算占用主进程与主线程、Wasm/C++ 内存膨胀无法回收  
+> **解决缺陷**：本地 Embedding / 向量检索计算占用主进程与主线程、Wasm/C++ 内存膨胀无法回收
 > **预期收益**：杜绝主进程卡死与 OOM 连锁反应，模型常驻堆内存封顶 256MB 且支持闲置完全回收。
 
 将 `@huggingface/transformers` 与 `onnxruntime-node` 从 `local-server.ts` 和主进程剥离，使用 Electron 官方推荐的 `utilityProcess` 派生独立工作进程：

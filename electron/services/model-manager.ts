@@ -1,10 +1,3 @@
-/**
- * electron/services/model-manager.ts
- * ============================================================================
- * AstroLib 端侧模型管理器 (On-Demand Model Lifecycle & Downloader Engine)
- * ============================================================================
- */
-
 import fs from 'node:fs';
 import path from 'node:path';
 import { EnvDetector } from './env-detector.ts';
@@ -74,9 +67,6 @@ export class ModelManager {
     this.customModelsDir = customModelsDir;
   }
 
-  /**
-   * 注册下载进度监听器
-   */
   onProgress(listener: (progress: ModelDownloadProgress) => void): () => void {
     this.progressListeners.add(listener);
     return () => {
@@ -89,14 +79,11 @@ export class ModelManager {
       try {
         listener(progress);
       } catch {
-        // ignore listener errors
+
       }
     }
   }
 
-  /**
-   * 检查单个模型状态
-   */
   async checkModelStatus(modelId: string, cachedDiag?: any): Promise<ModelInfoPayload> {
     const entry = REGISTERED_MODELS.find((m) => m.id === modelId);
     if (!entry) {
@@ -145,7 +132,6 @@ export class ModelManager {
       };
     }
 
-    // 检查缓存路径
     const candidateDirs = [
       path.join(diag.huggingFaceCacheDir, entry.hfHubFolder),
       path.join(diag.modelsDir, entry.id),
@@ -179,9 +165,6 @@ export class ModelManager {
     };
   }
 
-  /**
-   * 获取所有可用模型列表及状态
-   */
   async getAvailableModels(): Promise<ModelInfoPayload[]> {
     const diag = await EnvDetector.getDiagnostics(this.projectRoot, this.customModelsDir);
     const list: ModelInfoPayload[] = [];
@@ -191,9 +174,6 @@ export class ModelManager {
     return list;
   }
 
-  /**
-   * 启动模型按需下载（支持国内 hf-mirror.com 镜像）
-   */
   async startDownload(
     modelId: string,
     options: { mirrorUrl?: string } = {}
@@ -225,7 +205,6 @@ export class ModelManager {
     this.activeDownloads.set(modelId, { abortController, progress });
     this.emitProgress(progress);
 
-    // 异步执行下载流程
     this.executeDownload(entry, targetDir, abortController, options.mirrorUrl || 'https://hf-mirror.com').catch(
       (err) => {
         console.error(`[model-manager] 下载异常 (${modelId}):`, err);
@@ -242,9 +221,6 @@ export class ModelManager {
     return { ok: true, message: '已启动模型下载任务' };
   }
 
-  /**
-   * 取消当前下载
-   */
   cancelDownload(modelId: string): { ok: boolean } {
     const active = this.activeDownloads.get(modelId);
     if (!active) return { ok: false };
@@ -265,9 +241,6 @@ export class ModelManager {
     return { ok: true };
   }
 
-  /**
-   * 实际下载执行器（带测速与进度计算）
-   */
   private async executeDownload(
     entry: ModelRegistryEntry,
     targetDir: string,
@@ -278,7 +251,6 @@ export class ModelManager {
     let lastTime = startTime;
     let lastBytes = 0;
 
-    // 校验镜像 URL 严格为可信 HTTPS 地址，防止任意协议/命令注入
     let safeMirrorUrl = 'https://hf-mirror.com';
     try {
       const parsedMirror = new URL(mirrorUrl || 'https://hf-mirror.com');
@@ -291,7 +263,6 @@ export class ModelManager {
       throw new Error(err?.message || `非法的模型镜像 URL: ${mirrorUrl}`);
     }
 
-    // 针对 MiniLM：通过 Transformers.js 自动下载机制或镜像拉取
     if (entry.id === 'minilm-l12') {
       try {
         const { pipeline, env } = await import('@huggingface/transformers');
@@ -331,7 +302,6 @@ export class ModelManager {
           },
         });
 
-        // 验证推理
         await pipe('test query', { pooling: 'mean', normalize: true });
 
         this.emitProgress({
@@ -351,13 +321,11 @@ export class ModelManager {
       }
     }
 
-    // 针对 Qwen3 及后续大模型：通过 Python huggingface_hub snapshot_download
     const diag = await EnvDetector.getDiagnostics(this.projectRoot, this.customModelsDir);
     if (!diag.pythonPath) {
       throw new Error('未找到 Python 环境，无法下载 Qwen3 权重');
     }
 
-    // 在 Python 脚本中通过环境变量读取参数，彻底消除代码字符串拼接注入风险
     const pythonCode = [
       'import os, sys',
       'try:',

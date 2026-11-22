@@ -1,16 +1,3 @@
-/**
- * src/server/plugins/library/dev-server-plugin.mjs
- * ============================================================================
- * AstroLib 统一研读实体与书库服务插件 (/api/library/*)
- * ============================================================================
- * 职责：
- * 1. 响应前端统一书库实体查询 (/api/library/entities)；
- * 2. 响应书架查询与创建 (/api/library/shelves)；
- * 3. 接收并解压安装 .abp 书籍包 (/api/library/upload-abp)；
- * 4. 彻底解耦，同端服务于 Web 与 Electron 嵌入式服务。
- * ============================================================================
- */
-
 import fs from 'node:fs';
 import path from 'node:path';
 import zlib from 'node:zlib';
@@ -112,7 +99,6 @@ export function devLibraryServerPlugin() {
         const urlObj = new URL(rawUrl, 'http://localhost');
         const pathname = urlObj.pathname;
 
-        // 0. 开发态只读静态资产伺服 (.tmp/dev-abp-packs 与 artifacts/，严格不触及 public/)
         if (req.method === 'GET' && pathname.startsWith('/abp-packs/')) {
           const decodedRel = decodeURIComponent(pathname.slice('/abp-packs/'.length));
           if (!decodedRel.includes('..') && !decodedRel.includes('\\')) {
@@ -180,7 +166,6 @@ export function devLibraryServerPlugin() {
         try {
           const store = getStore();
 
-          // 1. 获取全库统一实体 (书籍 + 文献)
           if (req.method === 'GET' && pathname === `${LIBRARY_PATH_PREFIX}/entities`) {
             const entities = [];
             const seenBookIds = new Set();
@@ -221,7 +206,6 @@ export function devLibraryServerPlugin() {
               });
             };
 
-            // A.1 优先扫描开发态已上传安装目录 (.tmp/dev-abp-packs/*/manifest.json)
             const devPacksDir = path.resolve(projectRoot, '.tmp/dev-abp-packs');
             if (fs.existsSync(devPacksDir)) {
               try {
@@ -238,7 +222,6 @@ export function devLibraryServerPlugin() {
               } catch {}
             }
 
-            // A.2 读取开发产物或临时目录的 catalog.json 书籍（不再读取 public/abp-packs）
             const candidateCatalogs = [
               path.resolve(projectRoot, 'artifacts/abp-packs/catalog.json'),
               path.resolve(projectRoot, '.tmp/dev-abp-packs/catalog.json'),
@@ -253,7 +236,6 @@ export function devLibraryServerPlugin() {
               } catch {}
             }
 
-            // B. 读取 MinerU 文献任务
             try {
               const taskMgr = TaskManager.getInstance();
               const tasks = taskMgr.listTasks();
@@ -293,7 +275,6 @@ export function devLibraryServerPlugin() {
               }
             } catch {}
 
-            // 排序
             entities.sort((a, b) => {
               const aT = a.lastReadAt || a.createdAt;
               const bT = b.lastReadAt || b.createdAt;
@@ -303,12 +284,10 @@ export function devLibraryServerPlugin() {
             return sendJson(res, 200, { success: true, entities });
           }
 
-          // 2. 获取书架列表
           if (req.method === 'GET' && pathname === `${LIBRARY_PATH_PREFIX}/shelves`) {
             return sendJson(res, 200, { success: true, shelves: store.shelves });
           }
 
-          // 3. 创建书架
           if (req.method === 'POST' && pathname === `${LIBRARY_PATH_PREFIX}/shelves`) {
             const body = await readJsonBody(req);
             const name = (body.name || '').trim();
@@ -324,7 +303,6 @@ export function devLibraryServerPlugin() {
             return sendJson(res, 200, { success: true, shelf: newShelf });
           }
 
-          // 4. 更新实体元数据 (书架归属、阅读进度)
           if (req.method === 'POST' && pathname === `${LIBRARY_PATH_PREFIX}/entity-meta`) {
             const body = await readJsonBody(req);
             const { entityId, updates } = body;
@@ -335,7 +313,6 @@ export function devLibraryServerPlugin() {
             return sendJson(res, 200, { success: true });
           }
 
-          // 5. 统一上传并安装书籍文件 (.abp / .epub)（开发态写入 .tmp/dev-abp-packs，严禁污染 public/）
           if (
             req.method === 'POST' &&
             (pathname === `${LIBRARY_PATH_PREFIX}/upload-abp` || pathname === `${LIBRARY_PATH_PREFIX}/upload-book`)
@@ -389,10 +366,9 @@ export function devLibraryServerPlugin() {
               let swapped = false;
 
               try {
-                // 1. 写入 manifest 到 staging
+
                 fs.writeFileSync(path.join(stagingDir, 'manifest.json'), JSON.stringify(manifest, null, 2), 'utf8');
 
-                // 2. 写入章节
                 if (bundle.chapters && typeof bundle.chapters === 'object') {
                   for (const [cSlug, cData] of Object.entries(bundle.chapters)) {
                     const destChap = path.join(stagingChaptersDir, `${cSlug}.json`);
@@ -401,7 +377,6 @@ export function devLibraryServerPlugin() {
                   }
                 }
 
-                // 3. 写入资源
                 if (bundle.assets && typeof bundle.assets === 'object') {
                   for (const [relPath, b64] of Object.entries(bundle.assets)) {
                     const destAsset = path.join(stagingDir, relPath);
@@ -410,7 +385,6 @@ export function devLibraryServerPlugin() {
                   }
                 }
 
-                // 3.1 写入自包含 AI 索引与原始归档
                 if (bundle.aiIndex) {
                   fs.writeFileSync(path.join(stagingDir, 'ai-index.json'), JSON.stringify(bundle.aiIndex, null, 2), 'utf8');
                 }
@@ -427,7 +401,6 @@ export function devLibraryServerPlugin() {
                   );
                 }
 
-                // 4. 写入习题
                 if (bundle.exercises && typeof bundle.exercises === 'object') {
                   const stagingExercisesDir = path.join(stagingDir, 'exercises');
                   fs.mkdirSync(stagingExercisesDir, { recursive: true });
@@ -439,7 +412,6 @@ export function devLibraryServerPlugin() {
                   }
                 }
 
-                // 5. 三段式原子重命名替换 (P1-C2)
                 if (fs.existsSync(targetDir)) {
                   fs.renameSync(targetDir, backupDir);
                   backedUp = true;
@@ -447,14 +419,13 @@ export function devLibraryServerPlugin() {
                 fs.renameSync(stagingDir, targetDir);
                 swapped = true;
 
-                // 6. 成功后物理清理 backup (P1-C3 降级与幂等彻底清理)
                 if (backedUp && fs.existsSync(backupDir)) {
                   fs.rmSync(backupDir, { recursive: true, force: true });
                 }
 
                 return sendJson(res, 200, { success: true, manifest });
               } catch (writeErr) {
-                // 写入或替换异常，触发回滚 (P1-C2)
+
                 if (swapped) {
                   try {
                     if (fs.existsSync(targetDir)) {
@@ -481,7 +452,6 @@ export function devLibraryServerPlugin() {
             }
           }
 
-          // 6. 删除已安装书籍包 (/api/library/books/:bookKey) (P1-C3)
           if (req.method === 'DELETE' && pathname.startsWith(`${LIBRARY_PATH_PREFIX}/books/`)) {
             const bookKey = pathname.slice(`${LIBRARY_PATH_PREFIX}/books/`.length);
             if (!bookKey || bookKey.includes('..') || bookKey.includes('/') || bookKey.includes('\\')) {

@@ -1,10 +1,3 @@
-/**
- * src/components/harness/pdf2abp/pdf2abp-bridge.ts
- * ============================================================================
- * HarnessController / PluginEnvironment 与 PDF2ABP & ArtifactHub 的桥梁
- * ============================================================================
- */
-
 import type { PluginEnvironment } from '../../../plugins/harness/plugin-environment.ts';
 import { getPdf2AbpStore, type Pdf2AbpStore } from './pdf2abp-store.ts';
 import { ArtifactStore } from '../../../features/harness/artifact-store.ts';

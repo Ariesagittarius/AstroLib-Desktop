@@ -1,10 +1,3 @@
-/**
- * src/ai/skills/pdf2abp/mineru-pitfalls-and-python-recipes.ts
- * ============================================================================
- * Skill 5: MinerU 常见 OCR 陷阱与沙箱 Python 预处理菜谱
- * ============================================================================
- */
-
 import type { SkillDocument } from './types.ts';
 
 export const mineruPitfallsSkill: SkillDocument = {

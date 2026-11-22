@@ -1,18 +1,3 @@
-/**
- * tests/unit/heading-contract.test.ts
- * ============================================================================
- * 标题大纲与锚点唯一真源契约测试 (Heading & Anchor Contract Suite)
- * ============================================================================
- * 遵循 P1-B1 门禁规格与 ADR-CONTENT-IR-2026-11-13：
- * 1. 验证 src/core/content/headings.ts 纯函数的算法冻结、大纲提取与去重重写契约；
- * 2. 普查 13 本书全部章节：headings[].id 必须 100% 属于 HTML 中 <h1-4> 的 id 集合；
- * 3. 每章 headings 的 depth 与 text 与 HTML 中对应标题标签一致；
- * 4. 同一章节内 headings 与 HTML 锚点 id 严格唯一（0 重复碰撞）；
- * 5. 全书 headings 非空章数必须 ≥ 983 章；
- * 6. 源码负向断言：scripts/pack-book-abp.mjs 中硬编码 slug 正则出现次数必须为 0。
- * ============================================================================
- */
-
 import { describe, it, expect } from 'vitest';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
@@ -115,12 +100,10 @@ describe('Heading & Anchor Contract Suite (P1-B1)', () => {
           const payload = JSON.parse(fs.readFileSync(cf, 'utf8'));
           const html = payload.html || '';
 
-          // 提取 HTML 中所有 <h1-4 id="..."> 的 id
           const htmlIdMatches = [...html.matchAll(/<h([1-4])\b[^>]*\sid="([^"]+)"/gi)];
           const htmlIds = htmlIdMatches.map((m) => m[2]);
           const htmlIdSet = new Set(htmlIds);
 
-          // 验证 HTML 标题 ID 唯一性（0 重复）
           if (htmlIds.length !== htmlIdSet.size) {
             duplicateIdCount++;
           }
@@ -130,7 +113,6 @@ describe('Heading & Anchor Contract Suite (P1-B1)', () => {
             chaptersWithHeadings++;
           }
 
-          // 核心断言：headings[].id ⊆ htmlIdSet (100%)
           for (const h of headings) {
             expect(
               htmlIdSet.has(h.id),
@@ -138,16 +120,15 @@ describe('Heading & Anchor Contract Suite (P1-B1)', () => {
             ).toBe(true);
           }
 
-          // 验证 heading 自身 ID 唯一性
           const headingIds = headings.map((h: any) => h.id);
           expect(new Set(headingIds).size, `[${d}] 章节 ${cf} 的 headings 数组存在重复 ID`).toBe(headingIds.length);
         }
       }
 
       expect(totalChaptersChecked).toBe(1251);
-      // 重打包后 headings 覆盖率由 465 提升至 ≥ 983
+
       expect(chaptersWithHeadings).toBeGreaterThanOrEqual(983);
-      // 重复 ID 章数归零
+
       expect(duplicateIdCount).toBe(0);
     }, 60000);
   });

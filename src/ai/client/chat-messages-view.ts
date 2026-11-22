@@ -1,10 +1,3 @@
-/**
- * src/ai/client/chat-messages-view.ts
- * ============================================================================
- * Messages View Event Delegation & Sources Rendering for AI Chat
- * ============================================================================
- */
-
 import { safeLink } from './chat-markdown';
 import { renderTitleHtml } from '../../utils/render-title';
 
@@ -17,7 +10,6 @@ export function bindMessagesViewEvents(messagesEl: HTMLElement, host: MessagesVi
   messagesEl.addEventListener('click', (e: MouseEvent) => {
     const targetEl = e.target as HTMLElement;
 
-    // 工具面板 Tab 切换 (结果 / 参数)
     const tabBtn = targetEl.closest('.ask-tool-tab');
     if (tabBtn) {
       e.preventDefault();
@@ -42,7 +34,6 @@ export function bindMessagesViewEvents(messagesEl: HTMLElement, host: MessagesVi
       return;
     }
 
-    // 工具数据复制
     const copyBtn = targetEl.closest('.ask-tool-copy-btn');
     if (copyBtn) {
       e.preventDefault();
@@ -65,7 +56,6 @@ export function bindMessagesViewEvents(messagesEl: HTMLElement, host: MessagesVi
       return;
     }
 
-    // 错误卡片重试
     const retryBtn = targetEl.closest('.ask-error-retry-btn');
     if (retryBtn) {
       e.preventDefault();
@@ -73,7 +63,6 @@ export function bindMessagesViewEvents(messagesEl: HTMLElement, host: MessagesVi
       return;
     }
 
-    // 错误卡片打开快速设置调整模型
     const settingsTrigger = targetEl.closest('.ask-error-settings-btn');
     if (settingsTrigger) {
       e.preventDefault();
@@ -81,7 +70,6 @@ export function bindMessagesViewEvents(messagesEl: HTMLElement, host: MessagesVi
       return;
     }
 
-    // 错误卡片完整日志复制
     const copyErrBtn = targetEl.closest('.ask-error-copy-btn');
     if (copyErrBtn) {
       e.preventDefault();
@@ -101,7 +89,6 @@ export function bindMessagesViewEvents(messagesEl: HTMLElement, host: MessagesVi
       return;
     }
 
-    // 链接点击处理与平滑滚动
     const link = targetEl.closest('a');
     if (!link || !link.href) return;
     const rawHref = link.getAttribute('href') || '';

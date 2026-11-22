@@ -21,23 +21,23 @@ $$
 见图 $25.1$，在直角坐标系中计算
 
 $$
-\begin{array}{c} 
-z_{x} = \frac{x}{z}, \quad z_{y} = \frac{y}{z}, \\ 
-\sqrt{1 + z_{x}^{2} + z_{y}^{2}} = \sqrt{2}, \\ 
-I = \iint_{x^{2} + y^{2} \leqslant 2 a x} [ x^{2} y^{2} + (x^{2} + y^{2})^{2} ] \sqrt{2} \mathrm{d} x \mathrm{d} y. 
+\begin{array}{c}
+z_{x} = \frac{x}{z}, \quad z_{y} = \frac{y}{z}, \\
+\sqrt{1 + z_{x}^{2} + z_{y}^{2}} = \sqrt{2}, \\
+I = \iint_{x^{2} + y^{2} \leqslant 2 a x} [ x^{2} y^{2} + (x^{2} + y^{2})^{2} ] \sqrt{2} \mathrm{d} x \mathrm{d} y.
 \end{array}
 $$
 
-![](images/bc3801d6d4028eb58baec0fc40a805deb9bf0c225dc77e311fcde50b478d60f6.jpg)  
+![](images/bc3801d6d4028eb58baec0fc40a805deb9bf0c225dc77e311fcde50b478d60f6.jpg)
 图$25.1$
 
 用极坐标变换求上述二重积分，则
 
 $$
-\begin{array}{r l} 
-I & = \sqrt{2} \int_{- \pi / 2}^{\pi / 2} \mathrm{d} \theta \int_{0}^{2 a \cos \theta} (r^{4} \cos^{2} \theta \sin^{2} \theta + r^{4}) r \mathrm{d} r \\ 
-& = \sqrt{2} \int_{- \pi / 2}^{\pi / 2} (\cos^{2} \theta \sin^{2} \theta + 1) \cdot \left(\frac{1}{6} r^{6} \Big|_{0}^{2 a \cos \theta}\right) \mathrm{d} \theta \\ 
-& = \frac{\sqrt{2}}{6} (2 a)^{6} \int_{- \pi / 2}^{\pi / 2} \cos^{6} \theta (\cos^{2} \theta \sin^{2} \theta + 1) \mathrm{d} \theta = \frac{29}{8} \sqrt{2} \pi a^{6}. 
+\begin{array}{r l}
+I & = \sqrt{2} \int_{- \pi / 2}^{\pi / 2} \mathrm{d} \theta \int_{0}^{2 a \cos \theta} (r^{4} \cos^{2} \theta \sin^{2} \theta + r^{4}) r \mathrm{d} r \\
+& = \sqrt{2} \int_{- \pi / 2}^{\pi / 2} (\cos^{2} \theta \sin^{2} \theta + 1) \cdot \left(\frac{1}{6} r^{6} \Big|_{0}^{2 a \cos \theta}\right) \mathrm{d} \theta \\
+& = \frac{\sqrt{2}}{6} (2 a)^{6} \int_{- \pi / 2}^{\pi / 2} \cos^{6} \theta (\cos^{2} \theta \sin^{2} \theta + 1) \mathrm{d} \theta = \frac{29}{8} \sqrt{2} \pi a^{6}.
 \end{array}
 $$
 </Solution>
@@ -76,9 +76,9 @@ $$
 最后得到
 
 $$
-\begin{array}{l} 
-I = \int_{- \pi / 2}^{\pi / 2} \mathrm{d} \theta \int_{0}^{2 \sqrt{2} a \cos \theta} \left(\frac{1}{4} r^{4} \cos^{2} \theta \sin^{2} \theta + \frac{1}{4} r^{4}\right) \frac{r}{\sqrt{2}} \mathrm{d} r \\ 
-= \frac{29}{8} \sqrt{2} \pi a^{6}. 
+\begin{array}{l}
+I = \int_{- \pi / 2}^{\pi / 2} \mathrm{d} \theta \int_{0}^{2 \sqrt{2} a \cos \theta} \left(\frac{1}{4} r^{4} \cos^{2} \theta \sin^{2} \theta + \frac{1}{4} r^{4}\right) \frac{r}{\sqrt{2}} \mathrm{d} r \\
+= \frac{29}{8} \sqrt{2} \pi a^{6}.
 \end{array}
 $$
 </Solution>
@@ -97,26 +97,26 @@ $$
 故所求面积
 
 $$
-\begin{array}{r l} 
-S & = \iint_{x^{2} + y^{2} \leqslant a x} \frac{a}{\sqrt{a^{2} - x^{2} - y^{2}}} \mathrm{d} x \mathrm{d} y \\ 
-& = \int_{- \pi / 2}^{\pi / 2} \mathrm{d} \theta \int_{0}^{a \cos \theta} \frac{a r}{\sqrt{a^{2} - r^{2}}} \mathrm{d} r \\ 
-& = (\pi - 2) a^{2}. 
+\begin{array}{r l}
+S & = \iint_{x^{2} + y^{2} \leqslant a x} \frac{a}{\sqrt{a^{2} - x^{2} - y^{2}}} \mathrm{d} x \mathrm{d} y \\
+& = \int_{- \pi / 2}^{\pi / 2} \mathrm{d} \theta \int_{0}^{a \cos \theta} \frac{a r}{\sqrt{a^{2} - r^{2}}} \mathrm{d} r \\
+& = (\pi - 2) a^{2}.
 \end{array}
 $$
 
 下面求质心坐标，由对称性知 $y_{0}=0$，且
 
 $$
-\begin{aligned} 
-x_{0} & = \frac{1}{(\pi - 2)a^{2}}\iint \limits_{S}x\mathrm{d}S\\ 
-& = \frac{2}{(\pi - 2)a^{2}}\iint \limits_{\substack{x^{2} + y^{2}\leqslant ax\\ y\geqslant 0}}\frac{ax}{\sqrt{a^{2} - x^{2} - y^{2}}}\mathrm{d}x\mathrm{d}y\\ 
-& = \frac{2}{(\pi - 2)a}\int_{0}^{\pi /2}\cos \theta \mathrm{d}\theta \int_{0}^{a\cos \theta}\frac{r}{\sqrt{a^{2} - r^{2}}} r\mathrm{d}r\quad (r = a\cos t)\\ 
-& = \frac{2}{(\pi - 2)a}\int_{0}^{\pi /2}\cos \theta \mathrm{d}\theta \int_{\pi /2}^{\theta}\frac{a^{2}\cos^{2}t}{a\sin t} (-a\sin t)\mathrm{d}t\\ 
-& = \frac{a}{\pi - 2}\int_{0}^{\pi /2}\cos \theta \left(\frac{\pi}{2} -\theta -\sin \theta \cos \theta\right)\mathrm{d}\theta \\ 
-& = \frac{2a}{3(\pi - 2)};\\ 
-z_{0} & = \frac{1}{(\pi - 2)a^{2}}\iint \limits_{S}z\mathrm{d}S\\ 
-& = \frac{1}{(\pi - 2)a^{2}}\iint \limits_{x^{2} + y^{2}\leqslant ax}\frac{a}{\sqrt{a^{2} - x^{2} - y^{2}}}\sqrt{a^{2} - x^{2} - y^{2}}\mathrm{d}x\mathrm{d}y\\ 
-& = \frac{\pi a}{4(\pi - 2)}. 
+\begin{aligned}
+x_{0} & = \frac{1}{(\pi - 2)a^{2}}\iint \limits_{S}x\mathrm{d}S\\
+& = \frac{2}{(\pi - 2)a^{2}}\iint \limits_{\substack{x^{2} + y^{2}\leqslant ax\\ y\geqslant 0}}\frac{ax}{\sqrt{a^{2} - x^{2} - y^{2}}}\mathrm{d}x\mathrm{d}y\\
+& = \frac{2}{(\pi - 2)a}\int_{0}^{\pi /2}\cos \theta \mathrm{d}\theta \int_{0}^{a\cos \theta}\frac{r}{\sqrt{a^{2} - r^{2}}} r\mathrm{d}r\quad (r = a\cos t)\\
+& = \frac{2}{(\pi - 2)a}\int_{0}^{\pi /2}\cos \theta \mathrm{d}\theta \int_{\pi /2}^{\theta}\frac{a^{2}\cos^{2}t}{a\sin t} (-a\sin t)\mathrm{d}t\\
+& = \frac{a}{\pi - 2}\int_{0}^{\pi /2}\cos \theta \left(\frac{\pi}{2} -\theta -\sin \theta \cos \theta\right)\mathrm{d}\theta \\
+& = \frac{2a}{3(\pi - 2)};\\
+z_{0} & = \frac{1}{(\pi - 2)a^{2}}\iint \limits_{S}z\mathrm{d}S\\
+& = \frac{1}{(\pi - 2)a^{2}}\iint \limits_{x^{2} + y^{2}\leqslant ax}\frac{a}{\sqrt{a^{2} - x^{2} - y^{2}}}\sqrt{a^{2} - x^{2} - y^{2}}\mathrm{d}x\mathrm{d}y\\
+& = \frac{\pi a}{4(\pi - 2)}.
 \end{aligned}
 $$
 </Solution>

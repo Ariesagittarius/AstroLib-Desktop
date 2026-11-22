@@ -1,9 +1,3 @@
-/**
- * src/services/translation/translation-core.ts
- * ============================================================================
- * Unified Translation Core dispatcher for Vercel Serverless Function & Dev Plugin
- * ============================================================================
- */
 import { translationService } from './service.ts';
 import { dictionaryService } from '../dictionary/dictionary-service.ts';
 import type { WordDefinitionResult, WordContextExplanationResult } from '../dictionary/types.ts';

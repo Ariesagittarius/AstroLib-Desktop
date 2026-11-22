@@ -1,10 +1,3 @@
-/**
- * src/plugins/harness/builtin/interaction.plugin.ts
- * ============================================================================
- * 结构化交互澄清与 /grill-me 深度需求访谈插件
- * ============================================================================
- */
-
 import type { HarnessPlugin, PluginContext } from '../types.ts';
 
 const SOURCE_FILE = 'src/plugins/harness/builtin/interaction.plugin.ts';

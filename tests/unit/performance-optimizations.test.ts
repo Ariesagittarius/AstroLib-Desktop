@@ -56,12 +56,10 @@ describe('Performance & Architecture Optimizations', () => {
         }
       );
 
-      // Still busy at 10s -> must NOT unload
       vi.advanceTimersByTime(10_500);
       expect(unloadCount).toBe(0);
       expect(loaded).toBe(true);
 
-      // Become idle, then advance past retry window
       busy = false;
       vi.advanceTimersByTime(10_500);
       expect(unloadCount).toBe(1);
@@ -169,7 +167,7 @@ describe('Performance & Architecture Optimizations', () => {
 
       const filePath = path.join(dir, 'math-book1', '01_intro.json');
       const rawDisk = fs.readFileSync(filePath, 'utf8');
-      // Compact JSON has zero pretty-print indentation newlines
+
       expect(rawDisk.includes('\n  ')).toBe(false);
     });
   });
@@ -179,7 +177,6 @@ describe('Performance & Architecture Optimizations', () => {
       const distDir = makeTempDir('astrolib-dist-');
       const handler = new StaticHandler(distDir);
 
-      // Write 10 x 3.8 MB files (38 MB total > 32 MB limit)
       const chunkBuf = Buffer.alloc(3_800_000, 65);
       for (let i = 0; i < 10; i++) {
         fs.writeFileSync(path.join(distDir, `blob-${i}.bin`), chunkBuf);
@@ -200,14 +197,12 @@ describe('Performance & Architecture Optimizations', () => {
         expect(code).toBe(200);
       };
 
-      // Load 0..7 (8 * 3.8MB = 30.4MB <= 32MB)
       for (let i = 0; i < 8; i++) {
         await servePath(`blob-${i}.bin`);
       }
-      // Touch blob-0 so it becomes MRU, making blob-1 the oldest LRU
+
       await servePath('blob-0.bin');
 
-      // Load blob-8 and blob-9 -> must evict oldest entries to remain <= 32 MB
       await servePath('blob-8.bin');
       await servePath('blob-9.bin');
 

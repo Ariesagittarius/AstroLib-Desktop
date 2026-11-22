@@ -1,15 +1,3 @@
-// scripts/build-exercise-data.mjs
-// 构建期：从唯一题库源 src/data/exercises/ 编译全站支持书目的结构化题库（预渲染 KaTeX 公式并数据瘦身）
-// 输出到唯一构建产物目录:
-//   - artifacts/exercises/<bookSlug>/ch{1..N}.json
-//   - artifacts/exercises/<bookSlug>/papers.json
-//   - artifacts/exercises/<bookSlug>/papers/p{paper_id}.json
-//   - artifacts/exercises/<bookSlug>/meta.json
-//   - artifacts/exercises/support-status.json (显式记录 13 本官方书目的 supported / unsupported 状态)
-//
-// 用法：
-//   node scripts/build-exercise-data.mjs
-
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -69,7 +57,6 @@ export const SUPPORTED_EXERCISE_BOOKS = [
   },
 ];
 
-/** HTML 实体安全转义 */
 function escapeHtml(s) {
   return String(s || '')
     .replace(/&/g, '&amp;')
@@ -78,10 +65,8 @@ function escapeHtml(s) {
     .replace(/"/g, '&quot;');
 }
 
-/** 分隔符拆分：$$...$$（display）优先，其次 $...$（inline/multiline） */
 const MATH_SPLIT_RE = /(\$\$[\s\S]+?\$\$|\$[^\$]+?\$)/g;
 
-/** 清理并修复 LaTeX 字符串中的控制字符与转义序列 */
 function sanitizeMathLatex(val) {
   if (typeof val !== 'string') return '';
   let str = val;

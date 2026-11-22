@@ -1,15 +1,3 @@
-/**
- * src/services/pdf2abp/workspace-manager.ts
- * ============================================================================
- * PDF2ABP 任务工作区沙箱管理器 (Workspace Sandbox & Checkpoint Persistence)
- * ============================================================================
- * 职责：
- * 1. 创建与解析每项 pdf2abp 任务的隔离工作区目录；
- * 2. 严格路径越狱防护（只允许读写工作区内文件；源 PDF 仅限只读白名单）；
- * 3. 提供分页读取、原子写入、精准局部编辑、文件枚举、状态检查点持久化。
- * ============================================================================
- */
-
 import fs from 'node:fs';
 import path from 'node:path';
 import type { Pdf2AbpEvent, Pdf2AbpJobState, WorkspaceFileEntry } from './types.ts';
@@ -95,16 +83,13 @@ export class JobWorkspace {
     }
   }
 
-  /**
-   * 严格路径越狱校验：把任意工作区相对路径安全映射为绝对路径
-   */
   public resolveWorkspacePath(relPath: string): string {
     if (typeof relPath !== 'string' || !relPath.trim()) {
       throw new Error('工作区路径不能为空');
     }
     let normalized = relPath.trim().replace(/\\/g, '/');
     if (path.isAbsolute(normalized) || /^[a-zA-Z]:/.test(normalized) || normalized.startsWith('/')) {
-      // 允许传入恰好位于本工作区内部的绝对路径，但先规范化回相对路径
+
       const absCandidate = path.resolve(relPath.trim());
       const rel = path.relative(this.rootDir, absCandidate).replace(/\\/g, '/');
       if (!rel || rel.startsWith('..') || path.isAbsolute(rel)) {
@@ -137,7 +122,7 @@ export class JobWorkspace {
     if (!candidatePdfPath) return this.sourcePdfPath;
     const resolved = path.resolve(candidatePdfPath);
     if (resolved !== this.sourcePdfPath) {
-      // 允许读取工作区内的拆分 PDF（mineru/parts/...）
+
       if (resolved.startsWith(this.rootDir + path.sep)) {
         return resolved;
       }

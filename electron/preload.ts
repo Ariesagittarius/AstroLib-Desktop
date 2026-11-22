@@ -1,10 +1,3 @@
-/**
- * electron/preload.ts
- * ============================================================================
- * AstroLib 安全上下文预加载脚本 (Secure IPC Context Bridge)
- * ============================================================================
- */
-
 import { contextBridge, ipcRenderer } from 'electron';
 import type {
   AstroLibDesktopBridge,
@@ -21,7 +14,7 @@ function readAppVersionSync(): string {
       return ver.trim();
     }
   } catch {
-    // 沙箱降级兜底版本号
+
   }
   return '0.0.4';
 }
@@ -293,7 +286,6 @@ const bridge: AstroLibDesktopBridge = {
   },
 };
 
-// 预先向 DOM 注入桌面宿主标记与全量设置同步脚本
 if (typeof document !== 'undefined') {
   const markAsElectron = () => {
     if (document.documentElement) {
@@ -307,7 +299,6 @@ if (typeof document !== 'undefined') {
     markAsElectron();
   }
 
-  // 同步初始化注入用户持久化偏好至 Main World 的 localStorage
   try {
     const initialSettings = ipcRenderer.sendSync('astrolib:get-settings-sync');
     if (initialSettings && typeof initialSettings === 'object') {

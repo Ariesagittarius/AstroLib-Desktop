@@ -60,7 +60,7 @@ $$
 
 不难看出，前两条边选择是成功的。但是第三条边，B-D，如果将其加入将导致环的出现。因此我们放弃之，然后再继续。最终我们得到了一个代价为14的树，正是我们所求的最小生成树。
 
-![](../images/2ee1b8f2ff0777821e07ba7ee9ac58b5e21f0f3c7d7642a3330d83df3a5a53e0.jpg)  
+![](../images/2ee1b8f2ff0777821e07ba7ee9ac58b5e21f0f3c7d7642a3330d83df3a5a53e0.jpg)
 图5-1 基于Kruskal算法得到的最小生成树
 
 <Knowledge title="专栏: 树">
@@ -112,7 +112,7 @@ $$
 
 注意到 $e$ 和 $e'$ 都跨越分割 $\{S, V - S\}$ ，且 $e$ 是此类边中的最轻(权重最小)者，因此有 $w(e) \leqslant w(e')$ 。从而， $\mathrm{weight}(T') \leqslant \mathrm{weight}(T)$ 。 $T$ 是MST，故此时必然为$weight(T')=weight(T)$ ，由此可知 $T'$ 也是 MST。
 
-![](../images/4c4aa4b771bc12ab96d30793a32d5daf73de0c96d0b60a6fe7becd07e4de49f3.jpg)  
+![](../images/4c4aa4b771bc12ab96d30793a32d5daf73de0c96d0b60a6fe7becd07e4de49f3.jpg)
 图 5-2 $T \cup \{e\}$ 。将 e(虚线)增加到 T(实线)中产生了一个环。该环至少包含另一条跨越分割 $\{S, V-S\}$ 的边，图中为 $e'$
 
 图 5-3 为分割性质的示例。其中哪条边是 $e'$ 呢？
@@ -125,7 +125,7 @@ $$
 
 ![](../images/3aaef1d0cff26e1a0905f28558481c28a87dedb64314fc05ff95489ac54c62f1.jpg)
 
-![](../images/7401899dd3e6285872c0486cc0c97963cc93166c1d375b5e745d8a2e29eaef60.jpg)  
+![](../images/7401899dd3e6285872c0486cc0c97963cc93166c1d375b5e745d8a2e29eaef60.jpg)
 图 5-3 分割性质示例。(a)为一个无向图。(b)中的边集 X 有三条边，且 X 被包含于右侧的 MST T。(c)中 $S=\{A, B, C, D\}$ ，一条跨越分割 $\{S, V-S\}$ 的最轻边为 $e=\{D, E\}$ 。 $X \cup \{e\}$ 被包含于右侧的另一个 MST T'
 
 ## 5.1.3 Kruskal算法
@@ -162,7 +162,7 @@ for all edges {u, v} ∈ E, in increasing order of weight:
     if find(u) ≠ find(v):
     add edge {u, v} to X
     union(u, v)
-```  
+```
 图 5-4 Kruskal 的最小生成树算法
 
 ## 5.1.4 一种用于分离集的数据结构
@@ -173,7 +173,7 @@ for all edges {u, v} ∈ E, in increasing order of weight:
 
 除了父指针 $\pi$ ，每个节点还有一个等级信息。就目前而言，我们可以将节点的等级解释为其下悬挂的子树的高度。
 
-![](../images/8136e66177dfe51839af2c0536ed762ec248f919840d828cec120aed4671d386.jpg)  
+![](../images/8136e66177dfe51839af2c0536ed762ec248f919840d828cec120aed4671d386.jpg)
 图5-5 代表集合 $\{B, E\}$ 和 $\{A, C, D, F, G, H\}$ 的有向树
 
 显然，makeset 是一个常数时间的操作。另一方面，find 循着节点的父指针找到树的根，其所需时间应该和树的高度成正比。由于树的构造事实上是由第三个操作 union 操作实现的，因此，在该操作中，我们应该尽量使树的高度保持较低。
@@ -182,12 +182,12 @@ for all edges {u, v} ∈ E, in increasing order of weight:
 
 <div class="mineru-algorithm">
 procedure union(x, y)
- $r_{x} = \text{find}(x)$ $r_{y} = \text{find}(y)$ 
+ $r_{x} = \text{find}(x)$ $r_{y} = \text{find}(y)$
 if  $r_{x} = r_{y}$ : return
 if  $\text{rank}(r_{x}) > \text{rank}(r_{y})$ :
- $\pi(r_{y}) = r_{x}$ 
+ $\pi(r_{y}) = r_{x}$
 else:
- $\pi(r_{x}) = r_{y}$ 
+ $\pi(r_{x}) = r_{y}$
 if  $\text{rank}(r_{x}) = \text{rank}(r_{y})$ :  $\text{rank}(r_{y}) = \text{rank}(r_{y}) + 1$
 </div>
 
@@ -207,7 +207,7 @@ $\int_{a}^{b} |t| = \int_{a}^{b} |t| = \int_{a}^{b} \cdots \int_{a}^{b} |t| = \i
 
 执行 union(B, G)后：
 
-![](../images/be56665ed83b73ee0c4ffb1108673469ffda914225fbd7ebc13a09db69640fbf.jpg)  
+![](../images/be56665ed83b73ee0c4ffb1108673469ffda914225fbd7ebc13a09db69640fbf.jpg)
 图 5-6 分离集操作的过程。图中节点上标为其等级
 
 根据设计，节点的等级事实上就是以该节点为根的子树的高度。这意味着，当沿着一条路径向根节点前进时，途经节点的等级是严格递增的。
@@ -234,13 +234,13 @@ $\int_{a}^{b} |t| = \int_{a}^{b} |t| = \int_{a}^{b} \cdots \int_{a}^{b} |t| = \i
 
 <div class="mineru-algorithm">
 function find(x)
-if  $x \neq \pi(x)$ :  $\pi(x) = \text{find}(\pi(x))$ 
+if  $x \neq \pi(x)$ :  $\pi(x) = \text{find}(\pi(x))$
 return  $\pi(x)$
 </div>
 
 这一小小改变所带来的好处，更多地表现为长期的性能改善，而非眼前的利益。因此，对其进行分析也需要采用一些特殊的方法：我们需要从算法之初的空数据结构开始，对发生过的一系列 find 和 union 操作进行观察，并计算其平均的操作时间。结果是，总的代价分摊后由此前的 $O(\log n)$ 下降到了仅仅略微超过 $O(1)$ 。
 
-![](../images/04f76e87f70066b79cc7067f7cf6b9341329324c3c89bc04e70b495f2964cf84.jpg)  
+![](../images/04f76e87f70066b79cc7067f7cf6b9341329324c3c89bc04e70b495f2964cf84.jpg)
 图 5-7 路径压缩的作用：在 find(K)之后执行 find(I)
 
 以上的数据结构可以视为由包含根节点的“顶层”和其下方树的内部所组成。这恰好对应于以下的分工，即 find 操作(不论是否采用路径压缩)仅仅触及树的内部，而 union 则只关注树的顶层。因此，路径压缩不会对 union 操作产生任何影响，它将保持树的顶层不变。
@@ -288,7 +288,7 @@ $$
 \operatorname{cost} (v) = \min _ {u \in S} w (u, v)
 $$
 
-![](../images/2b7440bced2a2becac63c8763acacc563af2041cec6f00d3d4ffe8176d5a5180.jpg)  
+![](../images/2b7440bced2a2becac63c8763acacc563af2041cec6f00d3d4ffe8176d5a5180.jpg)
 图5-8 Prim算法：边集 $X$ 构成了一棵树， $S$ 是其顶点集合
 
 这立刻让人回想起 Dijkstra 算法。事实上，这两个算法的伪代码(如图 5-9 所示)是基本一致的，仅有的不同在于优先级队列排序所使用的键值。在 Prim 算法中，键值为节点与集合 S 中顶点间的最轻边的权重，而在 Dijkstra 算法中，键值为由起始点到某节点的完整路径长度。除此以外，这两个算法确实非常相似，它们甚至具有相同的运行时间，而该时间仅取决于特定的优先级队列实现。
@@ -315,7 +315,6 @@ while H is not empty:
 
 · 何使用 prev 数组完整描述最终得到的 MST 的。
 
-  
 ![](../images/d8f4f7801310248a0c8dd6caaf12b686359d81749814fa9e59556c184dcf5f99.jpg)
 
 <table><tr><td>集合S</td><td>A</td><td>B</td><td>C</td><td>D</td><td>E</td><td>F</td></tr><tr><td>&#123;&#125;</td><td>0/nil</td><td>∞/nil</td><td>∞/nil</td><td>∞/nil</td><td>∞/nil</td><td>∞/nil</td></tr><tr><td>A</td><td></td><td>5/A</td><td>6/A</td><td>4/A</td><td>∞/nil</td><td>∞/nil</td></tr><tr><td>A,D</td><td></td><td>2/D</td><td>2/D</td><td></td><td>∞/nil</td><td>4/D</td></tr><tr><td>A,D,B</td><td></td><td></td><td>1/B</td><td></td><td>∞/nil</td><td>4/D</td></tr><tr><td>A,D,B,C</td><td></td><td></td><td></td><td></td><td>5/C</td><td>3/C</td></tr><tr><td>A,D,B,C,F</td><td></td><td></td><td></td><td></td><td>4/F</td><td></td></tr></table>

@@ -1,11 +1,3 @@
-/**
- * src/features/sideload/contract.ts
- * ============================================================================
- * Shared contract & accessor for global Sideload & Sidebar Layout state
- * ============================================================================
- * Decouples services/business logic from concrete UI component implementations.
- */
-
 export type SideloadWidthTier = 'compact' | 'medium' | 'wide' | 'full' | 'none';
 
 export interface SideloadPanelConfig {

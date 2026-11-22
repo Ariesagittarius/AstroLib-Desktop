@@ -1,17 +1,3 @@
-/**
- * src/ai/agent/harness-runner.ts
- * ============================================================================
- * 通用 Agent Tool-Calling 执行循环器 (OpenAI-Compatible Streaming & Sync Runner)
- * ============================================================================
- * 特性：
- * 1. 基于 Zod v4 (`z.toJSONSchema`) 自动导出工具 Schema 并做严格入参校验；
- * 2. 原生支持 SSE 流式与普通 JSON 双响应，兼容推理模型的 `reasoning_content` / `reasoning`；
- * 3. 与 `AgentContextManager` 深度绑定，保证任意网关（含 Youlabber 单图槽限制）零溢出运行；
- * 4. 工具返回的 `visionAttachment` 在同一 Turn 所有 `role:'tool'` 落盘后以合成 `user` 消息注入；
- * 5. 支持瞬时故障指数退避重试、`AbortSignal` 优雅取消、`finish_reason === 'length'` 自动续写。
- * ============================================================================
- */
-
 import { z } from 'zod';
 import {
   AgentContextManager,
@@ -173,7 +159,7 @@ function isRetryableError(err: unknown): boolean {
   if (err instanceof HttpGatewayError) {
     return err.status === 429 || err.status >= 500;
   }
-  // 网络抖动 / 连接重置 / JSON 截断
+
   return true;
 }
 
@@ -184,7 +170,6 @@ async function parseCompletionResponse(
 ): Promise<RawCompletionResponse> {
   const contentType = (response.headers.get('content-type') || '').toLowerCase();
 
-  // 非流式 JSON 直接解析
   if (!contentType.includes('text/event-stream')) {
     const json = (await response.json()) as any;
     const choice = json?.choices?.[0];
@@ -226,7 +211,6 @@ async function parseCompletionResponse(
     };
   }
 
-  // SSE 流式累积解析
   if (!response.body) {
     throw new Error('SSE response has empty body');
   }
@@ -525,7 +509,6 @@ export async function runAgentLoop(config: AgentLoopConfig): Promise<AgentRunRes
       consecutiveLengthRetries = 0;
       consecutiveEmptyStopRetries = 0;
 
-      // 防止视觉槽被下一轮图像顶出后模型产生“视觉失忆”：若本轮紧随 syntheticVision 且仅输出了 reasoningContent 而未落盘文本，自动提取视觉观察摘要写入 assistant.content
       let assistantContent: string | null = completion.content ? completion.content : null;
       const lastMsg = history.length > 0 ? history[history.length - 1] : undefined;
       if (
@@ -665,7 +648,6 @@ export async function runAgentLoop(config: AgentLoopConfig): Promise<AgentRunRes
         }
       }
 
-      // 所有 role:'tool' 落盘后再追加合成 user 图片消息，防止破坏 tool_calls 配对
       if (pendingVisions.length > 0 && capabilities.maxImagesPerRequest > 0) {
         const sliced = pendingVisions.slice(-capabilities.maxImagesPerRequest);
         const droppedLabels = pendingVisions
@@ -720,7 +702,6 @@ export async function runAgentLoop(config: AgentLoopConfig): Promise<AgentRunRes
       continue;
     }
 
-    // 无 tool_calls 返回
     const trimmedContent = completion.content.trim();
     if (completion.finishReason === 'length' && consecutiveLengthRetries < 2) {
       consecutiveLengthRetries++;

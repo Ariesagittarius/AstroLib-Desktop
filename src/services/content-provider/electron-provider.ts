@@ -1,10 +1,3 @@
-/**
- * src/services/content-provider/electron-provider.ts
- * ============================================================================
- * Electron 桌面端内容提供者实现 (Node.js FS / IPC Bridge)
- * ============================================================================
- */
-
 import type {
   AstroBookManifest,
   AstroBookChapterPayload,

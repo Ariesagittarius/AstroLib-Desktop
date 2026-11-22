@@ -1,13 +1,3 @@
-/**
- * src/config/release.config.ts
- * ============================================================================
- * AstroLib 桌面端官方发布通道与 ABP 资产坐标（Single Config Source）
- * ============================================================================
- * 遵循 ADR-DISTRIBUTION-2026-11-12（模式 A：零内置书 Shell + GitHub Releases）：
- * - 应用安装包本身不内置 .abp；
- * - 官方教材 catalog.json 与 13 本 .abp 与应用版本同步托管于 GitHub Releases。
- */
-
 export const DEFAULT_DESKTOP_RELEASE_REPO =
   (typeof process !== 'undefined' && process.env?.ASTROLIB_RELEASE_REPO) || 'Ariesagittarius/AstroLib-Desktop';
 

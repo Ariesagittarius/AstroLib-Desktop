@@ -1,16 +1,3 @@
-/**
- * electron/server/static-handler.ts
- * ============================================================================
- * AstroLib 静态资源服务引擎 (Zero-Dependency High-Performance Static Handler)
- * ============================================================================
- * 遵循 P1-A1 架构规范与 ADR-READER-CONTRACT-2026-11-13：
- * 1. 严格 0 模糊匹配：彻底删除 cleanSlug 扫描与正则降级逻辑；
- * 2. 章节两级精确匹配：第一级物理命中 Canonical Slug，第二级显式查表 legacySlug；
- * 3. 规范重定向与 404：legacySlug 返回 301 永久重定向；未命中返回标准学术 404 视窗；
- * 4. 高性能缓存：内存 LRU 缓存与 ETag 304 协商，零磁盘 I/O 延迟。
- * ============================================================================
- */
-
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -63,10 +50,6 @@ function escapeHtml(str?: string | null): string {
     .replace(/'/g, '&#39;');
 }
 
-/**
- * 极简学术规范 404 视窗渲染器
- * 复用 AstroLib M3 设计 tokens，无额外第三方依赖
- */
 function renderAcademic404Html(
   colSlug: string,
   bookSlug: string,
@@ -271,8 +254,8 @@ export class StaticHandler {
   private memoryCache = new Map<string, MemoryCacheEntry>();
   private inFlightAbp = new Map<string, Promise<string | null>>();
   private currentCacheBytes = 0;
-  private readonly MAX_CACHE_FILE_SIZE = 4 * 1024 * 1024; // 单文件最大缓存 4 MB
-  private readonly MAX_CACHE_BYTES = 32 * 1024 * 1024; // 内存静态缓存总字节上限 32 MB
+  private readonly MAX_CACHE_FILE_SIZE = 4 * 1024 * 1024;
+  private readonly MAX_CACHE_BYTES = 32 * 1024 * 1024;
 
   constructor(distDir: string, userAbpDir?: string, projectRoot?: string) {
     this.projectRoot = projectRoot;
@@ -311,9 +294,6 @@ export class StaticHandler {
     }
   }
 
-  /**
-   * 处理静态文件请求 (RAM 高速缓存优先，零磁盘 I/O 延迟)
-   */
   async handle(req: IncomingMessage, res: ServerResponse): Promise<boolean> {
     if (req.method !== 'GET' && req.method !== 'HEAD') {
       return false;
@@ -322,7 +302,6 @@ export class StaticHandler {
     const rawUrl = req.url || '/';
     const pathname = rawUrl.split('?')[0].split('#')[0];
 
-    // 防止目录穿越
     let safePath: string;
     try {
       safePath = decodeURIComponent(pathname);
@@ -336,7 +315,6 @@ export class StaticHandler {
       return true;
     }
 
-    // 0.0 防御性兼容：若收到 /astrolib:/* 或 /astrolib://* 的请求，严格校验片段后重定向至 /collections/ 路由
     const astrolibPathMatch = safePath.match(/^\/?astrolib:\/{1,3}([^\/]+)\/([^\/]+)(?:\/(.+?))?\/?$/i);
     if (astrolibPathMatch) {
       const col = astrolibPathMatch[1];
@@ -365,7 +343,6 @@ export class StaticHandler {
       return true;
     }
 
-    // 0.0b 防御性兼容：若收到 /workspace 或 /workspace/ 或 /workspace/ingest 请求，规范 302 重定向至 /workspace/ingest/，杜绝 404
     if (safePath === '/workspace' || safePath === '/workspace/' || safePath === '/workspace/ingest') {
       const redirectUrl = '/workspace/ingest/';
       res.writeHead(302, {
@@ -376,7 +353,6 @@ export class StaticHandler {
       return true;
     }
 
-    // 0.0c 章节自由画布工作台动态合成 (/workspace/canvas/?col=...&book=...&chapter=...)
     if (safePath === '/workspace/canvas' || safePath === '/workspace/canvas/') {
       const parsedQuery = new URL(rawUrl, 'http://127.0.0.1').searchParams;
       const colSlug = parsedQuery.get('col') || 'math';
@@ -408,7 +384,6 @@ export class StaticHandler {
       return true;
     }
 
-    // 0.0d 动态合成 /abp-packs/catalog.json (打包桌面端无预置 artifacts 时，自动聚合 userAbpDir 已安装书目供 Ctrl+K 搜索使用)
     if (safePath === '/abp-packs/catalog.json') {
       const diskCatalog = this.resolveFilePath(safePath);
       if (diskCatalog && fs.existsSync(diskCatalog)) {
@@ -455,8 +430,6 @@ export class StaticHandler {
       return true;
     }
 
-    // 0. 特别处理 /collections/ 章节与书本根路由（排除静态配图、内嵌样式、字体等资产）
-    // 章节 slug 允许包含多级路径（如 zh-wp/001_books-and-algorithms），以支持官方多卷本目录结构
     const isStaticBookAsset =
       safePath.includes('/images/') ||
       /^\/?collections\/[^/]+\/[^/]+\/(?:assets|styles|fonts|source)\//i.test(safePath) ||
@@ -481,9 +454,6 @@ export class StaticHandler {
     return await this.serveFile(req, res, filePath, pathname);
   }
 
-  /**
-   * 获取某本书籍的候选存储根目录 (用户安装目录优先，回退开发期构建目录)
-   */
   private getBookCandidateDirs(colSlug: string, bookSlug: string): string[] {
     const candidateDirs: string[] = [];
     if (this.userAbpDir) {
@@ -498,9 +468,6 @@ export class StaticHandler {
     return candidateDirs;
   }
 
-  /**
-   * 精确处理 /collections/:col/:book/:chapter/ 动态章节阅读与 301 重定向
-   */
   private async handleCollectionsRoute(
     req: IncomingMessage,
     res: ServerResponse,
@@ -527,7 +494,6 @@ export class StaticHandler {
       return true;
     }
 
-    // 按 updatedAt 降序排序，使最新构建的内容包版本优先命中
     validCandidates.sort((a, b) => {
       const tA = a.manifest.updatedAt ? Date.parse(a.manifest.updatedAt) : 0;
       const tB = b.manifest.updatedAt ? Date.parse(b.manifest.updatedAt) : 0;
@@ -536,8 +502,6 @@ export class StaticHandler {
 
     const primaryManifest = validCandidates[0].manifest;
 
-    // 1. 若请求未指定章节 (形如 /collections/:col/:book/ 或 /collections/:col/:book)
-    // 302 临时重定向至书籍默认入口章节
     if (!rawChapterSlug) {
       const entryPoint = primaryManifest.entryPoint || 'chapter-01';
       const redirectUrl = `/collections/${colSlug}/${bookSlug}/${entryPoint}/`;
@@ -557,7 +521,6 @@ export class StaticHandler {
       ? `/collections/${colSlug}/${bookSlug}/${primaryManifest.entryPoint}/`
       : '/desktop/';
 
-    // 2. 依次在候选版本目录中检查：第一级物理命中 Canonical Slug，第二级命中 legacySlug
     for (const candidate of validCandidates) {
       const directChapJson = path.join(candidate.dir, 'chapters', `${rawChapterSlug}.json`);
       if (fs.existsSync(directChapJson)) {
@@ -572,7 +535,6 @@ export class StaticHandler {
         }
       }
 
-      // 第二级检查：显式检索 legacySlug 别名映射
       const sections: AstroBookSection[] = Array.isArray(candidate.manifest.sections) ? candidate.manifest.sections : [];
       let matchedCanonicalSlug: string | null = null;
       for (const sec of sections) {
@@ -586,7 +548,7 @@ export class StaticHandler {
       }
 
       if (matchedCanonicalSlug) {
-        // 命中历史别名：301 永久重定向至规范化 Canonical URL
+
         const canonicalUrl = `/collections/${colSlug}/${bookSlug}/${matchedCanonicalSlug}/`;
         res.writeHead(301, {
           Location: encodeURI(canonicalUrl),
@@ -601,14 +563,10 @@ export class StaticHandler {
       }
     }
 
-    // 两级均未命中任何候选版本：如实输出 404 学术视窗，由上层宿主通过 Snackbar 明确告知，不作静默篡改
     this.sendAcademic404(req, res, colSlug, bookSlug, rawChapterSlug, '章节不存在或链接已失效', defaultChapterUrl);
     return true;
   }
 
-  /**
-   * 输出标准 404 学术视窗
-   */
   private sendAcademic404(
     req: IncomingMessage,
     res: ServerResponse,
@@ -632,9 +590,6 @@ export class StaticHandler {
     res.end(bodyBuf);
   }
 
-  /**
-   * 基础静态文件传输与协商缓存引擎
-   */
   private async serveFile(
     req: IncomingMessage,
     res: ServerResponse,
@@ -649,7 +604,6 @@ export class StaticHandler {
 
       const etag = `W/"${stat.size}-${stat.mtimeMs.toString(16)}"`;
 
-      // 304 缓存协商
       const ifNoneMatch = req.headers['if-none-match'];
       if (ifNoneMatch === etag) {
         res.writeHead(304, {
@@ -677,7 +631,6 @@ export class StaticHandler {
         return true;
       }
 
-      // 命中内存缓存：更新 LRU 访问序后直接输出 Buffer
       const cached = this.memoryCache.get(filePath);
       if (cached && cached.mtimeMs === stat.mtimeMs && cached.size === stat.size) {
         this.memoryCache.delete(filePath);
@@ -687,7 +640,6 @@ export class StaticHandler {
         return true;
       }
 
-      // 小文件写入按字节封顶的 LRU 内存缓存
       if (stat.size <= this.MAX_CACHE_FILE_SIZE) {
         const fileBuf = await fs.promises.readFile(filePath);
         this.setMemoryCacheEntry(filePath, {
@@ -703,7 +655,6 @@ export class StaticHandler {
         return true;
       }
 
-      // 超大文件流式传输
       res.writeHead(200, headers);
       const stream = fs.createReadStream(filePath);
       stream.pipe(res);
@@ -713,20 +664,13 @@ export class StaticHandler {
     }
   }
 
-  /**
-   * 将 URL 路由映射为本地文件系统路径 (Clean URLs)
-   */
   private resolveFilePath(cleanPath: string): string | null {
     const directPath = path.join(this.distDir, cleanPath);
 
-    // 1. 完全精确匹配文件 (distDir 优先)
     if (fs.existsSync(directPath) && fs.statSync(directPath).isFile()) {
       return directPath;
     }
 
-    // 1.1 若请求的是 /abp-packs/ 目录下的资源，按优先级检索：
-    //    a. userAbpDir (用户目录动态解压或安装的书籍包与索引)
-    //    b. resolveAbpArtifactsDir(projectRoot) (开发期按需编译产物)
     if (cleanPath.startsWith('/abp-packs/') || cleanPath.startsWith('abp-packs/')) {
       const relAbp = cleanPath.replace(/^\/?abp-packs\//, '').replace(/\.\.(\/|\\)/g, '');
       if (this.userAbpDir) {
@@ -747,7 +691,6 @@ export class StaticHandler {
       }
     }
 
-    // 1.1b 自包含辅助数据路由：优先从 userAbpDir 已解包的对应书籍包读取，开发期回退 artifacts/
     const auxRouteMap: Array<{ prefix: string; internalFile: string; artifactDir: string }> = [
       { prefix: '/ai-index/', internalFile: 'ai-index.json', artifactDir: 'ai-index' },
       { prefix: '/data/cross-ref/', internalFile: 'cross-refs.json', artifactDir: 'cross-ref' },
@@ -773,7 +716,6 @@ export class StaticHandler {
       }
     }
 
-    // 1.1c 自包含习题数据路由 (/data/exercises/<bookSlug>/<relPath>)
     if (cleanPath.startsWith('/data/exercises/')) {
       const exRel = cleanPath.slice('/data/exercises/'.length).replace(/\.\.(\/|\\)/g, '');
       const firstSlash = exRel.indexOf('/');
@@ -802,7 +744,6 @@ export class StaticHandler {
       }
     }
 
-    // 1.2 若 distDir 未命中，且配置了 projectRoot，尝试从 projectRoot/public 匹配静态资产
     if (this.projectRoot) {
       const publicPath = path.join(this.projectRoot, 'public', cleanPath);
       if (fs.existsSync(publicPath) && fs.statSync(publicPath).isFile()) {
@@ -810,19 +751,16 @@ export class StaticHandler {
       }
     }
 
-    // 2. 目录 index.html
     const dirIndexPath = path.join(directPath, 'index.html');
     if (fs.existsSync(dirIndexPath) && fs.statSync(dirIndexPath).isFile()) {
       return dirIndexPath;
     }
 
-    // 3. .html 后缀补齐
     const htmlPath = directPath + '.html';
     if (fs.existsSync(htmlPath) && fs.statSync(htmlPath).isFile()) {
       return htmlPath;
     }
 
-    // 4.1 统一书籍内嵌静态资产路由 (/collections/:col/:book/(assets|styles|fonts)/<relPath>)
     const bookAssetMatch = cleanPath.match(/^\/?collections\/([^/]+)\/([^/]+)\/(assets|styles|fonts)\/(.+)$/i);
     if (bookAssetMatch) {
       const colSlug = bookAssetMatch[1];
@@ -845,7 +783,6 @@ export class StaticHandler {
       }
     }
 
-    // 4. ABP 章节配图资产回退 (/collections/:col/:book/images/:image 或 /collections/:col/:book/:chapter/images/:image 或 /images/:image)
     const imgMatch = cleanPath.match(/(?:^|\/)collections\/([^/]+)\/([^/]+)(?:\/[^/]+)?\/images\/(.+)$/) ||
                      cleanPath.match(/(?:^|\/)images\/(.+)$/);
     if (imgMatch) {
@@ -890,9 +827,6 @@ export class StaticHandler {
     return null;
   }
 
-  /**
-   * 异步将 ABP 预编译章节数据即时合成并缓存为标准 HTML（含并发请求去重）
-   */
   private synthesizeAbpHtmlAsync(
     abpDir: string,
     manifestFile: string,
@@ -918,7 +852,6 @@ export class StaticHandler {
           fs.promises.stat(chapJsonFile),
         ]);
 
-        // 跟踪 Master Shell 模板与引擎更新，确保构建升级时刷新缓存
         const masterTemplateFile = path.join(this.distDir, 'reader-shell', 'index.html');
         const engineCandidates = [
           masterTemplateFile,
@@ -967,19 +900,16 @@ export class StaticHandler {
     return job;
   }
 
-  /**
-   * 缓存控制策略
-   */
   private getCacheControl(pathname: string): string {
     if (pathname.includes('/_astro/')) {
-      // Astro 构建期带 Hash 资产：永久强缓存 1 年
+
       return 'public, max-age=31536000, immutable';
     }
     if (pathname.endsWith('.html') || pathname === '/' || !pathname.includes('.')) {
-      // HTML 文件：每次协商验证
+
       return 'no-cache, must-revalidate';
     }
-    // 其它静态资源（图片、字体）：缓存 1 天
+
     return 'public, max-age=86400';
   }
 }

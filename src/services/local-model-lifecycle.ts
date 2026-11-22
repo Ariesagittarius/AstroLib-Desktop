@@ -1,15 +1,3 @@
-/**
- * src/services/local-model-lifecycle.ts
- * ============================================================================
- * AstroLib 本地 AI 模型按需驻留与空闲自动回收生命周期控制器
- * ============================================================================
- * 职责：
- * 1. 默认按需懒加载，默认 5 分钟 (300,000 ms) 空闲超时自动释放显存/内存；
- * 2. 读取与同步 ASTROLIB_MODEL_IDLE_TTL_MS 环境变量（0 表示保持直到退出）；
- * 3. 安全保护：推理排队中 (pending > 0) 或初始化中绝不中断回收。
- * ============================================================================
- */
-
 export const DEFAULT_MODEL_IDLE_TTL_MS = 5 * 60 * 1000;
 
 export type LocalModelId = 'qwen-highlight' | 'qwen-align' | 'minilm-align';
@@ -55,9 +43,6 @@ export class LocalModelIdleController {
     return this.lastUsedAt;
   }
 
-  /**
-   * 标记模型刚发生推理或完成热加载，刷新空闲回收倒计时。
-   */
   public touch(
     isBusy: () => boolean,
     isLoaded: () => boolean,
@@ -67,9 +52,6 @@ export class LocalModelIdleController {
     this.schedule(isBusy, isLoaded, onIdleUnload);
   }
 
-  /**
-   * 运行时更新空闲回收时长，并重新计算当前驻留模型的剩余倒计时。
-   */
   public setIdleTimeoutMs(
     ms: number,
     isBusy: () => boolean,
@@ -87,9 +69,6 @@ export class LocalModelIdleController {
     this.armTimer(remaining, isBusy, isLoaded, onIdleUnload);
   }
 
-  /**
-   * 重新排期空闲回收定时器。
-   */
   public schedule(
     isBusy: () => boolean,
     isLoaded: () => boolean,

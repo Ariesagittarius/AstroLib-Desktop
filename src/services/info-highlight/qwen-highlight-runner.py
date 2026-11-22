@@ -22,13 +22,11 @@ import math
 import argparse
 from typing import List, Dict, Tuple, Optional, Any
 
-# Ensure UTF-8 output on Windows
 if sys.stdout.encoding != 'utf-8':
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', line_buffering=True)
 if sys.stderr.encoding != 'utf-8':
     sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', line_buffering=True)
 
-# Strictly offline
 os.environ["HF_HUB_OFFLINE"] = "1"
 os.environ["TRANSFORMERS_OFFLINE"] = "1"
 
@@ -46,7 +44,6 @@ DEFAULT_LOCAL_PATHS = [
     os.path.join(os.path.expanduser("~"), ".cache", "huggingface", "hub", "models--Qwen--Qwen3-0.6B-Base"),
 ]
 
-
 def resolve_model_path(custom_path: Optional[str] = None) -> str:
     if custom_path and os.path.exists(custom_path):
         return custom_path
@@ -57,7 +54,6 @@ def resolve_model_path(custom_path: Optional[str] = None) -> str:
         if os.path.exists(p):
             return p
     raise FileNotFoundError("Local Qwen3-0.6B-Base weights not found in local cache.")
-
 
 def load_model(custom_path: Optional[str] = None):
     global _model, _tokenizer, _device, _bos_logits_cache
@@ -85,7 +81,6 @@ def load_model(custom_path: Optional[str] = None):
     ).to(_device)
     _model.eval()
 
-    # Precompute BOS logits cache for first token estimation
     bos_id = _tokenizer.bos_token_id or _tokenizer.eos_token_id or 0
     with torch.inference_mode():
         bos_tensor = torch.tensor([[bos_id]], dtype=torch.long, device=_device)
@@ -93,7 +88,6 @@ def load_model(custom_path: Optional[str] = None):
         _bos_logits_cache = out.logits[0, -1].detach().cpu().float()
 
     return _model, _tokenizer, _device
-
 
 def compute_first_token_prob(first_token_id: int) -> float:
     global _bos_logits_cache
@@ -104,7 +98,6 @@ def compute_first_token_prob(first_token_id: int) -> float:
     if 0 <= first_token_id < probs.shape[0]:
         return float(probs[first_token_id].item())
     return ZERO_CONFIDENCE_PROBABILITY_BASELINE
-
 
 def analyze_text(text: str, chunk_size: int = 1024) -> Dict[str, Any]:
     import torch
@@ -121,7 +114,6 @@ def analyze_text(text: str, chunk_size: int = 1024) -> Dict[str, Any]:
             "device": str(device),
         }
 
-    # Encode with char offsets
     encoding = tokenizer(
         text,
         return_offsets_mapping=True,
@@ -141,17 +133,15 @@ def analyze_text(text: str, chunk_size: int = 1024) -> Dict[str, Any]:
             "device": str(device),
         }
 
-    # Chunked inference using KV-cache to avoid peak memory explosion
     real_probs: List[float] = []
     past_key_values = None
 
     with torch.inference_mode():
-        # First token probability via BOS prefix cache
+
         first_token_id = int(input_ids[0, 0].item())
         first_prob = compute_first_token_prob(first_token_id)
         real_probs.append(first_prob)
 
-        # Subsequent tokens conditional probability P(w_t | w_<t)
         total_chunks = (seq_len + chunk_size - 1) // chunk_size
         for i in range(total_chunks):
             start_idx = i * chunk_size
@@ -220,7 +210,6 @@ def analyze_text(text: str, chunk_size: int = 1024) -> Dict[str, Any]:
         "vramAllocatedMB": vram_mb,
     }
 
-
 def daemon_loop():
     """Persistent JSON-RPC daemon loop over stdin/stdout"""
     try:
@@ -272,7 +261,6 @@ def daemon_loop():
             resp = {"id": req.get("id") if 'req' in locals() else None, "status": "error", "error": str(err)}
             print(json.dumps(resp, ensure_ascii=False), flush=True)
 
-
 def main():
     parser = argparse.ArgumentParser(description="Qwen Highlight Inference Runner")
     parser.add_argument("--daemon", action="store_true", help="Run as persistent JSON-RPC daemon")
@@ -286,7 +274,7 @@ def main():
         res = analyze_text(args.text)
         print(json.dumps(res, ensure_ascii=False, indent=2))
     else:
-        # Default test
+
         test_sent = "量子计算利用量子叠加与纠缠特性，展现出超越经典计算机的指数级加速潜力。"
         print(f"Testing sentence: {test_sent}\n")
         res = analyze_text(test_sent)
@@ -295,7 +283,6 @@ def main():
         print("-" * 55)
         for tok in res["tokens"]:
             print(f"{tok['raw']:<10} | {tok['prob']:<10.3e} | {tok['surprisalBits']:<10.2f} | {tok['ciRatio']:<8.1%} | {tok['level']:<4}")
-
 
 if __name__ == "__main__":
     main()

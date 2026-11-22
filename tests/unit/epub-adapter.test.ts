@@ -43,7 +43,6 @@ describe('EPUB Adapter & CSS Harmonizer Unit Tests', () => {
     expect(res.scopedCss).toContain('font-family: "ep_test1234__CustomKai"');
     expect(res.scopedCss).toContain('url("/collections/acg/sample-book/assets/fonts/kai.woff2")');
 
-    // 验证多前缀笛卡尔积：不会生成不带 html[data-style-mode="..."] .astrolib-book-scope 前缀的裸选择器
     expect(res.scopedCss).toContain(
       'html[data-style-mode="original"] .astrolib-book-scope .chapter-accent'
     );
@@ -51,11 +50,9 @@ describe('EPUB Adapter & CSS Harmonizer Unit Tests', () => {
       'html[data-style-mode="harmonized"][data-use-book-fonts="true"] .astrolib-book-scope .chapter-accent'
     );
 
-    // 结构排版保留
     expect(res.scopedCss).toContain('text-indent: 2em');
     expect(res.scopedCss).toContain('line-height: 1.75');
 
-    // harmonized 亮色模式映射主题色而不输出纯黑白中性底色/文字硬编码
     expect(res.scopedCss).toContain('var(--md-sys-color-primary');
     const harmonizedLightBlockMatch = res.scopedCss.match(
       /html\[data-style-mode="harmonized"\]:not\(\[data-theme="dark"\]\) \.astrolib-book-scope \.astrolib-epub-body\s*\{[\s\S]*?\}/
@@ -91,7 +88,6 @@ describe('EPUB Adapter & CSS Harmonizer Unit Tests', () => {
     expect(sourceArchive?.fileName).toBe('original.epub');
     expect(sourceArchive?.bytes.byteLength).toBe(bytes.byteLength);
 
-    // 核心架构门禁校验
     expect(() => validateInstallPayload(bundle)).not.toThrow();
 
     const { manifest, chapters, assets, aiIndex } = bundle;
@@ -103,13 +99,11 @@ describe('EPUB Adapter & CSS Harmonizer Unit Tests', () => {
     expect(Object.keys(chapters).length).toBe(21);
     expect(assets?.['styles/epub-book.css']).toBeDefined();
 
-    // 验证自包含 AI 索引切片非空
     expect(aiIndex).toBeDefined();
     const aiChunks = (aiIndex as { chunks?: unknown[] } | undefined)?.chunks;
     expect(Array.isArray(aiChunks)).toBe(true);
     expect((aiChunks || []).length).toBeGreaterThan(20);
 
-    // 验证跨文件 EPUB 3 脚注提取与正文标记注入
     expect(manifest.footnotes).toBeDefined();
     expect(manifest.footnotes?.note0301).toBeDefined();
     expect(manifest.footnotes?.note0301?.text.length).toBeGreaterThan(2);
@@ -120,7 +114,6 @@ describe('EPUB Adapter & CSS Harmonizer Unit Tests', () => {
     expect(chaptersWithFootnotes.length).toBeGreaterThan(0);
     expect(chaptersWithFootnotes[0].html).toContain('data-astrolib-footnote=');
 
-    // 验证 NAV 子锚点（如 #toc-1）完整提取进章节 headings，供右侧大纲展示
     const tocSubChapter = Object.values(chapters).find((c) =>
       c.headings.some((h) => h.id === 'toc-1')
     );

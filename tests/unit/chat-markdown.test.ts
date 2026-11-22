@@ -20,7 +20,7 @@ describe('AI Chat Markdown Parser Suite (Unit Tests)', () => {
       expect(html).toContain('<blockquote>');
       expect(html).toContain('$f$ 在子区间上为常数 $\\iff f\'$ 在该子区间上恒为 0。');
       expect(html).toContain('</blockquote>');
-      // 绝不能泄漏未经解析的原生 > 或 &gt;
+
       expect(html).not.toMatch(/<p>&gt;\s*/);
     });
 
@@ -57,7 +57,7 @@ describe('AI Chat Markdown Parser Suite (Unit Tests)', () => {
       expect(isTableDelimiterRow('---|---|---')).toBe(true);
       expect(isTableDelimiterRow('| - | - |')).toBe(true);
 
-      expect(isTableDelimiterRow('---')).toBe(false); // 普通分割线不应被误判为表格
+      expect(isTableDelimiterRow('---')).toBe(false);
       expect(isTableDelimiterRow('| 姓名 | 年龄 |')).toBe(false);
       expect(isTableDelimiterRow('')).toBe(false);
     });
@@ -200,7 +200,7 @@ describe('AI Chat Markdown Parser Suite (Unit Tests)', () => {
       const html = mdToHtml(input);
       expect(html).toContain('data-astrolib-uri="astrolib://science/vectors_and_tensors/zh/063_riemann-curvature-tensor#math-128"');
       expect(html).toContain('href="/collections/science/vectors_and_tensors/zh/063_riemann-curvature-tensor/#math-128"');
-      // math-128 必须在 <a> 标签内部，绝不可被丢在徽章外部，且遵循 MD3E 学术书目指向而不是裸露协议
+
       expect(html).toContain('math-128');
       expect(html).toContain('从向量到张量');
       expect(html).not.toMatch(/<\/a>\s*math-128/);
@@ -219,7 +219,7 @@ describe('AI Chat Markdown Parser Suite (Unit Tests)', () => {
       const html = mdToHtml(input);
       expect(html).toContain('href="/collections/math/graph_theory/11_%E5%9B%BE/"');
       expect(html).toContain('data-astrolib-uri="astrolib://math/graph_theory/11_图"');
-      // 绝不泄漏未转义的引号或把引号转成 %E2%80%9D 混入链接
+
       expect(html).not.toContain('%E2%80%9D');
     });
 
@@ -255,4 +255,3 @@ describe('AI Chat Markdown Parser Suite (Unit Tests)', () => {
     });
   });
 });
-

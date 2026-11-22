@@ -1,10 +1,3 @@
-/**
- * electron/server/canvas/styles.ts
- * ============================================================================
- * 章节无限自由画布工作台样式表生成器 (Material You 主题色 + 统一字体 + 微点光标)
- * ============================================================================
- */
-
 export function buildCanvasStyles(): string {
   const drawCursorLight =
     "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Ccircle cx='6' cy='6' r='2.1' fill='%231f1f1f' stroke='%23ffffff' stroke-width='1'/%3E%3C/svg%3E\") 6 6, default";

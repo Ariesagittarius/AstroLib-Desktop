@@ -1,10 +1,3 @@
-/**
- * src/scripts/pages/settings-agent-client.ts
- * ============================================================================
- * 全局设置中心「Agent 与工具」前端控制器
- * ============================================================================
- */
-
 import { PluginEnvironment } from '../../plugins/harness/plugin-environment.ts';
 import {
   DEFAULT_HARNESS_SYSTEM_PROMPT,
@@ -96,7 +89,6 @@ export function initAgentSettingsPanel(): { switchSubtab: (tab: AgentSubtab) => 
     });
   });
 
-  // 1. 权限与导览折叠偏好
   const permChipSet = document.getElementById('agent-perm-mode-chips');
   const permHint = document.getElementById('agent-perm-mode-hint');
   const autoCollapseSwitch = document.getElementById('agent-auto-collapse-switch') as any;
@@ -130,7 +122,6 @@ export function initAgentSettingsPanel(): { switchSubtab: (tab: AgentSubtab) => 
     settingsStore.setAutoCollapseTrace(Boolean(autoCollapseSwitch.selected));
   });
 
-  // 2. 工具目录与开发者检查器
   const toolsSearch = document.getElementById('agent-tools-search') as any;
   toolsSearch?.addEventListener('input', () => {
     searchQuery = String(toolsSearch.value || '').trim().toLowerCase();
@@ -475,7 +466,6 @@ export function initAgentSettingsPanel(): { switchSubtab: (tab: AgentSubtab) => 
     renderToolInspector(allTools);
   };
 
-  // 3. 模型与服务商管理
   const renderProvidersList = () => {
     const listHost = document.getElementById('agent-providers-list');
     if (!listHost) return;
@@ -693,7 +683,6 @@ export function initAgentSettingsPanel(): { switchSubtab: (tab: AgentSubtab) => 
     renderProvidersList();
   });
 
-  // 4. 系统预设
   const reasoningChips = document.getElementById('agent-reasoning-default-chips');
   const tokenWindowInput = document.getElementById('agent-token-window-input') as any;
   const maxRoundsInput = document.getElementById('agent-max-rounds-input') as any;
@@ -728,7 +717,6 @@ export function initAgentSettingsPanel(): { switchSubtab: (tab: AgentSubtab) => 
     snackbar('已保存 Agent 系统预设');
   });
 
-  // 5. Python 独立科学计算沙箱管理
   const pyEnvStatusEl = document.getElementById('agent-py-env-status');
   const pyCustomPathInput = document.getElementById('agent-py-custom-path') as any;
   const pyInstallInput = document.getElementById('agent-py-install-input') as any;
@@ -842,7 +830,6 @@ export function initAgentSettingsPanel(): { switchSubtab: (tab: AgentSubtab) => 
     }
   });
 
-  // 6. 可选联网搜索配置
   const wsSwitch = document.getElementById('agent-websearch-enable-switch') as any;
   const wsChips = document.getElementById('agent-websearch-provider-chips');
   const wsApiKeyInput = document.getElementById('agent-websearch-apikey') as any;

@@ -1,10 +1,3 @@
-/**
- * src/scripts/pages/settings-ingest-client.ts
- * ============================================================================
- * 全局设置中心「文献解析与研读」面板控制器 (M3 + MD3E)
- * ============================================================================
- */
-
 import {
   INGEST_STORAGE_KEYS,
   readIngestSettings,
@@ -179,7 +172,6 @@ export function initIngestSettingsPanel(onJumpToPanel?: (panelId: string, scroll
   syncUiFromSettings();
   void hydrateToken();
 
-  // 解析引擎
   engineSeg?.addEventListener('change', () => {
     const val = engineSeg.value as IngestEngineType;
     if (val === 'api' || val === 'agent' || val === 'local') {
@@ -188,7 +180,6 @@ export function initIngestSettingsPanel(onJumpToPanel?: (panelId: string, scroll
     }
   });
 
-  // Token 显隐、保存与清除
   tokenToggleBtn?.addEventListener('click', () => {
     if (!tokenInput) return;
     const isPassword = tokenInput.type === 'password';
@@ -227,7 +218,6 @@ export function initIngestSettingsPanel(onJumpToPanel?: (panelId: string, scroll
     void persistToken('');
   });
 
-  // 字体与排版
   bindSingleChipSet(
     fontChipsEl,
     'data-paper-font',

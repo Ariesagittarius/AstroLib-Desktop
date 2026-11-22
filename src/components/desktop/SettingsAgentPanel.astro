@@ -1,16 +1,5 @@
 ---
-/**
- * src/components/desktop/SettingsAgentPanel.astro
- * ============================================================================
- * 全局设置中心面板：Agent 与工具中心 (替代旧版 HarnessSettingsModal)
- * ============================================================================
- * 集成三大核心视图：
- * 1. 工具与权限：三档权限模式、导览折叠策略、全部注册工具检查器（图标/描述自定义、
- *    JSON Schema 接口表、源文件定位、只读源代码查看器）；
- * 2. 模型与服务商：邮百工网关 / Antigravity CLI / DeepSeek / Gemini / 自定义网关管理；
- * 3. 系统预设：默认推理强度、Token 窗口上限、自定义系统提示词。
- * ============================================================================
- */
+
 ---
 
 <section id="panel-agent" class="hub-panel" data-panel-title="Agent 与工具">
@@ -23,7 +12,6 @@
     </div>
   </div>
 
-  <!-- 顶部 M3 分段子导航 -->
   <div class="agent-subtabs-bar">
     <md-chip-set id="agent-hub-subtabs" aria-label="Agent 设置子分类">
       <md-filter-chip label="工具与权限" data-agent-subtab="tools" selected></md-filter-chip>
@@ -32,7 +20,6 @@
     </md-chip-set>
   </div>
 
-  <!-- 子页 1: 工具与权限 -->
   <div class="agent-subpane active" id="agent-subpane-tools">
     <div class="hub-card">
       <div class="ft-section hub-ft-section">
@@ -63,7 +50,6 @@
       </div>
     </div>
 
-    <!-- 工具检查器与自定义卡片 -->
     <div class="hub-card">
       <div class="ft-section hub-ft-section">
         <div class="agent-tools-toolbar">
@@ -82,12 +68,10 @@
 
         <div class="agent-tools-grid" id="agent-tools-grid"></div>
 
-        <!-- 选中工具的开发者检视抽屉 -->
         <div class="agent-tool-inspector" id="agent-tool-inspector" hidden></div>
       </div>
     </div>
 
-    <!-- 独立 Python 科学计算沙箱 (.venv-agent) 管理卡 -->
     <div class="hub-card" style="margin-top:16px;">
       <div class="ft-section hub-ft-section">
         <div class="agent-models-header">
@@ -126,7 +110,6 @@
       </div>
     </div>
 
-    <!-- 可选联网搜索服务商配置卡 -->
     <div class="hub-card" style="margin-top:16px;">
       <div class="ft-section hub-ft-section">
         <div class="agent-models-header">
@@ -174,7 +157,6 @@
     </div>
   </div>
 
-  <!-- 子页 2: 模型与服务商 -->
   <div class="agent-subpane" id="agent-subpane-models" hidden>
     <div class="hub-card">
       <div class="ft-section hub-ft-section">
@@ -216,7 +198,6 @@
     </div>
   </div>
 
-  <!-- 子页 3: 系统预设 -->
   <div class="agent-subpane" id="agent-subpane-presets" hidden>
     <div class="hub-card">
       <div class="ft-section hub-ft-section">
@@ -271,7 +252,6 @@
     </div>
   </div>
 
-  <!-- 只读源代码 / JSON 配置预览浮层 -->
   <div class="agent-code-modal" id="agent-code-modal" hidden role="dialog" aria-modal="true">
     <div class="agent-code-modal__dialog">
       <div class="agent-code-modal__head">

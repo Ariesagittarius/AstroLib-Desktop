@@ -10,10 +10,6 @@ function isPreservedJsDirective(commentText) {
   );
 }
 
-/**
- * State machine stripping JS/TS/JSX/TSX/JSONC/Typst comments while preserving
- * string literals, nested template literals, regex literals, and compiler/bundler directives.
- */
 export function stripJsTsComments(code, options = {}) {
   const preserveDirectives = options.preserveDirectives ?? true;
   const nestedBlockComments = options.nestedBlockComments ?? false;
@@ -36,7 +32,7 @@ export function stripJsTsComments(code, options = {}) {
     const currentState = stateStack.length > 0 ? stateStack[stateStack.length - 1] : 'DEFAULT';
 
     if (currentState === 'DEFAULT' || currentState === 'TEMPLATE_EXPR') {
-      // Optional JSX empty expression block comment: {/* ... */}
+
       if (ch === '{' && code.slice(i, i + 3) === '{/*') {
         const end = code.indexOf('*/}', i + 3);
         if (end >= 0) {
@@ -45,7 +41,6 @@ export function stripJsTsComments(code, options = {}) {
         }
       }
 
-      // 1. Single-line comment //
       if (ch === '/' && next === '/') {
         const start = i;
         i += 2;
@@ -59,7 +54,6 @@ export function stripJsTsComments(code, options = {}) {
         continue;
       }
 
-      // 2. Multi-line comment /* ... */
       if (ch === '/' && next === '*') {
         const start = i;
         i += 2;
@@ -82,7 +76,6 @@ export function stripJsTsComments(code, options = {}) {
         continue;
       }
 
-      // 3. Single-quoted string
       if (ch === "'") {
         output += ch;
         i++;
@@ -101,7 +94,6 @@ export function stripJsTsComments(code, options = {}) {
         continue;
       }
 
-      // 4. Double-quoted string
       if (ch === '"') {
         output += ch;
         i++;
@@ -120,7 +112,6 @@ export function stripJsTsComments(code, options = {}) {
         continue;
       }
 
-      // 5. Template literal `...`
       if (ch === '`') {
         output += ch;
         i++;
@@ -128,7 +119,6 @@ export function stripJsTsComments(code, options = {}) {
         continue;
       }
 
-      // 6. RegExp literal vs division operator
       if (ch === '/') {
         if (isRegExpStart(output)) {
           output += ch;

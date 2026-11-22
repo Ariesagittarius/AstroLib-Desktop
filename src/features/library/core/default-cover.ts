@@ -1,11 +1,3 @@
-/**
- * src/features/library/core/default-cover.ts
- * ============================================================================
- * 学术级极简缺省书封生成器与本地封面链路回退工具
- * (MIT Press / 岩波文库克制出版美学)
- * ============================================================================
- */
-
 import type { UnifiedReadingEntity } from '../../../types/library-entity';
 
 function escapeHtml(raw: unknown): string {
@@ -96,9 +88,6 @@ function getTitleMonogram(title: string): string {
   return first ? first.toUpperCase() : 'A';
 }
 
-/**
- * 构建 MIT Press / 岩波文库风格学术极简缺省书封
- */
 export function buildAcademicDefaultCoverHtml(item: UnifiedReadingEntity): string {
   const { tone, overline } = resolveCoverTheme(item);
   const title = (item.title || 'Untitled').trim();

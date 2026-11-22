@@ -1,9 +1,9 @@
 # ADR: UI Surface Contract & Single Production Implementation (P1-D)
 
-**Status**: Accepted  
-**Date**: 2026-11-13  
-**Authors**: Architecture Committee & Execution Agent  
-**Context**: `PROJECT_ARCHITECTURE_AUDIT_2026-11-12.md` §5 (P1-02, P1-03, P1-04, P1-05, P1-07, P1-08, P1-13) & `P1_D_E_HANDOFF_2026-11-13.md` §2  
+**Status**: Accepted
+**Date**: 2026-11-13
+**Authors**: Architecture Committee & Execution Agent
+**Context**: `PROJECT_ARCHITECTURE_AUDIT_2026-11-12.md` §5 (P1-02, P1-03, P1-04, P1-05, P1-07, P1-08, P1-13) & `P1_D_E_HANDOFF_2026-11-13.md` §2
 
 ---
 

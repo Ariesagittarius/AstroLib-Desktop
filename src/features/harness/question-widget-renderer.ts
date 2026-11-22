@@ -1,10 +1,3 @@
-/**
- * src/features/harness/question-widget-renderer.ts
- * ============================================================================
- * M3 交互式用户追问卡片渲染器 (ask_user_questions / /grill-me)
- * ============================================================================
- */
-
 import type { QuestionBlock, QuestionItem } from './types.ts';
 
 function esc(str: unknown): string {
@@ -31,7 +24,7 @@ export function renderQuestionBlockElement(
 
   const isPending = block.status === 'pending';
   const prevStateKey = host.dataset.renderedStatus || '';
-  // 若已渲染为 pending 且仍处于 pending 状态，严禁重置用户正在勾选/输入的表单控件！
+
   if (existingEl && prevStateKey === 'pending' && isPending) {
     return existingEl;
   }

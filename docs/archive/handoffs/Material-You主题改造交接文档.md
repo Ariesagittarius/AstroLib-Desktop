@@ -1,10 +1,10 @@
 # Material You (Material 3) 现代学术设计规范与技术架构交接文档
 
-> **生效日期**：2026-09-11  
-> **核心宗旨**：全面以 **Material You (Material 3 / M3)** 风格为全站唯一核心设计语言，深度贯彻 Google 现代 Web 视觉范式与大学学术出版排版规范。  
-> **交接对象**：所有承接 AstroLib 界面、组件、交互与视觉重构的后续 Agent  
-> **开发环境**：Astro 7 + Starlight 0.41 本地后台开发服务器（`http://localhost:4321`）  
-> **权威参考**：[Material Design 3 官方规范 (m3.material.io)](https://m3.material.io/) 与 `@material/web` 官方 Web Component 组件库  
+> **生效日期**：2026-09-11
+> **核心宗旨**：全面以 **Material You (Material 3 / M3)** 风格为全站唯一核心设计语言，深度贯彻 Google 现代 Web 视觉范式与大学学术出版排版规范。
+> **交接对象**：所有承接 AstroLib 界面、组件、交互与视觉重构的后续 Agent
+> **开发环境**：Astro 7 + Starlight 0.41 本地后台开发服务器（`http://localhost:4321`）
+> **权威参考**：[Material Design 3 官方规范 (m3.material.io)](https://m3.material.io/) 与 `@material/web` 官方 Web Component 组件库
 
 ---
 

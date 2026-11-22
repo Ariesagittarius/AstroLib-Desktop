@@ -403,4 +403,3 @@ sequenceDiagram
 6. **阶段六：本地持久化与状态同步**
    - 将当前对话的消息队列、使用的工具日志、渲染分段（`segments`）保存至 `localStorage`（键为 `dsh-aiask-threads-<col>-<book>`）。
    - 更新头部历史面板列表与页签 Tabs，以便刷新或再次进入时即时恢复会话状态。
-

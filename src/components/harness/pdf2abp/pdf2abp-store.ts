@@ -1,10 +1,3 @@
-/**
- * src/components/harness/pdf2abp/pdf2abp-store.ts
- * ============================================================================
- * Pure Reactive Client Store for PDF2ABP Harness UI (Dev Server & Electron)
- * ============================================================================
- */
-
 import type {
   MineruAvailabilityStatus,
   Pdf2AbpEvent,
@@ -389,7 +382,7 @@ export class Pdf2AbpStore {
           nextRunning = applied.runningSubagents;
           nextActive = applied.activeJob;
         } catch {
-          // ignore malformed historical line
+
         }
       }
 
@@ -400,7 +393,7 @@ export class Pdf2AbpStore {
         ...(nextActive ? { activeJob: nextActive } : {}),
       });
     } catch {
-      // ignore if historical log unavailable
+
     }
   }
 
@@ -574,7 +567,7 @@ export class Pdf2AbpStore {
       );
       this.upsertJob(res.job);
     } catch {
-      // keep existing snapshot
+
     }
   }
 
@@ -594,7 +587,7 @@ export class Pdf2AbpStore {
             this.handleIncomingEvent(parsed);
           }
         } catch {
-          // ignore malformed SSE packet
+
         }
       });
     }
@@ -606,7 +599,7 @@ export class Pdf2AbpStore {
           this.upsertJob(payload.job);
         }
       } catch {
-        // ignore
+
       }
       void this.refreshFiles(jobId);
       this.closeStream();
@@ -619,7 +612,7 @@ export class Pdf2AbpStore {
           this.handleIncomingEvent(parsed);
         }
       } catch {
-        // ignore
+
       }
     };
 
@@ -710,7 +703,7 @@ export class Pdf2AbpStore {
             updates[field] = parsed;
           }
         } catch {
-          // ignore transient probe read failures during active write
+
         }
       })
     );

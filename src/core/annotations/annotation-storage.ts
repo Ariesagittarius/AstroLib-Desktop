@@ -1,16 +1,3 @@
-/**
- * src/core/annotations/annotation-storage.ts
- * ============================================================================
- * AstroLib 书籍批注与自由画布持久化存储引擎 (.anp / JSON 解耦存储)
- * ============================================================================
- * 职责：
- * 1. 将批注（高亮/侧注/数位板笔迹）与章节自由画布解耦落盘至 artifacts/annotations/；
- * 2. 提供无损 .anp (AstroNote Package 1.0.0) 整书/单章导入导出与 UUID 幂等合并；
- * 3. 提供混合双层手写坐标锚定（node-relative 归一化坐标 + margin-offset 缩放偏移向量）
- *    纯几何映射算法，确保窗口缩放或折叠块重排时笔迹与正文段落零漂移同步。
- * ============================================================================
- */
-
 import fs from 'node:fs';
 import path from 'node:path';
 import {
@@ -35,11 +22,6 @@ export interface NodeBoxRect {
   height: number;
 }
 
-/**
- * 将视窗指针位置转换为混合双层锚定坐标 (InkPoint)
- * - node-relative: u = (x - nodeRect.left) / nodeRect.width, v = (y - nodeRect.top) / nodeRect.height
- * - margin-offset: u = (x - nodeRect.left) / zoomScale, v = (y - nodeRect.top) / zoomScale
- */
 export function toAnchoredInkPoint(params: {
   clientX: number;
   clientY: number;
@@ -76,12 +58,6 @@ export function toAnchoredInkPoint(params: {
   };
 }
 
-/**
- * 将混合双层锚定坐标重投影为当前容器坐标系内的像素坐标 (x, y)
- * - nodeRect 为锚定 AST 节点当前实时 getBoundingClientRect()
- * - containerRect 为手写 SVG 叠加层当前实时 getBoundingClientRect()
- * - zoomScale 为当前阅读视窗缩放系数
- */
 export function projectInkPointToContainer(params: {
   point: InkPoint;
   anchorMode: InkAnchorMode;
@@ -252,9 +228,6 @@ export class AnnotationStorageService {
     };
   }
 
-  /**
-   * 原子读取单章节批注载荷（不存在时返回结构完整的空载荷）
-   */
   public getChapterAnnotations(
     colSlug: string,
     bookSlug: string,
@@ -297,9 +270,6 @@ export class AnnotationStorageService {
     }
   }
 
-  /**
-   * 持久化单章节批注载荷（自动创建目录并写入紧凑 JSON）
-   */
   public saveChapterAnnotations(
     colSlug: string,
     bookSlug: string,
@@ -314,9 +284,6 @@ export class AnnotationStorageService {
     return nextPayload;
   }
 
-  /**
-   * 异步序列化持久化单章节批注载荷（命中内存 LRU 缓存 + 按文件串行落盘，避免阻塞事件循环）
-   */
   public async saveChapterAnnotationsAsync(
     colSlug: string,
     bookSlug: string,
@@ -356,9 +323,6 @@ export class AnnotationStorageService {
     return nextPayload;
   }
 
-  /**
-   * 新增或更新单条批注（高亮 / 侧注 / 手写笔迹）
-   */
   public upsertAnnotationItem(
     colSlug: string,
     bookSlug: string,
@@ -380,9 +344,6 @@ export class AnnotationStorageService {
     });
   }
 
-  /**
-   * 删除指定批注条目
-   */
   public deleteAnnotationItem(
     colSlug: string,
     bookSlug: string,
@@ -396,9 +357,6 @@ export class AnnotationStorageService {
     });
   }
 
-  /**
-   * 保存章节自由画布笔记
-   */
   public saveCanvasNote(
     colSlug: string,
     bookSlug: string,
@@ -414,9 +372,6 @@ export class AnnotationStorageService {
     );
   }
 
-  /**
-   * 异步保存章节自由画布笔记（供高频率后端保存接口调用）
-   */
   public saveCanvasNoteAsync(
     colSlug: string,
     bookSlug: string,
@@ -432,9 +387,6 @@ export class AnnotationStorageService {
     );
   }
 
-  /**
-   * 列出指定书籍存在持久化批注文件的全部章节 slug
-   */
   public listAnnotatedChapterSlugs(colSlug: string, bookSlug: string): string[] {
     const bookDir = this.getBookDir(colSlug, bookSlug);
     if (!fs.existsSync(bookDir)) return [];
@@ -456,9 +408,6 @@ export class AnnotationStorageService {
     return results.sort();
   }
 
-  /**
-   * 导出整本书或单章的无损 AstroNote Package (.anp) 数据包
-   */
   public exportBookAnp(
     colSlug: string,
     bookSlug: string,
@@ -491,9 +440,6 @@ export class AnnotationStorageService {
     };
   }
 
-  /**
-   * 导入并校验 .anp 批注包，支持无损合并 (merge) 或覆盖 (overwrite)
-   */
   public importBookAnp(
     rawPkg: unknown,
     mode: 'merge' | 'overwrite' = 'merge'

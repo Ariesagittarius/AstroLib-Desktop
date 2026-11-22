@@ -30,13 +30,13 @@ import Algorithm from '@/components/Algorithm.astro';
 
 下面我们介绍一些量子物理概念。我们将电子的基态表示为 $|0\rangle$ ，因为基态对应于位值 0，类似地将激发态表示为 $|1\rangle$ 。它们是经典物理中电子的两种可能状态。很多量子物理中违背人类直观感受的现象都是由叠加原理导致的，该原理指出：如果一个量子系统能处于上述两个状态中的一个，则它也可以处于这两个状态的任意线性叠加。例如，电子的状态完全可能是 $\frac{1}{\sqrt{2}} |0\rangle + \frac{1}{\sqrt{2}} |1\rangle$ 或 $\frac{1}{\sqrt{2}} |0\rangle - \frac{1}{\sqrt{2}} |1\rangle$ ；或者形如 $\alpha_0 |0\rangle + \alpha_1 |1\rangle$ 的无穷种组合中的任意一个。系数 $\alpha_0$ 称为状态 $|0\rangle$ 的振幅 (amplitude)，类似地， $\alpha_1$ 为 $|1\rangle$ 的振幅。如果以上这些还不足以让人觉得新奇的话，更奇怪的是这些系数还可以取复数值，只要它们满足归一化条件即可： $|\alpha_0|^2 + |\alpha_1|^2 = 1$ 。例如， $\frac{1}{\sqrt{5}} |0\rangle + \frac{2i}{\sqrt{5}} |1\rangle$ (其中 $i$ 表示复数的虚部单位，等于 $\sqrt{-1}$ ) 是完全正确可行的量子状态！叠加状态 $\alpha_0 |0\rangle + \alpha_1 |1\rangle$ 是量子计算机中信息编码的基本单元 (如图 10-1)，我们将其称为量子位元。
 
-![](../images/cb73a7a007a19fb96ff8a0e862a99fedf85db0d412e5d5db130be8207d728bf2.jpg)  
+![](../images/cb73a7a007a19fb96ff8a0e862a99fedf85db0d412e5d5db130be8207d728bf2.jpg)
 基态 $|0\rangle$
 
-![](../images/b7c4451084369b2b7cdce2950aec5f8e87c8829c16eaf7870097082189f251ac.jpg)  
+![](../images/b7c4451084369b2b7cdce2950aec5f8e87c8829c16eaf7870097082189f251ac.jpg)
 激发态 |1>
 
-![](../images/3b600ad4af44cb8f61005f397d0eed4faebb343db4cf5c17e38ce2d0c6c1ef08.jpg)  
+![](../images/3b600ad4af44cb8f61005f397d0eed4faebb343db4cf5c17e38ce2d0c6c1ef08.jpg)
 叠加状态 $\alpha_0|0\rangle +\alpha_1|1\rangle$
 
 图10-1 一个电子可以处于基态也可以处于激发态。在量子物理中使用的Dirac表示法中，这两种状态分别记为 $\left|0\right\rangle$ 和 $\left|1\right\rangle$ 。但是叠加原理告诉我们，电子实际上可以处于这两种状态的线性组合状态： $\alpha_0\left|0\right\rangle +\alpha_1\left|1\right\rangle$ 。这个组合给我们的第一印象是系数 $\alpha$ 表示概率，它们是两个和为1的非负实数。但是叠加原理强调它们可以是任意的复数，只需要满足范数平方和为1的条件
@@ -45,7 +45,7 @@ import Algorithm from '@/components/Algorithm.astro';
 
 然而，线性叠加是电子世界中特有的。为了更好地理解叠加状态，使人们对它有一个大概的印象，我们给出一种度量方法，将该状态变换为单个位表示的信息，即为0或1。如果电子的状态是 $\alpha_0|0\rangle +\alpha_1|1\rangle$ ，那么度量过程的输出是0和1的概率分别为 $\left|\alpha_0\right|^2$ 和 $\left|\alpha_1\right|^2$ （它们满足归一化条件 $\left|\alpha_0\right|^2 +\left|\alpha_1\right|^2 = 1)$ 。此外，度量过程导致系统状态的改变：如果输出为0，则系统的新状态为 $|0\rangle$ (基态)；如果输出为1，则系统新状态为 $|1\rangle$ (激发态)。度量过程扰乱了系统并强迫系统不得不在基态和激发态之间进行选择，这又是一个量子物理的所特有的奇异现象。
 
-![](../images/8218741130e95a566c0c41c54c717791202ecf96317de2aeee1ca105d97fd357.jpg)  
+![](../images/8218741130e95a566c0c41c54c717791202ecf96317de2aeee1ca105d97fd357.jpg)
 图10-2 叠加状态的度量过程使得系统必须选定一个特定的状态，选择的概率由状态的振幅确定
 
 叠加原理不仅适用于上述的这类2值系统，同样也适用于更一般的 $k$ 值系统。例如，在实际情况中，氢原子的电子可能处于多个能级之一，这些能级由基态开始，依次为第一激发态、第二激发态等等。下面我们考虑由基态和前 $k - 1$ 个激发态构成的 $k$ 值系统，这些状态分别记为 $\left|0\right\rangle ,\left|1\right\rangle ,\left|2\right\rangle ,\ldots ,\left|k - 1\right\rangle$ 。在这里，叠加原理可以表示为：系统一般的量子状态是 $\alpha_0\left|0\right\rangle +\alpha_1\left|1\right\rangle +\alpha_2\left|2\right\rangle +\ldots +\alpha_{k - 1}\left|k - 1\right\rangle$ ，其中系数满足归一化条件 $\sum_{j = 0}^{k - 1}\left|\alpha_j\right|^2 = 1$ 。因此，系统状态的度量结果为一个0到 $k - 1$ 之间(包含0和 $k - 1$ )的整数，且其输出为 $j$ 的概率为 $\left|\alpha_j\right|^2$ 。前面已经提过，度量会扰乱系统。当前，度量过程使得系统状态实际上是状态 $\left|j\right\rangle$ ，也就是说系统被强迫处于第 $j$ 个激发态。

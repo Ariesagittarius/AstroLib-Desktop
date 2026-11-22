@@ -1,9 +1,3 @@
-﻿/**
- * src/scripts/pages/settings-hub-client.ts
- * ============================================================================
- * Client runtime for Settings Hub: tabs, diagnostics hydration, model downloads
- * ============================================================================
- */
 import '@material/web/button/filled-button.js';
 import '@material/web/button/filled-tonal-button.js';
 import '@material/web/button/outlined-button.js';
@@ -54,7 +48,6 @@ export function initHubRuntime(): void {
   let diagnosticsLoaded = false;
   let modelsLoaded = false;
 
-  // 1. 选项卡切换逻辑
   const navItems = document.querySelectorAll<HTMLElement>('.hub-nav-item');
   const panels = document.querySelectorAll<HTMLElement>('.hub-panel');
   const sectionHeading = document.getElementById('hub-modal-section-heading');
@@ -93,7 +86,6 @@ export function initHubRuntime(): void {
     });
   });
 
-  // 初始化「Agent 与工具」设置面板
   const agentPanelCtrl = initAgentSettingsPanel();
 
   window.addEventListener('astrolib:hub-select-panel', ((e: CustomEvent<{ panel?: string; section?: string }>) => {
@@ -121,7 +113,6 @@ export function initHubRuntime(): void {
     }
   }) as EventListener);
 
-  // 初始化「文献解析与研读」设置面板
   initIngestSettingsPanel((panelId, scrollSelector) => {
     activatePanel(panelId);
     if (scrollSelector) {
@@ -131,7 +122,6 @@ export function initHubRuntime(): void {
     }
   });
 
-  // 初始化「多窗口与分屏关闭行为」单选 Chips
   const splitPolicySet = document.getElementById('hub-split-close-policy-chips');
   if (splitPolicySet) {
     const getPolicy = (): SplitClosePolicy => {
@@ -170,7 +160,6 @@ export function initHubRuntime(): void {
     }
   }
 
-  // 初始化「按格式默认排版配置」面板（ABP 学术教材 / EPUB 电子书各自独立默认值）
   const formatTabs = document.getElementById('hub-format-defaults-tabs');
   if (formatTabs) {
     let activeFormat: FormatDefaultKey = 'abp';
@@ -362,7 +351,6 @@ export function initHubRuntime(): void {
     }
   }) as EventListener);
 
-  // 2. 桌面环境探测与模型状态水合
   const isElectron = Boolean((window as any).astrolib?.isElectron);
   const envBadge = document.getElementById('env-badge');
   const envText = document.getElementById('env-text');
@@ -377,7 +365,6 @@ export function initHubRuntime(): void {
     if (envText) envText.textContent = 'AstroLib 桌面运行时';
   }
 
-  // 3. 模态框关闭按键逻辑
   document.getElementById('hub-overlay-close-btn')?.addEventListener('click', () => {
     window.dispatchEvent(new CustomEvent('astrolib:close-settings-hub'));
   });
@@ -423,7 +410,6 @@ export function initHubRuntime(): void {
     }
   };
 
-  // 4. 端侧诊断数据延迟刷新（仅打开面板或主动重新检测时触发）
   const refreshDiagnostics = async () => {
     if (!isElectron) return;
     diagnosticsLoaded = true;
@@ -477,7 +463,6 @@ export function initHubRuntime(): void {
     }
   });
 
-  // 5. 本地模型安装态与显存驻留生命周期控制
   const updateModelCard = (prefix: string, m: any) => {
     const badge = document.getElementById(`badge-${prefix}`);
     const statusText = badge?.querySelector<HTMLElement>('.status-text');
@@ -703,7 +688,6 @@ export function initHubRuntime(): void {
     void refreshRuntimeModels();
   });
 
-  // 独立 /hub/ 页面若默认打开诊断或模型面板，仅在该面板本身已激活时触发加载；桌面主窗口覆盖层保持启动零探测
   const initialActivePanel = document.querySelector<HTMLElement>('.hub-panel.active')?.id;
   if (initialActivePanel) {
     triggerLazyPanelRefresh(initialActivePanel);

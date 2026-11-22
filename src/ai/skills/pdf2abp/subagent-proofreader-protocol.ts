@@ -1,10 +1,3 @@
-/**
- * src/ai/skills/pdf2abp/subagent-proofreader-protocol.ts
- * ============================================================================
- * Skill 4: 子代理视觉校对协议与结构化落盘契约
- * ============================================================================
- */
-
 import type { SkillDocument } from './types.ts';
 
 export const subagentProtocolSkill: SkillDocument = {

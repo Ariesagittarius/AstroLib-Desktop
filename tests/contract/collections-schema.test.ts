@@ -82,7 +82,6 @@ describe('Collections Source of Truth Schema Contract', () => {
     expect(emptyStateBooks.map((b) => b.slug)).toEqual(expectedSlugs);
     expect(getCatalogCollections()).toBe(sourceCollections);
 
-    // 模拟静态构建开关 collections 非空时，catalog 仍严格单源返回 exact 13 本
     collections.push({
       id: 'mock',
       slug: 'mock',

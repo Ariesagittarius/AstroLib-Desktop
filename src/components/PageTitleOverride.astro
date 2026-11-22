@@ -11,7 +11,6 @@ const titleHtml = renderTitleHtml(rawTitle);
 const entryId = entry.id || '';
 const entrySlug = (entry as any).slug || entry.id || '';
 
-// 深度匹配当前路由所属图书及合集
 let currentBook = null;
 let currentCol = null;
 
@@ -32,7 +31,6 @@ const stageSubjectLabel = [
   currentBook?.categoryLabel || currentBook?.subjectLabel
 ].filter(Boolean).join(' · ');
 
-// 双语教材与多语言/多译本切换判定
 interface VersionOption {
   id: string;
   label: string;
@@ -46,17 +44,15 @@ const versionOptions: VersionOption[] = [];
 if (isBilingualBook && currentCol && currentBook && currentBook.languages) {
   const prefix = `/collections/${currentCol.slug}/${currentBook.slug}`;
 
-  // 1. 深度检测当前处于哪一个语言版本 (较长 prefix 优先匹配，防止 zh 截断 zh-wp)
   const sortedLangs = [...currentBook.languages].sort((a, b) => (b.pathPrefix?.length || 0) - (a.pathPrefix?.length || 0));
   let currentLang = sortedLangs.find(l => l.pathPrefix && (
-    pathname.includes(`/${currentBook.slug}/${l.pathPrefix}/`) || 
+    pathname.includes(`/${currentBook.slug}/${l.pathPrefix}/`) ||
     entrySlug.includes(`/${currentBook.slug}/${l.pathPrefix}/`)
   ));
   if (!currentLang) {
     currentLang = currentBook.languages.find(l => !l.pathPrefix || l.default) || currentBook.languages[0];
   }
 
-  // 2. 提取当前章节的基础 key
   let baseChapterKey = '';
   if (currentLang.pathPrefix) {
     const match = pathname.match(new RegExp(`${prefix}/${currentLang.pathPrefix}/([^/?#]+)`));
@@ -76,7 +72,6 @@ if (isBilingualBook && currentCol && currentBook && currentBook.languages) {
     baseChapterKey = match ? match[1] : '';
   }
 
-  // 3. 为所有配置的语言版本生成无缝跳转链接
   for (const lang of currentBook.languages) {
     const isActive = lang.id === currentLang.id;
     let targetSub = baseChapterKey;
@@ -197,7 +192,6 @@ const targetVersionOptions = versionOptions.filter((o) => !o.isActive);
               <span class="m3-chip-text">双语段落关联对比</span>
             </md-assist-chip>
 
-            <!-- M3 Expressive Chrome 风格版本选择气泡菜单 (默认彻底隐藏) -->
             <div id="bilingual-version-popover" class="m3e-version-popover is-hidden" style="display: none;" role="menu" aria-label="选择对比版本">
               <div class="popover-header">
                 <span class="popover-title">选择要对比的版本</span>
@@ -245,8 +239,7 @@ const targetVersionOptions = versionOptions.filter((o) => !o.isActive);
   <h1 id={PAGE_TITLE_ID} class="chapter-title" set:html={titleHtml}></h1>
 )}
 
-<style>
-  @layer starlight.core {
+<style>@layer starlight.core {
     .chapter-header {
       display: flex;
       flex-direction: column;
@@ -337,7 +330,6 @@ const targetVersionOptions = versionOptions.filter((o) => !o.isActive);
       --md-assist-chip-container-color: var(--sl-color-accent-low, rgba(59, 130, 246, 0.15)) !important;
     }
 
-    /* Fallback and styling before hydration */
     md-assist-chip:not(:defined) {
       display: inline-flex;
       align-items: center;
@@ -362,13 +354,10 @@ const targetVersionOptions = versionOptions.filter((o) => !o.isActive);
       flex-shrink: 0;
     }
 
-    /* When defined by Lit, the shadow DOM handles the label via `label` property,
-       so hide the light DOM fallback text to prevent duplication */
     md-assist-chip:defined .m3-chip-text {
       display: none;
     }
 
-    /* Strict bounding on all SVGs inside md-assist-chip */
     md-assist-chip svg {
       width: 0.95rem !important;
       height: 0.95rem !important;
@@ -379,8 +368,7 @@ const targetVersionOptions = versionOptions.filter((o) => !o.isActive);
   }
 </style>
 
-<script>
-  import '@material/web/chips/chip-set.js';
+<script>import '@material/web/chips/chip-set.js';
   import '@material/web/chips/assist-chip.js';
   import { inPageCompareController } from '../services/bilingual/in-page-compare-controller.ts';
 
@@ -423,25 +411,23 @@ const targetVersionOptions = versionOptions.filter((o) => !o.isActive);
     trigger.addEventListener('click', (e) => {
       e.stopPropagation();
 
-      // 如果当前已经是激活状态，点击则是切换关闭
       if (inPageCompareController.getIsActive()) {
         inPageCompareController.close();
         trigger.classList.remove('is-active');
         return;
       }
 
-      // 检查是否有记住的选择
       const savedTargetId = localStorage.getItem(storageKey);
       const matchedSaved = savedTargetId ? availableTargets.find((t: any) => t.id === savedTargetId) : null;
 
       if (matchedSaved) {
-        // 已经有记住的选择：直接展开
+
         launchTarget(matchedSaved);
       } else if (availableTargets.length === 1) {
-        // 只有一种可选目标：直接展开并记住
+
         launchTarget(availableTargets[0]);
       } else {
-        // 首次且有多个选项：展示 M3E Chrome 风格气泡选单
+
         if (popover) {
           const isHidden = popover.style.display === 'none' || popover.classList.contains('is-hidden');
           if (isHidden) {
@@ -455,7 +441,6 @@ const targetVersionOptions = versionOptions.filter((o) => !o.isActive);
       }
     });
 
-    // 气泡选单项点击
     popover?.addEventListener('click', (e) => {
       const item = (e.target as HTMLElement).closest('.m3e-popover-item') as HTMLElement | null;
       if (!item) return;
@@ -469,7 +454,6 @@ const targetVersionOptions = versionOptions.filter((o) => !o.isActive);
       }
     });
 
-    // 点击外部关闭气泡
     document.addEventListener('click', (e) => {
       if (popover && popover.style.display !== 'none' && !popover.contains(e.target as Node) && !trigger.contains(e.target as Node)) {
         popover.style.display = 'none';
@@ -485,4 +469,3 @@ const targetVersionOptions = versionOptions.filter((o) => !o.isActive);
   }
   document.addEventListener('astro:page-load', initBilingualTrigger);
 </script>
-

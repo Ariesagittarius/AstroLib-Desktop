@@ -21,10 +21,10 @@ import ExerciseTrigger from '@/components/exercises/ExerciseTrigger.astro';
 graph TD
     A["通信信源 (Information Source)"] --> B["离散信源 (Discrete Source)"]
     A --> C["连续信源 (Continuous Source)"]
-    
+
     B --> B1["单符号离散信源 (离散随机变量 X)"]
     B --> B2["序列离散信源 (随机序列 X_1, X_2, ..., X_L)"]
-    
+
     B2 --> B21["离散无记忆信源 DMS (独立同分布)"]
     B22["离散有记忆信源 (符号间统计关联)"]
     B2 --> B22

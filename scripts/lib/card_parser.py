@@ -40,24 +40,24 @@ class CardParser:
     )
 
     REF_START = (
-        # 结构与修饰助词
+
         '的', '中', '和', '与', '及', '说', '是', '里', '后', '也', '都', '还', '则', '并', '但',
         '所', '或', '且', '它', '其', '这', '该', '此', '被', '由', '据', '基于', '沿用',
-        # 方位与指示代词
+
         '上述', '上面', '下面', '以下', '下述', '前面', '后面', '第', '见', '参见', '参考',
-        # 述谓与能愿动词
+
         '可以', '可', '能', '能够', '使得', '允许', '需要', '旨在', '试图',
         '表明', '说明', '指出', '意味着', '显示', '告诉', '反映', '揭示', '表达', '断言',
         '保证', '确保', '给出', '提供了', '提供', '描述', '刻画', '回答', '解决',
         '有', '具有', '含有', '包含', '拥有', '也有',
-        # 来源与归属
+
         '来自', '出自', '来源于', '源于', '取自', '归功于', '引自', '通常归功于',
-        # 频度与状态副词
+
         '通常', '经常', '一般', '有时', '已经', '曾', '在此', '事实上', '实际上', '显然',
-        # 推理与派生
+
         '结论', '公式', '意义', '应用', '重要', '思想', '过程', '随后', '知', '可得', '可知', '就属于',
         '推广', '类似', '正如', '如同', '比如', '例如', '即', '不仅', '不仅是',
-        # 证明相关
+
         '证明了', '证明并', '证明的', '证明过程', '证明方法', '证明思路', '证明从略', '证明要点',
         '的证明', '之证明',
     )
@@ -112,7 +112,6 @@ class CardParser:
         for raw in lines:
             s = raw.strip()
 
-            # 处理空行（保留真实段落结构）
             if not s:
                 prev_line_empty = True
                 if cur is not None:
@@ -127,7 +126,6 @@ class CardParser:
                         cur[2].append('')
                 continue
 
-            # 跟踪 ``` 或 ~~~ 代码块
             if s.startswith('```') or s.startswith('~~~'):
                 in_code_block = not in_code_block
                 if cur is None:
@@ -142,7 +140,6 @@ class CardParser:
                 prev_line_empty = False
                 continue
 
-            # 在代码块内部时，直接原样存入当前缓冲区，避免误匹配代码注释或内部例题标识
             if in_code_block:
                 if cur is None:
                     cur = ('para', [raw])
@@ -156,13 +153,11 @@ class CardParser:
                 prev_line_empty = False
                 continue
 
-            # 跟踪 $$ 跨行公式块
             if '$$' in s:
                 cnt = s.count('$$')
                 if cnt % 2 == 1:
                     in_display_math = not in_display_math
 
-            # 在公式块内部时，直接存入当前缓冲区，避免误匹配
             if in_display_math and '$$' not in s:
                 if cur is None:
                     cur = ('para', [raw])
@@ -176,7 +171,6 @@ class CardParser:
                 prev_line_empty = False
                 continue
 
-            # 块内 (A)/(B) 标题排版
             if cur is not None and cur[0] == 'block':
                 m = self.AB_RE.match(s)
                 if m:
@@ -186,7 +180,6 @@ class CardParser:
                 prev_line_empty = False
                 continue
 
-            # Block 块标题
             m = self.BLOCK_RE.match(s)
             if m:
                 flush()
@@ -199,7 +192,6 @@ class CardParser:
                 prev_line_empty = False
                 continue
 
-            # 例 / 例题
             m = self.EX_RE.match(s)
             if m and not self.is_ref_quote(m.group(2)):
                 flush()
@@ -217,7 +209,6 @@ class CardParser:
                 prev_line_empty = False
                 continue
 
-            # 定理 / 定义 / 性质 等知识点 (若在注解页面 is_notes 则完全不生成卡片，避免将文献考证误解析为定理)
             if not is_notes:
                 m = self.KN_RE.match(s)
                 if m:
@@ -240,7 +231,6 @@ class CardParser:
                         prev_line_empty = False
                         continue
 
-            # 注意 / 警告 / 注 / 想一想
             m = self.NOTE_RE.match(s)
             if m:
                 raw_keyword = (m.group(1) or m.group(3) or '注意').strip()
@@ -254,7 +244,6 @@ class CardParser:
                 prev_line_empty = False
                 continue
 
-            # 证明 / 证 / 解 / 证法一
             m = self.SOL_RE.match(s)
             if m:
                 kind = m.group(1) or ''
@@ -275,7 +264,6 @@ class CardParser:
                 prev_line_empty = False
                 continue
 
-            # 二级及以上小标题
             if self.HEAD_RE.match(s):
                 txt = re.sub(r'^#{1,6}\s*', '', s)
                 if TextCleaner.is_numeric_heading(s):
@@ -295,7 +283,6 @@ class CardParser:
                 prev_line_empty = False
                 continue
 
-            # 证明/解答结束后的新段落过渡句探测（自动闭合前序卡片）
             if prev_line_empty and cur is not None and (cur_sol is not None or cur[0] == 'solution'):
                 has_content = len(cur_sol[1]) > 0 if cur_sol else len(cur[2]) > 0
                 if has_content and self.TRANSITION_RE.match(s):
@@ -304,7 +291,6 @@ class CardParser:
                     prev_line_empty = False
                     continue
 
-            # 正常正文行归并
             if cur is None:
                 cur = ('para', [raw])
             elif cur[0] == 'card':

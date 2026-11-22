@@ -1,10 +1,3 @@
-/**
- * tests/contract/harness-chat-endpoint.test.ts
- * ============================================================================
- * AstroLib Agent Harness 对话端点与学校免费 API (baigong) 契约测试
- * ============================================================================
- */
-
 import { describe, it, expect } from 'vitest';
 import https from 'node:https';
 
@@ -95,7 +88,6 @@ describe('AstroLib Harness: School Free API (baigong) Contract Tests', () => {
     expect(fullText).toContain('data:');
     expect(fullText).toContain('[DONE]');
 
-    // 验证能够解析出 reasoning 或 content
     const lines = fullText.split('\n').filter((l) => l.startsWith('data: ') && !l.includes('[DONE]'));
     let hasDelta = false;
     for (const l of lines) {

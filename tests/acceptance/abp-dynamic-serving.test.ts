@@ -58,7 +58,6 @@ describe('ABP Dynamic Content Serving Acceptance Test', () => {
   it('StaticHandler 能即时合成 canonical slug 与 legacySlug 别名章节及自包含辅助数据', async () => {
     const handler = new StaticHandler(distDir, testAbpPacksDir);
 
-    // 1. Canonical slug 精确直接命中 (HTTP 200)
     {
       const canonicalUrl = '/collections/math/math_senior/07_11_%E5%9F%BA%E6%9C%AC%E5%85%AC%E5%BC%8F/';
       let statusCode = 0;
@@ -84,7 +83,6 @@ describe('ABP Dynamic Content Serving Acceptance Test', () => {
       expect(htmlText).toContain('三角函数');
     }
 
-    // 2. Legacy 历史别名显式查表命中 (HTTP 301 永久重定向至 Canonical URL)
     {
       const legacyUrl = '/collections/math/math_senior/07_1.1_%E5%9F%BA%E6%9C%AC%E5%85%AC%E5%BC%8F/';
       let statusCode = 0;
@@ -107,7 +105,6 @@ describe('ABP Dynamic Content Serving Acceptance Test', () => {
       expect(headers['Location']).toContain('07_11_%E5%9F%BA%E6%9C%AC%E5%85%AC%E5%BC%8F');
     }
 
-    // 3. 不存在的章节返回标准 404 学术视窗 (HTTP 404, text/html)
     {
       const notFoundUrl = '/collections/math/math_senior/not_exist_slug/';
       let statusCode = 0;
@@ -133,7 +130,6 @@ describe('ABP Dynamic Content Serving Acceptance Test', () => {
       expect(htmlText).toContain('not_exist_slug');
     }
 
-    // 4. 模糊前缀绝对不命中 (HTTP 404, 杜绝模糊匹配隐患)
     {
       const fuzzyUrl = '/collections/math/math_senior/07_1/';
       let statusCode = 0;
@@ -148,7 +144,6 @@ describe('ABP Dynamic Content Serving Acceptance Test', () => {
       expect(statusCode).toBe(404);
     }
 
-    // 5. 自包含辅助数据端点从已安装目录直出（无需 public/ 或 projectRoot）
     for (const auxUrl of [
       '/ai-index/math-math_senior.json',
       '/data/cross-ref/math-math_senior.json',
@@ -242,13 +237,11 @@ describe('ABP Dynamic Content Serving Acceptance Test', () => {
       });
     }
 
-    // 1. 解析真实 .abp 包，确认 bundle.exercises 非空
     const bundle = JSON.parse(zlib.gunzipSync(fs.readFileSync(eaAbpFile)).toString('utf8'));
     expect(bundle.exercises).toBeTruthy();
     expect(typeof bundle.exercises['ch1.json']).toBe('string');
     expect(typeof bundle.exercises['papers.json']).toBe('string');
 
-    // 2. DesktopBookManager 解包安装后，exercises/ 必须真实落盘
     const exUserDir = path.join(ROOT, 'tests', 'fixtures', 'runtime-abp-exercises');
     fs.rmSync(exUserDir, { recursive: true, force: true });
     try {
@@ -261,7 +254,6 @@ describe('ABP Dynamic Content Serving Acceptance Test', () => {
       expect(fs.existsSync(path.join(installedExDir, 'papers.json'))).toBe(true);
       expect(fs.existsSync(path.join(installedExDir, 'meta.json'))).toBe(true);
 
-      // 3. StaticHandler 请求 /data/exercises/<book>/<file>.json 返回 200（仅依赖 userAbpDir，不回退 projectRoot）
       const exHandler = new StaticHandler(distDir, exUserDir);
       for (const reqUrl of [
         '/data/exercises/engineering_analysis/ch1.json',
@@ -285,7 +277,6 @@ describe('ABP Dynamic Content Serving Acceptance Test', () => {
       fs.rmSync(exUserDir, { recursive: true, force: true });
     }
 
-    // 4. 若全量 13 本 .abp 已编译，核对支持书单与 unsupported 书单完全一致
     const allCatalogBooks = getCatalogBooks();
     const allAbpExist = allCatalogBooks.every((b) =>
       fs.existsSync(path.join(artifactsAbpDir, `${b.collectionSlug}-${b.slug}.abp`))

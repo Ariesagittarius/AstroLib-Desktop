@@ -17,7 +17,6 @@ describe('Universal Reader Entry Pure Functions (P1-A3)', () => {
       expect(q1.bookId).toBe('math-math_senior');
       expect(q1.chapterSlug).toBe('07_11_基本公式');
 
-      // 不带 ? 前缀
       const q2 = parseReaderQuery('book=cs-algorithms&chapter=01_intro');
       expect(q2.error).toBeNull();
       expect(q2.bookId).toBe('cs-algorithms');
@@ -168,7 +167,6 @@ describe('Universal Reader Entry Pure Functions (P1-A3)', () => {
 
       const content = fs.readFileSync(fullPath, 'utf-8');
 
-      // 负向检测：禁止出现静态 node:fs, node:path, process.cwd(, from 'fs'
       expect(content).not.toMatch(/from\s+['"]node:fs['"]/);
       expect(content).not.toMatch(/from\s+['"]node:path['"]/);
       expect(content).not.toMatch(/process\.cwd\(/);

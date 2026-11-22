@@ -10,7 +10,6 @@ import Note from '@/components/Note.astro';
 import Block from '@/components/Block.astro';
 import Method from '@/components/Method.astro';
 
-
 连续向量场的旋转度可以通过曲线积分来定义， 它是多元微积分应用的一个重要例子。 本节可作为习题课的补充材料。 以 $\mathbf{R}^2$ 为例， 设 $F: \mathbf{R}^2 \to \mathbf{R}^2$ 是连续映射， 我们也称 $F$ 是 $\mathbf{R}^2$ 上的一个连续向量场。 即对每一点 $(x, y) \in \mathbf{R}^2$ ， 确定一个随 $(x, y)$ 连续变化的向量 $F(x, y)$ 。
 
 设 $\mathcal{L} \subset \mathbf{R}^2$ 是逐段光滑的定向封闭曲线。 如果 $F$ 在 $\mathcal{L}$ 上恒不取零向量， 则称 $F$ 在 $\mathcal{L}$ 上非退化。 定义 $T(x, y) = \frac{F(x, y)}{|F(x, y)|}$ ， 则 $T$ 把 $\mathcal{L}$ 映射到单位圆周 $S$ 。 当点 $(x, y)$ 在 $\mathcal{L}$ 上逆时针方向绕 $\mathcal{L}$ 一周时， 向量 $T(x, y)$ 在 $S$ 上绕整数圈。 所绕圈数的代数和 (逆时针方向为正) 称为向量场 $F$ 沿 $\mathcal{L}$ 的旋转度， 记为 $\gamma(F, \mathcal{L})$ 。 当 $F(x, y) = (u(x, y), v(x, y))$ 是一阶连续可微向量场时， 有

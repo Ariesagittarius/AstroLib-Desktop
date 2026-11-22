@@ -1,10 +1,3 @@
-/**
- * src/components/exercises/exercise-submodals.ts
- * ============================================================================
- * Submodals controller for Exercise Center (Feedback, Source Editor, AI Upload)
- * ============================================================================
- */
-
 import { exerciseDb, type CommunityAiSolution, type ExerciseFeedbackPayload } from '../../utils/exercise-db/exercise-db-client';
 import type { SlimQuestionItem } from '../../types/exercises';
 

@@ -172,4 +172,3 @@
    当前 AI 问答为桌面右下浮动面板。未来若需要将其接入右侧基准底座，可直接以视图身份挂载入 `PageSidebarOverride.astro` 的 `.astrolib-sideload-dock` 中，由 `sideloadManager` 统一分配侧载宽度。
 2. **移动端手势优化**：
    在屏幕宽度小于 `50rem` 时，问答窗口转为全宽底部抽屉。未来可考虑引入轻量触摸下拉手势（Swipe to dismiss）进一步提升触控手感。
-

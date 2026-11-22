@@ -1,10 +1,3 @@
-/**
- * electron/types.ts
- * ============================================================================
- * AstroLib 桌面端核心类型定义 (IPC / 环境自省 / 模型生命周期 / 更新机制)
- * ============================================================================
- */
-
 import type { RuntimeModelStatus } from '../src/services/local-model-lifecycle.ts';
 
 export type { RuntimeModelStatus };

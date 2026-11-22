@@ -1,16 +1,3 @@
-/**
- * electron/server/local-server.ts
- * ============================================================================
- * AstroLib 本地嵌入式服务引擎 (Embedded Localhost Server & Plugin Bridge)
- * ============================================================================
- * 职责：
- * 1. 启动轻量 Node 原生 HTTP 服务 (127.0.0.1:port)；
- * 2. 桥接挂载既有 10+ 个 Vite Connect 中间件插件 (Typst 编译、ONNX 向量、AI 代理等)；
- * 3. 挂载 StaticHandler 极速分发 pre-built dist/ 静态页面；
- * 4. 零延迟即开即用 (<500ms)，前端所有相对 API 路径 100% 无缝复用。
- * ============================================================================
- */
-
 import http from 'node:http';
 import crypto from 'node:crypto';
 import path from 'node:path';
@@ -105,9 +92,6 @@ export class LocalServer {
     return this.authToken;
   }
 
-  /**
-   * 按路由前缀注册服务端插件（严格按需懒加载：启动阶段不引入任何业务插件模块）
-   */
   private createLazyPluginRegistry(): LazyPluginEntry[] {
     const entries: Array<Pick<LazyPluginEntry, 'id' | 'prefixes' | 'loader'>> = [
       {
@@ -236,9 +220,6 @@ export class LocalServer {
     }
   }
 
-  /**
-   * 启动本地 HTTP 监听服务
-   */
   async start(preferredPort = 0): Promise<number> {
     return new Promise((resolve, reject) => {
       this.server = http.createServer(async (req, res) => {
@@ -276,7 +257,6 @@ export class LocalServer {
 
         const pathname = extractRequestPathname(req.url);
 
-        // 桌面端健康探活接口
         if (pathname === '/api/desktop/health') {
           res.writeHead(200, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ status: 'ok', port: this.port, timestamp: Date.now() }));
@@ -313,7 +293,6 @@ export class LocalServer {
           }
         }
 
-        // 顺序流转命中插件的 Connect 中间件；静态资源直接跳过所有插件
         let idx = 0;
         const next = async (err?: any) => {
           if (err) {
@@ -337,7 +316,7 @@ export class LocalServer {
               next(e);
             }
           } else {
-            // 未命中插件或中间件放行：进入静态资源分发
+
             const handled = await this.staticHandler.handle(req, res);
             if (!handled && !res.writableEnded) {
               res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
@@ -371,7 +350,6 @@ export class LocalServer {
         }
       });
 
-      // 绑定 127.0.0.1 限制仅本地访问，杜绝外部网络探测
       this.server.listen(listenPort, '127.0.0.1', () => {
         const addr = this.server?.address();
         if (addr && typeof addr === 'object') {
@@ -384,9 +362,6 @@ export class LocalServer {
     });
   }
 
-  /**
-   * 关闭本地服务
-   */
   async stop(): Promise<void> {
     if (!this.server) return;
     return new Promise((resolve) => {

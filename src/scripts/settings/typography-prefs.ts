@@ -1,8 +1,3 @@
-/**
- * src/scripts/settings/typography-prefs.ts
- * 排版与正文样式首选项控制器：段落缩进、句末标点替换、字号换算与字体同步
- */
-
 import {
   applyFontPref,
   clearFontPref,
@@ -12,7 +7,6 @@ import {
   type FontPref,
 } from '../font-presets';
 
-/** 段落首行缩进存储键：'true' (开启，默认) | 'false' (关闭) */
 export const TYPOGRAPHY_INDENT_KEY = 'astrolib_typography_indent';
 
 export function loadParagraphIndent(): boolean {
@@ -45,7 +39,6 @@ export function applyParagraphIndent(enabled: boolean = loadParagraphIndent()): 
   document.documentElement.dataset.paragraphIndent = enabled ? 'true' : 'false';
 }
 
-/** 标点风格存储键：'dot' (数理圆点 ．，默认) | 'circle' (标准句号 。) */
 export const PUNCT_STYLE_KEY = 'astrolib_punct_style';
 export type PunctStyle = 'dot' | 'circle';
 
@@ -70,7 +63,7 @@ export function savePunctStyle(style: PunctStyle): void {
   applyPunctStyle(style);
 }
 
-let currentDomPunctStyle: PunctStyle = 'dot'; // 构建期 rehype-cjk-punctuation 输出基准为 'dot'
+let currentDomPunctStyle: PunctStyle = 'dot';
 let punctProfileListenerBound = false;
 
 export function isLiteraryProfileActive(): boolean {
@@ -95,7 +88,6 @@ function ensurePunctProfileListener(): void {
   });
 }
 
-/** 递归替换正文纯文本节点中的句末标点（避开代码块、公式与徽章） */
 export function replaceBodyFullStops(targetStyle: PunctStyle): void {
   if (typeof document === 'undefined') return;
   const root = document.querySelector('.sl-markdown-content');
@@ -132,7 +124,6 @@ export function applyPunctStyle(style: PunctStyle = loadPunctStyle(), force = fa
   if (typeof document === 'undefined') return;
   ensurePunctProfileListener();
 
-  // 文学体裁（含 EPUB 书籍）强制保留全角中文句号，不执行数理圆点转换
   if (isLiteraryProfileActive()) {
     document.documentElement.dataset.punctStyle = 'circle';
     return;
@@ -140,13 +131,10 @@ export function applyPunctStyle(style: PunctStyle = loadPunctStyle(), force = fa
 
   document.documentElement.dataset.punctStyle = style;
 
-  // 关键性能优化：构建期输出默认即为数理圆点 'dot'。
-  // 若当前配置仍为默认 'dot' 且未强制触发，直接跳过耗时的全量 DOM TreeWalker 扫描。
   if (!force && style === currentDomPunctStyle && style === 'dot') {
     return;
   }
 
-  // 若需要从 dot 变换为 circle 或发生明确偏好切换，使用 idle 调度异步执行，杜绝阻塞首屏关键帧
   const idle = (typeof window !== 'undefined' && window.requestIdleCallback) || ((fn: Function) => setTimeout(fn, 60));
   idle(() => {
     replaceBodyFullStops(style);
@@ -154,7 +142,6 @@ export function applyPunctStyle(style: PunctStyle = loadPunctStyle(), force = fa
   }, { timeout: 800 });
 }
 
-/** 正文字号存储键：'13' ~ '20'，默认 15 (px / 11.25 pt，严谨精炼学术字阶) */
 export const FONT_SIZE_KEY = 'astrolib_font_size';
 export const DEFAULT_FONT_SIZE = 15;
 export const MIN_FONT_SIZE = 13;
@@ -174,13 +161,11 @@ export function loadFontSize(): number {
   }
 }
 
-/** 将字号像素值换算为 pt 磅/点字体单位（以 16px = 12pt 为基准，1px = 0.75pt） */
 export function formatFontSizePt(px: number): string {
   const pt = px * 0.75;
   return `${parseFloat(pt.toFixed(2))} pt`;
 }
 
-/** 兼容旧引用：保留 formatFontSizeRem 别名 */
 export function formatFontSizeRem(px: number): string {
   return formatFontSizePt(px);
 }
@@ -202,7 +187,6 @@ export function applyFontSize(val: number = loadFontSize()): void {
   syncAllFontSizeSliders(val);
 }
 
-/** 同步当前所有实例的字号调节滑块及数值角标 (支持 md-chip / 元素) */
 export function syncAllFontSizeSliders(val: number = loadFontSize()): void {
   if (typeof document === 'undefined') return;
   const ptText = formatFontSizePt(val);
@@ -222,7 +206,6 @@ export function syncAllFontSizeSliders(val: number = loadFontSize()): void {
   });
 }
 
-/** 同步全局所有面板中的标点风格 chip */
 export function syncAllPunctChips(targetStyle: PunctStyle = loadPunctStyle()): void {
   if (typeof document === 'undefined') return;
   document.querySelectorAll<any>('.ft-panel .ft-punct-chip, starlight-feature-toggles .ft-punct-chip').forEach((chip) => {
@@ -241,7 +224,6 @@ export function syncAllPunctChips(targetStyle: PunctStyle = loadPunctStyle()): v
   });
 }
 
-/** 同步全局所有面板中的字体按钮 (严格单选互斥并彻底清除未选中项 selected 属性) */
 export function syncAllFontButtons(targetPref: FontPref = loadFontPref()): void {
   if (typeof document === 'undefined') return;
   document.querySelectorAll<any>('.ft-panel .ft-font-btn, starlight-feature-toggles .ft-font-btn, .ft-panel .ft-font-chip, starlight-feature-toggles .ft-font-chip').forEach((el) => {
@@ -264,7 +246,6 @@ export function syncAllFontButtons(targetPref: FontPref = loadFontPref()): void 
   });
 }
 
-/** 应用字体偏好 */
 export function applyFont(enabled: boolean): void {
   if (typeof document === 'undefined') return;
   if (!enabled) {

@@ -1,45 +1,16 @@
-/**
- * src/types/content-package.ts
- * ============================================================================
- * AstroLib 标准化预编译语义包 (AstroBook Package / ABP) 核心契约定义
- * ============================================================================
- * 遵循架构规范：
- * - Layer 2 (Domain Model & Package Schema)
- * - 纯 TypeScript 接口声明，严禁依赖 UI 组件或运行层
- * - 遵循 Rule 1 (UI is not a domain model) & Rule 3 (Source of Truth)
- * ============================================================================
- */
-
 import type { ModuleItemConfig, BookLanguageConfig } from './collections.ts';
 import type { NoticeConfig } from './notices.ts';
 
 export const ABP_SCHEMA_VERSION = '1.0.0' as const;
 
-/**
- * 书籍来源格式 (Source Book Format)
- */
 export type BookSourceFormat = 'abp' | 'epub' | 'markdown' | 'custom';
 
-/**
- * 阅读体裁预设 (Reading Profile)
- * - academic: 理工科学术教材（数理圆点标点、交叉引用识别、卡片结构强化）
- * - literary: 文学 / 轻小说 / 文化美学（保留原书句号、插画纯净赏析、避免误伤正则徽章）
- */
 export type ReadingProfile = 'academic' | 'literary';
 
-/**
- * 原书样式融合模式 (Book Stylesheet Harmonization Mode)
- */
 export type BookStyleMode = 'harmonized' | 'original' | 'reflow';
 
-/**
- * 通用阅读视口布局模式 (Universal Reading Viewport Layout)
- */
 export type ReadingLayoutMode = 'scroll' | 'paged-single' | 'paged-dual';
 
-/**
- * 章节内容语义类别
- */
 export type ChapterContentKind =
   | 'body'
   | 'chapter-intro'
@@ -49,9 +20,6 @@ export type ChapterContentKind =
   | 'notes'
   | 'colophon';
 
-/**
- * 书籍跨章节脚注 / 译注条目
- */
 export interface BookFootnoteEntry {
   id: string;
   title?: string;
@@ -60,24 +28,18 @@ export interface BookFootnoteEntry {
   chapterSlug?: string;
 }
 
-/**
- * 章节目录节点摘要 (TOC Node)
- */
 export interface AstroBookChapterSummary {
   id: string;
   title: string;
   slug: string;
-  sourcePath?: string; // 源 MDX 相对路径，仅 provenance
-  legacySlug?: string; // 仅迁移期兼容旧原始文件名链接
-  path: string; // 相对包根目录的路径，例如 'chapters/01_intro.json'
-  hash: string; // 内容 MD5 / SHA256 哈希，供增量同步使用
+  sourcePath?: string;
+  legacySlug?: string;
+  path: string;
+  hash: string;
   sizeBytes: number;
   order?: number;
 }
 
-/**
- * 书籍大章节/分卷分区 (Section / Part / Chapter Level)
- */
 export interface AstroBookSection {
   id: string;
   title: string;
@@ -88,19 +50,12 @@ export interface AstroBookSection {
   chapters: AstroBookChapterSummary[];
 }
 
-/**
- * 章节大纲标题项 (TOC Headings)
- */
 export interface ChapterHeadingItem {
   depth: number;
   text: string;
   id: string;
 }
 
-/**
- * 章节详细有效负载 (Chapter Payload JSON)
- * 存放于 chapters/{slug}.json
- */
 export interface AstroBookChapterPayload {
   schemaVersion: typeof ABP_SCHEMA_VERSION;
   bookId: string;
@@ -108,7 +63,7 @@ export interface AstroBookChapterPayload {
   colSlug: string;
   chapterSlug: string;
   title: string;
-  html: string; // 经打包管线预渲染的语义 HTML（内嵌 KaTeX 纯 HTML 与卡片结构）
+  html: string;
   headings: ChapterHeadingItem[];
   crossRefs?: Record<string, unknown>;
   notices?: NoticeConfig[];
@@ -128,15 +83,11 @@ export interface AstroBookChapterPayload {
   updatedAt: string;
 }
 
-/**
- * 书籍主清单 (Book Manifest)
- * 存放于 manifest.json
- */
 export interface AstroBookManifest {
   schemaVersion: typeof ABP_SCHEMA_VERSION;
   id: string;
   slug: string;
-  colSlug: string; // 所属学科合集 slug，如 'math', 'physics', 'cs'
+  colSlug: string;
   title: string;
   author?: string;
   publisher?: string;
@@ -151,7 +102,7 @@ export interface AstroBookManifest {
   description?: string;
   tags?: string[];
   cover?: string;
-  entryPoint: string; // 默认入口章节 slug
+  entryPoint: string;
   trackClasses?: string[];
   notices?: NoticeConfig[];
   modules?: Record<string, ModuleItemConfig>;
@@ -160,9 +111,9 @@ export interface AstroBookManifest {
   totalChapters: number;
   updatedAt: string;
   contentHash: string;
-  assets?: string[]; // 包含的相对资产路径列表，如 ['images/fig_1_1.webp']
-  hasEmbeddings?: boolean; // 是否内置语义向量
-  embeddingMeta?: AstroBookEmbeddingMeta; // 向量元数据配置
+  assets?: string[];
+  hasEmbeddings?: boolean;
+  embeddingMeta?: AstroBookEmbeddingMeta;
   sourceFormat?: BookSourceFormat;
   readingProfile?: ReadingProfile;
   writingMode?: 'horizontal-tb' | 'vertical-rl';
@@ -173,33 +124,24 @@ export interface AstroBookManifest {
   footnotes?: Record<string, BookFootnoteEntry>;
 }
 
-/**
- * 向量嵌入元数据 (Embedding Metadata)
- */
 export interface AstroBookEmbeddingMeta {
-  model: string;              // 例如 'Xenova/bge-small-zh-v1.5'
-  dim: number;                // 例如 512 或 384
-  format: 'int8' | 'float32'; // 量化格式
-  vectorCount: number;        // 向量总条数
-  generatedAt: string;        // 生成时间戳
+  model: string;
+  dim: number;
+  format: 'int8' | 'float32';
+  vectorCount: number;
+  generatedAt: string;
 }
 
-/**
- * 语义向量切片索引条目 (Vector Chunk Reference)
- */
 export interface VectorChunkReference {
-  id: string;                 // 切片唯一标识，例如 '01_intro-0'
-  chapterSlug: string;        // 所在章节 slug
-  title: string;              // 切片标题 / 概念名
-  type: string;               // 卡片类型（'定理', '定义', '例题', etc.）
-  anchor?: string;            // 跳转锚点
-  textLength: number;         // 纯文本长度
-  scale?: number;             // Int8 专属标量量化因子 (float32 时无此字段)
+  id: string;
+  chapterSlug: string;
+  title: string;
+  type: string;
+  anchor?: string;
+  textLength: number;
+  scale?: number;
 }
 
-/**
- * 书库远程/本地条目信息 (Catalog Entry)
- */
 export interface CatalogBookEntry {
   id: string;
   slug: string;
@@ -214,16 +156,12 @@ export interface CatalogBookEntry {
   entryPoint: string;
   totalChapters: number;
   sizeBytes?: number;
-  packFileName: string; // e.g. 'math-linear_algebra.abp'
-  remotePackUrl?: string; // 完整下载链接
+  packFileName: string;
+  remotePackUrl?: string;
   contentHash: string;
   updatedAt: string;
 }
 
-/**
- * 书库总目录清单 (Library Catalog)
- * 托管在远程源 (如 GitHub Releases) 或本地维护的 catalog.json
- */
 export interface LibraryCatalog {
   schemaVersion: typeof ABP_SCHEMA_VERSION;
   catalogName: string;
@@ -234,15 +172,12 @@ export interface LibraryCatalog {
   books: CatalogBookEntry[];
 }
 
-/**
- * 本地已安装书籍元数据 (Installed Book Meta)
- */
 export interface InstalledBookMeta {
   manifest: AstroBookManifest;
   installedAt: string;
   sourceType: 'local-file' | 'remote-repo' | 'pre-bundled';
   sourceUrl?: string;
-  localPath?: string; // Electron 下有效
+  localPath?: string;
 }
 
 export interface AbpEmbeddingBundle {
@@ -250,9 +185,6 @@ export interface AbpEmbeddingBundle {
   meta?: Record<string, unknown>;
 }
 
-/**
- * 自包含 .abp 归档包完整载荷契约
- */
 export interface AbpBundlePayload {
   manifest: AstroBookManifest;
   chapters: Record<string, AstroBookChapterPayload>;
@@ -267,9 +199,6 @@ export interface AbpBundlePayload {
   sourceArchiveFileName?: string;
 }
 
-/**
- * 在安装或导入入口校验解压后的 ABP 数据包结构合法性，防止非法包进入运行层
- */
 export function validateAbpBundle(raw: unknown): AbpBundlePayload {
   if (!raw || typeof raw !== 'object') {
     throw new Error('无效的 ABP 数据包：根节点必须为 JSON 对象');

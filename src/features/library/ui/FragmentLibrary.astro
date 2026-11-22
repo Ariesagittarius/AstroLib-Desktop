@@ -1,23 +1,10 @@
 ---
-/**
- * src/features/library/ui/FragmentLibrary.astro
- * ============================================================================
- * Fragment 2: 学术研读书库 (严格对齐 Google Play 图书 Web 版范式)
- * ============================================================================
- * 规范：
- * 1. 严格实现书籍 (ABP) 与文献 (MinerU) 同级化一等公民呈现；
- * 2. 预留幻灯片 (Slides) 与研讨视频 (Videos) 架构体系；
- * 3. 左侧二级书架抽屉 + 顶栏 Chip 过滤 + 3:4 实体书封卡片网格；
- * 4. 彻底解耦：数据与安装走 LibraryClient 适配器，文档摄取/OCR 归 features/doc-ingestion。
- * ============================================================================
- */
-
 import M3Icon from '../../../components/m3/M3Icon.astro';
 import '../../../styles/desktop/library.css';
 ---
 
 <div class="fragment-library-container" id="fragment-library">
-  <!-- 1. 左侧书架与分类二级导航栏 (Sub-shelf Navigation - 对齐 Google Play 图书) -->
+
   <aside class="library-subnav" id="library-subnav">
     <div class="subnav-section">
       <div class="subnav-title">资源大类</div>
@@ -42,7 +29,6 @@ import '../../../styles/desktop/library.css';
 
     <div class="subnav-divider"></div>
 
-    <!-- 用户自建书架列表 -->
     <div class="subnav-section">
       <div class="subnav-header-row">
         <span class="subnav-title">我的书架</span>
@@ -57,16 +43,15 @@ import '../../../styles/desktop/library.css';
       </button>
 
       <div class="subnav-custom-list" id="subnav-custom-list">
-        <!-- 动态注入用户书架 -->
+
       </div>
     </div>
   </aside>
 
-  <!-- 2. 主书架浏览区 (Main Library Surface) -->
   <main class="library-main">
-    <!-- 顶栏：搜索、学科 Chips、排序与上传 -->
+
     <header class="library-toolbar">
-      <!-- 搜索框 -->
+
       <div class="library-search-box">
         <M3Icon name="search" size={20} class="search-icon" />
         <input
@@ -77,9 +62,8 @@ import '../../../styles/desktop/library.css';
         />
       </div>
 
-      <!-- 右侧动作区：上传与排序 -->
       <div class="library-toolbar__actions">
-        <!-- 排序选择 -->
+
         <select class="library-sort-select" id="library-sort-select" title="排列方式">
           <option value="recent">最近研读</option>
           <option value="created">最新入库</option>
@@ -87,20 +71,17 @@ import '../../../styles/desktop/library.css';
           <option value="title">名称排序</option>
         </select>
 
-        <!-- 官方书库通道 (Mode A: GitHub Releases 在线获取 .abp) -->
         <button type="button" class="library-token-btn" id="btn-official-catalog" title="从官方 Release 获取教材 .abp">
           <M3Icon name="cloud_download" size={16} />
           <span>官方书库</span>
         </button>
 
-        <!-- 统一多选导入入口 (同时支持 .abp 书籍包、.epub 电子书与 .pdf 文献) -->
         <md-filled-button id="btn-library-upload" title="支持多选或拖放 .abp / .epub 书籍与 .pdf 文献">
           <M3Icon name="upload" size={18} slot="icon" />
           <span>导入书籍 / 文献</span>
         </md-filled-button>
         <input type="file" id="library-file-input" accept=".abp,.epub,.pdf" multiple style="display: none;" />
 
-        <!-- 视图切换 (网格 vs 列表) -->
         <div class="library-view-toggle">
           <button type="button" class="view-btn active" id="btn-view-grid" title="网格视图">
             <M3Icon name="grid_view" size={18} />
@@ -112,7 +93,6 @@ import '../../../styles/desktop/library.css';
       </div>
     </header>
 
-    <!-- 学科与领域分类 Chip 筛选条 (Material 3 md-chip-set & md-filter-chip 规范) -->
     <div class="library-chips-row">
       <md-chip-set class="library-chip-set" id="library-chip-set">
         <md-filter-chip class="lib-filter-chip" label="全部领域" data-subject="all" selected></md-filter-chip>
@@ -128,7 +108,6 @@ import '../../../styles/desktop/library.css';
       </md-chip-set>
     </div>
 
-    <!-- 上传/安装实时通知横幅 -->
     <div class="library-status-banner" id="library-status-banner" style="display: none;">
       <div class="banner-content">
         <M3Icon name="sync" size={18} class="banner-spinner" id="banner-status-icon" />
@@ -139,10 +118,9 @@ import '../../../styles/desktop/library.css';
       </button>
     </div>
 
-    <!-- 图书与文献实体网格展示区 (Book & Paper Card Grid) -->
     <div class="library-content-scroll" id="library-content-scroll">
       <div class="library-entities-grid" id="library-entities-grid">
-        <!-- 动态卡片注入 -->
+
         <div class="library-loading-placeholder">
           <div class="lib-spinner"></div>
           <p>正在读取书目与学术文献库...</p>
@@ -151,7 +129,6 @@ import '../../../styles/desktop/library.css';
     </div>
   </main>
 
-  <!-- 官方 Release 书库获取覆盖层 (Mode A) -->
   <div class="official-catalog-backdrop" id="official-catalog-modal" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="official-catalog-title">
     <div class="official-catalog-surface">
       <header class="official-catalog-header">
@@ -173,7 +150,6 @@ import '../../../styles/desktop/library.css';
     </div>
   </div>
 
-  <!-- MinerU Token 缺失阻断提示对话框 (M3 Dialog) -->
   <md-dialog id="dialog-mineru-token-required">
     <div slot="headline">需要先配置 MinerU API Token</div>
     <div slot="content" class="lib-dialog-body">
@@ -187,7 +163,6 @@ import '../../../styles/desktop/library.css';
     </div>
   </md-dialog>
 
-  <!-- 超 200 页 PDF 页码范围选择对话框 (M3 Dialog) -->
   <md-dialog id="dialog-pdf-page-range">
     <div slot="headline">指定文献解析页码范围</div>
     <div slot="content" class="lib-dialog-body">
@@ -201,9 +176,7 @@ import '../../../styles/desktop/library.css';
   </md-dialog>
 </div>
 
-<!-- 客户端书库控制器 -->
-<script>
-  import '@material/web/dialog/dialog.js';
+<script>import '@material/web/dialog/dialog.js';
   import '@material/web/textfield/outlined-text-field.js';
   import '@material/web/button/filled-button.js';
   import '@material/web/button/filled-tonal-button.js';
@@ -263,7 +236,7 @@ import '../../../styles/desktop/library.css';
     }
 
     private initEventListeners() {
-      // 1. 分类与书架点击
+
       document.querySelectorAll('.subnav-item[data-kind]').forEach((btn) => {
         btn.addEventListener('click', () => {
           document.querySelectorAll('.subnav-item').forEach((b) => b.classList.remove('active'));
@@ -274,7 +247,6 @@ import '../../../styles/desktop/library.css';
         });
       });
 
-      // 2. 学科 M3 Filter Chip 筛选
       const filterChips = document.querySelectorAll('.lib-filter-chip');
       filterChips.forEach((chip: any) => {
         chip.addEventListener('click', () => {
@@ -287,19 +259,16 @@ import '../../../styles/desktop/library.css';
         });
       });
 
-      // 3. 搜索过滤
       this.searchInput?.addEventListener('input', () => {
         this.searchQuery = (this.searchInput?.value || '').trim().toLowerCase();
         this.render();
       });
 
-      // 4. 排序切换
       document.getElementById('library-sort-select')?.addEventListener('change', (e: any) => {
         this.sortKey = e.target.value;
         this.render();
       });
 
-      // 5. 视图切换
       document.getElementById('btn-view-grid')?.addEventListener('click', () => {
         document.getElementById('btn-view-grid')?.classList.add('active');
         document.getElementById('btn-view-list')?.classList.remove('active');
@@ -313,7 +282,6 @@ import '../../../styles/desktop/library.css';
         this.render();
       });
 
-      // 6. 多选上传触发、拖放导入与官方书库触发
       document.getElementById('btn-library-upload')?.addEventListener('click', () => {
         this.fileInput?.click();
       });
@@ -360,12 +328,10 @@ import '../../../styles/desktop/library.css';
         });
       }
 
-      // 7. 关闭横幅
       document.getElementById('btn-close-banner')?.addEventListener('click', () => {
         this.hideBanner();
       });
 
-      // 8. 创建书架
       document.getElementById('btn-create-shelf')?.addEventListener('click', async () => {
         const name = prompt('请输入新书架名称：');
         if (name && name.trim()) {
@@ -634,7 +600,7 @@ import '../../../styles/desktop/library.css';
             coverCandidates.push(localCand);
           }
         } else if (!isPaper) {
-          // 即使 manifest 中未写 cover，也尝试本地同名缩略图候选，找不到再渲染学术极简默认封面
+
           coverCandidates.push(...getLocalCoverFallbackCandidates(item));
         }
         const initialCoverSrc = coverCandidates[0] || '';

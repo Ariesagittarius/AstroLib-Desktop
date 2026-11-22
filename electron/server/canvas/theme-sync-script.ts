@@ -1,10 +1,3 @@
-/**
- * electron/server/canvas/theme-sync-script.ts
- * ============================================================================
- * 自由画布 Material You 动态色板、日夜主题与项目统一字体即时同步脚本
- * ============================================================================
- */
-
 export function buildCanvasThemeSyncScript(exportMode?: string): string {
   const isExport = Boolean(exportMode);
   return `

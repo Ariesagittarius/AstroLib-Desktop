@@ -1,17 +1,3 @@
-/**
- * scripts/evaluate_bilingual_benchmark.ts
- * ============================================================================
- * AstroLib 真实教材双语语义对齐评测基准套件 (Gold-Standard Benchmark Suite)
- * ============================================================================
- * 依据 Phase 5 规范：
- * 1. 抽取真实教材章节（算法概论 DPV 00.1, 00.3, 02.1 及 OCR 真实语料）；
- * 2. 建立人工标注的金标对应集（1:1, 1:N, 同主题错位干扰, 跨章节干扰, 孤立无对应）；
- * 3. 统计输出 Recall@1, Recall@5, Precision@K, MRR；
- * 4. 统计不同段落类型（heading, paragraph, math, card）匹配表现；
- * 5. 全面对比 INT8 (q8) 与 FP32 精度、耗时与内存。
- * ============================================================================
- */
-
 import fs from 'node:fs';
 import path from 'node:path';
 import { pipeline } from '@huggingface/transformers';
@@ -22,7 +8,7 @@ import type { SemanticParagraph } from '../src/services/bilingual/types.ts';
 export interface GoldStandardPair {
   id: string;
   sourceText: string;
-  targetTexts: string[]; // 支持 1:N
+  targetTexts: string[];
   sourceType: 'heading' | 'paragraph' | 'math' | 'card';
   sectionContext: string;
   relationType: 'one_to_one' | 'one_to_many' | 'cross_topic_negative' | 'cross_chapter_negative' | 'unmatched';
@@ -53,7 +39,7 @@ export interface FullBenchmarkReport {
 
 export function buildGoldStandardCorpus(): GoldStandardPair[] {
   return [
-    // 1. 章节标题 (Heading)
+
     {
       id: 'heading_00_3',
       sourceText: '## 0.3 Big-O notation',
@@ -71,7 +57,6 @@ export function buildGoldStandardCorpus(): GoldStandardPair[] {
       relationType: 'one_to_one',
     },
 
-    // 2. 经典导言与自然段落 (Paragraph 1:1)
     {
       id: 'p_sloppiness',
       sourceText: "We've just seen how sloppiness in the analysis of running times can lead to an unacceptable level of inaccuracy in the result. But the opposite danger is also present: it is possible to be too precise. An insightful analysis is based on the right simplifications.",
@@ -97,7 +82,6 @@ export function buildGoldStandardCorpus(): GoldStandardPair[] {
       relationType: 'one_to_one',
     },
 
-    // 3. 数学定理与公式段落 (Math / Rules 1:1)
     {
       id: 'math_big_o_def',
       sourceText: "Let f(n) and g(n) be functions from positive integers to positive reals. We say f = O(g) if there is a constant c > 0 such that f(n) <= c * g(n).",
@@ -115,7 +99,6 @@ export function buildGoldStandardCorpus(): GoldStandardPair[] {
       relationType: 'one_to_one',
     },
 
-    // 4. 一对多对应关系 (1:N Multi-paragraph)
     {
       id: 'multi_rules_domination',
       sourceText: "Here are some commonsense rules that help simplify functions by omitting dominated terms: Multiplicative constants can be omitted: 14n^2 becomes n^2. Any exponential dominates any polynomial: 3^n dominates n^5.",
@@ -128,7 +111,6 @@ export function buildGoldStandardCorpus(): GoldStandardPair[] {
       relationType: 'one_to_many',
     },
 
-    // 5. 同主题但非对应段落（负样本 Hard Negative）
     {
       id: 'neg_cavalier_vs_steps',
       sourceText: "Don't misunderstand this cavalier attitude toward constants. Programmers and algorithm developers are very interested in constants.",
@@ -138,7 +120,6 @@ export function buildGoldStandardCorpus(): GoldStandardPair[] {
       relationType: 'cross_topic_negative',
     },
 
-    // 6. 跨章节非对应段落（负样本 Distant Negative）
     {
       id: 'neg_cross_chapter',
       sourceText: "Gauss once noticed that although the product of two complex numbers seems to involve four multiplications, it can be done with three.",
@@ -148,7 +129,6 @@ export function buildGoldStandardCorpus(): GoldStandardPair[] {
       relationType: 'cross_chapter_negative',
     },
 
-    // 7. 孤立无对应段落 (Unmatched)
     {
       id: 'unmatched_english_unique',
       sourceText: "This specific pedagogical remark was added exclusively to the Western college edition and has no translation counterpart in this chapter.",
@@ -167,7 +147,6 @@ async function runBenchmarkForDtype(
 ): Promise<{ metrics: BenchmarkMetrics; embeddings: number[][] }> {
   const pipe = await pipeline('feature-extraction', modelName, { dtype, device: 'cpu' });
 
-  // 收集所有去重文本并编码
   const positiveQueries = corpus.filter(
     (c) => c.relationType === 'one_to_one' || c.relationType === 'one_to_many'
   );
@@ -211,7 +190,6 @@ async function runBenchmarkForDtype(
 
   const matrix = BipartiteMatcher.buildMatrix(srcEmbeds, tgtEmbeds);
 
-  // 评估指标
   let top1Hits = 0;
   let top5Hits = 0;
   let precision1Sum = 0;
@@ -227,13 +205,11 @@ async function runBenchmarkForDtype(
       .map((score, tgtIdx) => ({ tgtIdx, score }))
       .sort((a, b) => b.score - a.score);
 
-    // 记录每种类型统计
     if (!byTypeStats[q.sourceType]) {
       byTypeStats[q.sourceType] = { count: 0, hits1: 0, rr: 0 };
     }
     byTypeStats[q.sourceType].count++;
 
-    // Top-1
     const firstHit = validTargetIndices.has(ranked[0].tgtIdx);
     if (firstHit) {
       top1Hits++;
@@ -241,14 +217,12 @@ async function runBenchmarkForDtype(
       byTypeStats[q.sourceType].hits1++;
     }
 
-    // Top-3 Precision
     let top3Correct = 0;
     for (let k = 0; k < Math.min(3, ranked.length); k++) {
       if (validTargetIndices.has(ranked[k].tgtIdx)) top3Correct++;
     }
     precision3Sum += top3Correct / Math.min(3, validTargetIndices.size);
 
-    // Top-5 Recall & MRR
     let firstRank = -1;
     for (let r = 0; r < ranked.length; r++) {
       if (validTargetIndices.has(ranked[r].tgtIdx)) {
@@ -302,7 +276,6 @@ export async function executeFullBenchmark(): Promise<FullBenchmarkReport> {
   console.log('Evaluating FP32 Benchmark...');
   const fp32Res = await runBenchmarkForDtype(modelName, 'fp32', corpus);
 
-  // 计算 INT8 与 FP32 差异
   let cosSimSum = 0;
   let maxDiff = 0;
   const numEmbeds = q8Res.embeddings.length;

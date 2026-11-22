@@ -1,17 +1,3 @@
-/**
- * src/features/harness/turn-timeline-renderer.ts
- * ============================================================================
- * 地铁式线性导览图渲染器 (Linear Metro Rail Timeline Renderer)
- * ============================================================================
- * 规范：
- * 1. 严格居于正文流 .harness-message (820px) 列内，杜绝左侧顶格错位；
- * 2. 思维链与工具调用彻底分离：先「思考」节点，再独立「工具调用」节点，
- *    支持多轮 Think -> Tool -> Think -> Tool -> Complete 完整时间线；
- * 3. 工具展开抽屉严格对齐文本轴且限高独立滚动，杜绝撑爆容器；
- * 4. 全部图标对齐 Material Symbols Outlined 标准光学尺寸，支持用户自定义覆写。
- * ============================================================================
- */
-
 import type {
   ApprovalStep,
   StructuredTurn,
@@ -342,7 +328,6 @@ export function bindTimelineInteractions(
 ): void {
   if (!container) return;
 
-  // 外层摘要条折叠/展开
   container.querySelectorAll<HTMLElement>('[data-metro-summary-toggle]').forEach((btn) => {
     if (btn.dataset.boundMetroSummary === 'true') return;
     btn.dataset.boundMetroSummary = 'true';
@@ -371,7 +356,6 @@ export function bindTimelineInteractions(
     });
   });
 
-  // 单个思考/工具节点折叠/展开
   container.querySelectorAll<HTMLElement>('[data-metro-toggle]').forEach((btn) => {
     if (btn.dataset.boundMetroStep === 'true') return;
     btn.dataset.boundMetroStep = 'true';
@@ -407,7 +391,6 @@ export function bindTimelineInteractions(
     });
   });
 
-  // 跳转至右侧成果物面板
   container.querySelectorAll<HTMLElement>('[data-jump-artifact]').forEach((btn) => {
     if (btn.dataset.boundJumpArt === 'true') return;
     btn.dataset.boundJumpArt = 'true';
@@ -418,7 +401,6 @@ export function bindTimelineInteractions(
     });
   });
 
-  // 权限确认动作按钮
   container.querySelectorAll<HTMLElement>('[data-approval-choice]').forEach((btn) => {
     if (btn.dataset.boundApproval === 'true') return;
     btn.dataset.boundApproval = 'true';

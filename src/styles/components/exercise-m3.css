@@ -1,8 +1,3 @@
-/* --------------------------------------------------------------------------
-   6. Exercise Center & In-Page Exercise Triggers (Material Design 3 System)
-   -------------------------------------------------------------------------- */
-
-/* 6.1 In-Page Exercise Trigger Card (Section Bottom) & M3 Chip Group */
 html[data-site-theme='material-you'] .exercise-trigger-card {
   margin: 2.5rem 0 1.5rem 0;
   padding: 1.25rem 1.5rem;
@@ -69,7 +64,6 @@ html[data-site-theme='material-you'] .exercise-trigger-title {
   letter-spacing: -0.01em;
 }
 
-/* Material 3 Chip Group in Trigger Card */
 html[data-site-theme='material-you'] .exercise-chip-group {
   display: flex;
   align-items: center;
@@ -113,7 +107,6 @@ html[data-site-theme='material-you'] .ex-chip-label-text {
   line-height: 1;
 }
 
-/* Trailing Icon Button for License Info */
 html[data-site-theme='material-you'] .ex-chip-trailing-trigger {
   display: inline-flex;
   align-items: center;
@@ -151,7 +144,6 @@ html[data-site-theme='material-you'] .ex-info-svg {
   vertical-align: middle;
 }
 
-/* 6.1.1 M3 Rich Tooltip for Open Source Licenses */
 .ex-rich-tooltip-layer {
   position: fixed;
   z-index: var(--layer-toast, 700);
@@ -236,7 +228,6 @@ html[data-site-theme='material-you'] .ex-info-svg {
   opacity: 0.7;
 }
 
-/* 6.1.2 AstroLib Unified Sideload Dock & Desktop Layout Coordination */
 :root {
   --sl-sideload-width: 16.5rem;
   --sl-sideload-transition: width 0.28s cubic-bezier(0.2, 0, 0, 1), min-width 0.28s cubic-bezier(0.2, 0, 0, 1), max-width 0.28s cubic-bezier(0.2, 0, 0, 1);
@@ -335,7 +326,6 @@ html[data-site-theme='material-you'] .ex-info-svg {
   }
 }
 
-/* Sideload Panel Views (同宿主多视图协调) */
 .sideload-panel-view {
   width: 100%;
   height: 100%;
@@ -345,7 +335,6 @@ html[data-site-theme='material-you'] .ex-info-svg {
   box-sizing: border-box;
 }
 
-/* 默认仅大纲可见，非大纲面板在未激活时隐藏 */
 .sideload-panel-view[data-panel-id='toc'] {
   display: flex;
   height: 100%;
@@ -373,7 +362,6 @@ html[data-sideload-active='toc'] .sideload-panel-view[data-panel-id='toc'],
   display: none;
 }
 
-/* 激活非大纲面板时，隐藏大纲并展示目标面板 */
 html[data-sideload-active]:not([data-sideload-active='toc']):not([data-sideload-active='none']) .sideload-panel-view[data-panel-id='toc'],
 .custom-page-sidebar.has-exercise-active .sideload-panel-view[data-panel-id='toc'],
 .custom-page-sidebar.has-exercise-active .outline-marker {
@@ -393,7 +381,6 @@ html[data-sideload-active='annotations'] .sideload-panel-view[data-panel-id='ann
   display: flex;
 }
 
-/* 侧载返回大纲按钮 (Google M3 28px 标准图标按钮) */
 .sideload-back-btn {
   display: inline-flex;
   align-items: center;
@@ -415,7 +402,6 @@ html[data-sideload-active='annotations'] .sideload-panel-view[data-panel-id='ann
   color: var(--md-sys-color-on-surface);
 }
 
-/* Exercise Panel Container in Right Sidebar */
 .exercise-sidebar-panel {
   display: flex;
   flex-direction: column;
@@ -427,7 +413,6 @@ html[data-sideload-active='annotations'] .sideload-panel-view[data-panel-id='ann
   overflow: hidden;
 }
 
-/* 全局侧载抽屉遮罩 (Scrim) */
 .astrolib-sideload-scrim {
   position: fixed;
   inset: 0;
@@ -439,7 +424,6 @@ html[data-sideload-active='annotations'] .sideload-panel-view[data-panel-id='ann
   transition: opacity 0.25s ease;
 }
 
-/* 平板端 (50rem <= width < 72rem): 侧栏在激活非大纲面板时转为标准 M3 Side Sheet */
 @media (min-width: 50rem) and (max-width: 71.999rem) {
   html[data-sideload-active]:not([data-sideload-active='toc']):not([data-sideload-active='none']) .astrolib-sideload-scrim,
   body.exercise-sidebar-active .astrolib-sideload-scrim {
@@ -507,7 +491,6 @@ html[data-sideload-active='annotations'] .sideload-panel-view[data-panel-id='ann
   }
 }
 
-/* 移动端 (< 50rem): 侧栏在激活非大纲面板时转为标准 M3 Bottom Sheet */
 @media (max-width: 49.999rem) {
   html[data-sideload-active]:not([data-sideload-active='toc']):not([data-sideload-active='none']) .astrolib-sideload-scrim,
   body.exercise-sidebar-active .astrolib-sideload-scrim {
@@ -581,7 +564,6 @@ html[data-sideload-active='annotations'] .sideload-panel-view[data-panel-id='ann
   }
 }
 
-/* Panel Header */
 .ex-sidebar-header {
   display: flex;
   align-items: center;
@@ -646,7 +628,6 @@ html[data-sideload-active='annotations'] .sideload-panel-view[data-panel-id='ann
   color: var(--md-sys-color-on-surface);
 }
 
-/* Panel Content Area */
 .ex-sidebar-content {
   overflow-y: auto;
   overflow-x: hidden;
@@ -714,7 +695,6 @@ html[data-sideload-active='annotations'] .sideload-panel-view[data-panel-id='ann
   color: var(--md-sys-color-on-primary-container);
 }
 
-/* Material 3 Thematic Filled License Banner Card (Under Title) */
 .ex-license-banner-card {
   background-color: var(--md-sys-color-secondary-container, #e8def8);
   color: var(--md-sys-color-on-secondary-container, #1d192b);
@@ -835,7 +815,6 @@ html[data-site-theme='material-you'][data-theme='dark'] .ex-license-repo-link {
   margin-left: 2px;
 }
 
-/* Lightweight Material 3 Exercise Card (Official Filled Style, No Border) */
 .ex-light-card {
   background-color: var(--md-sys-color-surface-container, #f3edf7);
   border: none;
@@ -960,7 +939,6 @@ html[data-site-theme='material-you'][data-theme='dark'] .ex-card-option-item {
   overflow-x: auto;
 }
 
-/* Card Action Bar (Right-aligned M3 Icon Buttons) */
 .ex-card-actions {
   display: flex;
   align-items: center;
@@ -1005,7 +983,6 @@ html[data-site-theme='material-you'][data-theme='dark'] .ex-card-option-item {
   flex-shrink: 0;
 }
 
-/* Official Solution Body */
 .ex-card-solution-body {
   margin-top: 8px;
   padding: 10px 12px;
@@ -1041,7 +1018,6 @@ html[data-site-theme='material-you'][data-theme='dark'] .ex-card-solution-body {
   overflow-x: auto;
 }
 
-/* AI Derivation Panel */
 .ex-card-ai-body {
   margin-top: 8px;
   padding: 10px 12px;
@@ -1223,7 +1199,6 @@ html[data-site-theme='material-you'][data-theme='dark'] .ex-card-ai-body {
   opacity: 0.9;
 }
 
-/* 6.1.3 M3 Rich Tooltip for AI Derivation Reading */
 .ex-ai-rich-tooltip {
   position: fixed;
   z-index: var(--layer-toast, 700);
@@ -1437,7 +1412,6 @@ html[data-site-theme='material-you'][data-theme='dark'] .ex-card-ai-body {
   overflow-x: auto;
 }
 
-/* 学术 Markdown 语义化组件：标题、分割线、引用块与代码 */
 .ex-ai-rich-tooltip-body .ex-ai-heading,
 .ex-ai-box-content .ex-ai-heading {
   margin: 0.85em 0 0.4em 0;
@@ -1565,7 +1539,6 @@ html[data-site-theme='material-you'][data-theme='dark'] .ex-card-ai-body {
   opacity: 0.88;
 }
 
-/* 6.1.4 M3 CoT (Chain of Thought / 深度推导思路) Accordion Component */
 .ex-ai-cot-box {
   margin-bottom: 12px;
   border-radius: 8px;
@@ -1647,7 +1620,6 @@ html[data-site-theme='material-you'][data-theme='dark'] .ex-card-ai-body {
   margin: 0.4em 0;
 }
 
-/* 侧栏让渡显示：当左侧打开 Rich Tooltip 浮窗时，右侧栏隐藏重复的长篇推导步骤并展示紧凑微提示 */
 .ex-card-ai-body.tooltip-active-ceded .ex-ai-box-content {
   display: none !important;
 }
@@ -1698,7 +1670,6 @@ html[data-site-theme='material-you'][data-theme='dark'] .ex-card-ai-body {
   background-color: var(--md-sys-color-surface-container-highest);
 }
 
-/* 6.2 Main Exercise Modal Window & Backdrop (Material You M3 Dialog) */
 html[data-site-theme='material-you'] .ex-modal-backdrop {
   background-color: rgba(0, 0, 0, 0.38);
   backdrop-filter: blur(4px);
@@ -1718,7 +1689,6 @@ html[data-site-theme='material-you'] .ex-modal-m3-dialog {
   margin: auto;
 }
 
-/* 极简学术 M3 渐现微缩放动效（告别大落差坠落与伸缩） */
 html[data-site-theme='material-you'] md-dialog#exercise-modal-dialog[quick] {
   transition: opacity 0.2s cubic-bezier(0.05, 0.7, 0.1, 1), transform 0.2s cubic-bezier(0.05, 0.7, 0.1, 1);
 }
@@ -1753,7 +1723,6 @@ html[data-site-theme='material-you'] .ex-modal-window.is-fullscreen {
   margin: 0;
 }
 
-/* 6.3 Header Chrome & M3 Controls (Top App Bar & Segmented Control) */
 html[data-site-theme='material-you'] .ex-header {
   background-color: var(--md-sys-color-surface);
   border-bottom: 1px solid var(--md-sys-color-outline-variant);
@@ -1764,7 +1733,6 @@ html[data-site-theme='material-you'] .ex-header {
   gap: 1rem;
 }
 
-/* M3 Outlined Select (Chapter & Paper Selector) */
 html[data-site-theme='material-you'] .ex-chapter-select,
 html[data-site-theme='material-you'] .ex-paper-select {
   height: 38px;
@@ -1800,7 +1768,6 @@ html[data-site-theme='material-you'] .ex-paper-select:focus {
   outline-offset: -1px;
 }
 
-/* M3 Segmented Button Group (章节自测 / 试卷整卷) */
 html[data-site-theme='material-you'] .ex-header-center {
   display: inline-flex;
   align-items: center;
@@ -1844,7 +1811,6 @@ html[data-site-theme='material-you'] .ex-mode-tab.active::after {
   display: none !important;
 }
 
-/* Header Right Actions */
 html[data-site-theme='material-you'] .ex-header-right {
   display: flex;
   align-items: center;
@@ -1896,7 +1862,6 @@ html[data-site-theme='material-you'] .ex-close-btn:hover {
   color: var(--md-sys-color-on-surface);
 }
 
-/* 6.4 Toolbar & M3 Search Bar */
 html[data-site-theme='material-you'] .ex-toolbar {
   background-color: var(--md-sys-color-surface-container-low);
   border-bottom: 1px solid var(--md-sys-color-outline-variant);
@@ -1915,7 +1880,6 @@ html[data-site-theme='material-you'] .ex-stat-total {
   font-weight: 600;
 }
 
-/* M3 Search Field (Google Drive / Play Style) */
 html[data-site-theme='material-you'] .ex-search-box {
   height: 36px;
   min-width: 280px;
@@ -1972,7 +1936,6 @@ html[data-site-theme='material-you'] .ex-search-clear:hover {
   color: var(--md-sys-color-on-surface);
 }
 
-/* M3 Scope Toggle Button & Toolbar Toggle Button (Filter Chips) */
 html[data-site-theme='material-you'] .ex-scope-toggle-btn,
 html[data-site-theme='material-you'] .ex-toolbar-toggle-btn {
   height: 32px;
@@ -2001,7 +1964,6 @@ html[data-site-theme='material-you'] .ex-scope-toggle-btn.active {
   font-weight: 600;
 }
 
-/* 6.5 M3 Filter Drawer (Smooth Accordion Grid Motion) & Filter Chips */
 html[data-site-theme='material-you'] .ex-filter-drawer {
   display: grid;
   grid-template-rows: 1fr;
@@ -2090,7 +2052,6 @@ html[data-site-theme='material-you'] .ex-nav-count {
   font-size: 0.72rem;
 }
 
-/* 6.6 Question Body & M3 Outlined Question Stream Cards */
 html[data-site-theme='material-you'] .ex-body {
   background-color: var(--md-sys-color-surface);
   padding: 1.75rem 2.25rem 4.5rem;
@@ -2113,7 +2074,6 @@ html[data-site-theme='material-you'] .ex-q-card:hover {
   box-shadow: var(--md-elevation-level-1);
 }
 
-/* Question Header Meta */
 html[data-site-theme='material-you'] .ex-q-header {
   border-bottom: 1px solid var(--md-sys-color-outline-variant);
   opacity: 0.9;
@@ -2133,7 +2093,6 @@ html[data-site-theme='material-you'] .ex-q-type-label {
   color: var(--md-sys-color-on-surface-variant);
 }
 
-/* M3 Assist Chips for Question Source Badges (Eliminate Garish Purple Pill) */
 html[data-site-theme='material-you'] .ex-q-source-badge {
   font-family: var(--md-font-google-sans), inherit;
   font-size: 0.72rem;
@@ -2155,7 +2114,6 @@ html[data-site-theme='material-you'] .ex-q-source-badge.exam {
   color: var(--md-sys-color-on-surface-variant);
 }
 
-/* Question Header Action Links (报错, 源码) */
 html[data-site-theme='material-you'] .ex-text-link-btn {
   font-family: var(--md-font-google-sans), inherit;
   font-size: 0.75rem;
@@ -2183,14 +2141,12 @@ html[data-site-theme='material-you'] .ex-meta-svg {
   opacity: 0.75;
 }
 
-/* Question Stem (Protected Academic Typography) */
 html[data-site-theme='material-you'] .ex-q-stem {
   color: var(--md-sys-color-on-surface);
   font-size: 0.95rem;
   line-height: 1.75;
 }
 
-/* 6.7 Interactive Solving Area (Multiple Choice & Blank) */
 html[data-site-theme='material-you'] .ex-options-grid {
   gap: 0.65rem;
   margin-top: 0.5rem;
@@ -2267,7 +2223,6 @@ html[data-site-theme='material-you'] .ex-blank-check-btn:hover {
   background-color: color-mix(in srgb, var(--md-sys-color-secondary-container) 88%, var(--md-sys-color-on-secondary-container) 12%);
 }
 
-/* Source Reference Link */
 html[data-site-theme='material-you'] .ex-q-source-row {
   color: var(--md-sys-color-on-surface-variant);
   font-size: 0.8125rem;
@@ -2283,7 +2238,6 @@ html[data-site-theme='material-you'] .ex-source-link:hover {
   text-decoration: underline;
 }
 
-/* 6.8 Card Action Buttons (M3 Three-Tier Hierarchy) */
 html[data-site-theme='material-you'] .ex-card-actions {
   display: flex;
   align-items: center;
@@ -2301,7 +2255,6 @@ html[data-site-theme='material-you'] .ex-right-actions {
   gap: 0.65rem;
 }
 
-/* M3 Outlined Button for Reveal Steps */
 html[data-site-theme='material-you'] .ex-action-btn.ex-toggle-steps-btn {
   height: 34px;
   padding: 0 14px;
@@ -2325,7 +2278,6 @@ html[data-site-theme='material-you'] .ex-action-btn.ex-toggle-steps-btn:hover {
   border-color: var(--md-sys-color-outline);
 }
 
-/* M3 Text Button for Hints */
 html[data-site-theme='material-you'] .ex-action-btn.ex-toggle-hints-btn {
   height: 34px;
   padding: 0 12px;
@@ -2348,7 +2300,6 @@ html[data-site-theme='material-you'] .ex-action-btn.ex-toggle-hints-btn:hover {
   color: var(--md-sys-color-on-surface);
 }
 
-/* M3 Filled Tonal Button for Ask AI */
 html[data-site-theme='material-you'] .ex-action-btn.ex-ask-ai-btn {
   height: 34px;
   padding: 0 16px;
@@ -2372,7 +2323,6 @@ html[data-site-theme='material-you'] .ex-action-btn.ex-ask-ai-btn:hover {
   box-shadow: var(--md-elevation-level-1);
 }
 
-/* Material Symbols / md-icon 标准样式规范 */
 html[data-site-theme='material-you'] #exercise-modal-root md-icon,
 html[data-site-theme='material-you'] .ex-modal-m3-dialog md-icon {
   font-family: 'Material Symbols Outlined';
@@ -2424,7 +2374,6 @@ html[data-site-theme='material-you'] .ex-btn-svg {
   flex-shrink: 0;
 }
 
-/* 6.9 Solutions, Steps & In-Place AI Panels */
 html[data-site-theme='material-you'] .ex-solution-box {
   background-color: var(--md-sys-color-surface-container-low);
   border-radius: var(--md-shape-corner-medium, 12px);
@@ -2454,7 +2403,6 @@ html[data-site-theme='material-you'] .ex-k-tag {
   font-size: 0.75rem;
 }
 
-/* In-Place AI Panel */
 html[data-site-theme='material-you'] .ex-ai-box {
   background-color: var(--md-sys-color-surface-container-low);
   border-radius: var(--md-shape-corner-medium, 12px);
@@ -2510,7 +2458,6 @@ html[data-site-theme='material-you'] .ex-ai-ver-tab.active {
   text-decoration: none;
 }
 
-/* 6.10 Sub-Modals (Feedback / Dev Editor / AI Upload / Settings) */
 html[data-site-theme='material-you'] .ex-submodal-overlay {
   background-color: rgba(0, 0, 0, 0.4);
   backdrop-filter: blur(4px);
@@ -2560,7 +2507,6 @@ html[data-site-theme='material-you'] .ex-submodal-footer {
   padding: 1rem 1.5rem;
 }
 
-/* M3 Outlined Inputs and Textareas */
 html[data-site-theme='material-you'] .ex-textarea,
 html[data-site-theme='material-you'] .ex-submodal-body .ex-input {
   border-radius: var(--md-shape-corner-small, 8px);
@@ -2586,7 +2532,6 @@ html[data-site-theme='material-you'] .ex-code-editor {
   color: var(--md-sys-color-on-surface);
 }
 
-/* Dialog Action Buttons */
 html[data-site-theme='material-you'] .ex-btn {
   font-family: var(--md-font-google-sans), inherit;
   font-size: 0.875rem;
@@ -2621,7 +2566,6 @@ html[data-site-theme='material-you'] .ex-btn-secondary:hover {
   color: var(--md-sys-color-on-surface);
 }
 
-/* 6.11 Toast Notifications (M3 Snackbar) */
 html[data-site-theme='material-you'] .ex-toast {
   background-color: var(--md-sys-color-inverse-surface);
   color: var(--md-sys-color-inverse-on-surface);
@@ -2632,7 +2576,6 @@ html[data-site-theme='material-you'] .ex-toast {
   font-family: var(--md-font-google-sans), inherit;
 }
 
-/* 6.12 Load More & Finished States */
 html[data-site-theme='material-you'] .ex-load-more-btn {
   height: 36px;
   padding: 0 20px;
@@ -2652,7 +2595,6 @@ html[data-site-theme='material-you'] .ex-load-more-btn:hover {
   border-color: transparent;
 }
 
-/* 6.13 Mobile Responsive Adaptations */
 @media (max-width: 640px) {
   html[data-site-theme='material-you'] .ex-modal-window,
   html[data-site-theme='material-you'] md-dialog#exercise-modal-dialog {
@@ -2680,7 +2622,6 @@ html[data-site-theme='material-you'] .ex-load-more-btn:hover {
   }
 }
 
-/* Material Design 3 Accessibility: Reduced Motion Fallback */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms;

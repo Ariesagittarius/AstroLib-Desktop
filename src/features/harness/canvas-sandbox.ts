@@ -1,16 +1,3 @@
-/**
- * src/features/harness/canvas-sandbox.ts
- * ============================================================================
- * Track B: AstroCanvas 独立交互画布沙箱引擎
- * ============================================================================
- * 职责：
- * 1. 构建严格隔离的 <iframe sandbox="allow-scripts allow-downloads"> 运行环境；
- * 2. 自动注入当前 AstroLib Material You 动态主题变量、亮暗模式与本地 KaTeX CSS；
- * 3. 提供正文内联卡片（「在成果物打开」+「内联展开」带版面提示）与成果物宽屏工作台
- *    （预览/源码切换、版本撤销/重做、导出单文件 HTML、全屏预览）。
- * ============================================================================
- */
-
 import { ArtifactStore } from './artifact-store.ts';
 import type { ArtifactItem, CanvasTelemetrySnapshot } from './types.ts';
 

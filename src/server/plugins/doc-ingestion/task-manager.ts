@@ -1,16 +1,3 @@
-/**
- * src/server/plugins/doc-ingestion/task-manager.ts
- * ============================================================================
- * AstroLib 文档摄取与解析任务生命周期管理器
- * ============================================================================
- * 职责：
- * 1. 任务创建与状态机持久化 (task/ingest/<taskId>/meta.json)；
- * 2. 调度 MineruApiClient (云端 API) 与 LocalPipelineRunner (本地 5060)；
- * 3. 产物解包与结构提取 (full.md, images/, layout.json)；
- * 4. 章节切分与一键入库至站点书籍合集。
- * ============================================================================
- */
-
 import fs from 'node:fs';
 import path from 'node:path';
 import { MineruApiClient } from './mineru-api-client.ts';
@@ -54,9 +41,6 @@ export class TaskManager {
     return this.baseDir;
   }
 
-  /**
-   * 获取所有可能存放摄取任务的候选目录列表 (用户目录优先，回退工作区目录)
-   */
   public getCandidateDirs(): string[] {
     const dirs: string[] = [];
     if (this.baseDir && !dirs.includes(this.baseDir)) {
@@ -84,9 +68,6 @@ export class TaskManager {
     return dirs.filter((d) => fs.existsSync(d));
   }
 
-  /**
-   * 定位某个任务所在的真实物理目录
-   */
   public findTaskDir(taskId: string): string | null {
     if (!taskId || taskId.includes('..')) return null;
     const candidateDirs = this.getCandidateDirs();
@@ -100,18 +81,12 @@ export class TaskManager {
     return null;
   }
 
-  /**
-   * 获取任务对应原始 PDF 的真实路径
-   */
   public getOriginPdfPath(taskId: string): string | null {
     const dir = this.findTaskDir(taskId) || path.join(this.baseDir, taskId);
     const pdf = path.join(dir, 'origin.pdf');
     return fs.existsSync(pdf) ? pdf : null;
   }
 
-  /**
-   * 获取任务对应解包产物 unpacked 目录的真实路径
-   */
   public getUnpackedDir(taskId: string): string | null {
     const dir = this.findTaskDir(taskId) || path.join(this.baseDir, taskId);
     const unpacked = path.join(dir, 'unpacked');
@@ -126,17 +101,9 @@ export class TaskManager {
     return this.localRunner;
   }
 
-  /**
-   * 快速计算 PDF 真实页数 (无需重量级依赖)
-   * 优化策略：
-   * 1. 严格在单个 PDF 字典 `<< ... >>` 内部定位 `/Type /Pages` 与对应的 `/Count`
-   * 2. 统计所有独立叶子页对象 `/Type /Page\b` (排除 `/Pages`)
-   * 3. 统计全局最大的合法 `/Count` (排除书签大纲较小计数值)
-   */
   public countPdfPages(buffer: Buffer): number {
     const raw = buffer.toString('latin1');
 
-    // 方案 1: 在同一个字典 << ... >> 内部查找 /Type /Pages 和 /Count
     const dictRegex = /<<([^>]+)>>/g;
     let maxPagesCount = 0;
     let match: RegExpExecArray | null;
@@ -152,13 +119,11 @@ export class TaskManager {
     }
     if (maxPagesCount > 0) return maxPagesCount;
 
-    // 方案 2: 统计所有叶子页节点 /Type /Page\b (排除 /Pages)
     const pageMatches = raw.match(/\/Type\s*\/Page\b/g);
     if (pageMatches && pageMatches.length > 0) {
       return pageMatches.length;
     }
 
-    // 方案 3: 全局最大的 /Count
     const allCounts = [...raw.matchAll(/\/Count\s+(\d+)/g)].map((m) => parseInt(m[1], 10)).filter((n) => !isNaN(n));
     if (allCounts.length > 0) {
       return Math.max(...allCounts);
@@ -166,9 +131,6 @@ export class TaskManager {
     return 1;
   }
 
-  /**
-   * 1. 创建新摄取任务并保存原始 PDF
-   */
   public async createTask(
     fileName: string,
     fileBuffer: Buffer,
@@ -209,9 +171,6 @@ export class TaskManager {
     return this.activeJobs.has(taskId);
   }
 
-  /**
-   * 2. 启动或重新启动异步解析工作流
-   */
   public startParse(
     taskId: string,
     engine?: IngestEngineType,
@@ -267,9 +226,6 @@ export class TaskManager {
     return meta;
   }
 
-  /**
-   * 若任务处于运行态但后台已无活跃作业（进程重启遗留僵尸任务），将其收敛为失败中断态
-   */
   public reconcileStaleTask(taskId: string): IngestTaskMeta | null {
     const meta = this.getTask(taskId);
     if (!meta) return null;
@@ -282,9 +238,6 @@ export class TaskManager {
     return meta;
   }
 
-  /**
-   * 移除尚未运行中的任务物理目录
-   */
   public deleteTask(taskId: string): boolean {
     if (!taskId || taskId.includes('..')) return false;
     if (this.activeJobs.has(taskId)) {
@@ -298,15 +251,11 @@ export class TaskManager {
     return true;
   }
 
-  /**
-   * 执行云端 API 解析流
-   */
   private async executeApiParse(meta: IngestTaskMeta): Promise<void> {
     const taskDir = meta.outputDir;
     const pdfPath = path.join(taskDir, 'origin.pdf');
     const unpackedDir = path.join(taskDir, 'unpacked');
 
-    // 1. 申请上传预签名 URL
     meta.status = 'uploading';
     meta.progress = 10;
     this.saveTaskMeta(meta);
@@ -325,14 +274,12 @@ export class TaskManager {
     meta.progress = 20;
     this.saveTaskMeta(meta);
 
-    // 2. 上传文件到预签名 URL
     await this.mineruClient.uploadFileToPreSignedUrl(fileUrl, pdfPath);
 
     meta.status = 'processing';
     meta.progress = 30;
     this.saveTaskMeta(meta);
 
-    // 3. 轮询云端状态
     const { fullZipUrl } = await this.mineruClient.pollBatchStatus(batchId, {
       intervalMs: 2500,
       onProgress: (state) => {
@@ -353,14 +300,12 @@ export class TaskManager {
     meta.progress = 88;
     this.saveTaskMeta(meta);
 
-    // 4. 下载并解压结果 ZIP
     await this.mineruClient.downloadAndExtractZip(fullZipUrl, unpackedDir);
 
     meta.status = 'unpacking';
     meta.progress = 95;
     this.saveTaskMeta(meta);
 
-    // 5. 校验与整理成果
     this.finalizeUnpackedArtifacts(meta, unpackedDir);
 
     meta.status = 'completed';
@@ -371,9 +316,6 @@ export class TaskManager {
     this.saveTaskMeta(meta);
   }
 
-  /**
-   * 执行 Agent 免密轻量解析流
-   */
   private async executeAgentParse(meta: IngestTaskMeta): Promise<void> {
     const taskDir = meta.outputDir;
     const pdfPath = path.join(taskDir, 'origin.pdf');
@@ -406,9 +348,6 @@ export class TaskManager {
     this.saveTaskMeta(meta);
   }
 
-  /**
-   * 执行本地 5060 Pipeline 解析流
-   */
   private async executeLocalParse(meta: IngestTaskMeta): Promise<void> {
     const taskDir = meta.outputDir;
     const pdfPath = path.join(taskDir, 'origin.pdf');
@@ -434,11 +373,8 @@ export class TaskManager {
     this.saveTaskMeta(meta);
   }
 
-  /**
-   * 整理已解包目录中的 Markdown、图片与坐标元数据
-   */
   private finalizeUnpackedArtifacts(meta: IngestTaskMeta, unpackedDir: string): void {
-    // 递归寻找包含 full.md 或 *.md 的目录
+
     const findMdFile = (dir: string): string | null => {
       if (!fs.existsSync(dir)) return null;
       const entries = fs.readdirSync(dir, { withFileTypes: true });
@@ -473,9 +409,6 @@ export class TaskManager {
     }
   }
 
-  /**
-   * 3. 读取任务元数据
-   */
   public getTask(taskId: string): IngestTaskMeta | null {
     const taskDir = this.findTaskDir(taskId);
     if (!taskDir) return null;
@@ -491,9 +424,6 @@ export class TaskManager {
     }
   }
 
-  /**
-   * 3.1 获取所有历史摄取任务列表 (按创建时间降序，跨所有候选目录聚合)
-   */
   public listTasks(): IngestTaskMeta[] {
     const taskMap = new Map<string, IngestTaskMeta>();
     const candidateDirs = this.getCandidateDirs();
@@ -516,9 +446,6 @@ export class TaskManager {
     return Array.from(taskMap.values()).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
   }
 
-  /**
-   * 4. 读取解析成果（供双栏对照渲染与坐标映射）
-   */
   public getResult(taskId: string): ParseResultResponse | null {
     const meta = this.getTask(taskId);
     if (!meta || meta.status !== 'completed') return null;
@@ -526,7 +453,6 @@ export class TaskManager {
     const taskDir = this.findTaskDir(taskId) || path.join(this.baseDir, taskId);
     const unpackedDir = path.join(taskDir, 'unpacked');
 
-    // 搜索 Markdown 文件
     let markdown = '';
     let targetDir = unpackedDir;
     let rawJson = '';
@@ -561,7 +487,6 @@ export class TaskManager {
 
     findArtifacts(unpackedDir);
 
-    // 搜索图片
     const images: string[] = [];
     const imagesDir = path.join(targetDir, 'images');
     if (fs.existsSync(imagesDir)) {
@@ -573,10 +498,8 @@ export class TaskManager {
       }
     }
 
-    // 解析版面坐标 Blocks (高保真 AST 编译，含 KaTeX HTML、图片路径与 1000 归一化坐标)
     const layoutBlocks = this.extractLayoutBlocks(targetDir, meta.taskId);
 
-    // 优先采用结构化 AST 合成的高纯度 Markdown（去除突兀孤立页码，生成标准脚注与分页锚点）
     const cleanMarkdown = layoutBlocks.length > 0
       ? synthesizeStructuredMarkdown(layoutBlocks, markdown)
       : markdown;
@@ -595,16 +518,10 @@ export class TaskManager {
     };
   }
 
-  /**
-   * 从 content_list_v2.json / layout.json / full.md 提取统一的高质量 LayoutBlock AST
-   */
   private extractLayoutBlocks(targetDir: string, taskId: string): LayoutBlock[] {
     return compileIngestAST(targetDir, taskId);
   }
 
-  /**
-   * 5. 一键转入 AstroLib 书籍合集 (MDX 切分与静态资源迁移)
-   */
   public async exportToCollection(
     taskId: string,
     collectionSlug: string,
@@ -631,10 +548,9 @@ export class TaskManager {
       fs.mkdirSync(bookImagesDir, { recursive: true });
     }
 
-    // 拷贝提取出的图片
     const taskDir = this.findTaskDir(taskId) || path.join(this.baseDir, taskId);
     const unpackedDir = path.join(taskDir, 'unpacked');
-    // 寻找源 images 目录
+
     const copyImages = (dir: string) => {
       if (!fs.existsSync(dir)) return;
       const entries = fs.readdirSync(dir, { withFileTypes: true });
@@ -653,11 +569,8 @@ export class TaskManager {
     };
     copyImages(unpackedDir);
 
-    // 转换 Markdown 为 JSX 安全的 MDX 内容
-    // 转义非公式区域中的裸大括号 { -> &#123;, } -> &#125;
     const safeMdx = this.escapeMdxContent(result.markdown);
 
-    // 写入主章节文件
     const mainChapterPath = path.join(bookDir, '01_全文研判.mdx');
     const mdxHeader = `---
 title: "${bookTitle}"
@@ -674,22 +587,17 @@ description: "由 MinerU 智能解析与规整的学术文献"
     };
   }
 
-  /**
-   * 转义 MDX 中的裸 JSX 字符（避免构建阻断）
-   */
   private escapeMdxContent(content: string): string {
-    // 保护 $$ ... $$ 与 $ ... $ 内的数学公式
+
     const mathTokens: string[] = [];
     let tokenized = content.replace(/\$\$[\s\S]*?\$\$|\$[^\$\n]+?\$/g, (match) => {
       mathTokens.push(match);
       return `___MATH_TOKEN_${mathTokens.length - 1}___`;
     });
 
-    // 替换普通文本中的裸大括号与不合法波浪线
     tokenized = tokenized.replace(/\{/g, '&#123;').replace(/\}/g, '&#125;');
     tokenized = tokenized.replace(/(\d+)~(\d+)/g, '$1～$2');
 
-    // 还原公式
     const restored = tokenized.replace(/___MATH_TOKEN_(\d+)___/g, (_, idx) => {
       return mathTokens[parseInt(idx, 10)] || '';
     });

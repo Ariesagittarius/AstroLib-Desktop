@@ -1,16 +1,3 @@
-/**
- * src/server/plugins/bilingual-aligner/qwen-engine.ts
- * ============================================================================
- * AstroLib Qwen3-Embedding-0.6B 服务端常驻推理桥接器 (Qwen Embedding Engine Bridge)
- * ============================================================================
- * 核心设计：
- * 1. 管理 Python 常驻 Daemon 子进程 (qwen-runner.py)，一次加载模型，后续零重载延迟；
- * 2. 自动探测 Python 环境（优先复用 practice/.venv 与本工程 .venv，避免任何重复环境构建）；
- * 3. 严格离线加载，利用已下载的 ~/.cache/huggingface 权重，0 代理流量消耗；
- * 4. 出现环境未配置或 Python 缺失时，无缝向调用方抛出友好提示并支持降级。
- * ============================================================================
- */
-
 import { spawn, type ChildProcess } from 'node:child_process';
 import path from 'node:path';
 import fs from 'node:fs';
@@ -73,9 +60,6 @@ export class QwenEngine {
     return this.instance;
   }
 
-  /**
-   * 自动探测可用的 Python 解释器路径
-   */
   public findPythonPath(): string | null {
     if (process.env.PYTHON_PATH && fs.existsSync(process.env.PYTHON_PATH)) {
       return process.env.PYTHON_PATH;
@@ -97,16 +81,13 @@ export class QwenEngine {
           return p;
         }
       } catch {
-        // continue
+
       }
     }
 
     return null;
   }
 
-  /**
-   * 检查 Qwen3 模型与 Python 引擎是否可用（极速文件系统探测 + 缓存）
-   */
   async isAvailable(): Promise<boolean> {
     if (this.cachedAvailability !== null) {
       return this.cachedAvailability;
@@ -123,7 +104,6 @@ export class QwenEngine {
       return false;
     }
 
-    // 检查本地 HuggingFace 缓存目录中是否存在 Qwen3-Embedding-0.6B 权重
     const hubDir = path.join(
       os.homedir(),
       '.cache',
@@ -137,9 +117,6 @@ export class QwenEngine {
     return this.cachedAvailability;
   }
 
-  /**
-   * 确保常驻 Daemon 子进程运行
-   */
   private async ensureDaemon(): Promise<ChildProcess> {
     if (this.pythonProcess && !this.pythonProcess.killed && this.isReady) {
       this.touchIdleTimer();
@@ -198,7 +175,6 @@ export class QwenEngine {
           try {
             const data = JSON.parse(trimmed);
 
-            // 首次就绪通知
             if (data.status === 'ready') {
               this.isReady = true;
               this.isInitializing = false;
@@ -209,7 +185,6 @@ export class QwenEngine {
               return;
             }
 
-            // 匹配请求 ID
             if (data.id && this.pendingRequests.has(data.id)) {
               const { resolve: reqResolve, reject: reqReject } = this.pendingRequests.get(data.id)!;
               this.pendingRequests.delete(data.id);
@@ -239,7 +214,7 @@ export class QwenEngine {
 
         proc.stderr.on('data', (data) => {
           const msg = data.toString();
-          // 仅打印关键警告，忽略标准 loading 进度条
+
           if (msg.includes('Error') || msg.includes('Exception') || msg.includes('Traceback')) {
             console.warn('[qwen-bridge-stderr]:', msg.trim());
           }
@@ -253,7 +228,6 @@ export class QwenEngine {
           this.activeVramMB = 0;
           this.pythonProcess = null;
 
-          // Reject any pending requests
           this.pendingRequests.forEach(({ reject }) => {
             reject(new Error(`Qwen process exited unexpectedly with code ${code}`));
           });
@@ -270,7 +244,6 @@ export class QwenEngine {
           reject(err);
         });
 
-        // 首次加载模型（~600M 参数）的保护超时时间
         setTimeout(() => {
           if (!this.isReady) {
             proc.kill();
@@ -285,9 +258,6 @@ export class QwenEngine {
     });
   }
 
-  /**
-   * 调用 Qwen3-Embedding 执行双语段落语义对齐
-   */
   async alignParagraphs(sourceTexts: string[], targetTexts: string[]): Promise<AlignResultPayload> {
     const proc = await this.ensureDaemon();
     const reqId = `qwen_req_${Date.now()}_${++this.requestCounter}`;
@@ -333,16 +303,13 @@ export class QwenEngine {
     });
   }
 
-  /**
-   * 优雅停止 Daemon 进程
-   */
   destroy() {
     this.idleCtrl.reset();
     if (this.pythonProcess && !this.pythonProcess.killed) {
       try {
         this.pythonProcess.kill();
       } catch {
-        // ignore
+
       }
       this.pythonProcess = null;
     }

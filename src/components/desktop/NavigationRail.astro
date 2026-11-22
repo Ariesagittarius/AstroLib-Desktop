@@ -1,23 +1,11 @@
 ---
-/**
- * src/components/desktop/NavigationRail.astro
- * ============================================================================
- * AstroLib 桌面端 M3 极简可收纳左侧主导航轨 (Desktop Navigation Rail)
- * ============================================================================
- * 规范：
- * 1. 采用 56px 紧凑宽度与小尺寸胶囊激活态指示器，支持顶栏按钮或 Ctrl+\ 完整收纳至 0px；
- * 2. 驱动三大核心 Fragment 调度（1: 工作台，2: 研读书库，3: 研读视窗）；
- * 3. 底部集成亮暗主题切换与全局设置入口。
- * ============================================================================
- */
-
 import M3Icon from '../m3/M3Icon.astro';
 ---
 
 <aside class="desktop-nav-rail" id="desktop-nav-rail" aria-label="主功能导航">
-  <!-- 核心 Fragment 切换动作群 -->
+
   <nav class="rail-nav-group">
-    <!-- Fragment 1: Agent Harness -->
+
     <button type="button" class="rail-nav-item active" data-fragment="overview" id="nav-btn-overview" title="Agent 工作台">
       <div class="rail-nav-item__pill">
         <M3Icon name="smart_toy" size={19} />
@@ -25,7 +13,6 @@ import M3Icon from '../m3/M3Icon.astro';
       <span class="rail-nav-item__label">工作台</span>
     </button>
 
-    <!-- Fragment 2: 学术书库 (Google Play 图书级) -->
     <button type="button" class="rail-nav-item" data-fragment="library" id="nav-btn-library" title="学术资料与文献书库">
       <div class="rail-nav-item__pill">
         <M3Icon name="auto_stories" size={19} />
@@ -33,7 +20,6 @@ import M3Icon from '../m3/M3Icon.astro';
       <span class="rail-nav-item__label">研读书库</span>
     </button>
 
-    <!-- Fragment 3: 多篇研读中心 (Chrome 多标签 + Win11 分屏) -->
     <button type="button" class="rail-nav-item" data-fragment="reader" id="nav-btn-reader" title="多篇研读与分屏视窗">
       <div class="rail-nav-item__pill">
         <M3Icon name="splitscreen" size={19} />
@@ -43,7 +29,6 @@ import M3Icon from '../m3/M3Icon.astro';
     </button>
   </nav>
 
-  <!-- 底部快捷工具与设置 -->
   <div class="rail-footer">
     <button type="button" class="rail-nav-item" id="rail-btn-theme" title="切换全局亮暗主题">
       <div class="rail-nav-item__pill">
@@ -66,8 +51,7 @@ import M3Icon from '../m3/M3Icon.astro';
   </div>
 </aside>
 
-<style>
-  .desktop-nav-rail {
+<style>.desktop-nav-rail {
     width: var(--desktop-rail-width, 56px);
     height: 100%;
     background-color: var(--md-sys-color-surface, #ffffff);

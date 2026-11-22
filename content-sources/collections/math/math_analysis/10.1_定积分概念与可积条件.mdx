@@ -10,23 +10,22 @@ import Note from '@/components/Note.astro';
 import Block from '@/components/Block.astro';
 import Method from '@/components/Method.astro';
 
-
 ## 10.1.1 定积分的定义
 
 设函数 $f$ 在区间 $[a, b]$ 上有定义.
 
-1. 称点集 $P = \{x_{0}, x_{1}, \cdots, x_{n-1}, x_{n}\}$ 为 $[a, b]$ 的一个分划，如果满足条件：  
+1. 称点集 $P = \{x_{0}, x_{1}, \cdots, x_{n-1}, x_{n}\}$ 为 $[a, b]$ 的一个分划，如果满足条件：
    $$
    a = x _ {0} <   x _ {1} <   \dots <   x _ {n - 1} <   x _ {n} = b.
-   $$  
+   $$
    记 $\Delta x_{i}=x_{i}-x_{i-1},\quad i=1,\cdots,n,$ 并称 $\|P\|=\max_{1\leqslant i\leqslant n}\{\Delta x_{i}\}$ 为分划 $P$ 的细度. 如果 $\Delta x_{i}=\frac{b-a}{n},\quad i=1,\cdots,n,$ 则称 $P$ 为等距分划.
 
 2. 设 $P = \{x_{0}, x_{1}, \cdots, x_{n-1}, x_{n}\}$ 为区间 $[a, b]$ 的一个分划。对每个子区间 $[x_{i-1}, x_{i}]$ ，任取 $\xi_{i} \in [x_{i-1}, x_{i}]$ ，则称 $\xi = \{\xi_{i} \mid i = 1, 2, \cdots, n\}$ 为从属于 $P$ 的一个介点集；并称和式 $\sum_{i=1}^{n} f(\xi_{i}) \Delta x_{i}$ 或 $\sum_{P} f(\xi_{i}) \Delta x_{i}$ 为 $f$ 在区间 $[a, b]$ 上的一个 $Riemann$ (积分) 和。
 
-3. 设 $I$ 为实数, 且有 $\lim_{\| P \| \to 0} \sum_{i=1}^{n} f(\xi_i) \Delta x_i = I$ , 即 $\forall \varepsilon > 0, \exists \delta > 0$ , 对 $\| P \| < \delta$ 的每个分划 $P$ , 以及对从属于 $P$ 的每个介点集 $\xi$ , 成立 $\left|\sum_{i=1}^{n} f(\xi_i) \Delta x_i - I\right| < \varepsilon$ , 则称函数 $f$ 在区间 $[a, b]$ 上 $Riemann$ 可积或简称可积, 记为  
+3. 设 $I$ 为实数, 且有 $\lim_{\| P \| \to 0} \sum_{i=1}^{n} f(\xi_i) \Delta x_i = I$ , 即 $\forall \varepsilon > 0, \exists \delta > 0$ , 对 $\| P \| < \delta$ 的每个分划 $P$ , 以及对从属于 $P$ 的每个介点集 $\xi$ , 成立 $\left|\sum_{i=1}^{n} f(\xi_i) \Delta x_i - I\right| < \varepsilon$ , 则称函数 $f$ 在区间 $[a, b]$ 上 $Riemann$ 可积或简称可积, 记为
    $$
    f \in R [ a, b ],
-   $$  
+   $$
    并称 $I$ 为 $f$ 在区间 $[a, b]$ 上的 $Riemann$ 积分或定积分，简称积分，记为 $\int_{a}^{b} f(x) \mathrm{d}x = I$ ，或其简化记号 $\int_{a}^{b} f = I$ .
 
 <Note title="注 1">
@@ -40,7 +39,7 @@ $$
 
 \int_ {a} ^ {b} f (x) \mathrm{d} x = \int_ {a} ^ {b} f (t) \mathrm{d} t = \int_ {a} ^ {b} f (u) \mathrm{d} u = \dots .
 
-$$  
+$$
 
 因此在不需要写出积分变量时, 就可以使用定积分的简化记号 $\int_{a}^{b} f$ .
 </Note>
@@ -53,7 +52,7 @@ $$
 设 $f \in R[a, b]$ ，则 $f$ 在 $[a, b]$ 上有界.
 
 <Solution title="证明">
-若记 $\int_{a}^{b} f(x) \, \mathrm{d}x = I$ , 则从可积定义知道, 对于 $\varepsilon = 1$ , 存在一个分划 $P$ , 使得对于从属于这个 $P$ 的任何介点集 $\xi$ , 均成立不等式  
+若记 $\int_{a}^{b} f(x) \, \mathrm{d}x = I$ , 则从可积定义知道, 对于 $\varepsilon = 1$ , 存在一个分划 $P$ , 使得对于从属于这个 $P$ 的任何介点集 $\xi$ , 均成立不等式
 $$
 \left| \sum_ {i = 1} ^ {n} f (\xi_ {i}) \Delta x _ {i} - I \right| <   1.\tag{10.1}
 $$
@@ -68,7 +67,7 @@ $$
 </Solution>
 </Knowledge>
 
-为叙述可积的充分必要条件, 需要引入以下概念. 设函数 $f$ 在区间 $[a, b]$ 上有界, $P = \{x_{0}, x_{1}, \cdots, x_{n-1}, x_{n}\}$ 为 $[a, b]$ 的一个分划, 对 $i = 1, \cdots, n$ , 记  
+为叙述可积的充分必要条件, 需要引入以下概念. 设函数 $f$ 在区间 $[a, b]$ 上有界, $P = \{x_{0}, x_{1}, \cdots, x_{n-1}, x_{n}\}$ 为 $[a, b]$ 的一个分划, 对 $i = 1, \cdots, n$ , 记
 
 $$
 M _ {i} = \sup \{f (x) \mid x \in [ x _ {i - i}, x _ {i} ] \} \quad {\text {与}} \quad m _ {i} = \inf \{f (x) \mid x \in [ x _ {i - i}, x _ {i} ] \},
@@ -79,14 +78,14 @@ $$
 在一般的分析教科书中对下面两个最常用的可积充分必要条件都有证明.
 
 <Knowledge title="命题 $10.1.2$ （可积的第一充分必要条件）">
-有界函数 $f \in R[a, b]$ 的充分必要条件是  
+有界函数 $f \in R[a, b]$ 的充分必要条件是
 $$
 \lim _ {\| P \| \rightarrow 0} \sum_ {i = 1} ^ {n} \omega_ {i} \Delta x _ {i} = 0.
 $$
 </Knowledge>
 
 <Knowledge title="命题 $10.1.3$ (可积的第二充分必要条件)">
-有界函数 $f \in R[a, b]$ 的充分必要条件是对每个 $\varepsilon > 0$ ，存在区间 $[a, b]$ 的一个分划 $P$，使成立  
+有界函数 $f \in R[a, b]$ 的充分必要条件是对每个 $\varepsilon > 0$ ，存在区间 $[a, b]$ 的一个分划 $P$，使成立
 $$
 \sum_ {P} \omega_ {i} \Delta x _ {i} <   \varepsilon .
 $$
@@ -118,19 +117,19 @@ $$
 <Solution title="证明">
 设在 $[a, b]$ 上有 $m \leqslant f(x) \leqslant M$ .
 
-先证充分性. 对于 $\varepsilon > 0$ , 取  
+先证充分性. 对于 $\varepsilon > 0$ , 取
 
 $$
 \varepsilon^ {\prime} = \frac {\varepsilon}{2 (M - m)}, \quad \eta = \frac {\varepsilon}{2 (b - a)}.
 $$
 
-根据条件, 存在 $[a, b]$ 的分划 $P$ , 使振幅不小于 $\eta$ 的子区间的长度之和小于 $\varepsilon'$ (见图 $10.1$). 对 $P$ , 用 $\sum'$ 和 $\sum''$ 分别表示在积分和式中对振幅不小于 $\eta$ 的子区间和对振幅小于 $\eta$ 的子区间求和. 我们有  
+根据条件, 存在 $[a, b]$ 的分划 $P$ , 使振幅不小于 $\eta$ 的子区间的长度之和小于 $\varepsilon'$ (见图 $10.1$). 对 $P$ , 用 $\sum'$ 和 $\sum''$ 分别表示在积分和式中对振幅不小于 $\eta$ 的子区间和对振幅小于 $\eta$ 的子区间求和. 我们有
 
 $$
 \begin{array}{r l} & {\sum^ {\prime} \omega_ {i} \Delta x _ {i} \leqslant (M - m) \sum^ {\prime} \Delta x _ {i} \leqslant (M - m) \varepsilon^ {\prime},} \\ & {\sum^ {\prime \prime} \omega_ {i} \Delta x _ {i} <   \eta \sum^ {\prime \prime} \Delta x _ {i} \leqslant \eta (b - a).} \end{array}
 $$
 
-合并得到  
+合并得到
 
 $$
 \sum \omega_ {i} \Delta x _ {i} \leqslant (M - m) \varepsilon^ {\prime} + \eta (b - a) <   \varepsilon .
@@ -138,7 +137,7 @@ $$
 
 由可积的第二充分必要条件可见 $f$ 在 $[a, b]$ 上 $Riemann$ 可积.
 
-再证必要性. 设 $f$ 在 $[a, b]$ 上 $Riemann$ 可积, 则由可积的第二充分必要条件, 对给定的 $\varepsilon, \eta > 0$ , 存在 $[a, b]$ 的分划 $P$ , 使 $\sum_{p} \omega_{i} \Delta x_{i} < \varepsilon \eta$ . 用 $\sum^{\prime}$ 表示对振幅不小于 $\eta$ 的子区间求和, 则  
+再证必要性. 设 $f$ 在 $[a, b]$ 上 $Riemann$ 可积, 则由可积的第二充分必要条件, 对给定的 $\varepsilon, \eta > 0$ , 存在 $[a, b]$ 的分划 $P$ , 使 $\sum_{p} \omega_{i} \Delta x_{i} < \varepsilon \eta$ . 用 $\sum^{\prime}$ 表示对振幅不小于 $\eta$ 的子区间求和, 则
 
 $$
 \eta \sum^ {\prime} \Delta x _ {i} \leqslant \sum^ {\prime} \omega_ {i} \Delta x _ {i} \leqslant \sum_ {P} \omega_ {i} \Delta x _ {i} <   \varepsilon \eta .
@@ -148,13 +147,13 @@ $$
 </Solution>
 </Knowledge>
 
-![](images/389cfc6e3c5f28c8734ca06a8f209b108ae3e5e64d1b9106a92262b32b0b40e5.jpg)  
+![](images/389cfc6e3c5f28c8734ca06a8f209b108ae3e5e64d1b9106a92262b32b0b40e5.jpg)
 图 $10.1$
 
 对于有无限多个间断点的函数, 用可积的第三充分必要条件来讨论其可积性比较容易.
 
 <Example title="例题 $10.1.1$">
-证明函数  
+证明函数
 
 $$
 f (x) = \left\{ \begin{array}{l l} \frac {1}{x} - [ \frac {1}{x} ], & x \in (0, 1 ], \\ 0, & x = 0 \end{array} \right.
@@ -165,7 +164,7 @@ $$
 分析 虽然 $f$ 在 $[0,1]$ 内有无限个间断点, 然而由于这些间断点可以看成为收敛于 $0$ 的数列, 因此可用总长度任意小的有限个区间把所有间断点覆盖住, 这就是下列证明的要点.
 
 <Solution title="证明">
-对给定的 $\varepsilon, \eta > 0$ 取 $n$ 充分大, 使得  
+对给定的 $\varepsilon, \eta > 0$ 取 $n$ 充分大, 使得
 
 $$
 \delta = \frac {1}{n + \frac {1}{2}} <   \frac {\varepsilon}{2}.
@@ -175,7 +174,7 @@ $$
 </Solution>
 </Example>
 
-![](images/fb40864cdc27c66f5ec57a01235b82541ace565043b5e3868fb9368ff7d507bf.jpg)  
+![](images/fb40864cdc27c66f5ec57a01235b82541ace565043b5e3868fb9368ff7d507bf.jpg)
 图 $10.2$
 
 这样我们就看到 $Riemann$ 可积函数可以有无限多个不连续点. 不仅如此, 这些不连续点的分布还可能比例题 $10.1.1$ 中的情况复杂得多. 例如, 例题 $5.1.4$ 中的 $Riemann$ 函数以所有的有理数点为间断点, 但它仍然是可积函数 (留作 $10.1.3$ 小节的练习题 $10$).
@@ -220,10 +219,10 @@ $$
 
 对下面的前 $10$ 个题来说, 每题至少可以举出两个解法. 其中的一个解法是从定积分定义出发, 而另一个解法则是以 $Lebesgue$ 定理 (命题 $10.1.6$) 为根据的, 这两种解法的思路很不一样. 初学者通过这样的训练既可以熟悉定积分的基本出发点, 又可以学会如何应用 $Lebesgue$ 定理和有关的概念去处理一般的 $Riemann$ 可积函数. 对于今后遇到的有关可积函数的问题都可以如此考虑.
 
-1. 设  
+1. 设
    $$
    f (x) = {\left\{ \begin{array}{l l} {x (1 - x),} & {x {\text {是有理数}},} \\ {0,} & {x {\text {是无理数}}.} \end{array} \right.}
-   $$  
+   $$
    问 $f$ 在 $[0,1]$ 上是否可积？
 
 2. 设 $f, g \in R[a, b]$ , 且 $f$ 的值域在 $[a, b]$ 中, 问 $g \circ f$ 在 $[a, b]$ 上是否可积? 又若 $f, g$ 在 $[a, b]$ 上都不可积, 问 $g \circ f$ 在 $[a, b]$ 上是否一定不可积?
@@ -244,13 +243,13 @@ $$
 
 10. 证明: $Riemann$ 函数 (见例题 $5.1.4$) 在每个有界区间 $[a, b]$ 上可积.
 
-11. 对连续函数, 能否如下定义定积分: 如果 $f \in C[a, b]$ 且存在实数 $I$ , 使  
+11. 对连续函数, 能否如下定义定积分: 如果 $f \in C[a, b]$ 且存在实数 $I$ , 使
     $$
     \lim _ {n \rightarrow \infty} \frac {b - a}{n} \sum_ {i = 1} ^ {n} f \left(a + \frac {i}{n} (b - a)\right) = I,
-    $$  
+    $$
     则 $f \in R[a, b]$ 且 $\int_{a}^{b} f = I$ .
 
-12. 设 $f, g \in R[a, b]$ , $P = \{x_{0}, x_{1}, \cdots, x_{n}\}$ 是区间 $[a, b]$ 的分划, 证明: $\forall \varepsilon > 0$ , $\exists \delta > 0$ , 使对于满足 $\|P\| < \delta$ 的任意分划 $P$, 成立  
+12. 设 $f, g \in R[a, b]$ , $P = \{x_{0}, x_{1}, \cdots, x_{n}\}$ 是区间 $[a, b]$ 的分划, 证明: $\forall \varepsilon > 0$ , $\exists \delta > 0$ , 使对于满足 $\|P\| < \delta$ 的任意分划 $P$, 成立
     $$
     \left| \sum_ {k = 1} ^ {n} f (x _ {k}) \sin (g (x _ {k}) \Delta x _ {k}) - \int_ {a} ^ {b} f (x) g (x) \mathrm{d} x \right| <   \varepsilon .
     $$

@@ -41,7 +41,7 @@ Before delving more deeply into these equations, you should consider the implica
 
 If you think of the rotational analog to the translational equation ${ \vec { p } } = m { \vec { v } } ;$ you may be tempted to write an equation such as $\vec { L } = I \vec { \omega }$ . But that equation would indicate that the angular momentum $\vec { L }$ must be in the same direction as the angular velocity ${ \vec { \omega } } ,$ since multiplication by a scalar can change the length but not the direction of a vector (unless the scalar is negative, in which case the direction of the vector is reversed). For general motion, the situation is more complex, as you can see by applying Eq. 6.2 to a single particle cir cling about the axis shown in Figure 6.1. In this figure, the particle "m" is circling around the z-axis, so the angular velocity (ω) points straight up, paral lel to the z-axis. In this view, you're looking down the x-axis toward the origin of the coordinate system, which is well below the plane of the particle's path. The particle is initially at the position shown on the left side of the figure, and its velocity vector is coming out of the page. Since the vector angular momentum is given by ${ \vec { L } } = m { \vec { r } } \times { \vec { v } }$ , you can find the direction of the angular momentum at this initial instant by using your right hand to form the cross product between $\vec { r }$ and $\vec { v } ,$ as described in Section 2.2. If you do this properly, you should see that $\vec { L }$ initially points up and to the right, as shown by $\vec { L } _ { i n i t i a l }$ in the figure. At a later time, after the particle has completed one-half revolu tion about the z-axis, its velocity vector is into the page, as shown in the right portion of the figure. At that later instant, the cross product between $\vec { r }$ and $\vec { v }$ means that the direction of the angular momentum vector $\vec { L }$ is up and to the left, as shown by $\vec { L } _ { l a t e r }$
 
-![](images/dd536fedb3704a822e1bf6a70d441e35ca1d1fdb4d6ae9f516a55a29cc89cafe.jpg)  
+![](images/dd536fedb3704a822e1bf6a70d441e35ca1d1fdb4d6ae9f516a55a29cc89cafe.jpg)
 Figure 6.1 Single point mass moving around an axis.
 
 So not only is the angular-momentum vector $\vec { L }$ not parallel to the angular velocity vector $\vec { \omega } ,$ , the direction of the $\vec { L }$ is changing as the particle moves around the axis, while the direction of $\vec { \omega }$ remains fixed along the z-axis.
@@ -130,7 +130,7 @@ $$
 \begin{array}{l} I _ {x x} = m _ {1} (y _ {1} ^ {2} + z _ {1} ^ {2}) + m _ {2} (y _ {2} ^ {2} + z _ {2} ^ {2}) + m _ {3} (y _ {3} ^ {2} + z _ {3} ^ {2}) + m _ {4} (y _ {4} ^ {2} + z _ {4} ^ {2}) \\ \qquad + m _ {5} (y _ {5} ^ {2} + z _ {5} ^ {2}) \\ \qquad = m _ {1} (a ^ {2} + 0 ^ {2}) + m _ {2} (a ^ {2} + 0 ^ {2}) + m _ {3} [ (- a) ^ {2} + 0 ^ {2} ] + m _ {4} [ (- a) ^ {2} + 0 ^ {2} ] \\ \qquad + m _ {5} (0 ^ {2} + (2 a) ^ {2}) \\ \qquad = 8 m a ^ {2}, \end{array}
 $$
 
-![](images/3a470cc9879f21fbb7ae1a23cc74b16c63b93f9e3ce3bc6ae6554e8dc5064f98.jpg)  
+![](images/3a470cc9879f21fbb7ae1a23cc74b16c63b93f9e3ce3bc6ae6554e8dc5064f98.jpg)
 Figure 6.2 Five point masses arrayed as a pyramid.
 
 and you should obtain the same result for the other diagonal elements $I _ { y y }$ and $I _ { z z }$ . Moving on to the off-diagonal elements, the $I _ { x y }$ term is
@@ -169,7 +169,7 @@ To test this, imagine rotating the coordinate axes counter-clockwise about the x
 
 What effect might this have on the inertia tensor? To determine that, you'll need to know the coordinates of each of the masses in the new (rotated) coordi nate system (that is, you need to know $x ^ { \prime } , y ^ { \prime }$ , and $z ^ { \prime }$ for each mass). Fortunately, Chapter 4 should have given you some idea of how to do that by using a rotation matrix to convert between the original and rotated coordinates. In this case, that rotation matrix is given by
 
-![](images/28778e466be53e9360de0fdfad0b1fae3e331a976c3134620f064a6417a38c72.jpg)  
+![](images/28778e466be53e9360de0fdfad0b1fae3e331a976c3134620f064a6417a38c72.jpg)
 Figure 6.3 Coordinate axes rotated $3 0 ^ { \circ }$ anti-clockwise around x-axis.
 
 $$
@@ -198,7 +198,7 @@ $$
 \vec {\vec {I}} = \left( \begin{array}{c c c} 4 m a ^ {2} & 0 & 0 \\ 0 & 5 m a ^ {2} & 1. 7 3 m a ^ {2} \\ 0 & 1. 7 3 m a ^ {2} & 7 m a ^ {2} \end{array} \right).
 $$
 
-![](images/c224e3982f87db996be5625474c75e57cd87c204b6181bcfccd9e0f32b7d26a2.jpg)  
+![](images/c224e3982f87db996be5625474c75e57cd87c204b6181bcfccd9e0f32b7d26a2.jpg)
 Figure 6.4 Angular momentum vectors for masses in plane of page.
 
 And there's the answer: the other four masses contribute exactly as much angular momentum in the positive y-direction as $m { 5 }$ contributes to the negative y-direction, as illustrated in Figure 6.4. And remember from Chapter 5 that you can add tensors by adding their components. So when you add the inertia tensor for $m { 5 }$ to the inertia tensor for the other four masses, you get the (nicely diagonal) inertia tensor for the five-mass pyramid.

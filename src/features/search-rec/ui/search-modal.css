@@ -1,10 +1,3 @@
-/**
- * src/features/search-rec/ui/search-modal.css
- * AstroLib 全站知识整合与推荐模态框 Material 3 纯净学术样式
- * 严格遵循 AGENTS.md 极端减法与学术克制规约，去除一切 Emoji 与多余视觉噪音
- */
-
-/* 1. 顶栏触发胶囊条 (Google Drive 风格) */
 .astrolib-search-root {
   display: block;
   width: 100%;
@@ -82,7 +75,6 @@
   border-radius: 4px;
 }
 
-/* 2. 模态对话框与遮罩 */
 .astrolib-search-dialog {
   position: fixed;
   inset: 0;
@@ -111,7 +103,6 @@
   max-height: 82vh;
 }
 
-/* 3. 头部搜索输入区 */
 .astrolib-search-header {
   padding: 0.85rem 1.15rem 0.65rem;
   background-color: var(--md-sys-color-surface-container-high, rgba(255, 255, 255, 0.03));
@@ -151,7 +142,6 @@
   font-family: inherit;
 }
 
-/* 彻底隐蔽 Chromium 原生在 input[type="search"] 上自带的删除小圆叉，防止多出伪影按钮 */
 .astrolib-search-input-box input[type="search"]::-webkit-search-cancel-button,
 .astrolib-search-input-box input[type="search"]::-webkit-search-decoration,
 .astrolib-search-input-box input[type="search"]::-webkit-search-results-button,
@@ -189,7 +179,6 @@
   color: var(--sl-color-white, #ffffff) !important;
 }
 
-/* 4. 范围筛选条 (Material 3 Filter Chips) */
 .astrolib-search-scope-bar {
   display: flex;
   align-items: center;
@@ -271,7 +260,6 @@
   color: #f8fafc;
 }
 
-/* 5. 模态切换 Chip-Set (纯文本，严禁 Emoji) */
 .astrolib-search-chips {
   display: flex;
   align-items: center;
@@ -325,7 +313,6 @@
   user-select: none;
 }
 
-/* 6. 结果与即时探索流容器 */
 .astrolib-search-results {
   flex: 1;
   overflow-y: auto;
@@ -361,7 +348,6 @@
   gap: 0.35rem;
 }
 
-/* 7. 学术片段卡片 (极端减法：克制纯净) */
 .astrolib-search-card {
   display: flex;
   flex-direction: column;
@@ -435,7 +421,6 @@
   overflow: hidden;
 }
 
-/* 8. 底部导航与快捷键指引栏 */
 .astrolib-search-footer {
   display: flex;
   align-items: center;

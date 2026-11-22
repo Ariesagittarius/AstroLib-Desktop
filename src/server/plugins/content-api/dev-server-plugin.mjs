@@ -1,15 +1,3 @@
-/**
- * src/server/plugins/content-api/dev-server-plugin.mjs
- * ============================================================================
- * AstroLib 统一内部内容数据 REST 服务插件 (/api/v1/content/*)
- * ============================================================================
- * 职责：
- * 1. 拦截并处理 /api/v1/content/* 请求，暴露标准 RESTful JSON 端点；
- * 2. 桥接 ContentApiService，为外部脚本、CLI、MCP 与前端提供低延迟 HTTP 访问；
- * 3. 严格践行统一响应格式 ApiResponse<T> 与跨域保护。
- * ============================================================================
- */
-
 import { ContentApiService } from '../../../core/content-api/content-api-service.ts';
 import { AntigravityCliService } from '../../../services/antigravity-cli/antigravity-cli-service.ts';
 import { handleAgentToolsRoute } from './agent-tools-handler.ts';
@@ -162,13 +150,12 @@ export function contentApiDevServerPlugin() {
         const subPath = pathname.slice(CONTENT_API_PREFIX.length);
 
         try {
-          // 0. Agent 扩展工具后端端点 (/agent-tools/*)
+
           if (subPath.startsWith('/agent-tools/')) {
             const handled = await handleAgentToolsRoute(req, res, subPath, parsedUrl);
             if (handled) return;
           }
 
-          // 1. GET /books - 列出所有图书
           if (req.method === 'GET' && (subPath === '/books' || subPath === '/books/')) {
             const books = service.listBooks();
             return sendJson(res, 200, {
@@ -178,7 +165,6 @@ export function contentApiDevServerPlugin() {
             });
           }
 
-          // 1.1 GET /knowledge/items - 统一知识库文档列表 (MDX + pdf2abp + EPUB + 学术文献)
           if (req.method === 'GET' && subPath === '/knowledge/items') {
             const kind = parsedUrl.searchParams.get('kind') || 'all';
             const format = parsedUrl.searchParams.get('format') || 'all';
@@ -204,7 +190,6 @@ export function contentApiDevServerPlugin() {
             });
           }
 
-          // 1.2 GET /knowledge/outline?uri=... - 统一知识库结构化大纲树
           if (req.method === 'GET' && subPath === '/knowledge/outline') {
             const uri = parsedUrl.searchParams.get('uri') || parsedUrl.searchParams.get('id') || '';
             if (!uri.trim()) {
@@ -221,7 +206,6 @@ export function contentApiDevServerPlugin() {
             });
           }
 
-          // 1.3 GET /knowledge/section?uri=...&sectionId=...&offset=0&limit=80 - 统一知识库分节读取
           if (req.method === 'GET' && subPath === '/knowledge/section') {
             const uri = parsedUrl.searchParams.get('uri') || parsedUrl.searchParams.get('id') || '';
             const sectionId = parsedUrl.searchParams.get('sectionId') || undefined;
@@ -249,7 +233,6 @@ export function contentApiDevServerPlugin() {
             });
           }
 
-          // 1.4 POST /knowledge/search - 统一知识库四源联合检索
           if (req.method === 'POST' && subPath === '/knowledge/search') {
             const body = await readJsonBody(req);
             const query = String(body.query || '').trim();
@@ -272,13 +255,11 @@ export function contentApiDevServerPlugin() {
             });
           }
 
-          // 1.45 POST /knowledge/refresh - 刷新知识库索引缓存
           if (req.method === 'POST' && subPath === '/knowledge/refresh') {
             service.invalidateKnowledgeCache();
             return sendJson(res, 200, { success: true, timestamp: Date.now() });
           }
 
-          // 1.5 GET /locate?q=... - 统一内容定位协议求解 (Content Locator Protocol)
           if (req.method === 'GET' && subPath === '/locate') {
             const q = parsedUrl.searchParams.get('q') || '';
             const locator = service.locateContent(q);
@@ -289,11 +270,6 @@ export function contentApiDevServerPlugin() {
             });
           }
 
-          // ====================================================================
-          // 1.8 批注元数据、数位板笔迹与自由画布 (/api/v1/content/annotations/*)
-          // ====================================================================
-
-          // 1.8a GET /annotations/search?q=...&col=...&book=...&limit=...
           if (req.method === 'GET' && subPath === '/annotations/search') {
             const q = parsedUrl.searchParams.get('q') || '';
             const colSlug = parsedUrl.searchParams.get('col') || undefined;
@@ -308,7 +284,6 @@ export function contentApiDevServerPlugin() {
             });
           }
 
-          // 1.8a-2 POST /annotations/render-markdown - 离线本地 Markdown + KaTeX 渲染接口 (供侧注与自由画布使用)
           if (req.method === 'POST' && subPath === '/annotations/render-markdown') {
             const body = await readJsonBody(req);
             const rawMd = typeof body.markdown === 'string' ? body.markdown : '';
@@ -349,7 +324,6 @@ export function contentApiDevServerPlugin() {
             });
           }
 
-          // 1.8a-3 GET /annotations/katex.css & fonts - 分发本地 KaTeX CSS 与字体 (供独立画布工作台离线渲染)
           if (req.method === 'GET' && subPath === '/annotations/katex.css') {
             const katexCssCandidates = [
               path.resolve(pluginModuleDir, 'katex/katex.min.css'),
@@ -393,7 +367,6 @@ export function contentApiDevServerPlugin() {
             return res.end('');
           }
 
-          // 1.8a-4 GET KaTeX 运行时 JS 与扩展 (katex.min.js / auto-render / mhchem)
           const katexJsMap = {
             '/annotations/katex.min.js': [
               path.resolve(pluginModuleDir, 'katex/katex.min.js'),
@@ -425,7 +398,6 @@ export function contentApiDevServerPlugin() {
             return res.end('');
           }
 
-          // 1.8b GET /annotations/books/:col/:book/export?chapter=...
           const annExportMatch = subPath.match(/^\/annotations\/books\/([^/]+)\/([^/]+)\/export$/);
           if (req.method === 'GET' && annExportMatch) {
             const col = decodeURIComponent(annExportMatch[1]);
@@ -439,7 +411,6 @@ export function contentApiDevServerPlugin() {
             });
           }
 
-          // 1.8c POST /annotations/books/:col/:book/import
           const annImportMatch = subPath.match(/^\/annotations\/books\/([^/]+)\/([^/]+)\/import$/);
           if (req.method === 'POST' && annImportMatch) {
             const body = await readJsonBody(req);
@@ -461,7 +432,6 @@ export function contentApiDevServerPlugin() {
             }
           }
 
-          // 1.8d GET/POST /annotations/books/:col/:book/chapters/:slug (支持多级章节 slug)
           const annChapterMatch = subPath.match(/^\/annotations\/books\/([^/]+)\/([^/]+)\/chapters\/(.+)$/);
           if (annChapterMatch) {
             const col = decodeURIComponent(annChapterMatch[1]);
@@ -501,7 +471,6 @@ export function contentApiDevServerPlugin() {
             }
           }
 
-          // 1.8e GET /annotations/books/:col/:book - 获取整书批注全景概览
           const annBookMatch = subPath.match(/^\/annotations\/books\/([^/]+)\/([^/]+)$/);
           if (req.method === 'GET' && annBookMatch) {
             const col = decodeURIComponent(annBookMatch[1]);
@@ -514,7 +483,6 @@ export function contentApiDevServerPlugin() {
             });
           }
 
-          // 2. GET /exercises/search?q=... - 全局检索习题
           if (req.method === 'GET' && subPath === '/exercises/search') {
             const q = parsedUrl.searchParams.get('q') || '';
             const limit = parseInt(parsedUrl.searchParams.get('limit') || '20', 10);
@@ -526,7 +494,6 @@ export function contentApiDevServerPlugin() {
             });
           }
 
-          // 3. GET /mineru - 列出所有 MinerU 任务
           if (req.method === 'GET' && (subPath === '/mineru' || subPath === '/mineru/')) {
             const tasks = service.listMineruTasks();
             return sendJson(res, 200, {
@@ -536,7 +503,6 @@ export function contentApiDevServerPlugin() {
             });
           }
 
-          // 4. GET /mineru/:hash/layout - 获取 MinerU 布局切片
           const mineruLayoutMatch = subPath.match(/^\/mineru\/([^/]+)\/layout$/);
           if (req.method === 'GET' && mineruLayoutMatch) {
             const hash = decodeURIComponent(mineruLayoutMatch[1]);
@@ -548,7 +514,6 @@ export function contentApiDevServerPlugin() {
             });
           }
 
-          // 5. GET /mineru/:hash - 获取单个 MinerU 详情
           const mineruSingleMatch = subPath.match(/^\/mineru\/([^/]+)$/);
           if (req.method === 'GET' && mineruSingleMatch) {
             const hash = decodeURIComponent(mineruSingleMatch[1]);
@@ -567,7 +532,6 @@ export function contentApiDevServerPlugin() {
             });
           }
 
-          // 6. GET /books/:col/:book/toc - 获取图书目录
           const tocMatch = subPath.match(/^\/books\/([^/]+)\/([^/]+)\/toc$/);
           if (req.method === 'GET' && tocMatch) {
             const col = decodeURIComponent(tocMatch[1]);
@@ -580,7 +544,6 @@ export function contentApiDevServerPlugin() {
             });
           }
 
-          // 7. GET /books/:col/:book/chapters/:slug/ast - 获取章节 AST (支持多级章节 slug)
           const astMatch = subPath.match(/^\/books\/([^/]+)\/([^/]+)\/chapters\/(.+)\/ast$/);
           if (req.method === 'GET' && astMatch) {
             const col = decodeURIComponent(astMatch[1]);
@@ -595,7 +558,6 @@ export function contentApiDevServerPlugin() {
             });
           }
 
-          // 7.0a GET /books/:col/:book/chapters/:slug/nodes/:nodeId/html - 获取节点原版预编译 HTML
           const nodeHtmlMatch = subPath.match(/^\/books\/([^/]+)\/([^/]+)\/chapters\/(.+)\/nodes\/([^/]+)\/html$/);
           if (req.method === 'GET' && nodeHtmlMatch) {
             const col = decodeURIComponent(nodeHtmlMatch[1]);
@@ -610,7 +572,6 @@ export function contentApiDevServerPlugin() {
             });
           }
 
-          // 7.0 GET /books/:col/:book/chapters/:slug/nodes/:nodeId - 读取指定 AST 节点原文
           const nodeMatch = subPath.match(/^\/books\/([^/]+)\/([^/]+)\/chapters\/(.+)\/nodes\/([^/]+)$/);
           if (req.method === 'GET' && nodeMatch) {
             const col = decodeURIComponent(nodeMatch[1]);
@@ -634,7 +595,6 @@ export function contentApiDevServerPlugin() {
             }
           }
 
-          // 7.1 GET /books/:col/:book/chapters/:slug/cards - 获取章节学术卡片列表
           const cardsMatch = subPath.match(/^\/books\/([^/]+)\/([^/]+)\/chapters\/([^/]+)\/cards$/);
           if (req.method === 'GET' && cardsMatch) {
             const col = decodeURIComponent(cardsMatch[1]);
@@ -649,7 +609,6 @@ export function contentApiDevServerPlugin() {
             });
           }
 
-          // 7.2 GET /books/:col/:book/chapters/:slug/formulas - 获取章节公式列表
           const formulasMatch = subPath.match(/^\/books\/([^/]+)\/([^/]+)\/chapters\/([^/]+)\/formulas$/);
           if (req.method === 'GET' && formulasMatch) {
             const col = decodeURIComponent(formulasMatch[1]);
@@ -664,7 +623,6 @@ export function contentApiDevServerPlugin() {
             });
           }
 
-          // 8. GET /books/:col/:book/chapters/:slug/exercises - 获取章节习题
           const chExercisesMatch = subPath.match(/^\/books\/([^/]+)\/([^/]+)\/chapters\/([^/]+)\/exercises$/);
           if (req.method === 'GET' && chExercisesMatch) {
             const col = decodeURIComponent(chExercisesMatch[1]);
@@ -678,7 +636,6 @@ export function contentApiDevServerPlugin() {
             });
           }
 
-          // 9. POST /books/:col/:book/pack-abp - 触发打包 ABP
           const packMatch = subPath.match(/^\/books\/([^/]+)\/([^/]+)\/pack-abp$/);
           if (req.method === 'POST' && packMatch) {
             const col = decodeURIComponent(packMatch[1]);
@@ -690,7 +647,6 @@ export function contentApiDevServerPlugin() {
             });
           }
 
-          // 10. POST /books/import - 导入书籍
           if (req.method === 'POST' && (subPath === '/books/import' || subPath === '/books/import/')) {
             const body = await readJsonBody(req);
             const { colSlug, bookSlug, title, mineruDir } = body;
@@ -708,7 +664,6 @@ export function contentApiDevServerPlugin() {
             });
           }
 
-          // 11. POST /books/:col/:book/chapters/:slug/save - 保存章节 MDX
           const saveMatch = subPath.match(/^\/books\/([^/]+)\/([^/]+)\/chapters\/([^/]+)\/save$/);
           if (req.method === 'POST' && saveMatch) {
             const col = decodeURIComponent(saveMatch[1]);
@@ -729,7 +684,6 @@ export function contentApiDevServerPlugin() {
             });
           }
 
-          // 12. POST /diff - 计算章节或文本 Unified Diff
           if (req.method === 'POST' && (subPath === '/diff' || subPath === '/diff/')) {
             const body = await readJsonBody(req);
             let text1 = body.text1 || '';
@@ -760,7 +714,6 @@ export function contentApiDevServerPlugin() {
             });
           }
 
-          // 13. POST /cli - 交互终端直接调度运行 CLI
           if (req.method === 'POST' && (subPath === '/cli' || subPath === '/cli/')) {
             const body = await readJsonBody(req);
             const commandStr = (body.command || '').trim();
@@ -796,7 +749,6 @@ export function contentApiDevServerPlugin() {
             }
           }
 
-          // 13.5 GET /antigravity-cli/status - 静默探测本地 Antigravity CLI 状态
           if (req.method === 'GET' && (subPath === '/antigravity-cli/status' || subPath === '/antigravity-cli/status/')) {
             const cliService = AntigravityCliService.getInstance();
             const status = await cliService.detectCli();
@@ -807,14 +759,12 @@ export function contentApiDevServerPlugin() {
             });
           }
 
-          // 13.6 POST /antigravity-cli/chat - 本地 Antigravity CLI 流式调度
           if (req.method === 'POST' && (subPath === '/antigravity-cli/chat' || subPath === '/antigravity-cli/chat/')) {
             const body = await readJsonBody(req);
             await streamAntigravityCli(req, res, body);
             return;
           }
 
-          // 14. POST /chat - 本地与远程 AI 模型全双工流式对话代理 (/api/v1/content/chat)
           if (req.method === 'POST' && (subPath === '/chat' || subPath === '/chat/')) {
             const body = await readJsonBody(req);
 
@@ -832,7 +782,6 @@ export function contentApiDevServerPlugin() {
               max_tokens,
             } = body;
 
-            // 提取端点与密钥配置 (优先使用请求体传参，未传时兜底学校免费网关 baigong)
             let baseURL = body.baseURL;
             let apiKey = body.apiKey;
             let customHeaders = body.headers || {};

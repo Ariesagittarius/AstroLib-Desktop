@@ -1,10 +1,3 @@
-/**
- * src/server/plugins/info-highlight/dev-server-plugin.mjs
- * ============================================================================
- * Vite Dev Server / LocalServer 插件：本地 Qwen 信息高亮服务接口 (/__info_highlight__/*)
- * ============================================================================
- */
-
 import { QwenHighlightService } from '../../../services/info-highlight/qwen-highlight-service.ts';
 
 const HIGHLIGHT_PATH_PREFIX = '/__info_highlight__';
@@ -47,7 +40,7 @@ export function infoHighlightDevServerPlugin() {
         const path = rawUrl.split('?')[0];
 
         try {
-          // 2. 健康与模型状态探活 /__info_highlight__/status
+
           if (req.method === 'GET' && path === `${HIGHLIGHT_PATH_PREFIX}/status`) {
             const service = QwenHighlightService.getInstance();
             const status = await service.getStatus();
@@ -57,7 +50,6 @@ export function infoHighlightDevServerPlugin() {
             });
           }
 
-          // 3. 手动释放驻留显存 /__info_highlight__/unload
           if (req.method === 'POST' && path === `${HIGHLIGHT_PATH_PREFIX}/unload`) {
             const service = QwenHighlightService.getInstance();
             service.destroy();
@@ -67,7 +59,6 @@ export function infoHighlightDevServerPlugin() {
             });
           }
 
-          // 4. 文本分析 /__info_highlight__/analyze
           if (req.method === 'POST' && path === `${HIGHLIGHT_PATH_PREFIX}/analyze`) {
             const body = await readJsonBody(req);
             const text = body.text || '';

@@ -28,15 +28,12 @@ describe('BipartiteMatcher (Phase 4 Enhanced)', () => {
       sectionContext: '0.3 大 O 符号',
     };
 
-    // Heading to heading should have bonus
     const headingScore = BipartiteMatcher.computeAuxiliaryScore(srcHeading, tgtHeading);
     expect(headingScore).toBeGreaterThan(0.05);
 
-    // Heading to paragraph should be penalized
     const mismatchScore = BipartiteMatcher.computeAuxiliaryScore(srcHeading, tgtParagraph);
     expect(mismatchScore).toBeLessThan(0);
 
-    // Formula overlap bonus
     const srcMath: SemanticParagraph = {
       id: 'src-m',
       index: 2,
@@ -57,7 +54,7 @@ describe('BipartiteMatcher (Phase 4 Enhanced)', () => {
   });
 
   it('correctly detects 1:N relations and bidirectional top-k', () => {
-    // 1 source paragraph corresponds to 2 target paragraphs
+
     const sources: SemanticParagraph[] = [
       { id: 'src-0', index: 0, text: 'Long source paragraph covering concept A and B', type: 'paragraph' },
       { id: 'src-1', index: 1, text: 'Second source paragraph', type: 'paragraph' },
@@ -69,7 +66,6 @@ describe('BipartiteMatcher (Phase 4 Enhanced)', () => {
       { id: 'tgt-2', index: 2, text: 'Target for second paragraph', type: 'paragraph' },
     ];
 
-    // Simulated matrix where src-0 is strongly similar to tgt-0 (0.85) and tgt-1 (0.80)
     const matrix = [
       [0.85, 0.80, 0.15],
       [0.10, 0.20, 0.88],

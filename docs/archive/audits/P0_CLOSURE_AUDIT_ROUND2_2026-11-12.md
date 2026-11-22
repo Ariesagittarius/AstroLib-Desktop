@@ -1,6 +1,6 @@
 # AstroLib 第二轮与最终 P0 关闭审计报告
 
-**审计结论（2026-11-13 最终结论）：`P0 CLOSED — ALL BLOCKERS RESOLVED`。准予进入发布候选（Release Candidate）状态，准予正式进入 P1 阶段交接。**  
+**审计结论（2026-11-13 最终结论）：`P0 CLOSED — ALL BLOCKERS RESOLVED`。准予进入发布候选（Release Candidate）状态，准予正式进入 P1 阶段交接。**
 *(历史注记：2026-11-12 第二轮审计初核判定为 P0 NOT CLOSED，经第三轮与第四轮工程治理、GitHub Actions 编译及真实 Release 资产全量 HTTP 200 活网探测后，现已全部通过闭合)*
 
 | 项目 | 内容 |

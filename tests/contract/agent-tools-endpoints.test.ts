@@ -1,10 +1,3 @@
-/**
- * tests/contract/agent-tools-endpoints.test.ts
- * ============================================================================
- * Agent 扩展工具后端端点 (/api/v1/content/agent-tools/*) HTTP 契约测试
- * ============================================================================
- */
-
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -144,7 +137,7 @@ describe('Agent Tools HTTP Endpoints Contract Tests', () => {
       expect(pyRes.json.data.exitCode).toBe(0);
       expect(String(pyRes.json.data.stdout)).toContain('42');
     } else {
-      // 环境无可用 Python 时应返回明确可读错误，不得崩溃
+
       expect(pyRes.json.success).toBe(false);
       expect(typeof pyRes.json.error).toBe('string');
     }

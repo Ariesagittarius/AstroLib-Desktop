@@ -1,26 +1,4 @@
 #!/usr/bin/env node
-/**
- * bin/astrolib-cli.mjs
- * ============================================================================
- * AstroLib 统一内部数据与管线命令行工具 (Unified Content CLI Runner)
- * ============================================================================
- * 职责：
- * 1. 为外部脚本 (Python, Bash, Node.js) 和 CI 自动化测试提供零延迟 CLI 调度；
- * 2. 覆盖图书大纲 (TOC)、章节 AST 树、学术卡片、数学公式、习题集与 MinerU 提取；
- * 3. 支持 --json 格式化输出与管道传递。
- * ============================================================================
- * 用法示例：
- *   node bin/astrolib-cli.mjs books
- *   node bin/astrolib-cli.mjs toc math linear_algebra_geometry
- *   node bin/astrolib-cli.mjs chapter math linear_algebra_geometry 01_ch01 --format=ast
- *   node bin/astrolib-cli.mjs chapter math linear_algebra_geometry 01_ch01 --format=cards
- *   node bin/astrolib-cli.mjs chapter math linear_algebra_geometry 01_ch01 --format=formulas
- *   node bin/astrolib-cli.mjs exercises math linear_algebra_geometry 01_ch01
- *   node bin/astrolib-cli.mjs search-exercises "行列式" --limit=5
- *   node bin/astrolib-cli.mjs mineru
- *   node bin/astrolib-cli.mjs mineru --hash=71c8de5e --layout
- * ============================================================================
- */
 
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -38,7 +16,6 @@ async function main() {
     process.exit(0);
   }
 
-  // 动态导入 ContentApiService
   const { ContentApiService } = await import('../src/core/content-api/content-api-service.ts');
   const service = ContentApiService.getInstance();
 

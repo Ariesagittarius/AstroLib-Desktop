@@ -1,10 +1,3 @@
-/**
- * tests/unit/harness-astro-blocks.test.ts
- * ============================================================================
- * Track A: AstroBlocks (` ```astro-ui ` 协议编译器) 与 Markdown 集成单元测试
- * ============================================================================
- */
-
 import { describe, it, expect } from 'vitest';
 import { renderAstroUiBlock } from '../../src/features/harness/astro-blocks.ts';
 import { mdToHtml } from '../../src/ai/client/chat-markdown.ts';

@@ -104,7 +104,6 @@ describe('EPUB First-Class Citizen End-to-End Serving Acceptance Test', () => {
     const handler = new StaticHandler(DIST_DIR, TEST_EPUB_PACKS_DIR);
     const { colSlug, slug, entryPoint, id } = installedManifest;
 
-    // 1. 请求入口正文页 HTML
     const entryUrl = `/collections/${colSlug}/${slug}/${encodeURIComponent(entryPoint)}/`;
     const htmlRes = await dispatchStatic(handler, entryUrl);
     expect(htmlRes.handled).toBe(true);
@@ -117,7 +116,6 @@ describe('EPUB First-Class Citizen End-to-End Serving Acceptance Test', () => {
     expect(htmlText).toContain('__book_footnotes__');
     expect(htmlText).toContain('styles/epub-book.css');
 
-    // 1.1 查找包含 NAV 子锚点 #toc-1 与脚注的章节并验证大纲树与脚注载体注入
     const chapterFiles = fs.readdirSync(path.join(installedBookDir, 'chapters')).filter((f) => f.endsWith('.json'));
     const tocSubChap = chapterFiles
       .map((f) => JSON.parse(fs.readFileSync(path.join(installedBookDir, 'chapters', f), 'utf-8')))
@@ -131,14 +129,12 @@ describe('EPUB First-Class Citizen End-to-End Serving Acceptance Test', () => {
     expect(tocRes.statusCode).toBe(200);
     expect(tocRes.body.toString('utf-8')).toContain('#toc-1');
 
-    // 2. 请求作用域样式表 styles/epub-book.css
     const cssRes = await dispatchStatic(handler, `/collections/${colSlug}/${slug}/styles/epub-book.css`);
     expect(cssRes.handled).toBe(true);
     expect(cssRes.statusCode).toBe(200);
     expect(String(cssRes.headers['Content-Type'] || '')).toContain('text/css');
     expect(cssRes.body.toString('utf-8')).toContain('.astrolib-book-scope');
 
-    // 3. 请求嵌入式图片资产与字体资产
     const imageRel = installedManifest.assets?.find((a) => /\.(?:jpg|jpeg|png|webp)$/i.test(a));
     expect(imageRel).toBeDefined();
     const imgRes = await dispatchStatic(handler, `/collections/${colSlug}/${slug}/${encodeURI(imageRel!)}`);
@@ -153,14 +149,12 @@ describe('EPUB First-Class Citizen End-to-End Serving Acceptance Test', () => {
     expect(fontRes.statusCode).toBe(200);
     expect(fontRes.body.byteLength).toBeGreaterThan(100);
 
-    // 4. 请求 AI 检索索引 /ai-index/<bookId>.json
     const aiRes = await dispatchStatic(handler, `/ai-index/${encodeURIComponent(id)}.json`);
     expect(aiRes.handled).toBe(true);
     expect(aiRes.statusCode).toBe(200);
     const aiIndex = JSON.parse(aiRes.body.toString('utf-8'));
     expect(aiIndex.chunks.length).toBeGreaterThan(20);
 
-    // 5. 客户端 AI 检索工具原生可用（零格式特化）
     const retrieveResult = await runClientTool(
       'book_retrieve',
       { question: '暗部 麦野', topK: 4 },
@@ -169,7 +163,6 @@ describe('EPUB First-Class Citizen End-to-End Serving Acceptance Test', () => {
     expect(Array.isArray(retrieveResult.results)).toBe(true);
     expect(retrieveResult.results.length).toBeGreaterThan(0);
 
-    // 6. ContentApiService 发现与 AST 批注回退树均原生工作
     const api = new ContentApiService();
     const listed = api.listBooks();
     expect(listed.some((b) => b.colSlug === colSlug && b.slug === slug)).toBe(true);

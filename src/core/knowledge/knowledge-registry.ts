@@ -1,15 +1,3 @@
-/**
- * src/core/knowledge/knowledge-registry.ts
- * ============================================================================
- * AstroLib 统一知识库聚合注册中心 (Unified Knowledge Registry)
- * ============================================================================
- * 职责：
- * 1. 聚合 MDX 源码教材、ABP/pdf2abp 书籍、EPUB 电子书与 MinerU 学术文献；
- * 2. 支持动态挂载扩展适配器 (slides / videos / notes)；
- * 3. 提供统一列举、目录提取、分节无损读取与跨源全文检索，自动去重。
- * ============================================================================
- */
-
 import { MdxBookAdapter } from './adapters/mdx-book-adapter.ts';
 import { AbpEpubAdapter } from './adapters/abp-epub-adapter.ts';
 import { PaperIngestAdapter } from './adapters/paper-ingest-adapter.ts';
@@ -45,9 +33,6 @@ export class KnowledgeRegistry {
     return KnowledgeRegistry.instance;
   }
 
-  /**
-   * 供测试或新模态扩展插件注入独立适配器实例
-   */
   public static createIsolated(adapters: IKnowledgeAdapter[]): KnowledgeRegistry {
     return new KnowledgeRegistry(adapters);
   }

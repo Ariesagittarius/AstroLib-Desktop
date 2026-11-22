@@ -1,16 +1,4 @@
 ---
-/**
- * src/components/bilingual/AlignmentHeatmapSheet.astro
- * ============================================================================
- * AstroLib 双语关联度热力图抽屉 (Alignment Heatmap Bottom Sheet)
- * ============================================================================
- * 遵循 Material Design 3 规范与 Rule 5.3 极简主义呼吸感：
- * 1. 底部常驻微缩把手，点击平滑展开；
- * 2. 动态阈值控制器（Slider）过滤弱相关连接；
- * 3. 交互式 M x N 网格热力图，悬浮显示段落坐标与置信度，点击双栏对齐高亮；
- * 4. 0 显存/0 内存冗余，纯客户端 Canvas/DOM 渲染。
- * ============================================================================
- */
 interface Props {
   initialThreshold?: number;
 }
@@ -19,7 +7,7 @@ const { initialThreshold = 0.6 } = Astro.props;
 ---
 
 <aside id="bilingual-heatmap-sheet" class="bilingual-heatmap-sheet is-collapsed" aria-label="双语与跨书段落关联度热力图">
-  <!-- 抽屉顶部动作条 -->
+
   <header class="heatmap-sheet-header">
     <div class="sheet-title-group">
       <button id="heatmap-sheet-toggle" class="sheet-toggle-btn" aria-label="折叠或展开热力图" type="button">
@@ -38,9 +26,8 @@ const { initialThreshold = 0.6 } = Astro.props;
       </div>
     </div>
 
-    <!-- 阈值与模型控制器 -->
     <div class="sheet-controls">
-      <!-- 向量模型选择器 (Material 3 Filter Chips) -->
+
       <div class="sheet-model-group" title="选择段落语义嵌入推理模型">
         <span class="control-label">模型:</span>
         <div class="model-chip-set" role="radiogroup" aria-label="向量模型选择">
@@ -89,11 +76,10 @@ const { initialThreshold = 0.6 } = Astro.props;
     </div>
   </header>
 
-  <!-- 热力图内容渲染区 -->
   <div class="heatmap-sheet-body">
     <div class="heatmap-matrix-scroll-wrapper">
       <div id="heatmap-matrix-grid" class="heatmap-matrix-grid">
-        <!-- 动态 JS 填充 Canvas 或 Cell 网格 -->
+
         <canvas id="heatmap-canvas" class="heatmap-canvas"></canvas>
       </div>
     </div>
@@ -101,8 +87,7 @@ const { initialThreshold = 0.6 } = Astro.props;
   </div>
 </aside>
 
-<style>
-  .bilingual-heatmap-sheet {
+<style>.bilingual-heatmap-sheet {
     display: none;
     position: fixed;
     bottom: 0;
@@ -213,13 +198,11 @@ const { initialThreshold = 0.6 } = Astro.props;
     transition: background-color 0.2s, box-shadow 0.2s;
   }
 
-  /* 状态 1：在线就绪 (Green) */
   .sheet-engine-badge.is-ready .engine-status-dot {
     background-color: #10b981;
     box-shadow: 0 0 6px rgba(16, 185, 129, 0.6);
   }
 
-  /* 状态 2：推理/加载中 (Pulsing Accent) */
   .sheet-engine-badge.is-loading {
     border-color: var(--sl-color-accent, #3b82f6);
     background: var(--sl-color-accent-low, rgba(59, 130, 246, 0.08));
@@ -237,7 +220,6 @@ const { initialThreshold = 0.6 } = Astro.props;
     100% { transform: scale(1.3); opacity: 1; }
   }
 
-  /* 状态 3：降级模式 (Amber) */
   .sheet-engine-badge.is-fallback {
     border-color: rgba(245, 158, 11, 0.5);
     background: rgba(245, 158, 11, 0.08);
@@ -248,7 +230,6 @@ const { initialThreshold = 0.6 } = Astro.props;
     box-shadow: 0 0 6px rgba(245, 158, 11, 0.6);
   }
 
-  /* 状态 4：离线/错误 (Red) */
   .sheet-engine-badge.is-error {
     border-color: rgba(239, 68, 68, 0.5);
     background: rgba(239, 68, 68, 0.08);
